@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Mail } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 // Custom GitHub Logo SVG component
@@ -86,8 +87,13 @@ export const Footer: React.FC = () => {
   const { t } = useLanguage();
 
   const socialLinks = [
-    { 
-      name: 'GitHub', 
+    {
+      name: 'Email',
+      url: 'mailto:Jsgonzalezdevs@gmail.com',
+      icon: <Mail className="h-5 w-5" strokeWidth={2} />
+    },
+    {
+      name: 'GitHub',
       url: 'https://github.com/S4NS1605', 
       icon: <GithubIcon className="h-5 w-5" /> 
     },
@@ -122,19 +128,22 @@ export const Footer: React.FC = () => {
         
         {/* Social Icons Row */}
         <div className="mb-10 flex gap-4">
-          {socialLinks.map((link) => (
-            <motion.a
-              key={link.name}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              whileHover={{ scale: 1.15, y: -2 }}
-              className="p-2 text-neutral-400 transition-colors hover:text-white"
-              aria-label={link.name}
-            >
-              {link.icon}
-            </motion.a>
-          ))}
+          {socialLinks.map((link) => {
+            const isEmail = link.url.startsWith('mailto:');
+            return (
+              <motion.a
+                key={link.name}
+                href={link.url}
+                target={isEmail ? undefined : '_blank'}
+                rel={isEmail ? undefined : 'noopener noreferrer'}
+                whileHover={{ scale: 1.15, y: -2 }}
+                className="p-2 text-neutral-400 transition-colors hover:text-white"
+                aria-label={link.name}
+              >
+                {link.icon}
+              </motion.a>
+            );
+          })}
         </div>
 
         {/* Text and Copyright */}

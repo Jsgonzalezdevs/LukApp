@@ -1,26 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { useSmoothScroll } from '../hooks/useSmoothScroll';
 
 export const Hero: React.FC = () => {
   const { t } = useLanguage();
-
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    e.preventDefault();
-    const element = document.getElementById(targetId);
-    if (element) {
-      const offset = 80;
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = element.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
+  const { scrollToSection } = useSmoothScroll();
 
   return (
     <section 
@@ -81,7 +66,7 @@ export const Hero: React.FC = () => {
         >
           <motion.a
             href="#contacto"
-            onClick={(e) => handleScroll(e, 'contacto')}
+            onClick={(e) => scrollToSection(e, 'contacto')}
             whileHover={{ scale: 1.05, borderColor: '#ffffff', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center rounded-full border border-white/20 px-8 py-3.5 text-xs font-semibold tracking-widest text-white transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase"

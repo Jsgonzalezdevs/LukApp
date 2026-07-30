@@ -1,26 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
+import { useSmoothScroll } from '../hooks/useSmoothScroll';
 
 export const Navbar: React.FC = () => {
   const { language, toggleLanguage, t } = useLanguage();
-
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>, targetId: string) => {
-    e.preventDefault();
-    const element = document.getElementById(targetId);
-    if (element) {
-      const offset = 80; // height of the sticky header
-      const bodyRect = document.body.getBoundingClientRect().top;
-      const elementRect = element.getBoundingClientRect().top;
-      const elementPosition = elementRect - bodyRect;
-      const offsetPosition = elementPosition - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
-  };
+  const { scrollToSection } = useSmoothScroll();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/[0.08] bg-black/60 backdrop-blur-md">
@@ -49,14 +34,14 @@ export const Navbar: React.FC = () => {
 
           <a
             href="#sobre-mi"
-            onClick={(e) => handleScroll(e, 'sobre-mi')}
+            onClick={(e) => scrollToSection(e, 'sobre-mi')}
             className="inline-flex items-center justify-center rounded-full border border-white/20 bg-transparent px-5 py-2 text-xs font-semibold tracking-wider text-white transition-all duration-300 hover:border-white hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase"
           >
             {t.navbar.about}
           </a>
           <motion.a
             href="#contacto"
-            onClick={(e) => handleScroll(e, 'contacto')}
+            onClick={(e) => scrollToSection(e, 'contacto')}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2.5 text-xs font-bold tracking-wider text-black transition-colors hover:bg-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase"
