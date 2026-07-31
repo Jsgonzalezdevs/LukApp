@@ -48,11 +48,30 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           <h2 className="mt-3 text-lg font-extrabold tracking-tight">Token de acceso</h2>
           <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
             Cada análisis gasta dinero de tu cuenta de Anthropic, así que el endpoint pide un
-            token. Pégalo una vez y queda guardado en este dispositivo.
+            token. Guárdalo cuando tu navegador lo ofrezca y en tus otros dispositivos con la
+            misma cuenta (iCloud Keychain o Google) aparecerá solo.
           </p>
+
+          {/* A visible username field is what makes Safari/Chrome recognize this
+              as a real login form and offer to save it to iCloud Keychain /
+              Google Password Manager — which is what actually syncs the token
+              across the owner's own devices without ever putting the secret in
+              the public bundle. A hidden or absent username field makes most
+              password managers skip the save prompt entirely. */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            defaultValue="finanzas"
+            readOnly
+            aria-hidden="true"
+            tabIndex={-1}
+            className="sr-only"
+          />
 
           <input
             type="password"
+            name="password"
             value={tokenBorrador}
             onChange={(e) => setTokenBorrador(e.target.value)}
             autoComplete="current-password"
