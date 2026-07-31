@@ -1,0 +1,253 @@
+import { describe, it, expect } from 'vitest';
+import { parseTransaction } from './parseTransaction';
+
+describe('parseTransaction — expenses', () => {
+  it('reads a full expense sentence with a merchant', () => {
+    const r = parseTransaction('gasté 20 mil en el mercado del D1');
+    expect(r.kind).toBe('gasto');
+    expect(r.amount).toBe(20000);
+    expect(r.category).toBe('mercado');
+    expect(r.description).toContain('D1');
+    expect(r.signals.categorySource).toBe('merchant');
+    expect(r.needsReview).toBe(false);
+  });
+
+  it('reads es-CO digit grouping', () => {
+    const r = parseTransaction('pagué 45.000 de Transmilenio');
+    expect(r.kind).toBe('gasto');
+    expect(r.amount).toBe(45000);
+    expect(r.category).toBe('transporte');
+  });
+
+  it('reads a category keyword without a merchant', () => {
+    const r = parseTransaction('compré almuerzo por 15 mil');
+    expect(r.kind).toBe('gasto');
+    expect(r.amount).toBe(15000);
+    expect(r.category).toBe('comida');
+    expect(r.signals.categorySource).toBe('keyword');
+  });
+
+  it('reads slang amounts', () => {
+    const r = parseTransaction('saqué 200 mil del cajero');
+    expect(r.amount).toBe(200000);
+    expect(r.category).toBe('transferencia');
+  });
+
+  it('reads a half-scale amount', () => {
+    const r = parseTransaction('retiré medio millón de Nequi');
+    expect(r.kind).toBe('gasto');
+    expect(r.amount).toBe(500000);
+    expect(r.category).toBe('transferencia');
+    expect(r.description).toBe('Nequi');
+  });
+});
+
+// "me" starts both income and expense phrases. Longest-first matching is what
+// keeps these on the correct side.
+describe('parseTransaction — the "me" trap', () => {
+  it('treats "me costó" as an expense', () => {
+    const r = parseTransaction('me costó 80 lucas el Uber');
+    expect(r.kind).toBe('gasto');
+    expect(r.amount).toBe(80000);
+    expect(r.category).toBe('transporte');
+    expect(r.signals.kindSource).toBe('keyword');
+  });
+
+  it('treats "me salió" as an expense', () => {
+    expect(parseTransaction('me salió en 30 mil').kind).toBe('gasto');
+  });
+
+  it('separates aboné / me abonaron', () => {
+    expect(parseTransaction('aboné 100 mil').kind).toBe('gasto');
+    expect(parseTransaction('me abonaron 100 mil').kind).toBe('ingreso');
+  });
+
+  it('separates consigné / me consignaron', () => {
+    expect(parseTransaction('consigné 300 mil').kind).toBe('gasto');
+    expect(parseTransaction("me consignaron 1'200.000").kind).toBe('ingreso');
+  });
+
+  it('treats "me cobraron" as an expense despite the -aron ending', () => {
+    const r = parseTransaction('me cobraron 50 mil');
+    expect(r.kind).toBe('gasto');
+    expect(r.signals.kindSource).toBe('keyword');
+  });
+});
+
+describe('parseTransaction — income', () => {
+  it('reads an explicit income phrase', () => {
+    const r = parseTransaction('me entraron 2 millones');
+    expect(r.kind).toBe('ingreso');
+    expect(r.amount).toBe(2000000);
+  });
+
+  it('reads the Colombian apostrophe millions separator', () => {
+    expect(parseTransaction("me consignaron 1'200.000").amount).toBe(1200000);
+  });
+
+  it('reads other income verbs', () => {
+    expect(parseTransaction('recibí 500 mil de un cliente').kind).toBe('ingreso');
+    expect(parseTransaction('cobré 300 mil').kind).toBe('ingreso');
+    expect(parseTransaction('gané 50 mil').kind).toBe('ingreso');
+    expect(parseTransaction('me llegó el pago de 800 mil').kind).toBe('ingreso');
+  });
+
+  it('infers income from morphology for verbs not in the table', () => {
+    const r = parseTransaction('me reembolsaron 20 mil');
+    expect(r.kind).toBe('ingreso');
+    expect(r.signals.kindSource).toBe('morphology');
+  });
+
+  it('infers income from the category alone, with no verb', () => {
+    const r = parseTransaction('el salario de este mes');
+    expect(r.kind).toBe('ingreso');
+    expect(r.signals.kindSource).toBe('category-implied');
+    expect(r.amount).toBeNull();
+    expect(r.needsReview).toBe(true);
+  });
+
+  it('falls back to the ingreso category when nothing else matched', () => {
+    const r = parseTransaction('me pagaron 900 mil');
+    expect(r.kind).toBe('ingreso');
+    expect(r.category).toBe('ingreso');
+    expect(r.description).toBe('Ingreso');
+  });
+});
+
+// The classic bug family: a substring matcher would find `ara` in "para",
+// `mil` in "familia", `uno` in "desayuno", `d1` in "d10".
+describe('parseTransaction — no-substring invariants', () => {
+  it('does not find the Ara supermarket inside "para"', () => {
+    expect(parseTransaction('pagué el pasaje para el trabajo').category).toBe('transporte');
+  });
+
+  it('does not find "mil" inside "familia"', () => {
+    expect(parseTransaction('compré comida para la familia').amount).toBeNull();
+  });
+
+  it('does not find "uno" inside "desayuno"', () => {
+    const r = parseTransaction('el desayuno');
+    expect(r.amount).toBeNull();
+    expect(r.category).toBe('comida');
+  });
+
+  it('does not find the D1 merchant inside "d10"', () => {
+    expect(parseTransaction('gasté en camisetas d10').category).toBe('ropa');
+  });
+});
+
+describe('parseTransaction — amount candidate selection', () => {
+  it('prefers the scaled amount over a leading quantity', () => {
+    const r = parseTransaction('compré 2 pizzas por 30 mil');
+    expect(r.amount).toBe(30000);
+    expect(r.category).toBe('comida');
+    expect(r.signals.ambiguousAmount).toBe(true);
+  });
+
+  it('prefers the amount over a count of months', () => {
+    expect(parseTransaction('pagué 3 meses de gym por 300 mil').amount).toBe(300000);
+  });
+
+  it('reports an unambiguous amount as unambiguous', () => {
+    expect(parseTransaction('gasté 30 mil').signals.ambiguousAmount).toBe(false);
+  });
+});
+
+describe('parseTransaction — review flagging', () => {
+  it('flags an amount with no direction verb', () => {
+    const r = parseTransaction('20 mil');
+    expect(r.amount).toBe(20000);
+    expect(r.kind).toBe('gasto');
+    expect(r.signals.kindSource).toBe('default');
+    expect(r.needsReview).toBe(true);
+  });
+
+  it('flags a sentence with no amount and preserves the transcript', () => {
+    const r = parseTransaction('compré algo');
+    expect(r.amount).toBeNull();
+    expect(r.needsReview).toBe(true);
+    expect(r.raw).toBe('compré algo');
+  });
+
+  it('does not throw on empty input', () => {
+    const r = parseTransaction('');
+    expect(r.amount).toBeNull();
+    expect(r.needsReview).toBe(true);
+    expect(r.signals.amountSource).toBe('none');
+  });
+});
+
+describe('parseTransaction — description', () => {
+  it('drops the amount, the verb and stopwords', () => {
+    expect(parseTransaction('gasté 20 mil en el mercado').description).toBe('Mercado');
+  });
+
+  it('falls back to the category label when nothing is left', () => {
+    expect(parseTransaction('gasté 20 mil').description).toBe('Otros');
+  });
+
+  it('restores merchant accents and casing that dictation flattens', () => {
+    expect(parseTransaction('gasté 50 mil en exito').description).toBe('Éxito');
+    expect(parseTransaction('pagué 45 mil de transmilenio').description).toBe('TransMilenio');
+  });
+
+  it('keeps a quantity that is not the amount', () => {
+    expect(parseTransaction('compré 2 pizzas por 30 mil').description).toBe('2 pizzas');
+  });
+});
+
+describe('parseTransaction — confidence', () => {
+  it('decreases as signals disappear', () => {
+    const full = parseTransaction('gasté 20 mil en el D1');
+    const noCategory = parseTransaction('gasté 20 mil');
+    const amountOnly = parseTransaction('20 mil');
+    const empty = parseTransaction('');
+
+    expect(full.confidence).toBeGreaterThan(noCategory.confidence);
+    expect(noCategory.confidence).toBeGreaterThan(amountOnly.confidence);
+    expect(amountOnly.confidence).toBeGreaterThan(empty.confidence);
+    expect(empty.confidence).toBe(0);
+  });
+
+  it('stays within 0..1', () => {
+    for (const input of ['gasté 20 mil en el D1', '', 'hola', 'me entraron 2 millones']) {
+      const c = parseTransaction(input).confidence;
+      expect(c).toBeGreaterThanOrEqual(0);
+      expect(c).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe('parseTransaction — robustness and purity', () => {
+  const inputs = [
+    'GASTÉ 20 MIL EN EL D1',
+    '   gasté 20 mil   ',
+    'gasté  20  mil  en  mercado.',
+    '¿gasté 20 mil?',
+    'me entraron 2 millones 🎉',
+    `divagando mucho ${'texto '.repeat(80)}gasté 20 mil`,
+  ];
+
+  it('handles messy transcripts without throwing', () => {
+    for (const input of inputs) {
+      expect(() => parseTransaction(input)).not.toThrow();
+    }
+  });
+
+  it('still finds the amount through the noise', () => {
+    expect(parseTransaction('GASTÉ 20 MIL EN EL D1').amount).toBe(20000);
+    expect(parseTransaction('¿gasté 20 mil?').amount).toBe(20000);
+  });
+
+  it('preserves raw byte-for-byte in every branch', () => {
+    for (const input of [...inputs, '', 'hola']) {
+      expect(parseTransaction(input).raw).toBe(input);
+    }
+  });
+
+  it('is deterministic', () => {
+    for (const input of inputs) {
+      expect(parseTransaction(input)).toEqual(parseTransaction(input));
+    }
+  });
+});

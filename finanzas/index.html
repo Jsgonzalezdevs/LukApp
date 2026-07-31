@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es" class="fin-html">
+  <head>
+    <meta charset="UTF-8" />
+
+    <!-- Private tool: must never be indexed. Lives here and NOT in the root
+         index.html, which would deindex the whole public portfolio. -->
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+
+    <!-- viewport-fit=cover is required for env(safe-area-inset-*) to be non-zero -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <title>Finanzas</title>
+    <meta name="theme-color" content="#fbf9f6" />
+
+    <!-- Standalone mode on iOS. The apple-prefixed one is deprecated but still
+         functionally required; removing it breaks splash screens. Ship both. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Finanzas" />
+
+    <!-- iOS accepts PNG only, 180x180, opaque. SVG/WebP are ignored and
+         transparency gets filled with black. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/finanzas-icon-180.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/finanzas-icon-192.png" />
+  </head>
+  <body class="fin-page">
+    <div id="root"></div>
+    <script type="module" src="/src/finanzas-main.tsx"></script>
+  </body>
+</html>

@@ -1,6 +1,45 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  functions = "netlify/functions"
+
+# `analizar-extracto` runs as a background function (15 min) because a
+# synchronous one is capped at ~10s, far below an Opus 5 pass over a multi-page
+# PDF. Declared here as well as in the handler so the setting is visible in
+# config rather than only in code.
+[functions."analizar-extracto"]
+  background = true
+
+# Requests to /.netlify/functions/* are reserved by Netlify and resolved before
+# the redirect rules below, so the /* catch-all does not swallow them.
+
+# The private finance tool must never be indexed. Two rules are required:
+# `for = "/finanzas"` does NOT match "/finanzas/" or "/finanzas/anything".
+[[headers]]
+  for = "/finanzas"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/finanzas/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Cache-Control = "no-cache"
+
+# The finance app resolves to its own shell, not the portfolio's. BOTH rules are
+# required: "/finanzas/*" does not match the bare "/finanzas", and without this
+# first rule the bare path falls through to the catch-all and silently serves the
+# PORTFOLIO. Both MUST stay above the catch-all — the first matching rule wins.
+[[redirects]]
+  from = "/finanzas"
+  to = "/finanzas/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/finanzas/*"
+  to = "/finanzas/index.html"
+  status = 200
 
 # Handles single-page app routing redirects (critical for React apps)
 [[redirects]]

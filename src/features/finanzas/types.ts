@@ -1,0 +1,104 @@
+// `erasableSyntaxOnly` is on in tsconfig.app.json, so TS enums are unavailable.
+// `as const` + indexed access gives the same closed set with zero runtime cost.
+export const CATEGORIES = [
+  'mercado',
+  'comida',
+  'transporte',
+  'servicios',
+  'salud',
+  'hogar',
+  'entretenimiento',
+  'ropa',
+  'educacion',
+  'transferencia',
+  'ahorro',
+  'ingreso',
+  'otros',
+] as const;
+
+export type Category = typeof CATEGORIES[number];
+
+export type TxKind = 'gasto' | 'ingreso';
+
+export const CATEGORY_LABELS: Record<Category, string> = {
+  mercado: 'Mercado',
+  comida: 'Comida',
+  transporte: 'Transporte',
+  servicios: 'Servicios',
+  salud: 'Salud',
+  hogar: 'Hogar',
+  entretenimiento: 'Entretenimiento',
+  ropa: 'Ropa',
+  educacion: 'Educación',
+  transferencia: 'Transferencia',
+  ahorro: 'Ahorro',
+  ingreso: 'Ingreso',
+  otros: 'Otros',
+};
+
+/**
+ * One emoji per category. This is not decoration: colour must never be the only
+ * channel carrying meaning, and the emoji is the second channel — it survives
+ * greyscale, colour-blindness, and a glance too quick to read the label.
+ */
+export const CATEGORY_EMOJI: Record<Category, string> = {
+  mercado: '🛒',
+  comida: '🍔',
+  transporte: '🚌',
+  servicios: '💡',
+  salud: '💊',
+  hogar: '🏠',
+  entretenimiento: '🎬',
+  ropa: '👕',
+  educacion: '📚',
+  transferencia: '🔄',
+  ahorro: '🐷',
+  ingreso: '💰',
+  otros: '📦',
+};
+
+/**
+ * A distinct hue per category, chosen so adjacent bars in a sorted breakdown
+ * never read as the same colour. Used at full strength for bars and at low
+ * opacity for chip backgrounds — text always stays near-black on top, so no
+ * hue here needs to pass contrast as a text colour.
+ *
+ * Categories are dynamic, so these cannot be Tailwind classes (v4 only emits
+ * utilities it can see statically). They are applied as inline styles.
+ */
+export const CATEGORY_COLOR: Record<Category, string> = {
+  mercado: '#F59E0B',
+  comida: '#F97316',
+  transporte: '#38BDF8',
+  servicios: '#A78BFA',
+  salud: '#EC4899',
+  hogar: '#14B8A6',
+  entretenimiento: '#C084FC',
+  ropa: '#6366F1',
+  educacion: '#3B82F6',
+  transferencia: '#94A3B8',
+  ahorro: '#10B981',
+  ingreso: '#22C55E',
+  otros: '#A8A29E',
+};
+
+/** `#RRGGBB` + alpha -> `rgb(r g b / a)`, for chip tints off the same hue. */
+export const tint = (hex: string, alpha: number): string => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgb(${r} ${g} ${b} / ${alpha})`;
+};
+
+export interface Transaction {
+  id: string;
+  kind: TxKind;
+  amountCop: number;
+  category: Category;
+  description: string;
+  /** Bogota-local calendar day, 'YYYY-MM-DD'. Never a UTC timestamp. */
+  occurredOn: string;
+  /** The untouched dictation, kept so a mis-parse can always be reconstructed. */
+  rawTranscript: string;
+  createdAt: string;
+}
