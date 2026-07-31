@@ -1,9 +1,17 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FileUp, KeyRound, Loader2, RotateCcw } from 'lucide-react';
+import {
+  AlertTriangle,
+  ChevronDown,
+  FileUp,
+  KeyRound,
+  Loader2,
+  RotateCcw,
+  X,
+} from 'lucide-react';
 import type { Transaction } from '../types';
-import { formatCop } from '../lib/formatCop';
 import { planearImportacion } from '../analista/aMovimientos';
+import type { Trabajo } from '../analista/useAnalista';
 import { useAnalista } from '../analista/useAnalista';
 import { AnalistaReporte } from './AnalistaReporte';
 
@@ -17,19 +25,202 @@ const nuevoId = (): string =>
     ? crypto.randomUUID()
     : `tx-${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
 
+const segundosDe = (trabajo: Trabajo, ahora: number): number =>
+  Math.max(0, Math.floor((ahora - trabajo.inicio) / 1000));
+
+// -----------------------------------------------------------------------------
+
+interface TrabajoEnCursoProps {
+  trabajo: Trabajo;
+  segundos: number;
+}
+
+const TrabajoEnCurso: React.FC<TrabajoEnCursoProps> = ({ trabajo, segundos }) => (
+  <li className="rounded-3xl border border-[#ede9e3] bg-white p-5">
+    <div className="flex items-center gap-3">
+      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[#a8a29e]" strokeWidth={3} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
+        <p className="text-[12px] text-[#78716c]">
+          {trabajo.fase === 'subiendo' ? 'Subiendo…' : `Leyendo tu extracto… van ${segundos}s`}
+        </p>
+      </div>
+    </div>
+  </li>
+);
+
+interface TrabajoConErrorProps {
+  trabajo: Trabajo;
+  onReintentar: (id: string) => void;
+  onQuitar: (id: string) => void;
+}
+
+const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar, onQuitar }) => (
+  <li className="rounded-3xl bg-[#fff1f2] p-5">
+    <div className="flex items-start gap-3">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#be123c]" strokeWidth={3} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-extrabold text-[#be123c]">{trabajo.archivo.name}</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[#be123c]">{trabajo.error?.mensaje}</p>
+        <div className="mt-2.5 flex gap-2">
+          <button
+            type="button"
+            onClick={() => onReintentar(trabajo.id)}
+            className="rounded-full bg-white px-3.5 py-1.5 text-[11px] font-bold text-[#be123c]"
+          >
+            Reintentar
+          </button>
+          <button
+            type="button"
+            onClick={() => onQuitar(trabajo.id)}
+            className="rounded-full px-3.5 py-1.5 text-[11px] font-bold text-[#78716c]"
+          >
+            Quitar
+          </button>
+        </div>
+      </div>
+    </div>
+  </li>
+);
+
+interface TrabajoListoProps {
+  trabajo: Trabajo;
+  existentes: readonly Transaction[];
+  onImportar: (nuevos: Transaction[]) => void;
+  onQuitar: (id: string) => void;
+  contraido: boolean;
+  onToggle: (id: string) => void;
+}
+
+const TrabajoListo: React.FC<TrabajoListoProps> = ({
+  trabajo,
+  existentes,
+  onImportar,
+  onQuitar,
+  contraido,
+  onToggle,
+}) => {
+  const [importado, setImportado] = useState(0);
+  if (!trabajo.resultado) return null;
+
+  // Recomputed on every render from the CURRENT ledger, not memoized against a
+  // stale snapshot — importing job A must immediately stop job B from also
+  // offering the same overlapping rows as "new".
+  const plan = planearImportacion(trabajo.resultado.movimientos, existentes, nuevoId);
+
+  return (
+    <li className="rounded-3xl border border-[#ede9e3] bg-white p-5">
+      <button
+        type="button"
+        onClick={() => onToggle(trabajo.id)}
+        className="flex w-full items-center gap-3 text-left"
+      >
+        <span className="fin-emoji text-lg" aria-hidden="true">
+          ✅
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
+          <p className="truncate text-[11px] font-semibold text-[#a8a29e] capitalize">
+            {trabajo.resultado.periodo.etiqueta}
+            {importado > 0 ? ` · ${importado} importado${importado === 1 ? '' : 's'}` : ''}
+          </p>
+        </div>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-[#a8a29e] transition-transform ${contraido ? '' : 'rotate-180'}`}
+          strokeWidth={3}
+        />
+        <span
+          role="button"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
+            onQuitar(trabajo.id);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.stopPropagation();
+              onQuitar(trabajo.id);
+            }
+          }}
+          aria-label={`Quitar ${trabajo.archivo.name} de la lista`}
+          className="shrink-0 rounded-full p-1.5 text-[#d6d3d1] hover:bg-[#f5f3f0] hover:text-[#1c1917]"
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={3} />
+        </span>
+      </button>
+
+      {!contraido ? (
+        <div className="mt-4 flex flex-col gap-5 border-t border-[#ede9e3] pt-4">
+          <section className="rounded-2xl bg-[#f5f3f0] p-4">
+            <h3 className="text-xs font-bold text-[#78716c]">⬇️ Importar a tu historial</h3>
+
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              {[
+                { label: 'Nuevos', n: plan.nuevos.length, ink: '#15803d' },
+                { label: 'Ya estaban', n: plan.duplicados.length, ink: '#78716c' },
+                { label: 'No cuentan', n: plan.excluidos.length, ink: '#a16207' },
+              ].map((c) => (
+                <div key={c.label} className="rounded-xl bg-white px-2 py-2.5">
+                  <p className="text-lg font-extrabold tabular-nums" style={{ color: c.ink }}>
+                    {c.n}
+                  </p>
+                  <p className="text-[10px] font-bold text-[#78716c]">{c.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {importado > 0 ? (
+              <p className="mt-3 rounded-xl bg-[#f0fdf4] px-3 py-2.5 text-[12px] font-bold text-[#15803d]">
+                Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
+              </p>
+            ) : (
+              <button
+                type="button"
+                disabled={plan.nuevos.length === 0}
+                onClick={() => {
+                  onImportar(plan.nuevos);
+                  setImportado(plan.nuevos.length);
+                }}
+                className="mt-3 w-full rounded-full bg-[#1c1917] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#292524] disabled:opacity-30"
+              >
+                {plan.nuevos.length === 0
+                  ? 'Nada nuevo por importar'
+                  : `Importar ${plan.nuevos.length} movimiento${plan.nuevos.length === 1 ? '' : 's'}`}
+              </button>
+            )}
+
+            {plan.duplicados.length > 0 && plan.nuevos.length > 0 ? (
+              <p className="mt-2 text-[11px] leading-relaxed text-[#a8a29e]">
+                {plan.duplicados.length} ya estaban en tu historial y no se van a duplicar.
+              </p>
+            ) : null}
+          </section>
+
+          <AnalistaReporte resultado={trabajo.resultado} uso={trabajo.uso} />
+        </div>
+      ) : null}
+    </li>
+  );
+};
+
+// -----------------------------------------------------------------------------
+
 export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImportar }) => {
   const analista = useAnalista();
   const [tokenBorrador, setTokenBorrador] = useState('');
-  const [importado, setImportado] = useState(0);
+  const [arrastrando, setArrastrando] = useState(false);
+  const [contraidos, setContraidos] = useState<Set<string>>(new Set());
   const inputArchivo = useRef<HTMLInputElement>(null);
+  const contadorArrastre = useRef(0);
 
-  const plan = useMemo(
-    () =>
-      analista.resultado
-        ? planearImportacion(analista.resultado.movimientos, existentes, nuevoId)
-        : null,
-    [analista.resultado, existentes],
-  );
+  const toggleContraido = (id: string) => {
+    setContraidos((prev) => {
+      const siguiente = new Set(prev);
+      if (siguiente.has(id)) siguiente.delete(id);
+      else siguiente.add(id);
+      return siguiente;
+    });
+  };
 
   // ---------- Token gate ----------
   if (!analista.token) {
@@ -93,161 +284,125 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
     );
   }
 
+  const enCurso = analista.trabajos.filter((t) => t.fase === 'subiendo' || t.fase === 'procesando');
+  const conError = analista.trabajos.filter((t) => t.fase === 'error');
+  const listos = analista.trabajos.filter((t) => t.fase === 'listo');
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
-      {/* ---------- Upload ---------- */}
-      {analista.fase === 'inactivo' || analista.fase === 'error' ? (
-        <section className="rounded-3xl border-2 border-dashed border-[#ede9e3] bg-white px-6 py-9 text-center">
-          <span className="fin-emoji block text-4xl" aria-hidden="true">
-            📄
-          </span>
-          <h2 className="mt-3 text-lg font-extrabold tracking-tight">Sube tu extracto</h2>
-          <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
-            PDF de tu banco, hasta 6 MB. Se leen los movimientos, se clasifican, y decides qué
-            importar a tu historial.
-          </p>
+      {/* ---------- Dropzone: always visible, so more files can be added anytime ---------- */}
+      <section
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          // A counter rather than a boolean: dragging over a CHILD element fires
+          // dragleave on the parent, which would flicker the highlight off
+          // mid-drag if tracked with a plain flag.
+          contadorArrastre.current += 1;
+          setArrastrando(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          contadorArrastre.current = Math.max(0, contadorArrastre.current - 1);
+          if (contadorArrastre.current === 0) setArrastrando(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          contadorArrastre.current = 0;
+          setArrastrando(false);
+          const archivos = [...e.dataTransfer.files];
+          if (archivos.length > 0) analista.analizarArchivos(archivos);
+        }}
+        className={`rounded-3xl border-2 border-dashed px-6 py-9 text-center transition-colors ${
+          arrastrando ? 'border-[#1c1917] bg-[#f5f3f0]' : 'border-[#ede9e3] bg-white'
+        }`}
+      >
+        <span className="fin-emoji block text-4xl" aria-hidden="true">
+          {arrastrando ? '📥' : '📄'}
+        </span>
+        <h2 className="mt-3 text-lg font-extrabold tracking-tight">
+          {arrastrando ? 'Suelta aquí' : 'Sube tus extractos'}
+        </h2>
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
+          Arrastra uno o varios PDF, o elígelos desde el explorador. Hasta 6 MB cada uno.
+        </p>
 
-          <input
-            ref={inputArchivo}
-            type="file"
-            accept="application/pdf"
-            className="hidden"
-            onChange={(e) => {
-              const archivo = e.target.files?.[0];
-              if (archivo) {
-                setImportado(0);
-                analista.analizar(archivo);
-              }
-              // Reset so picking the same file twice still fires onChange.
-              e.target.value = '';
-            }}
-          />
+        <input
+          ref={inputArchivo}
+          type="file"
+          accept="application/pdf"
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const archivos = e.target.files ? [...e.target.files] : [];
+            if (archivos.length > 0) analista.analizarArchivos(archivos);
+            // Reset so picking the same file(s) twice still fires onChange.
+            e.target.value = '';
+          }}
+        />
 
-          <motion.button
-            type="button"
-            onClick={() => inputArchivo.current?.click()}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#1c1917] px-7 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#292524]"
-          >
-            <FileUp className="h-4 w-4" strokeWidth={3} />
-            Elegir PDF
-          </motion.button>
+        <motion.button
+          type="button"
+          onClick={() => inputArchivo.current?.click()}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#1c1917] px-7 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#292524]"
+        >
+          <FileUp className="h-4 w-4" strokeWidth={3} />
+          Elegir PDF
+        </motion.button>
 
-          <p className="mt-4 text-[11px] text-[#a8a29e]">Cuesta entre USD 0,20 y 0,50 por análisis.</p>
-        </section>
+        <p className="mt-4 text-[11px] text-[#a8a29e]">Cuesta entre USD 0,20 y 0,50 por análisis.</p>
+      </section>
+
+      {/* ---------- Jobs in flight ---------- */}
+      {enCurso.length > 0 ? (
+        <ul className="flex flex-col gap-3">
+          {enCurso.map((trabajo) => (
+            <TrabajoEnCurso key={trabajo.id} trabajo={trabajo} segundos={segundosDe(trabajo, analista.ahora)} />
+          ))}
+        </ul>
       ) : null}
 
-      {/* ---------- Error ---------- */}
-      {analista.fase === 'error' && analista.error ? (
-        <section className="rounded-3xl bg-[#fff1f2] p-5">
-          <p className="flex items-center gap-2 text-[13px] font-extrabold text-[#be123c]">
-            <span className="fin-emoji" aria-hidden="true">
-              ❌
-            </span>
-            No se pudo analizar
-          </p>
-          <p className="mt-1.5 text-[12px] leading-relaxed text-[#be123c]">
-            {analista.error.mensaje}
-          </p>
-
-          {analista.error.codigo === 'sin-autorizacion' ? (
-            <button
-              type="button"
-              onClick={() => analista.guardarToken('')}
-              className="mt-3 rounded-full bg-white px-4 py-2 text-[11px] font-bold text-[#be123c]"
-            >
-              Cambiar el token
-            </button>
-          ) : null}
-        </section>
+      {/* ---------- Failed jobs ---------- */}
+      {conError.length > 0 ? (
+        <ul className="flex flex-col gap-3">
+          {conError.map((trabajo) => (
+            <TrabajoConError
+              key={trabajo.id}
+              trabajo={trabajo}
+              onReintentar={analista.reintentar}
+              onQuitar={analista.quitarTrabajo}
+            />
+          ))}
+        </ul>
       ) : null}
 
-      {/* ---------- Working ---------- */}
-      {analista.fase === 'subiendo' || analista.fase === 'procesando' ? (
-        <section className="rounded-3xl border border-[#ede9e3] bg-white px-6 py-10 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#a8a29e]" strokeWidth={3} />
-          <p className="mt-4 text-sm font-extrabold">
-            {analista.fase === 'subiendo' ? 'Subiendo el PDF…' : 'Leyendo tu extracto…'}
-          </p>
-          <p className="mt-1 text-[12px] text-[#78716c]">
-            {analista.fase === 'procesando'
-              ? `Puede tardar varios minutos. Van ${analista.segundos}s.`
-              : 'Un momento.'}
-          </p>
-        </section>
+      {/* ---------- Finished jobs, newest first (already the array order) ---------- */}
+      {listos.length > 0 ? (
+        <ul className="flex flex-col gap-3">
+          {listos.map((trabajo) => (
+            <TrabajoListo
+              key={trabajo.id}
+              trabajo={trabajo}
+              existentes={existentes}
+              onImportar={onImportar}
+              onQuitar={analista.quitarTrabajo}
+              contraido={contraidos.has(trabajo.id)}
+              onToggle={toggleContraido}
+            />
+          ))}
+        </ul>
       ) : null}
 
-      {/* ---------- Result ---------- */}
-      {analista.fase === 'listo' && analista.resultado && plan ? (
-        <>
-          <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
-            <h2 className="text-xs font-bold text-[#78716c]">⬇️ Importar a tu historial</h2>
-
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              {[
-                { label: 'Nuevos', n: plan.nuevos.length, ink: '#15803d' },
-                { label: 'Ya estaban', n: plan.duplicados.length, ink: '#78716c' },
-                { label: 'No cuentan', n: plan.excluidos.length, ink: '#a16207' },
-              ].map((c) => (
-                <div key={c.label} className="rounded-2xl bg-[#f5f3f0] px-2 py-3">
-                  <p className="text-xl font-extrabold tabular-nums" style={{ color: c.ink }}>
-                    {c.n}
-                  </p>
-                  <p className="text-[10px] font-bold text-[#78716c]">{c.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {importado > 0 ? (
-              <p className="mt-3 rounded-2xl bg-[#f0fdf4] px-4 py-3 text-[12px] font-bold text-[#15803d]">
-                <span className="fin-emoji mr-1" aria-hidden="true">
-                  ✅
-                </span>
-                Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
-              </p>
-            ) : (
-              <button
-                type="button"
-                disabled={plan.nuevos.length === 0}
-                onClick={() => {
-                  onImportar(plan.nuevos);
-                  setImportado(plan.nuevos.length);
-                }}
-                className="mt-3 w-full rounded-full bg-[#1c1917] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#292524] disabled:opacity-30"
-              >
-                {plan.nuevos.length === 0
-                  ? 'Nada nuevo por importar'
-                  : `Importar ${plan.nuevos.length} movimiento${plan.nuevos.length === 1 ? '' : 's'}`}
-              </button>
-            )}
-
-            {plan.duplicados.length > 0 ? (
-              <p className="mt-2.5 text-[11px] leading-relaxed text-[#a8a29e]">
-                {plan.duplicados.length} ya estaban en tu historial y no se van a duplicar
-                {plan.nuevos.length > 0
-                  ? `. Los nuevos suman ${formatCop(
-                      plan.nuevos.reduce((s, tx) => s + tx.amountCop, 0),
-                    )}.`
-                  : '.'}
-              </p>
-            ) : null}
-          </section>
-
-          <AnalistaReporte resultado={analista.resultado} uso={analista.uso} />
-
-          <button
-            type="button"
-            onClick={() => {
-              setImportado(0);
-              analista.reiniciar();
-            }}
-            className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#ede9e3] bg-white px-5 py-2.5 text-[12px] font-bold text-[#78716c] transition-colors hover:text-[#1c1917]"
-          >
-            <RotateCcw className="h-3.5 w-3.5" strokeWidth={3} />
-            Analizar otro extracto
-          </button>
-        </>
+      {analista.trabajos.length > 0 ? (
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-[#a8a29e]">
+          <RotateCcw className="h-3 w-3" strokeWidth={3} />
+          Puedes seguir arrastrando más extractos mientras estos terminan.
+        </p>
       ) : null}
     </div>
   );

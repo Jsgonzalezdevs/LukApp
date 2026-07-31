@@ -9,19 +9,31 @@ const MAX_BYTES = 6 * 1024 * 1024;
 const INTERVALO_MS = 3_000;
 const MAX_INTENTOS = 320; // ~16 min, matching the background-function ceiling.
 
-export type FaseAnalista = 'inactivo' | 'subiendo' | 'procesando' | 'listo' | 'error';
+export type FaseTrabajo = 'subiendo' | 'procesando' | 'listo' | 'error';
 
-export interface UseAnalista {
-  fase: FaseAnalista;
-  /** Seconds elapsed since the upload, for a progress hint on a long request. */
-  segundos: number;
+export interface Trabajo {
+  id: string;
+  /** Kept (not just its name) so a failed job can be retried without re-picking the file. */
+  archivo: File;
+  fase: FaseTrabajo;
+  /** ms epoch when this job started, so elapsed time is `ahora - inicio` rather
+   *  than a per-job counter — one shared clock drives every job's display. */
+  inicio: number;
   resultado: AnalisisResultado | null;
   uso: UsoTokens | null;
   error: { codigo: CodigoError; mensaje: string } | null;
+}
+
+export interface UseAnalista {
+  trabajos: Trabajo[];
+  /** Shared clock tick (ms epoch), for computing each job's elapsed seconds. */
+  ahora: number;
   token: string;
   guardarToken: (token: string) => void;
-  analizar: (archivo: File) => void;
-  reiniciar: () => void;
+  /** Validates and launches one job per file. Files are processed concurrently. */
+  analizarArchivos: (archivos: readonly File[]) => void;
+  reintentar: (id: string) => void;
+  quitarTrabajo: (id: string) => void;
 }
 
 const leerTokenGuardado = (): string => {
@@ -48,38 +60,50 @@ const aBase64 = (archivo: File): Promise<string> =>
     lector.readAsDataURL(archivo);
   });
 
+const nuevoJobId = (): string =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now().toString(16)}-${Math.floor(Math.random() * 1e9).toString(16)}`;
+
+const dormir = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
- * Drives the two-step analyst flow: POST to a background function that answers
- * 202 with no body, then poll a synchronous endpoint until the result appears.
+ * Drives the analyst flow for any number of concurrent files.
  *
- * The job id is generated HERE, on the client, precisely because the background
- * function cannot tell us one — a 202 carries no payload.
+ * Each file gets its own job id and its own two-step flow: POST to a background
+ * function that answers 202 with no body, then poll a synchronous endpoint until
+ * the result appears in Netlify Blobs. Jobs are independent — one failing or
+ * taking minutes never blocks the others — because that's the natural shape of
+ * "drag three statements in at once".
  */
 export const useAnalista = (): UseAnalista => {
-  const [fase, setFase] = useState<FaseAnalista>('inactivo');
-  const [segundos, setSegundos] = useState(0);
-  const [resultado, setResultado] = useState<AnalisisResultado | null>(null);
-  const [uso, setUso] = useState<UsoTokens | null>(null);
-  const [error, setError] = useState<{ codigo: CodigoError; mensaje: string } | null>(null);
+  const [trabajos, setTrabajos] = useState<Trabajo[]>([]);
+  const [ahora, setAhora] = useState(() => Date.now());
   const [token, setToken] = useState(leerTokenGuardado);
 
   const cancelado = useRef(false);
-  const cronometro = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Mirrors `trabajos` synchronously so `reintentar` can read the current
+  // File/id pair without making the callback depend on (and thus be
+  // recreated on) every state update.
+  const trabajosRef = useRef<Trabajo[]>([]);
 
-  const detenerCronometro = useCallback(() => {
-    if (cronometro.current !== null) {
-      clearInterval(cronometro.current);
-      cronometro.current = null;
-    }
-  }, []);
+  useEffect(() => {
+    trabajosRef.current = trabajos;
+  }, [trabajos]);
 
   useEffect(() => {
     cancelado.current = false;
     return () => {
       cancelado.current = true;
-      detenerCronometro();
     };
-  }, [detenerCronometro]);
+  }, []);
+
+  // One shared clock for every job's elapsed-seconds display, instead of a
+  // timer per job.
+  useEffect(() => {
+    const id = setInterval(() => setAhora(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const guardarToken = useCallback((nuevo: string) => {
     const limpio = nuevo.trim();
@@ -92,103 +116,69 @@ export const useAnalista = (): UseAnalista => {
     }
   }, []);
 
-  const reiniciar = useCallback(() => {
-    detenerCronometro();
-    setFase('inactivo');
-    setSegundos(0);
-    setResultado(null);
-    setUso(null);
-    setError(null);
-  }, [detenerCronometro]);
+  const actualizarTrabajo = useCallback((id: string, cambios: Partial<Trabajo>) => {
+    setTrabajos((prev) => prev.map((t) => (t.id === id ? { ...t, ...cambios } : t)));
+  }, []);
 
-  const fallar = useCallback(
-    (codigo: CodigoError, mensaje: string) => {
-      detenerCronometro();
-      setError({ codigo, mensaje });
-      setFase('error');
-    },
-    [detenerCronometro],
-  );
-
-  const analizar = useCallback(
-    (archivo: File) => {
+  const procesarArchivo = useCallback(
+    (id: string, archivo: File, tokenActual: string) => {
       void (async () => {
-        setResultado(null);
-        setUso(null);
-        setError(null);
-        setSegundos(0);
-
-        if (!token) {
-          fallar('sin-autorizacion', 'Falta el token de acceso.');
-          return;
-        }
-        if (archivo.type !== 'application/pdf') {
-          fallar('pdf-invalido', 'El archivo debe ser un PDF.');
-          return;
-        }
-        if (archivo.size > MAX_BYTES) {
-          fallar(
-            'pdf-muy-grande',
-            `El PDF pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el límite es 6 MB.`,
-          );
-          return;
-        }
-
-        setFase('subiendo');
-
         let pdfBase64: string;
         try {
           pdfBase64 = await aBase64(archivo);
         } catch {
-          fallar('pdf-invalido', 'No se pudo leer el archivo.');
+          actualizarTrabajo(id, {
+            fase: 'error',
+            error: { codigo: 'pdf-invalido', mensaje: 'No se pudo leer el archivo.' },
+          });
           return;
         }
         if (cancelado.current) return;
-
-        const jobId =
-          typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-            ? crypto.randomUUID()
-            : `${Date.now().toString(16)}-${Math.floor(Math.random() * 1e9).toString(16)}`;
 
         try {
           const respuesta = await fetch(RUTA_ANALIZAR, {
             method: 'POST',
             headers: {
               'content-type': 'application/json',
-              authorization: `Bearer ${token}`,
+              authorization: `Bearer ${tokenActual}`,
             },
-            body: JSON.stringify({ jobId, pdfBase64, nombreArchivo: archivo.name }),
+            body: JSON.stringify({ jobId: id, pdfBase64, nombreArchivo: archivo.name }),
           });
 
           // A background function answers 202 and nothing else. Any other status
           // means the request never reached the handler.
           if (respuesta.status !== 202) {
-            fallar(
-              'fallo-interno',
-              respuesta.status === 404
-                ? 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.'
-                : `El servidor respondió ${respuesta.status}.`,
-            );
+            actualizarTrabajo(id, {
+              fase: 'error',
+              error: {
+                codigo: 'fallo-interno',
+                mensaje:
+                  respuesta.status === 404
+                    ? 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.'
+                    : `El servidor respondió ${respuesta.status}.`,
+              },
+            });
             return;
           }
         } catch {
-          fallar('fallo-interno', 'No se pudo contactar al servidor.');
+          actualizarTrabajo(id, {
+            fase: 'error',
+            error: { codigo: 'fallo-interno', mensaje: 'No se pudo contactar al servidor.' },
+          });
           return;
         }
         if (cancelado.current) return;
 
-        setFase('procesando');
-        detenerCronometro();
-        cronometro.current = setInterval(() => setSegundos((s) => s + 1), 1000);
+        actualizarTrabajo(id, { fase: 'procesando' });
 
         for (let intento = 0; intento < MAX_INTENTOS; intento += 1) {
-          await new Promise((r) => setTimeout(r, INTERVALO_MS));
+          await dormir(INTERVALO_MS);
           if (cancelado.current) return;
 
           let estado: EstadoAnalisis;
           try {
-            const respuesta = await fetch(`${RUTA_ESTADO}?id=${encodeURIComponent(jobId)}`, {
-              headers: { authorization: `Bearer ${token}` },
+            const respuesta = await fetch(`${RUTA_ESTADO}?id=${encodeURIComponent(id)}`, {
+              headers: { authorization: `Bearer ${tokenActual}` },
             });
             estado = (await respuesta.json()) as EstadoAnalisis;
           } catch {
@@ -198,33 +188,94 @@ export const useAnalista = (): UseAnalista => {
           if (cancelado.current) return;
 
           if (estado.estado === 'listo') {
-            detenerCronometro();
-            setResultado(estado.resultado);
-            setUso(estado.usoTokens);
-            setFase('listo');
+            actualizarTrabajo(id, {
+              fase: 'listo',
+              resultado: estado.resultado,
+              uso: estado.usoTokens,
+            });
             return;
           }
           if (estado.estado === 'error') {
-            fallar(estado.codigo, estado.mensaje);
+            actualizarTrabajo(id, { fase: 'error', error: { codigo: estado.codigo, mensaje: estado.mensaje } });
             return;
           }
         }
 
-        fallar('fallo-interno', 'El análisis tardó demasiado. Intenta de nuevo.');
+        actualizarTrabajo(id, {
+          fase: 'error',
+          error: { codigo: 'fallo-interno', mensaje: 'El análisis tardó demasiado. Intenta de nuevo.' },
+        });
       })();
     },
-    [token, fallar, detenerCronometro],
+    [actualizarTrabajo],
   );
 
-  return {
-    fase,
-    segundos,
-    resultado,
-    uso,
-    error,
-    token,
-    guardarToken,
-    analizar,
-    reiniciar,
-  };
+  const analizarArchivos = useCallback(
+    (archivos: readonly File[]) => {
+      if (!token || archivos.length === 0) return;
+
+      const creados: Trabajo[] = [];
+      const aProcesar: { id: string; archivo: File }[] = [];
+
+      // Validated up front, per file, so a bad file in a batch of five shows its
+      // own error immediately instead of flashing through "subiendo" first.
+      for (const archivo of archivos) {
+        const id = nuevoJobId();
+        const base: Omit<Trabajo, 'fase' | 'error'> = {
+          id,
+          archivo,
+          inicio: Date.now(),
+          resultado: null,
+          uso: null,
+        };
+
+        if (archivo.type !== 'application/pdf') {
+          creados.push({
+            ...base,
+            fase: 'error',
+            error: { codigo: 'pdf-invalido', mensaje: `"${archivo.name}" no es un PDF.` },
+          });
+          continue;
+        }
+        if (archivo.size > MAX_BYTES) {
+          creados.push({
+            ...base,
+            fase: 'error',
+            error: {
+              codigo: 'pdf-muy-grande',
+              mensaje: `"${archivo.name}" pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el límite es 6 MB.`,
+            },
+          });
+          continue;
+        }
+
+        creados.push({ ...base, fase: 'subiendo', error: null });
+        aProcesar.push({ id, archivo });
+      }
+
+      // Newest first, matching the convention used everywhere else in this app.
+      setTrabajos((prev) => [...creados, ...prev]);
+
+      for (const { id, archivo } of aProcesar) {
+        procesarArchivo(id, archivo, token);
+      }
+    },
+    [token, procesarArchivo],
+  );
+
+  const reintentar = useCallback(
+    (id: string) => {
+      const trabajo = trabajosRef.current.find((t) => t.id === id);
+      if (!trabajo || !token) return;
+      actualizarTrabajo(id, { fase: 'subiendo', error: null, resultado: null, uso: null, inicio: Date.now() });
+      procesarArchivo(id, trabajo.archivo, token);
+    },
+    [token, procesarArchivo, actualizarTrabajo],
+  );
+
+  const quitarTrabajo = useCallback((id: string) => {
+    setTrabajos((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  return { trabajos, ahora, token, guardarToken, analizarArchivos, reintentar, quitarTrabajo };
 };
