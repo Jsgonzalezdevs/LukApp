@@ -42,7 +42,7 @@ const TrabajoEnCurso: React.FC<TrabajoEnCursoProps> = ({ trabajo, segundos }) =>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
         <p className="text-[12px] text-[#78716c]">
-          {trabajo.fase === 'subiendo' ? 'Subiendo…' : `Leyendo tu extracto… van ${segundos}s`}
+          {segundos > 0 ? `Leyendo tu extracto… van ${segundos}s` : 'Leyendo tu extracto…'}
         </p>
       </div>
     </div>
@@ -196,7 +196,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : null}
           </section>
 
-          <AnalistaReporte resultado={trabajo.resultado} uso={trabajo.uso} />
+          <AnalistaReporte resultado={trabajo.resultado} />
         </div>
       ) : null}
     </li>
@@ -238,7 +238,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           </span>
           <h2 className="mt-3 text-lg font-extrabold tracking-tight">Token de acceso</h2>
           <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
-            El endpoint pide un token para que nadie más lo use con tu cuenta de Gemini.
+            El endpoint pide un token para que nadie más que encuentre la URL pueda usarlo.
             Guárdalo cuando tu navegador lo ofrezca y en tus otros dispositivos con la misma
             cuenta (iCloud Keychain o Google) aparecerá solo.
           </p>
@@ -284,7 +284,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
     );
   }
 
-  const enCurso = analista.trabajos.filter((t) => t.fase === 'subiendo' || t.fase === 'procesando');
+  const enCurso = analista.trabajos.filter((t) => t.fase === 'subiendo');
   const conError = analista.trabajos.filter((t) => t.fase === 'error');
   const listos = analista.trabajos.filter((t) => t.fase === 'listo');
 
@@ -355,16 +355,13 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           Elegir PDF
         </motion.button>
 
-        {/* Repeated here every time, not just in a settings screen once: the
-            residual privacy tradeoff is a fact about what happens each time
-            this button is pressed, not a one-time setup detail. */}
         <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[11px] leading-relaxed text-[#a8a29e]">
           <span className="fin-emoji shrink-0" aria-hidden="true">
             🛡️
           </span>
           <span>
-            Antes de enviarse se borra tu nombre, cuenta, cédula y dirección. Los comercios y
-            montos sí los procesa Gemini — en su nivel gratuito, Google puede revisarlos.
+            El análisis se hace con plantillas propias, sin inteligencia artificial: tu extracto
+            nunca sale de este servidor. Soporta Nequi, Nu y Bancolombia.
           </span>
         </p>
       </section>

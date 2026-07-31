@@ -1,20 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AnalisisResultado, CodigoError, EstadoAnalisis, UsoTokens } from './tipos';
+import type { AnalisisResultado, CodigoError, RespuestaAnalisis } from './tipos';
 
 const CLAVE_TOKEN = 'finanzas.analista.token';
-const RUTA_SUBIR = '/.netlify/functions/subir-extracto';
 const RUTA_ANALIZAR = '/.netlify/functions/analizar-extracto';
-const RUTA_ESTADO = '/.netlify/functions/analisis-estado';
 
-// Matches the server-side check in subir-extracto.mts: comfortably under
+// Matches the server-side check in analizar-extracto.mts: comfortably under
 // Netlify's documented ~4.5 MB effective binary limit for a base64-encoded
 // synchronous-function request body (found the hard way — a real extracto
 // hit a 413 when this file assumed a plain 6 MB ceiling).
 const MAX_BYTES = 4 * 1024 * 1024;
-const INTERVALO_MS = 3_000;
-const MAX_INTENTOS = 320; // ~16 min, matching the background-function ceiling.
 
-export type FaseTrabajo = 'subiendo' | 'procesando' | 'listo' | 'error';
+export type FaseTrabajo = 'subiendo' | 'listo' | 'error';
 
 export interface Trabajo {
   id: string;
@@ -25,7 +21,6 @@ export interface Trabajo {
    *  than a per-job counter — one shared clock drives every job's display. */
   inicio: number;
   resultado: AnalisisResultado | null;
-  uso: UsoTokens | null;
   error: { codigo: CodigoError; mensaje: string } | null;
 }
 
@@ -70,16 +65,14 @@ const nuevoJobId = (): string =>
     ? crypto.randomUUID()
     : `${Date.now().toString(16)}-${Math.floor(Math.random() * 1e9).toString(16)}`;
 
-const dormir = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-
 /**
  * Drives the analyst flow for any number of concurrent files.
  *
- * Each file gets its own job id and its own two-step flow: POST to a background
- * function that answers 202 with no body, then poll a synchronous endpoint until
- * the result appears in Netlify Blobs. Jobs are independent — one failing or
- * taking minutes never blocks the others — because that's the natural shape of
- * "drag three statements in at once".
+ * Each file gets its own job id and a single request to `analizar-extracto`,
+ * which parses the PDF against local per-bank templates and answers directly
+ * — no background function, no polling, since template matching takes
+ * milliseconds. Jobs are independent — one failing never blocks the others —
+ * because that's the natural shape of "drag three statements in at once".
  */
 export const useAnalista = (): UseAnalista => {
   const [trabajos, setTrabajos] = useState<Trabajo[]>([]);
@@ -140,50 +133,6 @@ export const useAnalista = (): UseAnalista => {
         }
         if (cancelado.current) return;
 
-        // Step 1 of 2 — a normal SYNCHRONOUS call that actually carries the
-        // PDF bytes, sized for that (Netlify's background-function request
-        // ceiling is a hard, non-configurable 256 KB, far too small for a
-        // base64-encoded statement — see subir-extracto.mts).
-        try {
-          const respuesta = await fetch(RUTA_SUBIR, {
-            method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              authorization: `Bearer ${tokenActual}`,
-            },
-            body: JSON.stringify({ jobId: id, pdfBase64 }),
-          });
-
-          if (!respuesta.ok) {
-            let mensaje = `El servidor respondió ${respuesta.status}.`;
-            if (respuesta.status === 404) {
-              mensaje = 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.';
-            } else {
-              // subir-extracto responds with a JSON body on failure (unlike
-              // the background function, which never can) — prefer that
-              // message when it's there.
-              try {
-                const cuerpo = (await respuesta.json()) as { mensaje?: string };
-                if (cuerpo.mensaje) mensaje = cuerpo.mensaje;
-              } catch {
-                // Fall back to the generic status-code message above.
-              }
-            }
-            actualizarTrabajo(id, { fase: 'error', error: { codigo: 'fallo-interno', mensaje } });
-            return;
-          }
-        } catch {
-          actualizarTrabajo(id, {
-            fase: 'error',
-            error: { codigo: 'fallo-interno', mensaje: 'No se pudo contactar al servidor.' },
-          });
-          return;
-        }
-        if (cancelado.current) return;
-
-        // Step 2 of 2 — trigger the actual (slow, AI) analysis with nothing
-        // but the job id. This request body is a few dozen bytes, nowhere
-        // near the 256 KB background-function ceiling.
         try {
           const respuesta = await fetch(RUTA_ANALIZAR, {
             method: 'POST',
@@ -191,69 +140,35 @@ export const useAnalista = (): UseAnalista => {
               'content-type': 'application/json',
               authorization: `Bearer ${tokenActual}`,
             },
-            body: JSON.stringify({ jobId: id, nombreArchivo: archivo.name }),
+            body: JSON.stringify({ pdfBase64 }),
           });
 
-          // A background function answers 202 and nothing else. Any other
-          // status means the request never reached the handler.
-          if (respuesta.status !== 202) {
+          if (respuesta.status === 404) {
             actualizarTrabajo(id, {
               fase: 'error',
               error: {
                 codigo: 'fallo-interno',
-                mensaje:
-                  respuesta.status === 404
-                    ? 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.'
-                    : `El servidor respondió ${respuesta.status}.`,
+                mensaje: 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.',
               },
             });
             return;
           }
+
+          const cuerpo = (await respuesta.json()) as RespuestaAnalisis;
+          if (cancelado.current) return;
+
+          if (!cuerpo.ok) {
+            actualizarTrabajo(id, { fase: 'error', error: { codigo: cuerpo.codigo, mensaje: cuerpo.mensaje } });
+            return;
+          }
+
+          actualizarTrabajo(id, { fase: 'listo', resultado: cuerpo.resultado });
         } catch {
           actualizarTrabajo(id, {
             fase: 'error',
             error: { codigo: 'fallo-interno', mensaje: 'No se pudo contactar al servidor.' },
           });
-          return;
         }
-        if (cancelado.current) return;
-
-        actualizarTrabajo(id, { fase: 'procesando' });
-
-        for (let intento = 0; intento < MAX_INTENTOS; intento += 1) {
-          await dormir(INTERVALO_MS);
-          if (cancelado.current) return;
-
-          let estado: EstadoAnalisis;
-          try {
-            const respuesta = await fetch(`${RUTA_ESTADO}?id=${encodeURIComponent(id)}`, {
-              headers: { authorization: `Bearer ${tokenActual}` },
-            });
-            estado = (await respuesta.json()) as EstadoAnalisis;
-          } catch {
-            // A single failed poll is not fatal — keep trying.
-            continue;
-          }
-          if (cancelado.current) return;
-
-          if (estado.estado === 'listo') {
-            actualizarTrabajo(id, {
-              fase: 'listo',
-              resultado: estado.resultado,
-              uso: estado.usoTokens,
-            });
-            return;
-          }
-          if (estado.estado === 'error') {
-            actualizarTrabajo(id, { fase: 'error', error: { codigo: estado.codigo, mensaje: estado.mensaje } });
-            return;
-          }
-        }
-
-        actualizarTrabajo(id, {
-          fase: 'error',
-          error: { codigo: 'fallo-interno', mensaje: 'El análisis tardó demasiado. Intenta de nuevo.' },
-        });
       })();
     },
     [actualizarTrabajo],
@@ -275,7 +190,6 @@ export const useAnalista = (): UseAnalista => {
           archivo,
           inicio: Date.now(),
           resultado: null,
-          uso: null,
         };
 
         if (archivo.type !== 'application/pdf') {
@@ -316,7 +230,7 @@ export const useAnalista = (): UseAnalista => {
     (id: string) => {
       const trabajo = trabajosRef.current.find((t) => t.id === id);
       if (!trabajo || !token) return;
-      actualizarTrabajo(id, { fase: 'subiendo', error: null, resultado: null, uso: null, inicio: Date.now() });
+      actualizarTrabajo(id, { fase: 'subiendo', error: null, resultado: null, inicio: Date.now() });
       procesarArchivo(id, trabajo.archivo, token);
     },
     [token, procesarArchivo, actualizarTrabajo],

@@ -1,0 +1,55 @@
+import { MERCHANTS, CATEGORY_KEYWORDS } from '../../../../src/features/finanzas/lib/vocabulary.ts';
+import { normalizeWord } from '../../../../src/features/finanzas/lib/numerals.ts';
+import type { Category } from '../../../../src/features/finanzas/types.ts';
+import type { MotivoExclusion } from '../../../../src/features/finanzas/analista/tipos.ts';
+
+/**
+ * Statement descriptions are bank jargon ("COMPRA EN MAKRO IBAG"), not spoken
+ * Spanish, but they are still whitespace-separated Spanish/brand tokens — so the
+ * same merchant table and category keywords the voice parser uses apply here
+ * too, rather than duplicating that list.
+ */
+export const categorizarDescripcion = (descripcion: string): Category => {
+  const palabras = normalizeWord(descripcion).split(/\s+/).filter(Boolean);
+  for (const palabra of palabras) {
+    const categoria = MERCHANTS[palabra];
+    if (categoria) return categoria;
+  }
+  for (const palabra of palabras) {
+    const categoria = CATEGORY_KEYWORDS[palabra];
+    if (categoria) return categoria;
+  }
+  return 'otros';
+};
+
+/**
+ * Patterns that mark a statement line as something other than real income or
+ * spending — moving money between the owner's own products, or settling a
+ * credit card whose purchases already appear as their own lines.
+ *
+ * This is necessarily heuristic without knowing the owner's own name or which
+ * other accounts are theirs: it keys off wording Colombian banks use for those
+ * specific movements (Nequi/Bancolombia cross-references, BRE-B — the
+ * interbank instant-transfer rail typically used to move between one's own
+ * wallets — and cash top-ups/withdrawals at a corresponsal). A wrongly
+ * classified row is always visible in the exclusions list, never silently
+ * dropped — see `totalesDelAnalisis`.
+ */
+const PATRONES_EXCLUSION: ReadonlyArray<{ patron: RegExp; motivo: MotivoExclusion }> = [
+  { patron: /pagaste tu tarjeta|pago tarjeta de credito|pago tc\b/, motivo: 'pago-tarjeta' },
+  { patron: /reverso|devolucion|nota credito|anulacion/, motivo: 'reverso' },
+  { patron: /saldo anterior|saldo actual|saldo promedio/, motivo: 'saldo-informativo' },
+  {
+    patron:
+      /\bnequi\b|\bbancolombia\b|bre-?b|recarga desde|recarga en corresponsal|retiro en corresponsal|transferencia cta suc virtual/,
+    motivo: 'traslado-propio',
+  },
+];
+
+export const exclusionDeDescripcion = (descripcion: string): MotivoExclusion | null => {
+  const normalizada = normalizeWord(descripcion);
+  for (const { patron, motivo } of PATRONES_EXCLUSION) {
+    if (patron.test(normalizada)) return motivo;
+  }
+  return null;
+};

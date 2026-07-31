@@ -3,13 +3,6 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# `analizar-extracto` runs as a background function (15 min) because a
-# synchronous one is capped at ~10s, far below an Opus 5 pass over a multi-page
-# PDF. Declared here as well as in the handler so the setting is visible in
-# config rather than only in code.
-[functions."analizar-extracto"]
-  background = true
-
 # Requests to /.netlify/functions/* are reserved by Netlify and resolved before
 # the redirect rules below, so the /* catch-all does not swallow them.
 

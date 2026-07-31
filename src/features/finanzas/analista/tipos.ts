@@ -64,25 +64,16 @@ export interface AnalisisResultado {
   advertencias: string[];
 }
 
-/** What the poll endpoint returns while and after the background job runs. */
-export type EstadoAnalisis =
-  | { estado: 'procesando' }
-  | { estado: 'listo'; resultado: AnalisisResultado; usoTokens: UsoTokens }
-  | { estado: 'error'; mensaje: string; codigo: CodigoError };
+/** What `analizar-extracto` returns — a single synchronous response, since
+ *  template parsing takes milliseconds and needs no polling. */
+export type RespuestaAnalisis =
+  | { ok: true; resultado: AnalisisResultado }
+  | { ok: false; codigo: CodigoError; mensaje: string };
 
 export type CodigoError =
   | 'sin-autorizacion'
   | 'pdf-invalido'
   | 'pdf-muy-grande'
-  | 'rechazado'
-  | 'respuesta-invalida'
-  | 'limite-api'
+  | 'banco-no-soportado'
+  | 'sin-movimientos'
   | 'fallo-interno';
-
-export interface UsoTokens {
-  entrada: number;
-  salida: number;
-  leidosDeCache: number;
-  /** USD, computed at Opus 5 rates. */
-  costoUsd: number;
-}

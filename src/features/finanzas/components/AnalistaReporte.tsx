@@ -2,12 +2,11 @@ import React from 'react';
 import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
 import { formatCop } from '../lib/formatCop';
-import type { AnalisisResultado, UsoTokens } from '../analista/tipos';
+import type { AnalisisResultado } from '../analista/tipos';
 import { metricasCoherentes, rebanadasDelAnalisis, totalesDelAnalisis } from '../analista/totales';
 
 interface AnalistaReporteProps {
   resultado: AnalisisResultado;
-  uso: UsoTokens | null;
 }
 
 const TONO_SEVERIDAD = {
@@ -16,7 +15,7 @@ const TONO_SEVERIDAD = {
   baja: { bg: '#fefce8', ink: '#a16207', emoji: '🟡' },
 } as const;
 
-export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado, uso }) => {
+export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) => {
   // Recomputed here rather than trusted: the model's own metrics table is prose,
   // the movement list is auditable line by line.
   const totales = totalesDelAnalisis(resultado.movimientos);
@@ -220,8 +219,8 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado, uso
       ) : null}
 
       <p className="px-1 text-[11px] leading-relaxed text-[#a8a29e]">
-        Análisis informativo, no asesoría financiera certificada.
-        {uso ? ` · ${uso.entrada.toLocaleString('es-CO')} tokens de entrada (nivel gratuito de Gemini).` : ''}
+        Análisis informativo, no asesoría financiera certificada · generado con plantillas
+        locales, sin inteligencia artificial.
       </p>
     </div>
   );
