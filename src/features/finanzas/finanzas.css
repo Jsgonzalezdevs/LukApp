@@ -1,0 +1,78 @@
+/* The finance app is a warm, light, colourful surface — deliberately nothing like
+   the portfolio's black. That is safe because /finanzas is a separate Vite HTML
+   entry with its own <head> and its own body class, so none of this can reach the
+   portfolio. The classes are stamped on <html>/<body> in finanzas/index.html
+   rather than set from an effect: a class is declarative, needs no cleanup, and
+   cannot leak across a StrictMode double-invoke.
+
+   These selectors are all class-based (0,1,0) so they outrank index.css's
+   element-level `body {}` rules (0,0,1), and this file is imported after
+   index.css so it also wins the `:root` tie. */
+
+.fin-html {
+  /* index.css sets `color-scheme: dark`, which would paint form controls,
+     scrollbars and the overscroll gutter dark on a light page. */
+  color-scheme: light;
+  /* index.css sets `scroll-behavior: smooth` on html, which animates every
+     programmatic scroll — visibly laggy when a row is appended. */
+  scroll-behavior: auto;
+  background-color: #fbf9f6;
+}
+
+.fin-page {
+  background-color: #fbf9f6;
+  color: #1c1917;
+  /* `body { overflow-x: hidden }` makes the UA compute overflow-y: auto on body,
+     which turns body into the scroll container and breaks position: sticky
+     descendants — the header in FinanzasApp is sticky. */
+  overflow-x: visible;
+  /* Suppresses the standalone rubber-band bounce past the top/bottom. */
+  overscroll-behavior-y: none;
+}
+
+.fin-root {
+  --fin-bg: #fbf9f6;
+  --fin-card: #ffffff;
+  --fin-ink: #1c1917;
+  --fin-ink-soft: #78716c;
+  --fin-ink-faint: #a8a29e;
+  --fin-line: #ede9e3;
+  --fin-in: #16a34a;
+  --fin-out: #e11d48;
+  --fin-warn: #d97706;
+}
+
+/* Selection and focus rings from index.css are tuned for white-on-black. */
+.fin-page ::selection {
+  background-color: rgb(28 25 23 / 0.12);
+  color: #1c1917;
+}
+
+.fin-page button:focus-visible,
+.fin-page a:focus-visible,
+.fin-page input:focus-visible,
+.fin-page textarea:focus-visible {
+  outline: 2px solid #1c1917;
+  outline-offset: 3px;
+}
+
+.fin-page ::-webkit-scrollbar-track {
+  background: #fbf9f6;
+}
+
+.fin-page ::-webkit-scrollbar-thumb {
+  background: #d6d3d1;
+}
+
+.fin-page ::-webkit-scrollbar-thumb:hover {
+  background: #a8a29e;
+}
+
+/* Emoji render through the system colour-emoji font. Naming it explicitly keeps
+   a category chip from falling back to a monochrome glyph on Linux/Android. */
+.fin-emoji {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji',
+    'Android Emoji', sans-serif;
+  font-weight: 400;
+  line-height: 1;
+}

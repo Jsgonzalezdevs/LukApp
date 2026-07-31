@@ -1,0 +1,81 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
+import type { CategorySlice } from '../lib/aggregate';
+import { formatCop } from '../lib/formatCop';
+
+interface CategoryBreakdownProps {
+  slices: readonly CategorySlice[];
+  title: string;
+}
+
+/**
+ * Horizontal bars, largest first. Hand-rolled on purpose: a chart library is
+ * ~100 kB for what a sorted list of width-percentage divs does in a few lines,
+ * and its default theme would fight the rest of the app.
+ */
+export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, title }) => {
+  if (slices.length === 0) return null;
+
+  const largest = slices[0].total;
+
+  return (
+    <section
+      className="rounded-3xl border border-[#ede9e3] bg-white p-5"
+      aria-label={title}
+    >
+      <h2 className="text-xs font-bold text-[#78716c]">{title}</h2>
+
+      <ul className="mt-4 flex flex-col gap-3.5">
+        {slices.map((slice, idx) => {
+          const color = CATEGORY_COLOR[slice.category];
+          // Bars scale against the largest slice, not against 100%, so the
+          // smallest category is still legible instead of a hairline.
+          const width = Math.max((slice.total / largest) * 100, 4);
+
+          return (
+            <li key={slice.category}>
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="fin-emoji flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base"
+                  style={{ backgroundColor: tint(color, 0.14) }}
+                  aria-hidden="true"
+                >
+                  {CATEGORY_EMOJI[slice.category]}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[13px] font-bold text-[#1c1917]">
+                      {CATEGORY_LABELS[slice.category]}
+                    </span>
+                    <span className="shrink-0 text-[13px] font-extrabold text-[#1c1917] tabular-nums">
+                      {formatCop(slice.total)}
+                    </span>
+                  </div>
+
+                  {/* The percentage is written out, so the bar length is never
+                      the only way to read the value. */}
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f5f3f0]">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${width}%` }}
+                        transition={{ duration: 0.5, delay: idx * 0.05, ease: 'easeOut' }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: color }}
+                      />
+                    </div>
+                    <span className="w-10 shrink-0 text-right text-[11px] font-semibold text-[#a8a29e] tabular-nums">
+                      {slice.pct}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+};

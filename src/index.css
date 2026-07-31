@@ -10,6 +10,14 @@
   --color-text-dim: #6b7280;
   --color-border-dark: #1f2937;
   --color-border-muted: #374151;
+
+  /* Finance tool. A monochrome palette cannot encode sign, so these carry
+     direction — always paired with an icon or +/− so colour is never the only
+     cue. Tailwind v4 emits nothing for unused tokens, so the portfolio bundle
+     is unaffected. */
+  --color-fin-in: #34d399;
+  --color-fin-out: #fb7185;
+  --color-fin-warn: #fbbf24;
 }
 
 :root {
