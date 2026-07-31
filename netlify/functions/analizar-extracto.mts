@@ -106,10 +106,14 @@ export default async (req: Request): Promise<Response> => {
           cache_control: { type: 'ephemeral' },
         },
       ],
-      // Extraction and arithmetic, not deep reasoning — `medium` is the right
-      // point on the cost curve here.
+      // Extraction, classification and arithmetic against a well-specified
+      // taxonomy — not open-ended reasoning. `low` is the documented sweet spot
+      // for scoped, non-intelligence-sensitive work, and it cuts the thinking
+      // token spend (the biggest cost driver here) without touching structured
+      // outputs or the exclusion logic, which stays fully specified in the
+      // system prompt regardless of effort.
       output_config: {
-        effort: 'medium',
+        effort: 'low',
         format: zodOutputFormat(analisisSchema),
       },
       messages: [
