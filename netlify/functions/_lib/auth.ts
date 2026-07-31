@@ -3,10 +3,9 @@ import { timingSafeEqual } from 'node:crypto';
 /**
  * Guards the analyst endpoints against being an open relay.
  *
- * These functions spend real money on every call, so an unauthenticated endpoint
- * is not merely a privacy issue — anyone who finds the URL can bill an unbounded
- * amount to the owner's Anthropic account. This is a single shared secret, not
- * per-user auth: adequate for a one-person private tool, and the seam to replace
+ * An unauthenticated endpoint is not merely a privacy issue — anyone who finds
+ * the URL could send PDFs through the owner's Gemini API key. This is a single
+ * shared secret, not per-user auth: adequate for a one-person private tool, and the seam to replace
  * with a Supabase JWT check later without touching the callers.
  *
  * `timingSafeEqual` rather than `===` because a plain comparison returns early on

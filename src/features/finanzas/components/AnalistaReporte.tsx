@@ -221,7 +221,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado, uso
 
       <p className="px-1 text-[11px] leading-relaxed text-[#a8a29e]">
         Análisis informativo, no asesoría financiera certificada.
-        {uso ? ` · Costó USD ${uso.costoUsd.toFixed(3)} (${uso.entrada.toLocaleString('es-CO')} tokens de entrada).` : ''}
+        {uso ? ` · ${uso.entrada.toLocaleString('es-CO')} tokens de entrada (nivel gratuito de Gemini).` : ''}
       </p>
     </div>
   );

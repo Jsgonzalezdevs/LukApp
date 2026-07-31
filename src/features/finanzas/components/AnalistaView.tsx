@@ -238,9 +238,9 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           </span>
           <h2 className="mt-3 text-lg font-extrabold tracking-tight">Token de acceso</h2>
           <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
-            Cada análisis gasta dinero de tu cuenta de Anthropic, así que el endpoint pide un
-            token. Guárdalo cuando tu navegador lo ofrezca y en tus otros dispositivos con la
-            misma cuenta (iCloud Keychain o Google) aparecerá solo.
+            El endpoint pide un token para que nadie más lo use con tu cuenta de Gemini.
+            Guárdalo cuando tu navegador lo ofrezca y en tus otros dispositivos con la misma
+            cuenta (iCloud Keychain o Google) aparecerá solo.
           </p>
 
           {/* A visible username field is what makes Safari/Chrome recognize this
@@ -327,7 +327,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           {arrastrando ? 'Suelta aquí' : 'Sube tus extractos'}
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
-          Arrastra uno o varios PDF, o elígelos desde el explorador. Hasta 6 MB cada uno.
+          Arrastra uno o varios PDF, o elígelos desde el explorador. Hasta 4 MB cada uno.
         </p>
 
         <input
@@ -355,7 +355,18 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           Elegir PDF
         </motion.button>
 
-        <p className="mt-4 text-[11px] text-[#a8a29e]">Cuesta entre USD 0,20 y 0,50 por análisis.</p>
+        {/* Repeated here every time, not just in a settings screen once: the
+            residual privacy tradeoff is a fact about what happens each time
+            this button is pressed, not a one-time setup detail. */}
+        <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[11px] leading-relaxed text-[#a8a29e]">
+          <span className="fin-emoji shrink-0" aria-hidden="true">
+            🛡️
+          </span>
+          <span>
+            Antes de enviarse se borra tu nombre, cuenta, cédula y dirección. Los comercios y
+            montos sí los procesa Gemini — en su nivel gratuito, Google puede revisarlos.
+          </span>
+        </p>
       </section>
 
       {/* ---------- Jobs in flight ---------- */}

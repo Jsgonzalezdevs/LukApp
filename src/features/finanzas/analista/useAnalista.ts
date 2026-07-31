@@ -2,10 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AnalisisResultado, CodigoError, EstadoAnalisis, UsoTokens } from './tipos';
 
 const CLAVE_TOKEN = 'finanzas.analista.token';
+const RUTA_SUBIR = '/.netlify/functions/subir-extracto';
 const RUTA_ANALIZAR = '/.netlify/functions/analizar-extracto';
 const RUTA_ESTADO = '/.netlify/functions/analisis-estado';
 
-const MAX_BYTES = 6 * 1024 * 1024;
+// Matches the server-side check in subir-extracto.mts: comfortably under
+// Netlify's documented ~4.5 MB effective binary limit for a base64-encoded
+// synchronous-function request body (found the hard way — a real extracto
+// hit a 413 when this file assumed a plain 6 MB ceiling).
+const MAX_BYTES = 4 * 1024 * 1024;
 const INTERVALO_MS = 3_000;
 const MAX_INTENTOS = 320; // ~16 min, matching the background-function ceiling.
 
@@ -135,6 +140,50 @@ export const useAnalista = (): UseAnalista => {
         }
         if (cancelado.current) return;
 
+        // Step 1 of 2 — a normal SYNCHRONOUS call that actually carries the
+        // PDF bytes, sized for that (Netlify's background-function request
+        // ceiling is a hard, non-configurable 256 KB, far too small for a
+        // base64-encoded statement — see subir-extracto.mts).
+        try {
+          const respuesta = await fetch(RUTA_SUBIR, {
+            method: 'POST',
+            headers: {
+              'content-type': 'application/json',
+              authorization: `Bearer ${tokenActual}`,
+            },
+            body: JSON.stringify({ jobId: id, pdfBase64 }),
+          });
+
+          if (!respuesta.ok) {
+            let mensaje = `El servidor respondió ${respuesta.status}.`;
+            if (respuesta.status === 404) {
+              mensaje = 'La función no está desplegada todavía. Esto solo funciona en Netlify, no en el servidor local.';
+            } else {
+              // subir-extracto responds with a JSON body on failure (unlike
+              // the background function, which never can) — prefer that
+              // message when it's there.
+              try {
+                const cuerpo = (await respuesta.json()) as { mensaje?: string };
+                if (cuerpo.mensaje) mensaje = cuerpo.mensaje;
+              } catch {
+                // Fall back to the generic status-code message above.
+              }
+            }
+            actualizarTrabajo(id, { fase: 'error', error: { codigo: 'fallo-interno', mensaje } });
+            return;
+          }
+        } catch {
+          actualizarTrabajo(id, {
+            fase: 'error',
+            error: { codigo: 'fallo-interno', mensaje: 'No se pudo contactar al servidor.' },
+          });
+          return;
+        }
+        if (cancelado.current) return;
+
+        // Step 2 of 2 — trigger the actual (slow, AI) analysis with nothing
+        // but the job id. This request body is a few dozen bytes, nowhere
+        // near the 256 KB background-function ceiling.
         try {
           const respuesta = await fetch(RUTA_ANALIZAR, {
             method: 'POST',
@@ -142,11 +191,11 @@ export const useAnalista = (): UseAnalista => {
               'content-type': 'application/json',
               authorization: `Bearer ${tokenActual}`,
             },
-            body: JSON.stringify({ jobId: id, pdfBase64, nombreArchivo: archivo.name }),
+            body: JSON.stringify({ jobId: id, nombreArchivo: archivo.name }),
           });
 
-          // A background function answers 202 and nothing else. Any other status
-          // means the request never reached the handler.
+          // A background function answers 202 and nothing else. Any other
+          // status means the request never reached the handler.
           if (respuesta.status !== 202) {
             actualizarTrabajo(id, {
               fase: 'error',
@@ -243,7 +292,7 @@ export const useAnalista = (): UseAnalista => {
             fase: 'error',
             error: {
               codigo: 'pdf-muy-grande',
-              mensaje: `"${archivo.name}" pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el límite es 6 MB.`,
+              mensaje: `"${archivo.name}" pesa ${(archivo.size / 1024 / 1024).toFixed(1)} MB y el límite es 4 MB.`,
             },
           });
           continue;

@@ -106,3 +106,25 @@ export const analisisSchema = z
   .strict();
 
 export type AnalisisValidado = z.infer<typeof analisisSchema>;
+
+/**
+ * The same schema, as plain JSON Schema, for Gemini's `responseJsonSchema`.
+ *
+ * Uses Zod v4's own built-in converter (`z.toJSONSchema`), not the
+ * `zod-to-json-schema` npm package — that package's peer-dependency range
+ * claims Zod v4 support, but in practice it silently returns an EMPTY schema
+ * (just the bare `$schema` key, none of our fields) against a Zod v4 object.
+ * Verified directly before writing this rather than trusting the package's
+ * own compatibility claim. Zod v4 shipping a native converter makes the
+ * third-party package unnecessary here regardless.
+ *
+ * `$schema` is stripped because Gemini's documented supported-keyword list
+ * (`$id`, `$defs`, `$ref`, `$anchor`, `type`, `format`, ...) does not include
+ * it, and every field the rest of this schema uses — `type`, `properties`,
+ * `required`, `additionalProperties`, `enum`, `anyOf`, `items`, `description`
+ * — is on that supported list.
+ */
+export const analisisJsonSchema: unknown = (() => {
+  const { $schema: _omitido, ...resto } = z.toJSONSchema(analisisSchema) as Record<string, unknown>;
+  return resto;
+})();
