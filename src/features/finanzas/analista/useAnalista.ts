@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AnalisisResultado, CodigoError, RespuestaAnalisis } from './tipos';
 
 const CLAVE_TOKEN = 'finanzas.analista.token';
-const RUTA_ANALIZAR = '/.netlify/functions/analizar-extracto';
+const RUTA_ANALIZAR = '/api/analizar-extracto';
 
 // Matches the server-side check in analizar-extracto.mts: comfortably under
 // Netlify's documented ~4.5 MB effective binary limit for a base64-encoded

@@ -67,7 +67,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
         throw new Error('No hay sesión activa');
       }
 
-      const res = await fetch('/.netlify/functions/crear-usuario', {
+      const res = await fetch('/api/crear-usuario', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
