@@ -36,25 +36,42 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   otros: 'Otros',
 };
 
+import {
+  ShoppingCart,
+  Utensils,
+  Bus,
+  Lightbulb,
+  Pill,
+  Home,
+  Film,
+  Shirt,
+  Book,
+  RefreshCw,
+  PiggyBank,
+  DollarSign,
+  Package,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
 /**
- * One emoji per category. This is not decoration: colour must never be the only
- * channel carrying meaning, and the emoji is the second channel — it survives
+ * One icon per category. This is not decoration: colour must never be the only
+ * channel carrying meaning, and the icon is the second channel — it survives
  * greyscale, colour-blindness, and a glance too quick to read the label.
  */
-export const CATEGORY_EMOJI: Record<Category, string> = {
-  mercado: '🛒',
-  comida: '🍔',
-  transporte: '🚌',
-  servicios: '💡',
-  salud: '💊',
-  hogar: '🏠',
-  entretenimiento: '🎬',
-  ropa: '👕',
-  educacion: '📚',
-  transferencia: '🔄',
-  ahorro: '🐷',
-  ingreso: '💰',
-  otros: '📦',
+export const CATEGORY_ICON: Record<Category, LucideIcon> = {
+  mercado: ShoppingCart,
+  comida: Utensils,
+  transporte: Bus,
+  servicios: Lightbulb,
+  salud: Pill,
+  hogar: Home,
+  entretenimiento: Film,
+  ropa: Shirt,
+  educacion: Book,
+  transferencia: RefreshCw,
+  ahorro: PiggyBank,
+  ingreso: DollarSign,
+  otros: Package,
 };
 
 /**

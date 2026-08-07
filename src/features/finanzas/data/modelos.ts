@@ -5,7 +5,7 @@
 export interface Cajita {
   id: string;
   nombre: string;
-  emoji: string;
+  icon: string;
   /** Optional target for this pocket alone, independent of any Meta. */
   metaCop: number | null;
   createdAt: string;
@@ -42,15 +42,29 @@ export const CAJITA_MOV_LABELS: Record<CajitaMovKind, string> = {
   ajuste: 'Ajuste de saldo',
 };
 
-export const CAJITA_MOV_EMOJI: Record<CajitaMovKind, string> = {
-  deposito: '⬆️',
-  retiro: '⬇️',
-  rendimiento: '✨',
-  ajuste: '✏️',
+import { ArrowUp, ArrowDown, Sparkles, Pencil } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
+  deposito: ArrowUp,
+  retiro: ArrowDown,
+  rendimiento: Sparkles,
+  ajuste: Pencil,
 };
 
-/** Pocket emoji offered when creating one. Nu's own pockets are named freely. */
-export const CAJITA_EMOJIS = ['🐷', '🏖️', '🚗', '🏠', '🎓', '💻', '🎁', '🛟', '💍', '✈️'] as const;
+/** Pocket icon offered when creating one. Nu's own pockets are named freely. */
+export const CAJITA_ICONS = [
+  'PiggyBank',
+  'Tent',
+  'Car',
+  'Home',
+  'GraduationCap',
+  'Laptop',
+  'Gift',
+  'LifeBuoy',
+  'Gem',
+  'Plane'
+] as const;
 
 /**
  * A savings target. Progress comes from a linked pocket when there is one, so
@@ -60,7 +74,7 @@ export const CAJITA_EMOJIS = ['🐷', '🏖️', '🚗', '🏠', '🎓', '💻',
 export interface Meta {
   id: string;
   nombre: string;
-  emoji: string;
+  icon: string;
   objetivoCop: number;
   /** 'YYYY-MM-DD', or null for an open-ended goal. */
   fechaObjetivo: string | null;

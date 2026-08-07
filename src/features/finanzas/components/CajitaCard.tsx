@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { COPY } from '../copy';
 import type { CajitaMovKind } from '../data/modelos';
-import { CAJITA_MOV_EMOJI, CAJITA_MOV_LABELS } from '../data/modelos';
+import { CAJITA_MOV_ICON, CAJITA_MOV_LABELS } from '../data/modelos';
+import { icons } from 'lucide-react';
 import type { ResumenCajita } from '../lib/cajitas';
 import { historialDeCajita } from '../lib/cajitas';
 import type { CajitaMovimiento } from '../data/modelos';
@@ -77,10 +78,13 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
     <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
       <div className="flex items-start gap-3">
         <span
-          className="fin-emoji flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--fin-soft)] text-2xl"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[var(--fin-soft)]"
           aria-hidden="true"
         >
-          {cajita.emoji}
+          {(() => {
+            const Icon = icons[cajita.icon as keyof typeof icons] || icons.PiggyBank;
+            return <Icon className="h-6 w-6 text-[var(--fin-ink-soft)]" strokeWidth={1.5} />;
+          })()}
         </span>
 
         <div className="min-w-0 flex-1">
@@ -226,8 +230,11 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                   key={movimiento.id}
                   className="flex items-center gap-2.5 rounded-xl bg-[var(--fin-bg)] px-3 py-2"
                 >
-                  <span className="fin-emoji shrink-0 text-sm" aria-hidden="true">
-                    {CAJITA_MOV_EMOJI[movimiento.kind]}
+                  <span className="shrink-0" aria-hidden="true">
+                    {(() => {
+                      const Icon = CAJITA_MOV_ICON[movimiento.kind];
+                      return <Icon className="h-4 w-4 text-[var(--fin-ink-faint)]" />;
+                    })()}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[11px] font-bold text-[var(--fin-ink)]">

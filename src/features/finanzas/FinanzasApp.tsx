@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Pencil, History } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
@@ -59,7 +59,11 @@ const comoParseado = (tx: Transaction): ParsedTransaction => ({
  * configured the tool must still work exactly as it does today, on device
  * storage and with no login wall it has no way to satisfy.
  */
-export const FinanzasApp: React.FC = () => {
+export interface FinanzasAppProps {
+  onBack?: () => void;
+}
+
+export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
 
@@ -89,6 +93,7 @@ export const FinanzasApp: React.FC = () => {
       cuenta={cuenta}
       tema={tema}
       onCambiarTema={setTema}
+      onBack={onBack}
     />
   );
 };
@@ -99,9 +104,10 @@ interface FinanzasPanelProps {
   cuenta?: { email: string; onSalir: () => void };
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
+  onBack?: () => void;
 }
 
-const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onCambiarTema }) => {
+const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onCambiarTema, onBack }) => {
   const repositorio = useMemo(() => {
     if (!userId) return undefined;
     const cliente = obtenerSupabase();
@@ -167,7 +173,9 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
 
   const registrar = (
     <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-      <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">✍️ Registrar un movimiento</h2>
+      <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+        <Pencil className="h-4 w-4" strokeWidth={2.5} /> Registrar un movimiento
+      </h2>
       <div className="mt-3">
         <DictationInput onSubmit={handleSubmit} />
       </div>
@@ -191,6 +199,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
       toolbar={conBarraDeMes ? monthNav : undefined}
       cuenta={cuenta}
       temaToggle={<TemaToggle tema={tema} onCambiar={onCambiarTema} />}
+      onBack={onBack}
     >
       {/* Storage that cannot remember has to say so — silently losing a month of
           entries is far worse than an ugly banner. */}
@@ -229,14 +238,16 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
           <div className="grid gap-5 lg:grid-cols-2">
             <div className="flex flex-col gap-5">
               {registrar}
-              <CategoryBreakdown slices={gastos} title="🎯 En qué se te va" />
+              <CategoryBreakdown slices={gastos} title="En qué se te va" />
             </div>
 
             <div className="flex flex-col gap-5">
-              <CategoryBreakdown slices={ingresos} title="🌱 De dónde entra" />
+              <CategoryBreakdown slices={ingresos} title="De dónde entra" />
 
               <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-                <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">🕒 Últimos movimientos</h2>
+                <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+                  <History className="h-4 w-4" strokeWidth={2.5} /> Últimos movimientos
+                </h2>
                 <div className="mt-3">
                   <TransactionList
                     transactions={delMes.slice(0, 5)}
@@ -281,9 +292,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
                     activa ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'text-[var(--fin-ink-soft)]'
                   }`}
                 >
-                  <span className="fin-emoji" aria-hidden="true">
-                    {pestana.emoji}
-                  </span>
+                  <pestana.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   {pestana.label}
                 </button>
               );

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, CheckCircle2, Trash2, icons, Target } from 'lucide-react';
 import { COPY } from '../copy';
 import type { Cajita, Meta } from '../data/modelos';
-import { CAJITA_EMOJIS } from '../data/modelos';
+import { CAJITA_ICONS } from '../data/modelos';
 import { metasConProgreso } from '../lib/metas';
 import type { ProgresoMeta } from '../lib/metas';
 import { saldosPorCajita } from '../lib/cajitas';
@@ -50,7 +50,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
 }) => {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
-  const [emoji, setEmoji] = useState<string>('✈️');
+  const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
   const [objetivoTexto, setObjetivoTexto] = useState('');
   const [fecha, setFecha] = useState('');
   const [cajitaId, setCajitaId] = useState('');
@@ -70,7 +70,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
 
     onCrear({
       nombre: limpio,
-      emoji,
+      icon,
       objetivoCop: objetivo,
       fechaObjetivo: fecha || null,
       cajitaId: cajitaId || null,
@@ -111,20 +111,23 @@ export const MetasView: React.FC<MetasViewProps> = ({
           <fieldset className="mt-4">
             <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {CAJITA_EMOJIS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setEmoji(option)}
-                  aria-pressed={emoji === option}
-                  aria-label={`Ícono ${option}`}
-                  className={`fin-emoji flex h-10 w-10 items-center justify-center rounded-2xl border-2 text-xl transition-colors ${
-                    emoji === option ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
+              {CAJITA_ICONS.map((option) => {
+                const Icon = icons[option as keyof typeof icons] || icons.Target;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setIcon(option)}
+                    aria-pressed={icon === option}
+                    aria-label={`Ícono ${option}`}
+                    className={`flex h-10 w-10 items-center justify-center rounded-2xl border-2 transition-colors ${
+                      icon === option ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 text-[var(--fin-ink-soft)]" />
+                  </button>
+                );
+              })}
             </div>
           </fieldset>
 
@@ -167,7 +170,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
             <option value="">{COPY.metas.sinEnlace}</option>
             {vivas.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.emoji} {c.nombre}
+                {c.nombre}
               </option>
             ))}
           </select>
@@ -201,9 +204,9 @@ export const MetasView: React.FC<MetasViewProps> = ({
       )}
 
       {filas.length === 0 && !creando ? (
-        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-          <span className="fin-emoji block text-4xl" aria-hidden="true">
-            🎯
+        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center flex flex-col items-center">
+          <span className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center" aria-hidden="true">
+            <Target className="h-10 w-10" strokeWidth={1.5} />
           </span>
           <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{COPY.metas.vacio}</p>
           <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.metas.vacioHint}</p>
@@ -217,15 +220,18 @@ export const MetasView: React.FC<MetasViewProps> = ({
           <section key={meta.id} className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
             <div className="flex items-start gap-3">
               <span
-                className="fin-emoji flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--fin-soft)] text-xl"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--fin-soft)]"
                 aria-hidden="true"
               >
-                {meta.emoji}
+                {(() => {
+                  const Icon = icons[meta.icon as keyof typeof icons] || icons.Target;
+                  return <Icon className="h-5 w-5 text-[var(--fin-ink-soft)]" />;
+                })()}
               </span>
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-sm font-extrabold text-[var(--fin-ink)]">{meta.nombre}</h3>
                 <p className="text-[11px] text-[var(--fin-ink-faint)]">
-                  {cajita ? `Sigue la cajita ${cajita.emoji} ${cajita.nombre}` : COPY.metas.sinEnlace}
+                  {cajita ? `Sigue la cajita ${cajita.nombre}` : COPY.metas.sinEnlace}
                 </p>
               </div>
               <button
@@ -240,13 +246,13 @@ export const MetasView: React.FC<MetasViewProps> = ({
 
             <Progreso progreso={progreso} />
 
-            {/* What to actually do about it */}
             <div className="mt-3 rounded-2xl bg-[var(--fin-bg)] px-4 py-3">
               {progreso.completada ? (
                 <p className="text-xs font-bold text-[var(--fin-in)]">
-                  <span className="fin-emoji mr-1" aria-hidden="true">
-                    🎉
-                  </span>
+                  {(() => {
+                    const Icon = CheckCircle2;
+                    return <Icon className="mr-1.5 inline h-4 w-4" />;
+                  })()}
                   {COPY.metas.lograda}
                 </p>
               ) : (

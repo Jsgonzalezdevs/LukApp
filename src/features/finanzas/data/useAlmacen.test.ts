@@ -74,7 +74,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Vacaciones', emoji: '🏖️', metaCop: null });
+      await result.current.crearCajita({ nombre: 'Vacaciones', icon: '🏖️', metaCop: null });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
 
@@ -97,7 +97,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Carro', emoji: '🚗', metaCop: null });
+      await result.current.crearCajita({ nombre: 'Carro', icon: '🚗', metaCop: null });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
     await act(async () => {
@@ -117,14 +117,14 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.crearCajita({ nombre: 'Viaje', emoji: '✈️', metaCop: null });
+      await result.current.crearCajita({ nombre: 'Viaje', icon: '✈️', metaCop: null });
     });
     const cajitaId = result.current.datos.cajitas[0].id;
     await act(async () => {
       await result.current.registrarMovimiento({ cajitaId, kind: 'deposito', deltaCop: 10000 });
       await result.current.crearMeta({
         nombre: 'Cartagena',
-        emoji: '🏖️',
+        icon: '🏖️',
         objetivoCop: 500000,
         fechaObjetivo: null,
         cajitaId,

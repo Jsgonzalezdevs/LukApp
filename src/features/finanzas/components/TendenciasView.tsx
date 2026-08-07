@@ -1,6 +1,7 @@
 import React from 'react';
 import { COPY } from '../copy';
-import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS } from '../types';
+import { TrendingUp, BarChart2, Scale, Search } from 'lucide-react';
+import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS } from '../types';
 import type { Transaction } from '../types';
 import { compararCategorias, promedioMensual, serieMensual, ultimosMeses } from '../lib/tendencias';
 import { formatCop } from '../lib/formatCop';
@@ -30,8 +31,8 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
   if (mesesConDatos === 0) {
     return (
       <div className="mx-auto max-w-3xl rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-        <span className="fin-emoji block text-4xl" aria-hidden="true">
-          📈
+        <span className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center" aria-hidden="true">
+          <TrendingUp className="h-10 w-10" strokeWidth={1.5} />
         </span>
         <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{COPY.tendencias.sinDatos}</p>
         <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.tendencias.sinDatosHint}</p>
@@ -44,9 +45,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
       {/* Six-month bars */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
-          <span className="fin-emoji mr-1.5" aria-hidden="true">
-            📊
-          </span>
+          <BarChart2 className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
           {COPY.tendencias.ultimosMeses}
         </h2>
 
@@ -100,9 +99,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
       {/* Averages */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
-          <span className="fin-emoji mr-1.5" aria-hidden="true">
-            ⚖️
-          </span>
+          <Scale className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
           {COPY.tendencias.promedio}
         </h2>
 
@@ -137,9 +134,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
       {cambios.length > 0 ? (
         <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
           <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
-            <span className="fin-emoji mr-1.5" aria-hidden="true">
-              🔍
-            </span>
+            <Search className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
             {COPY.tendencias.comparativo}
           </h2>
           <p className="mt-0.5 text-[10px] capitalize text-[var(--fin-ink-faint)]">
@@ -158,8 +153,11 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
                   key={cambio.category}
                   className="flex items-center gap-3 rounded-2xl bg-[var(--fin-bg)] px-3 py-2.5"
                 >
-                  <span className="fin-emoji shrink-0 text-base" aria-hidden="true">
-                    {CATEGORY_EMOJI[cambio.category]}
+                  <span className="shrink-0" aria-hidden="true">
+                    {(() => {
+                      const Icon = CATEGORY_ICON[cambio.category];
+                      return <Icon className="h-4 w-4" style={{ color }} />;
+                    })()}
                   </span>
 
                   <div className="min-w-0 flex-1">

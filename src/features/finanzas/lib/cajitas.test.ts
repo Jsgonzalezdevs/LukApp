@@ -23,7 +23,7 @@ const mov = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => ({
 const caj = (over: Partial<Cajita> = {}): Cajita => ({
   id: 'c1',
   nombre: 'Vacaciones',
-  emoji: '🏖️',
+  icon: '🏖️',
   metaCop: null,
   createdAt: '2026-08-01T00:00:00.000Z',
   archivedAt: null,

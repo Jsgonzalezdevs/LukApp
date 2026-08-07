@@ -6,23 +6,23 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 /**
- * Serves the finance entry at `/finanzas` as well as `/finanzas/`.
+ * Serves the finance entry at `/ecosistema` as well as `/ecosistema/`.
  *
- * A multi-page entry lives at `finanzas/index.html`, which Vite only resolves for
- * the trailing-slash form. Without this, the bare `/finanzas` — the URL anyone
+ * A multi-page entry lives at `ecosistema/index.html`, which Vite only resolves for
+ * the trailing-slash form. Without this, the bare `/ecosistema` — the URL anyone
  * actually types — falls through to the SPA fallback and silently renders the
  * PORTFOLIO instead. Rewriting (rather than redirecting) keeps the address bar
  * clean and matches the 200 rewrite configured in netlify.toml for production.
  */
-const finanzasTrailingSlash = (): PluginOption => {
+const ecosistemaTrailingSlash = (): PluginOption => {
   const rewrite: Connect.NextHandleFunction = (req, _res, next) => {
-    if (req.url === '/finanzas') req.url = '/finanzas/'
-    else if (req.url?.startsWith('/finanzas?')) req.url = `/finanzas/${req.url.slice('/finanzas'.length)}`
+    if (req.url === '/ecosistema') req.url = '/ecosistema/'
+    else if (req.url?.startsWith('/ecosistema?')) req.url = `/ecosistema/${req.url.slice('/ecosistema'.length)}`
     next()
   }
 
   return {
-    name: 'finanzas-trailing-slash',
+    name: 'ecosistema-trailing-slash',
     configureServer(server) {
       server.middlewares.use(rewrite)
     },
@@ -37,7 +37,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    finanzasTrailingSlash(),
+    ecosistemaTrailingSlash(),
   ],
   build: {
     rollupOptions: {
@@ -46,7 +46,7 @@ export default defineConfig({
       // index.html cannot provide, and this keeps the two bundles disjoint.
       input: {
         main: resolve(__dirname, 'index.html'),
-        finanzas: resolve(__dirname, 'finanzas/index.html'),
+        ecosistema: resolve(__dirname, 'ecosistema/index.html'),
       },
     },
   },

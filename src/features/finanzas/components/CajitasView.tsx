@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, PiggyBank, icons } from 'lucide-react';
 import { COPY } from '../copy';
 import type { Cajita, CajitaMovimiento, CajitaMovKind } from '../data/modelos';
-import { CAJITA_EMOJIS } from '../data/modelos';
+import { CAJITA_ICONS } from '../data/modelos';
 import { resumenDeCajitas, totalEnCajitas } from '../lib/cajitas';
 import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
@@ -10,7 +10,7 @@ import { CajitaCard } from './CajitaCard';
 interface CajitasViewProps {
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
-  onCrear: (datos: { nombre: string; emoji: string; metaCop: number | null }) => void;
+  onCrear: (datos: { nombre: string; icon: string; metaCop: number | null }) => void;
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
   onEliminar: (cajitaId: string) => void;
@@ -26,7 +26,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
 }) => {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
-  const [emoji, setEmoji] = useState<string>(CAJITA_EMOJIS[0]);
+  const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
   const [metaTexto, setMetaTexto] = useState('');
 
   const resumenes = resumenDeCajitas(cajitas, movimientos);
@@ -37,9 +37,9 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     const limpio = nombre.trim();
     if (!limpio) return;
 
-    onCrear({ nombre: limpio, emoji, metaCop: parseAmountInput(metaTexto) });
+    onCrear({ nombre: limpio, icon, metaCop: parseAmountInput(metaTexto) });
     setNombre('');
-    setEmoji(CAJITA_EMOJIS[0]);
+    setIcon(CAJITA_ICONS[0]);
     setMetaTexto('');
     setCreando(false);
   };
@@ -49,9 +49,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       {/* Total across every live pocket */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">
-          <span className="fin-emoji mr-1.5" aria-hidden="true">
-            🐷
-          </span>
+          <PiggyBank className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
           {COPY.cajitas.total}
         </h2>
         <p className="mt-1 font-display text-4xl font-extrabold tabular-nums text-[var(--fin-ink)]">
@@ -84,22 +82,24 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
           <fieldset className="mt-4">
             <legend className="text-xs font-bold text-[var(--fin-ink-soft)]">Ícono</legend>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {CAJITA_EMOJIS.map((option) => (
+              {CAJITA_ICONS.map((option: string) => {
+                const IconComponent = icons[option as keyof typeof icons] || icons.PiggyBank;
+                return (
                 <button
                   key={option}
                   type="button"
-                  onClick={() => setEmoji(option)}
-                  aria-pressed={emoji === option}
+                  onClick={() => setIcon(option)}
+                  aria-pressed={icon === option}
                   aria-label={`Ícono ${option}`}
-                  className={`fin-emoji flex h-10 w-10 items-center justify-center rounded-2xl border-2 text-xl transition-colors ${
-                    emoji === option
-                      ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]'
-                      : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
+                  className={`flex h-10 w-10 items-center justify-center rounded-2xl border-2 transition-colors ${
+                    icon === option
+                      ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
+                      : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
                   }`}
                 >
-                  {option}
+                  <IconComponent className="h-5 w-5" />
                 </button>
-              ))}
+              )})}
             </div>
           </fieldset>
 
@@ -148,9 +148,9 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
 
       {/* Pockets */}
       {resumenes.length === 0 && !creando ? (
-        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-          <span className="fin-emoji block text-4xl" aria-hidden="true">
-            🐷
+        <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center flex flex-col items-center">
+          <span className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center" aria-hidden="true">
+            <PiggyBank className="h-10 w-10" strokeWidth={1.5} />
           </span>
           <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{COPY.cajitas.vacio}</p>
           <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.cajitas.vacioHint}</p>

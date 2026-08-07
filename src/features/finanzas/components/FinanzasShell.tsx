@@ -11,6 +11,7 @@ interface FinanzasShellProps {
   /** Absent in local mode, where there is no account to sign out of. */
   cuenta?: { email: string; onSalir: () => void };
   temaToggle?: React.ReactNode;
+  onBack?: () => void;
   children: React.ReactNode;
 }
 
@@ -34,6 +35,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   toolbar,
   cuenta,
   temaToggle,
+  onBack,
   children,
 }) => (
   <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased lg:flex">
@@ -41,6 +43,15 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
     <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[var(--fin-line)] lg:bg-[var(--fin-card)] lg:px-4 lg:py-6 lg:sticky lg:top-0">
       <div>
         <div className="flex items-center gap-2.5 px-2">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+              aria-label="Volver al ecosistema"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+          )}
           <BrandMark className="h-6 w-6" />
           <span className="text-base font-extrabold tracking-tight">Finanzas</span>
         </div>
@@ -60,9 +71,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
                     : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
                 }`}
               >
-                <span className="fin-emoji text-base" aria-hidden="true">
-                  {item.emoji}
-                </span>
+                <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                 {item.label}
               </button>
             );
@@ -92,6 +101,15 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
     <div className="flex min-w-0 flex-1 flex-col">
       {/* Mobile header. Hidden on desktop, where the sidebar carries the brand. */}
       <header className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-[var(--fin-line)] bg-[var(--fin-bg-blur)] px-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] pb-3.5 backdrop-blur-md lg:hidden">
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+            aria-label="Volver al ecosistema"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+        )}
         <BrandMark className="h-5 w-5" />
         <h1 className="text-sm font-extrabold tracking-tight">Finanzas</h1>
         <div className="ml-auto flex items-center gap-2">
@@ -141,12 +159,12 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
             {/* The active pill is the second channel: the label also changes
                 weight and colour, so it never relies on colour alone. */}
             <span
-              className={`fin-emoji rounded-full px-3 py-1 text-lg transition-colors ${
+              className={`rounded-full px-3 py-1 transition-colors ${
                 active ? 'bg-[var(--fin-soft)]' : ''
               }`}
               aria-hidden="true"
             >
-              {item.emoji}
+              <item.icon className="h-5 w-5" />
             </span>
             <span
               className={`max-w-full truncate text-[9px] transition-colors ${

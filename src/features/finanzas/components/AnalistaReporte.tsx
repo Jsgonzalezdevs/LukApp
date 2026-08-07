@@ -1,6 +1,6 @@
 import React from 'react';
-import { AlertTriangle, CheckCircle2, Info } from 'lucide-react';
-import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
+import { AlertTriangle, CheckCircle2, Info, ArrowUpCircle, ArrowDownCircle, ClipboardList, Target, AlertCircle, Lightbulb } from 'lucide-react';
+import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import { formatCop } from '../lib/formatCop';
 import type { AnalisisResultado } from '../analista/tipos';
 import { metricasCoherentes, rebanadasDelAnalisis, totalesDelAnalisis } from '../analista/totales';
@@ -10,9 +10,9 @@ interface AnalistaReporteProps {
 }
 
 const TONO_SEVERIDAD = {
-  alta: { bg: 'var(--fin-out-bg)', ink: 'var(--fin-out)', emoji: '🔴' },
-  media: { bg: 'var(--fin-media-bg)', ink: 'var(--fin-media-ink)', emoji: '🟠' },
-  baja: { bg: 'var(--fin-baja-bg)', ink: 'var(--fin-baja-ink)', emoji: '🟡' },
+  alta: { bg: 'var(--fin-out-bg)', ink: 'var(--fin-out)', icon: AlertCircle },
+  media: { bg: 'var(--fin-media-bg)', ink: 'var(--fin-media-ink)', icon: AlertTriangle },
+  baja: { bg: 'var(--fin-baja-bg)', ink: 'var(--fin-baja-ink)', icon: Info },
 } as const;
 
 export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) => {
@@ -27,7 +27,9 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Verdict */}
       <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">📋 Veredicto</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+            <ClipboardList className="h-4 w-4" strokeWidth={2.5} /> Veredicto
+          </h2>
           <span className="shrink-0 rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)] capitalize">
             {resultado.periodo.etiqueta}
           </span>
@@ -38,10 +40,10 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Recomputed totals */}
       <section className="grid grid-cols-3 gap-3">
         {[
-          { emoji: '💰', label: 'Ingresos', valor: totales.ingresos, ink: 'var(--fin-in)', bg: 'var(--fin-in-bg)' },
-          { emoji: '💸', label: 'Gastos', valor: totales.gastos, ink: 'var(--fin-out)', bg: 'var(--fin-out-bg)' },
+          { icon: ArrowUpCircle, label: 'Ingresos', valor: totales.ingresos, ink: 'var(--fin-in)', bg: 'var(--fin-in-bg)' },
+          { icon: ArrowDownCircle, label: 'Gastos', valor: totales.gastos, ink: 'var(--fin-out)', bg: 'var(--fin-out-bg)' },
           {
-            emoji: totales.balance >= 0 ? '🤑' : '😬',
+            icon: totales.balance >= 0 ? CheckCircle2 : AlertTriangle,
             label: 'Balance',
             valor: totales.balance,
             ink: totales.balance >= 0 ? 'var(--fin-in)' : 'var(--fin-out)',
@@ -50,11 +52,11 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
         ].map((k) => (
           <div key={k.label} className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
             <span
-              className="fin-emoji flex h-8 w-8 items-center justify-center rounded-xl text-base"
-              style={{ backgroundColor: k.bg }}
+              className="flex h-8 w-8 items-center justify-center rounded-xl"
+              style={{ backgroundColor: k.bg, color: k.ink }}
               aria-hidden="true"
             >
-              {k.emoji}
+              <k.icon className="h-5 w-5" strokeWidth={2} />
             </span>
             <p className="mt-2 text-[11px] font-bold text-[var(--fin-ink-soft)]">{k.label}</p>
             <p className="truncate text-lg font-extrabold tabular-nums" style={{ color: k.ink }}>
@@ -107,7 +109,9 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Category bars */}
       {gastos.length > 0 ? (
         <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">🎯 En qué se fue</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+            <Target className="h-4 w-4" strokeWidth={2.5} /> En qué se fue
+          </h2>
           <ul className="mt-4 flex flex-col gap-3">
             {gastos.map((slice) => {
               const color = CATEGORY_COLOR[slice.categoria];
@@ -115,11 +119,14 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
               return (
                 <li key={slice.categoria} className="flex items-center gap-2.5">
                   <span
-                    className="fin-emoji flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base"
-                    style={{ backgroundColor: tint(color, 0.14) }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: tint(color, 0.14), color: color }}
                     aria-hidden="true"
                   >
-                    {CATEGORY_EMOJI[slice.categoria]}
+                    {(() => {
+                      const Icon = CATEGORY_ICON[slice.categoria];
+                      return <Icon className="h-5 w-5" />;
+                    })()}
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
@@ -152,7 +159,9 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Alerts */}
       {resultado.alertas.length > 0 ? (
         <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">🚨 Alertas</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+            <AlertCircle className="h-4 w-4" strokeWidth={2.5} /> Alertas
+          </h2>
           <ul className="mt-3 flex flex-col gap-2.5">
             {resultado.alertas.map((alerta, idx) => {
               const tono = TONO_SEVERIDAD[alerta.severidad];
@@ -163,9 +172,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
                   style={{ backgroundColor: tono.bg }}
                 >
                   <p className="flex items-center gap-1.5 text-[13px] font-extrabold" style={{ color: tono.ink }}>
-                    <span className="fin-emoji" aria-hidden="true">
-                      {tono.emoji}
-                    </span>
+                    <tono.icon className="h-4 w-4 shrink-0" aria-hidden="true" strokeWidth={2.5} />
                     {alerta.titulo}
                   </p>
                   <p className="mt-1 text-[12px] leading-relaxed" style={{ color: tono.ink }}>
@@ -181,7 +188,9 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Recommendations */}
       {resultado.recomendaciones.length > 0 ? (
         <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
-          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">💡 Qué puedes hacer</h2>
+          <h2 className="flex items-center gap-1.5 text-xs font-bold text-[var(--fin-ink-soft)]">
+            <Lightbulb className="h-4 w-4" strokeWidth={2.5} /> Qué puedes hacer
+          </h2>
           <ol className="mt-3 flex flex-col gap-3">
             {resultado.recomendaciones.map((rec, idx) => (
               <li key={`${rec.titulo}-${idx}`} className="flex items-start gap-3">

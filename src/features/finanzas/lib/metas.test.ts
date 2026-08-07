@@ -5,7 +5,7 @@ import { metasConProgreso, progresoDeMeta } from './metas';
 const meta = (over: Partial<Meta> = {}): Meta => ({
   id: 'meta-1',
   nombre: 'Viaje',
-  emoji: '✈️',
+  icon: '✈️',
   objetivoCop: 1000000,
   fechaObjetivo: null,
   cajitaId: null,

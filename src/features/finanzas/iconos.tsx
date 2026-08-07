@@ -19,7 +19,6 @@ import {
   Shield,
   ShoppingCart,
   Shirt,
-  Smartphone,
   Sparkles,
   Target,
   TrendingUp,

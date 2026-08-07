@@ -22,7 +22,7 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
 const cajita = (over: Partial<Cajita> = {}): Cajita => ({
   id: 'caj-1',
   nombre: 'Vacaciones',
-  emoji: '🏖️',
+  icon: '🏖️',
   metaCop: 2000000,
   createdAt: '2026-08-01T00:00:00.000Z',
   archivedAt: null,
@@ -43,7 +43,7 @@ const movimiento = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => (
 const meta = (over: Partial<Meta> = {}): Meta => ({
   id: 'meta-1',
   nombre: 'Viaje a Cartagena',
-  emoji: '✈️',
+  icon: '✈️',
   objetivoCop: 3000000,
   fechaObjetivo: '2026-12-31',
   cajitaId: null,

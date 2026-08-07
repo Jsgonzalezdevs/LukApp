@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
+import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { CategorySlice } from '../lib/aggregate';
 import { formatCop } from '../lib/formatCop';
 
@@ -33,15 +33,17 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
           // smallest category is still legible instead of a hairline.
           const width = Math.max((slice.total / largest) * 100, 4);
 
+          const Icon = CATEGORY_ICON[slice.category];
+          
           return (
             <li key={slice.category}>
               <div className="flex items-center gap-2.5">
                 <span
-                  className="fin-emoji flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base"
-                  style={{ backgroundColor: tint(color, 0.14) }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: tint(color, 0.14), color: color }}
                   aria-hidden="true"
                 >
-                  {CATEGORY_EMOJI[slice.category]}
+                  <Icon className="h-5 w-5" />
                 </span>
 
                 <div className="min-w-0 flex-1">

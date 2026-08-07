@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Pencil, Trash2 } from 'lucide-react';
-import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
+import { Hand, Pencil, Trash2 } from 'lucide-react';
+import { CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
 import { formatCop, formatSigned } from '../lib/formatCop';
@@ -46,8 +46,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   if (transactions.length === 0) {
     return (
       <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
-        <span className="fin-emoji block text-4xl" aria-hidden="true">
-          👋
+        <span className="block text-[var(--fin-ink-ghost)] mb-2 flex justify-center" aria-hidden="true">
+          <Hand className="h-10 w-10" strokeWidth={1.5} />
         </span>
         <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{COPY.list.empty}</p>
         <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.list.emptyHint}</p>
@@ -72,6 +72,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               const color = CATEGORY_COLOR[tx.category];
               const esIngreso = tx.kind === 'ingreso';
 
+                const Icon = CATEGORY_ICON[tx.category];
+
               return (
                 <motion.li
                   key={tx.id}
@@ -80,13 +82,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                   transition={{ duration: 0.25, delay: Math.min(idx * 0.03, 0.15) }}
                   className="flex items-center gap-3 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3"
                 >
-                  {/* Category identity: emoji on its own hue. Two channels, not one. */}
+                  {/* Category identity: icon on its own hue. Two channels, not one. */}
                   <span
-                    className="fin-emoji flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-xl"
-                    style={{ backgroundColor: tint(color, 0.14) }}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                    style={{ backgroundColor: tint(color, 0.14), color: color }}
                     aria-hidden="true"
                   >
-                    {CATEGORY_EMOJI[tx.category]}
+                    <Icon className="h-6 w-6" />
                   </span>
 
                   <div className="min-w-0 flex-1">

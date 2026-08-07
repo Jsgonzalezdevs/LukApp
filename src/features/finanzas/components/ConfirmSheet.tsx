@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, X } from 'lucide-react';
-import { CATEGORIES, CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
+import { AlertTriangle, X, ArrowDownCircle, ArrowUpCircle, Ear, CheckCircle2 } from 'lucide-react';
+import { CATEGORIES, CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { Category, TxKind } from '../types';
 import { COPY } from '../copy';
 import { formatAmountInput, parseAmountInput } from '../lib/formatCop';
@@ -95,9 +95,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-extrabold tracking-tight text-[var(--fin-ink)]">
-              <span className="fin-emoji" aria-hidden="true">
-                {CATEGORY_EMOJI[category]}
-              </span>
+              {(() => {
+                  const Icon = CATEGORY_ICON[category];
+                  return <Icon className="h-6 w-6 mr-1" aria-hidden="true" />;
+              })()}
               {editando ? COPY.confirm.titleEditar : COPY.confirm.title}
             </h2>
             {!editando && parsed.needsReview ? (
@@ -151,8 +152,8 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             style={{ borderColor: kindWeak ? 'var(--fin-warn)' : 'var(--fin-line)' }}
           >
             {([
-              { value: 'gasto', emoji: '💸', label: COPY.confirm.gasto, on: 'var(--fin-out-bg)', ink: 'var(--fin-out)' },
-              { value: 'ingreso', emoji: '💰', label: COPY.confirm.ingreso, on: 'var(--fin-in-bg)', ink: 'var(--fin-in)' },
+              { value: 'gasto', icon: ArrowDownCircle, label: COPY.confirm.gasto, on: 'var(--fin-out-bg)', ink: 'var(--fin-out)' },
+              { value: 'ingreso', icon: ArrowUpCircle, label: COPY.confirm.ingreso, on: 'var(--fin-in-bg)', ink: 'var(--fin-in)' },
             ] as const).map((option) => {
               const active = kind === option.value;
               return (
@@ -167,9 +168,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                     color: active ? option.ink : 'var(--fin-ink-faint)',
                   }}
                 >
-                  <span className="fin-emoji" aria-hidden="true">
-                    {option.emoji}
-                  </span>
+                  <option.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   {option.label}
                 </button>
               );
@@ -197,9 +196,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                     color: active ? 'var(--fin-ink)' : 'var(--fin-ink-soft)',
                   }}
                 >
-                  <span className="fin-emoji" aria-hidden="true">
-                    {CATEGORY_EMOJI[option]}
-                  </span>
+                  {(() => {
+                    const Icon = CATEGORY_ICON[option];
+                    return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
+                  })()}
                   {CATEGORY_LABELS[option]}
                 </button>
               );
@@ -223,9 +223,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         {/* What was actually heard, so a mis-parse is always traceable */}
         {parsed.raw.trim() ? (
           <p className="mt-4 rounded-2xl bg-[var(--fin-soft)] px-4 py-3 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
-            <span className="fin-emoji mr-1" aria-hidden="true">
-              👂
-            </span>
+            <Ear className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
             <span className="font-bold">{COPY.confirm.heard}: </span>
             &ldquo;{parsed.raw.trim()}&rdquo;
           </p>
@@ -239,9 +237,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           whileTap={{ scale: 0.98 }}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-6 py-4 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
         >
-          <span className="fin-emoji" aria-hidden="true">
-            ✅
-          </span>
+          <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
           {editando ? COPY.confirm.saveEditar : COPY.confirm.save}
         </motion.button>
       </motion.form>
