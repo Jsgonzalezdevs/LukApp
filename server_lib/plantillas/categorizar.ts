@@ -1,7 +1,7 @@
-import { MERCHANTS, CATEGORY_KEYWORDS } from '../../../../src/features/finanzas/lib/vocabulary.ts';
-import { normalizeWord } from '../../../../src/features/finanzas/lib/numerals.ts';
-import type { Category } from '../../../../src/features/finanzas/types.ts';
-import type { MotivoExclusion } from '../../../../src/features/finanzas/analista/tipos.ts';
+import { MERCHANTS, CATEGORY_KEYWORDS } from '../../src/features/finanzas/lib/vocabulary.ts';
+import { normalizeWord } from '../../src/features/finanzas/lib/numerals.ts';
+import type { Category } from '../../src/features/finanzas/types.ts';
+import type { MotivoExclusion } from '../../src/features/finanzas/analista/tipos.ts';
 
 /**
  * Statement descriptions are bank jargon ("COMPRA EN MAKRO IBAG"), not spoken
