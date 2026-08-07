@@ -13,9 +13,34 @@ export type AppId = 'finanzas' | 'superadmin' | null;
 export const AppsRoot: React.FC = () => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
-  const [activeApp, setActiveApp] = useState<AppId>(null);
+  const [activeApp, setActiveApp] = useState<AppId>(() => {
+    const path = window.location.pathname;
+    if (path.startsWith('/finanzas')) return 'finanzas';
+    if (path.startsWith('/superadmin')) return 'superadmin';
+    return null;
+  });
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [loadingRol, setLoadingRol] = useState(true);
+
+  // Sync URL with state changes
+  useEffect(() => {
+    const path = activeApp === 'finanzas' ? '/finanzas' : activeApp === 'superadmin' ? '/superadmin' : '/ecosistema';
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, '', path);
+    }
+  }, [activeApp]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path.startsWith('/finanzas')) setActiveApp('finanzas');
+      else if (path.startsWith('/superadmin')) setActiveApp('superadmin');
+      else setActiveApp(null);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   useEffect(() => {
     if (sesion.estado.modo === 'autenticado') {

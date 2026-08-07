@@ -34,6 +34,26 @@
   to = "/ecosistema/index.html"
   status = 200
 
+[[redirects]]
+  from = "/finanzas"
+  to = "/ecosistema/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/finanzas/*"
+  to = "/ecosistema/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/superadmin"
+  to = "/ecosistema/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/superadmin/*"
+  to = "/ecosistema/index.html"
+  status = 200
+
 # Handles single-page app routing redirects (critical for React apps)
 [[redirects]]
   from = "/*"
