@@ -36,12 +36,12 @@ interface TrabajoEnCursoProps {
 }
 
 const TrabajoEnCurso: React.FC<TrabajoEnCursoProps> = ({ trabajo, segundos }) => (
-  <li className="rounded-3xl border border-[#ede9e3] bg-white p-5">
+  <li className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
     <div className="flex items-center gap-3">
-      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[#a8a29e]" strokeWidth={3} />
+      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--fin-ink-faint)]" strokeWidth={3} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
-        <p className="text-[12px] text-[#78716c]">
+        <p className="text-[12px] text-[var(--fin-ink-soft)]">
           {segundos > 0 ? `Leyendo tu extracto… van ${segundos}s` : 'Leyendo tu extracto…'}
         </p>
       </div>
@@ -56,24 +56,24 @@ interface TrabajoConErrorProps {
 }
 
 const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar, onQuitar }) => (
-  <li className="rounded-3xl bg-[#fff1f2] p-5">
+  <li className="rounded-3xl bg-[var(--fin-out-bg)] p-5">
     <div className="flex items-start gap-3">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#be123c]" strokeWidth={3} />
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" strokeWidth={3} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-extrabold text-[#be123c]">{trabajo.archivo.name}</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-[#be123c]">{trabajo.error?.mensaje}</p>
+        <p className="truncate text-[13px] font-extrabold text-[var(--fin-out)]">{trabajo.archivo.name}</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-[var(--fin-out)]">{trabajo.error?.mensaje}</p>
         <div className="mt-2.5 flex gap-2">
           <button
             type="button"
             onClick={() => onReintentar(trabajo.id)}
-            className="rounded-full bg-white px-3.5 py-1.5 text-[11px] font-bold text-[#be123c]"
+            className="rounded-full bg-[var(--fin-card)] px-3.5 py-1.5 text-[11px] font-bold text-[var(--fin-out)]"
           >
             Reintentar
           </button>
           <button
             type="button"
             onClick={() => onQuitar(trabajo.id)}
-            className="rounded-full px-3.5 py-1.5 text-[11px] font-bold text-[#78716c]"
+            className="rounded-full px-3.5 py-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]"
           >
             Quitar
           </button>
@@ -109,7 +109,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   const plan = planearImportacion(trabajo.resultado.movimientos, existentes, nuevoId);
 
   return (
-    <li className="rounded-3xl border border-[#ede9e3] bg-white p-5">
+    <li className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
       <button
         type="button"
         onClick={() => onToggle(trabajo.id)}
@@ -120,13 +120,13 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold">{trabajo.archivo.name}</p>
-          <p className="truncate text-[11px] font-semibold text-[#a8a29e] capitalize">
+          <p className="truncate text-[11px] font-semibold text-[var(--fin-ink-faint)] capitalize">
             {trabajo.resultado.periodo.etiqueta}
             {importado > 0 ? ` · ${importado} importado${importado === 1 ? '' : 's'}` : ''}
           </p>
         </div>
         <ChevronDown
-          className={`h-4 w-4 shrink-0 text-[#a8a29e] transition-transform ${contraido ? '' : 'rotate-180'}`}
+          className={`h-4 w-4 shrink-0 text-[var(--fin-ink-faint)] transition-transform ${contraido ? '' : 'rotate-180'}`}
           strokeWidth={3}
         />
         <span
@@ -143,34 +143,34 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             }
           }}
           aria-label={`Quitar ${trabajo.archivo.name} de la lista`}
-          className="shrink-0 rounded-full p-1.5 text-[#d6d3d1] hover:bg-[#f5f3f0] hover:text-[#1c1917]"
+          className="shrink-0 rounded-full p-1.5 text-[var(--fin-ink-ghost)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
         >
           <X className="h-3.5 w-3.5" strokeWidth={3} />
         </span>
       </button>
 
       {!contraido ? (
-        <div className="mt-4 flex flex-col gap-5 border-t border-[#ede9e3] pt-4">
-          <section className="rounded-2xl bg-[#f5f3f0] p-4">
-            <h3 className="text-xs font-bold text-[#78716c]">⬇️ Importar a tu historial</h3>
+        <div className="mt-4 flex flex-col gap-5 border-t border-[var(--fin-line)] pt-4">
+          <section className="rounded-2xl bg-[var(--fin-soft)] p-4">
+            <h3 className="text-xs font-bold text-[var(--fin-ink-soft)]">⬇️ Importar a tu historial</h3>
 
             <div className="mt-3 grid grid-cols-3 gap-2 text-center">
               {[
-                { label: 'Nuevos', n: plan.nuevos.length, ink: '#15803d' },
-                { label: 'Ya estaban', n: plan.duplicados.length, ink: '#78716c' },
-                { label: 'No cuentan', n: plan.excluidos.length, ink: '#a16207' },
+                { label: 'Nuevos', n: plan.nuevos.length, ink: 'var(--fin-in)' },
+                { label: 'Ya estaban', n: plan.duplicados.length, ink: 'var(--fin-ink-soft)' },
+                { label: 'No cuentan', n: plan.excluidos.length, ink: 'var(--fin-baja-ink)' },
               ].map((c) => (
-                <div key={c.label} className="rounded-xl bg-white px-2 py-2.5">
+                <div key={c.label} className="rounded-xl bg-[var(--fin-card)] px-2 py-2.5">
                   <p className="text-lg font-extrabold tabular-nums" style={{ color: c.ink }}>
                     {c.n}
                   </p>
-                  <p className="text-[10px] font-bold text-[#78716c]">{c.label}</p>
+                  <p className="text-[10px] font-bold text-[var(--fin-ink-soft)]">{c.label}</p>
                 </div>
               ))}
             </div>
 
             {importado > 0 ? (
-              <p className="mt-3 rounded-xl bg-[#f0fdf4] px-3 py-2.5 text-[12px] font-bold text-[#15803d]">
+              <p className="mt-3 rounded-xl bg-[var(--fin-in-bg)] px-3 py-2.5 text-[12px] font-bold text-[var(--fin-in)]">
                 Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
               </p>
             ) : (
@@ -181,7 +181,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                   onImportar(plan.nuevos);
                   setImportado(plan.nuevos.length);
                 }}
-                className="mt-3 w-full rounded-full bg-[#1c1917] px-6 py-3 text-[13px] font-bold text-white transition-colors hover:bg-[#292524] disabled:opacity-30"
+                className="mt-3 w-full rounded-full bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
                 {plan.nuevos.length === 0
                   ? 'Nada nuevo por importar'
@@ -190,7 +190,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             )}
 
             {plan.duplicados.length > 0 && plan.nuevos.length > 0 ? (
-              <p className="mt-2 text-[11px] leading-relaxed text-[#a8a29e]">
+              <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
                 {plan.duplicados.length} ya estaban en tu historial y no se van a duplicar.
               </p>
             ) : null}
@@ -231,13 +231,13 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
             e.preventDefault();
             analista.guardarToken(tokenBorrador);
           }}
-          className="rounded-3xl border border-[#ede9e3] bg-white p-6 text-center"
+          className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center"
         >
           <span className="fin-emoji block text-4xl" aria-hidden="true">
             🔐
           </span>
           <h2 className="mt-3 text-lg font-extrabold tracking-tight">Token de acceso</h2>
-          <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
+          <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             El endpoint pide un token para que nadie más que encuentre la URL pueda usarlo.
             Guárdalo cuando tu navegador lo ofrezca y en tus otros dispositivos con la misma
             cuenta (iCloud Keychain o Google) aparecerá solo.
@@ -267,14 +267,14 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
             onChange={(e) => setTokenBorrador(e.target.value)}
             autoComplete="current-password"
             placeholder="ANALISTA_TOKEN"
-            className="mt-5 w-full rounded-2xl border-2 border-[#ede9e3] bg-[#fbf9f6] px-4 py-3 text-center text-base font-medium focus:border-[#a8a29e] focus:outline-none"
+            className="mt-5 w-full rounded-2xl border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-center text-base font-medium focus:border-[var(--fin-ink-faint)] focus:outline-none"
             aria-label="Token de acceso"
           />
 
           <button
             type="submit"
             disabled={!tokenBorrador.trim()}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[#1c1917] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#292524] disabled:opacity-30"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
           >
             <KeyRound className="h-4 w-4" strokeWidth={3} />
             Guardar
@@ -317,7 +317,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           if (archivos.length > 0) analista.analizarArchivos(archivos);
         }}
         className={`rounded-3xl border-2 border-dashed px-6 py-9 text-center transition-colors ${
-          arrastrando ? 'border-[#1c1917] bg-[#f5f3f0]' : 'border-[#ede9e3] bg-white'
+          arrastrando ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'
         }`}
       >
         <span className="fin-emoji block text-4xl" aria-hidden="true">
@@ -326,7 +326,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
         <h2 className="mt-3 text-lg font-extrabold tracking-tight">
           {arrastrando ? 'Suelta aquí' : 'Sube tus extractos'}
         </h2>
-        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[#78716c]">
+        <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
           Arrastra uno o varios PDF, o elígelos desde el explorador. Hasta 4 MB cada uno.
         </p>
 
@@ -349,13 +349,13 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
           onClick={() => inputArchivo.current?.click()}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#1c1917] px-7 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#292524]"
+          className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-7 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
         >
           <FileUp className="h-4 w-4" strokeWidth={3} />
           Elegir PDF
         </motion.button>
 
-        <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[11px] leading-relaxed text-[#a8a29e]">
+        <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
           <span className="fin-emoji shrink-0" aria-hidden="true">
             🛡️
           </span>
@@ -407,7 +407,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
       ) : null}
 
       {analista.trabajos.length > 0 ? (
-        <p className="flex items-center justify-center gap-1.5 text-[11px] text-[#a8a29e]">
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-[var(--fin-ink-faint)]">
           <RotateCcw className="h-3 w-3" strokeWidth={3} />
           Puedes seguir arrastrando más extractos mientras estos terminan.
         </p>

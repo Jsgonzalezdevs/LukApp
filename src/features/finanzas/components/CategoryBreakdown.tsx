@@ -21,10 +21,10 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
   return (
     <section
-      className="rounded-3xl border border-[#ede9e3] bg-white p-5"
+      className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5"
       aria-label={title}
     >
-      <h2 className="text-xs font-bold text-[#78716c]">{title}</h2>
+      <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">{title}</h2>
 
       <ul className="mt-4 flex flex-col gap-3.5">
         {slices.map((slice, idx) => {
@@ -46,10 +46,10 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-[13px] font-bold text-[#1c1917]">
+                    <span className="truncate text-[13px] font-bold text-[var(--fin-ink)]">
                       {CATEGORY_LABELS[slice.category]}
                     </span>
-                    <span className="shrink-0 text-[13px] font-extrabold text-[#1c1917] tabular-nums">
+                    <span className="shrink-0 text-[13px] font-extrabold text-[var(--fin-ink)] tabular-nums">
                       {formatCop(slice.total)}
                     </span>
                   </div>
@@ -57,7 +57,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
                   {/* The percentage is written out, so the bar length is never
                       the only way to read the value. */}
                   <div className="mt-1.5 flex items-center gap-2">
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f5f3f0]">
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--fin-soft)]">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${width}%` }}
@@ -66,7 +66,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
                         style={{ backgroundColor: color }}
                       />
                     </div>
-                    <span className="w-10 shrink-0 text-right text-[11px] font-semibold text-[#a8a29e] tabular-nums">
+                    <span className="w-10 shrink-0 text-right text-[11px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
                       {slice.pct}%
                     </span>
                   </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { CATEGORY_COLOR, CATEGORY_EMOJI, CATEGORY_LABELS, tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
@@ -10,6 +10,8 @@ import { dayLabel } from '../lib/localDate';
 interface TransactionListProps {
   transactions: readonly Transaction[];
   onDelete: (id: string) => void;
+  /** Optional so read-only listings (summaries) can omit the control entirely. */
+  onEdit?: (tx: Transaction) => void;
 }
 
 interface DayGroup {
@@ -36,15 +38,19 @@ const groupByDay = (transactions: readonly Transaction[]): DayGroup[] => {
     }));
 };
 
-export const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete }) => {
+export const TransactionList: React.FC<TransactionListProps> = ({
+  transactions,
+  onDelete,
+  onEdit,
+}) => {
   if (transactions.length === 0) {
     return (
-      <div className="rounded-3xl border-2 border-dashed border-[#ede9e3] px-6 py-12 text-center">
+      <div className="rounded-3xl border-2 border-dashed border-[var(--fin-line)] px-6 py-12 text-center">
         <span className="fin-emoji block text-4xl" aria-hidden="true">
           👋
         </span>
-        <p className="mt-3 text-sm font-bold text-[#1c1917]">{COPY.list.empty}</p>
-        <p className="mt-1 text-xs text-[#a8a29e]">{COPY.list.emptyHint}</p>
+        <p className="mt-3 text-sm font-bold text-[var(--fin-ink)]">{COPY.list.empty}</p>
+        <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">{COPY.list.emptyHint}</p>
       </div>
     );
   }
@@ -55,8 +61,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
         <section key={group.date} aria-label={dayLabel(group.date)}>
           {/* Day header with its own subtotal */}
           <div className="mb-2 flex items-baseline justify-between px-1">
-            <h3 className="text-xs font-bold text-[#78716c] capitalize">{dayLabel(group.date)}</h3>
-            <span className="text-[11px] font-semibold text-[#a8a29e] tabular-nums">
+            <h3 className="text-xs font-bold text-[var(--fin-ink-soft)] capitalize">{dayLabel(group.date)}</h3>
+            <span className="text-[11px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
               {formatCop(group.net)}
             </span>
           </div>
@@ -72,7 +78,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25, delay: Math.min(idx * 0.03, 0.15) }}
-                  className="flex items-center gap-3 rounded-2xl border border-[#ede9e3] bg-white px-3 py-3"
+                  className="flex items-center gap-3 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3"
                 >
                   {/* Category identity: emoji on its own hue. Two channels, not one. */}
                   <span
@@ -84,7 +90,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
                   </span>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-[#1c1917]">{tx.description}</p>
+                    <p className="truncate text-sm font-bold text-[var(--fin-ink)]">{tx.description}</p>
                     <p className="text-[11px] font-medium" style={{ color }}>
                       {CATEGORY_LABELS[tx.category]}
                     </p>
@@ -92,16 +98,27 @@ export const TransactionList: React.FC<TransactionListProps> = ({ transactions, 
 
                   <span
                     className="shrink-0 text-sm font-extrabold tabular-nums"
-                    style={{ color: esIngreso ? '#15803d' : '#be123c' }}
+                    style={{ color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)' }}
                   >
                     {formatSigned(tx.amountCop, tx.kind)}
                   </span>
+
+                  {onEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(tx)}
+                      aria-label={`${COPY.list.edit}: ${tx.description}`}
+                      className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                    >
+                      <Pencil className="h-4 w-4" strokeWidth={2.5} />
+                    </button>
+                  ) : null}
 
                   <button
                     type="button"
                     onClick={() => onDelete(tx.id)}
                     aria-label={`${COPY.list.delete}: ${tx.description}`}
-                    className="shrink-0 rounded-xl p-1.5 text-[#d6d3d1] transition-colors hover:bg-[#fff1f2] hover:text-[#e11d48]"
+                    className="shrink-0 rounded-xl p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                   </button>

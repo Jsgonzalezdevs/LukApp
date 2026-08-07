@@ -10,9 +10,9 @@ interface AnalistaReporteProps {
 }
 
 const TONO_SEVERIDAD = {
-  alta: { bg: '#fff1f2', ink: '#be123c', emoji: '🔴' },
-  media: { bg: '#fff7ed', ink: '#c2410c', emoji: '🟠' },
-  baja: { bg: '#fefce8', ink: '#a16207', emoji: '🟡' },
+  alta: { bg: 'var(--fin-out-bg)', ink: 'var(--fin-out)', emoji: '🔴' },
+  media: { bg: 'var(--fin-media-bg)', ink: 'var(--fin-media-ink)', emoji: '🟠' },
+  baja: { bg: 'var(--fin-baja-bg)', ink: 'var(--fin-baja-ink)', emoji: '🟡' },
 } as const;
 
 export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) => {
@@ -25,30 +25,30 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
   return (
     <div className="flex flex-col gap-5">
       {/* Verdict */}
-      <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
+      <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-bold text-[#78716c]">📋 Veredicto</h2>
-          <span className="shrink-0 rounded-full bg-[#f5f3f0] px-2.5 py-1 text-[10px] font-bold text-[#78716c] capitalize">
+          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">📋 Veredicto</h2>
+          <span className="shrink-0 rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)] capitalize">
             {resultado.periodo.etiqueta}
           </span>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-[#1c1917]">{resultado.veredicto}</p>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--fin-ink)]">{resultado.veredicto}</p>
       </section>
 
       {/* Recomputed totals */}
       <section className="grid grid-cols-3 gap-3">
         {[
-          { emoji: '💰', label: 'Ingresos', valor: totales.ingresos, ink: '#15803d', bg: '#f0fdf4' },
-          { emoji: '💸', label: 'Gastos', valor: totales.gastos, ink: '#be123c', bg: '#fff1f2' },
+          { emoji: '💰', label: 'Ingresos', valor: totales.ingresos, ink: 'var(--fin-in)', bg: 'var(--fin-in-bg)' },
+          { emoji: '💸', label: 'Gastos', valor: totales.gastos, ink: 'var(--fin-out)', bg: 'var(--fin-out-bg)' },
           {
             emoji: totales.balance >= 0 ? '🤑' : '😬',
             label: 'Balance',
             valor: totales.balance,
-            ink: totales.balance >= 0 ? '#15803d' : '#be123c',
-            bg: totales.balance >= 0 ? '#f0fdf4' : '#fff1f2',
+            ink: totales.balance >= 0 ? 'var(--fin-in)' : 'var(--fin-out)',
+            bg: totales.balance >= 0 ? 'var(--fin-in-bg)' : 'var(--fin-out-bg)',
           },
         ].map((k) => (
-          <div key={k.label} className="rounded-2xl border border-[#ede9e3] bg-white p-4">
+          <div key={k.label} className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
             <span
               className="fin-emoji flex h-8 w-8 items-center justify-center rounded-xl text-base"
               style={{ backgroundColor: k.bg }}
@@ -56,7 +56,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
             >
               {k.emoji}
             </span>
-            <p className="mt-2 text-[11px] font-bold text-[#78716c]">{k.label}</p>
+            <p className="mt-2 text-[11px] font-bold text-[var(--fin-ink-soft)]">{k.label}</p>
             <p className="truncate text-lg font-extrabold tabular-nums" style={{ color: k.ink }}>
               {formatCop(k.valor)}
             </p>
@@ -66,25 +66,25 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
 
       {/* What was left out of the totals, and why. Never silent. */}
       {totales.excluidos.length > 0 ? (
-        <section className="rounded-3xl border border-[#ede9e3] bg-[#f5f3f0] p-5">
-          <h2 className="flex items-center gap-2 text-xs font-bold text-[#78716c]">
+        <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-soft)] p-5">
+          <h2 className="flex items-center gap-2 text-xs font-bold text-[var(--fin-ink-soft)]">
             <Info className="h-3.5 w-3.5" strokeWidth={3} />
             No se sumó a los totales
           </h2>
-          <p className="mt-2 text-[11px] leading-relaxed text-[#78716c]">
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">
             Sumar estas líneas contaría dos veces la misma plata.
           </p>
           <ul className="mt-3 flex flex-col gap-2">
             {totales.excluidos.map((ex) => (
               <li
                 key={ex.motivo}
-                className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-xl bg-[var(--fin-card)] px-3 py-2.5"
               >
-                <span className="min-w-0 truncate text-[13px] font-semibold text-[#1c1917]">
+                <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--fin-ink)]">
                   {ex.motivo}
-                  <span className="ml-1.5 font-normal text-[#a8a29e]">({ex.cuantos})</span>
+                  <span className="ml-1.5 font-normal text-[var(--fin-ink-faint)]">({ex.cuantos})</span>
                 </span>
-                <span className="shrink-0 text-[13px] font-bold text-[#78716c] tabular-nums">
+                <span className="shrink-0 text-[13px] font-bold text-[var(--fin-ink-soft)] tabular-nums">
                   {formatCop(ex.montoCop)}
                 </span>
               </li>
@@ -95,7 +95,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
 
       {/* Coherence warning: the narrative disagrees with the auditable rows. */}
       {!cuadra ? (
-        <p className="flex items-start gap-2 rounded-2xl bg-[#fff7ed] px-4 py-3 text-[11px] leading-relaxed text-[#c2410c]">
+        <p className="flex items-start gap-2 rounded-2xl bg-[var(--fin-media-bg)] px-4 py-3 text-[11px] leading-relaxed text-[var(--fin-media-ink)]">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={3} />
           <span>
             La tabla de métricas no cuadra con los movimientos extraídos. Los totales de arriba se
@@ -106,8 +106,8 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
 
       {/* Category bars */}
       {gastos.length > 0 ? (
-        <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
-          <h2 className="text-xs font-bold text-[#78716c]">🎯 En qué se fue</h2>
+        <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">🎯 En qué se fue</h2>
           <ul className="mt-4 flex flex-col gap-3">
             {gastos.map((slice) => {
               const color = CATEGORY_COLOR[slice.categoria];
@@ -131,13 +131,13 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
                       </span>
                     </div>
                     <div className="mt-1.5 flex items-center gap-2">
-                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#f5f3f0]">
+                      <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--fin-soft)]">
                         <div
                           className="h-full rounded-full"
                           style={{ width: `${width}%`, backgroundColor: color }}
                         />
                       </div>
-                      <span className="w-10 shrink-0 text-right text-[11px] font-semibold text-[#a8a29e] tabular-nums">
+                      <span className="w-10 shrink-0 text-right text-[11px] font-semibold text-[var(--fin-ink-faint)] tabular-nums">
                         {slice.pct}%
                       </span>
                     </div>
@@ -151,8 +151,8 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
 
       {/* Alerts */}
       {resultado.alertas.length > 0 ? (
-        <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
-          <h2 className="text-xs font-bold text-[#78716c]">🚨 Alertas</h2>
+        <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">🚨 Alertas</h2>
           <ul className="mt-3 flex flex-col gap-2.5">
             {resultado.alertas.map((alerta, idx) => {
               const tono = TONO_SEVERIDAD[alerta.severidad];
@@ -180,19 +180,19 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
 
       {/* Recommendations */}
       {resultado.recomendaciones.length > 0 ? (
-        <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
-          <h2 className="text-xs font-bold text-[#78716c]">💡 Qué puedes hacer</h2>
+        <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+          <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">💡 Qué puedes hacer</h2>
           <ol className="mt-3 flex flex-col gap-3">
             {resultado.recomendaciones.map((rec, idx) => (
               <li key={`${rec.titulo}-${idx}`} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#f5f3f0] text-[11px] font-extrabold text-[#78716c] tabular-nums">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[var(--fin-soft)] text-[11px] font-extrabold text-[var(--fin-ink-soft)] tabular-nums">
                   {idx + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-extrabold text-[#1c1917]">{rec.titulo}</p>
-                  <p className="mt-0.5 text-[12px] leading-relaxed text-[#78716c]">{rec.detalle}</p>
+                  <p className="text-[13px] font-extrabold text-[var(--fin-ink)]">{rec.titulo}</p>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--fin-ink-soft)]">{rec.detalle}</p>
                   {rec.ahorroMensualCop !== null ? (
-                    <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[#f0fdf4] px-2.5 py-1 text-[11px] font-bold text-[#15803d]">
+                    <p className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-[var(--fin-in-bg)] px-2.5 py-1 text-[11px] font-bold text-[var(--fin-in)]">
                       <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
                       Ahorras ~{formatCop(rec.ahorroMensualCop)}/mes
                     </p>
@@ -206,11 +206,11 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
 
       {/* Things the model could not read confidently */}
       {resultado.advertencias.length > 0 ? (
-        <section className="rounded-3xl bg-[#fefce8] p-5">
-          <h2 className="text-xs font-bold text-[#a16207]">⚠️ Lo que no quedó claro</h2>
+        <section className="rounded-3xl bg-[var(--fin-baja-bg)] p-5">
+          <h2 className="text-xs font-bold text-[var(--fin-baja-ink)]">⚠️ Lo que no quedó claro</h2>
           <ul className="mt-2.5 flex flex-col gap-1.5">
             {resultado.advertencias.map((adv, idx) => (
-              <li key={idx} className="text-[12px] leading-relaxed text-[#a16207]">
+              <li key={idx} className="text-[12px] leading-relaxed text-[var(--fin-baja-ink)]">
                 · {adv}
               </li>
             ))}
@@ -218,7 +218,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
         </section>
       ) : null}
 
-      <p className="px-1 text-[11px] leading-relaxed text-[#a8a29e]">
+      <p className="px-1 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">
         Análisis informativo, no asesoría financiera certificada · generado con plantillas
         locales, sin inteligencia artificial.
       </p>

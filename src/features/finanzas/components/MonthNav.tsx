@@ -16,12 +16,12 @@ export const MonthNav: React.FC<MonthNavProps> = ({ month, onChange, maxMonth, s
   const canGoForward = month < maxMonth;
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-full border border-[#ede9e3] bg-white px-1.5 py-1.5 lg:w-auto lg:justify-start">
+    <div className="flex items-center justify-between gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-1.5 py-1.5 lg:w-auto lg:justify-start">
       <button
         type="button"
         onClick={() => onChange(shift(month, -1))}
         aria-label="Mes anterior"
-        className="rounded-full p-2 text-[#78716c] transition-colors hover:bg-[#f5f3f0] hover:text-[#1c1917]"
+        className="rounded-full p-2 text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
       >
         <ChevronLeft className="h-4 w-4" strokeWidth={3} />
       </button>
@@ -35,7 +35,7 @@ export const MonthNav: React.FC<MonthNavProps> = ({ month, onChange, maxMonth, s
         onClick={() => onChange(shift(month, 1))}
         disabled={!canGoForward}
         aria-label="Mes siguiente"
-        className="rounded-full p-2 text-[#78716c] transition-colors hover:bg-[#f5f3f0] hover:text-[#1c1917] disabled:opacity-25 disabled:hover:bg-transparent"
+        className="rounded-full p-2 text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] disabled:opacity-25 disabled:hover:bg-transparent"
       >
         <ChevronRight className="h-4 w-4" strokeWidth={3} />
       </button>

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useEffect, useState, useContext } from 'react';
 
 type Language = 'es' | 'en';
 
@@ -6,6 +6,8 @@ interface Translations {
   navbar: {
     about: string;
     contact: string;
+    menu: string;
+    login: string;
   };
   hero: {
     role: string;
@@ -46,6 +48,8 @@ const translations: Record<Language, Translations> = {
     navbar: {
       about: 'Sobre Mi',
       contact: 'Contacto',
+      menu: 'Abrir menú de navegación',
+      login: 'Entrar a Finanzas',
     },
     hero: {
       role: 'Software Developer',
@@ -84,6 +88,8 @@ const translations: Record<Language, Translations> = {
     navbar: {
       about: 'About Me',
       contact: 'Contact',
+      menu: 'Open navigation menu',
+      login: 'Sign in to Finanzas',
     },
     hero: {
       role: 'Software Developer',
@@ -128,11 +134,54 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'portafolio:idioma';
+
+const isLanguage = (value: unknown): value is Language => value === 'es' || value === 'en';
+
+/**
+ * A previously chosen language wins; otherwise the browser's own preference
+ * decides, so an English-speaking visitor is not dropped into Spanish. Anything
+ * we don't publish a translation for falls back to Spanish, the site's default.
+ */
+const initialLanguage = (): Language => {
+  if (typeof window === 'undefined') return 'es';
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (isLanguage(stored)) return stored;
+  } catch {
+    // Safari in private mode throws on localStorage access rather than
+    // returning null, and that must not take down the whole site.
+  }
+
+  return navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'es';
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('es'); // Default is Spanish
+  // Lazy initialiser: reading storage on every render would be wasted work, and
+  // this must resolve before first paint to avoid a flash of the wrong language.
+  const [language, setLanguage] = useState<Language>(initialLanguage);
+
+  // Screen readers pick their pronunciation rules from this attribute, so it has
+  // to track the language actually on screen — otherwise the English copy gets
+  // read aloud with Spanish phonetics.
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === 'es' ? 'en' : 'es'));
+    setLanguage((prev) => {
+      const next = prev === 'es' ? 'en' : 'es';
+      // Persisted here rather than in the effect above: only a deliberate switch
+      // is a preference worth remembering. Writing on mount would freeze in
+      // whatever the detection happened to guess on the very first visit.
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        // Private mode — the toggle still works, it just won't be remembered.
+      }
+      return next;
+    });
   };
 
   const value = {

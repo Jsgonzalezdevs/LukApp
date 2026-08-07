@@ -25,3 +25,17 @@ export const parseAmountInput = (text: string): number | null => {
   const value = Number(digits);
   return Number.isFinite(value) && value > 0 ? value : null;
 };
+
+/**
+ * Same, but zero is a legitimate answer.
+ *
+ * A movement of $0 is meaningless, so `parseAmountInput` rejects it. A *balance*
+ * of $0 is not: emptying a pocket is an ordinary thing to do, and rejecting it
+ * would leave the user unable to state the one balance they most need to record.
+ */
+export const parseSaldoInput = (text: string): number | null => {
+  const digits = text.replace(/\D/g, '');
+  if (digits === '') return null;
+  const value = Number(digits);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+};

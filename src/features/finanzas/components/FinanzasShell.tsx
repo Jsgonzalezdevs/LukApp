@@ -8,6 +8,9 @@ interface FinanzasShellProps {
   onSectionChange: (section: SectionId) => void;
   /** Rendered to the right of the title in the desktop header. */
   toolbar?: React.ReactNode;
+  /** Absent in local mode, where there is no account to sign out of. */
+  cuenta?: { email: string; onSalir: () => void };
+  temaToggle?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -29,11 +32,13 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
   section,
   onSectionChange,
   toolbar,
+  cuenta,
+  temaToggle,
   children,
 }) => (
-  <div className="fin-root min-h-[100dvh] bg-[#fbf9f6] text-[#1c1917] antialiased lg:flex">
+  <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased lg:flex">
     {/* ---------- Desktop: persistent sidebar ---------- */}
-    <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[#ede9e3] lg:bg-white lg:px-4 lg:py-6 lg:sticky lg:top-0">
+    <aside className="hidden lg:flex lg:h-[100dvh] lg:w-60 lg:shrink-0 lg:flex-col lg:justify-between lg:border-r lg:border-[var(--fin-line)] lg:bg-[var(--fin-card)] lg:px-4 lg:py-6 lg:sticky lg:top-0">
       <div>
         <div className="flex items-center gap-2.5 px-2">
           <BrandMark className="h-6 w-6" />
@@ -51,8 +56,8 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
                 aria-current={active ? 'page' : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition-colors ${
                   active
-                    ? 'bg-[#1c1917] text-white'
-                    : 'text-[#78716c] hover:bg-[#f5f3f0] hover:text-[#1c1917]'
+                    ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
+                    : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
                 }`}
               >
                 <span className="fin-emoji text-base" aria-hidden="true">
@@ -65,21 +70,46 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
         </nav>
       </div>
 
-      <p className="px-3 text-[11px] leading-relaxed text-[#a8a29e]">
-        Privado · solo para ti
-      </p>
+      <div className="px-3">
+        {temaToggle ? <div className="mb-3">{temaToggle}</div> : null}
+        {cuenta ? (
+          <>
+            <p className="truncate text-[11px] font-semibold text-[var(--fin-ink-soft)]">{cuenta.email}</p>
+            <button
+              type="button"
+              onClick={cuenta.onSalir}
+              className="mt-1.5 text-[11px] font-bold text-[var(--fin-ink-faint)] underline-offset-2 hover:text-[var(--fin-ink)] hover:underline"
+            >
+              Cerrar sesión
+            </button>
+          </>
+        ) : null}
+        <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">Privado · solo para ti</p>
+      </div>
     </aside>
 
     {/* ---------- Content ---------- */}
     <div className="flex min-w-0 flex-1 flex-col">
       {/* Mobile header. Hidden on desktop, where the sidebar carries the brand. */}
-      <header className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-[#ede9e3] bg-[#fbf9f6]/85 px-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] pb-3.5 backdrop-blur-md lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center gap-2.5 border-b border-[var(--fin-line)] bg-[var(--fin-bg-blur)] px-4 pt-[calc(env(safe-area-inset-top)+0.875rem)] pb-3.5 backdrop-blur-md lg:hidden">
         <BrandMark className="h-5 w-5" />
         <h1 className="text-sm font-extrabold tracking-tight">Finanzas</h1>
+        <div className="ml-auto flex items-center gap-2">
+          {temaToggle}
+          {cuenta ? (
+            <button
+              type="button"
+              onClick={cuenta.onSalir}
+              className="text-[11px] font-bold text-[var(--fin-ink-faint)]"
+            >
+              Salir
+            </button>
+          ) : null}
+        </div>
       </header>
 
       {/* Desktop header: section title + whatever the view wants in the toolbar. */}
-      <header className="hidden lg:flex lg:items-center lg:justify-between lg:gap-4 lg:border-b lg:border-[#ede9e3] lg:px-8 lg:py-5">
+      <header className="hidden lg:flex lg:items-center lg:justify-between lg:gap-4 lg:border-b lg:border-[var(--fin-line)] lg:px-8 lg:py-5">
         <h1 className="text-xl font-extrabold tracking-tight">{sectionLabel(section)}</h1>
         {toolbar}
       </header>
@@ -93,7 +123,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
 
     {/* ---------- Mobile: fixed bottom tab bar ---------- */}
     <nav
-      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-3 border-t border-[#ede9e3] bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[var(--fin-line)] bg-[var(--fin-card)]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
       aria-label="Secciones"
     >
       {SECTIONS.map((item) => {
@@ -104,21 +134,23 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
             type="button"
             onClick={() => onSectionChange(item.id)}
             aria-current={active ? 'page' : undefined}
-            className="flex flex-col items-center gap-0.5 py-2.5"
+            // `min-w-0` lets the label truncate instead of forcing the grid
+            // wider than the screen: "Movimientos" does not fit a fifth of 375px.
+            className="flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2.5"
           >
             {/* The active pill is the second channel: the label also changes
                 weight and colour, so it never relies on colour alone. */}
             <span
               className={`fin-emoji rounded-full px-3 py-1 text-lg transition-colors ${
-                active ? 'bg-[#f5f3f0]' : ''
+                active ? 'bg-[var(--fin-soft)]' : ''
               }`}
               aria-hidden="true"
             >
               {item.emoji}
             </span>
             <span
-              className={`text-[10px] transition-colors ${
-                active ? 'font-extrabold text-[#1c1917]' : 'font-semibold text-[#a8a29e]'
+              className={`max-w-full truncate text-[9px] transition-colors ${
+                active ? 'font-extrabold text-[var(--fin-ink)]' : 'font-semibold text-[var(--fin-ink-faint)]'
               }`}
             >
               {item.label}

@@ -1,0 +1,172 @@
+import { describe, it, expect } from 'vitest';
+import type { Cajita, CajitaMovimiento } from '../data/modelos';
+import {
+  ajusteHacia,
+  historialDeCajita,
+  resumenDeCajitas,
+  saldoDeCajita,
+  saldosPorCajita,
+  totalEnCajitas,
+} from './cajitas';
+
+const mov = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => ({
+  id: 'm1',
+  cajitaId: 'c1',
+  kind: 'deposito',
+  deltaCop: 100000,
+  occurredOn: '2026-08-01',
+  nota: '',
+  createdAt: '2026-08-01T10:00:00.000Z',
+  ...over,
+});
+
+const caj = (over: Partial<Cajita> = {}): Cajita => ({
+  id: 'c1',
+  nombre: 'Vacaciones',
+  emoji: '🏖️',
+  metaCop: null,
+  createdAt: '2026-08-01T00:00:00.000Z',
+  archivedAt: null,
+  ...over,
+});
+
+describe('saldosPorCajita', () => {
+  it('sums deltas per pocket', () => {
+    const saldos = saldosPorCajita([
+      mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }),
+      mov({ id: 'b', cajitaId: 'c1', deltaCop: 50000 }),
+      mov({ id: 'c', cajitaId: 'c2', deltaCop: 30000 }),
+    ]);
+
+    expect(saldos.get('c1')).toBe(150000);
+    expect(saldos.get('c2')).toBe(30000);
+  });
+
+  it('nets withdrawals against deposits', () => {
+    const saldos = saldosPorCajita([
+      mov({ id: 'a', deltaCop: 200000 }),
+      mov({ id: 'b', kind: 'retiro', deltaCop: -80000 }),
+    ]);
+
+    expect(saldos.get('c1')).toBe(120000);
+  });
+
+  it('is empty for a pocket with no movements', () => {
+    expect(saldoDeCajita([], 'c1')).toBe(0);
+  });
+});
+
+describe('ajusteHacia', () => {
+  it('produces the delta that reaches the stated balance', () => {
+    expect(ajusteHacia(150000, 200000)).toBe(50000);
+  });
+
+  it('goes negative when the real balance is lower than recorded', () => {
+    expect(ajusteHacia(200000, 150000)).toBe(-50000);
+  });
+
+  it('is zero when nothing changed', () => {
+    expect(ajusteHacia(150000, 150000)).toBe(0);
+  });
+
+  it('round-trips: applying the adjustment lands exactly on the target', () => {
+    const movimientos = [mov({ deltaCop: 137_500 })];
+    const actual = saldoDeCajita(movimientos, 'c1');
+
+    const delta = ajusteHacia(actual, 300_000);
+    const despues = saldoDeCajita([...movimientos, mov({ id: 'x', deltaCop: delta })], 'c1');
+
+    expect(despues).toBe(300_000);
+  });
+});
+
+describe('historialDeCajita', () => {
+  it('returns newest first with the balance after each movement', () => {
+    const filas = historialDeCajita(
+      [
+        mov({ id: 'a', occurredOn: '2026-08-01', deltaCop: 100000 }),
+        mov({ id: 'b', occurredOn: '2026-08-05', deltaCop: 50000 }),
+        mov({ id: 'c', occurredOn: '2026-08-10', kind: 'retiro', deltaCop: -20000 }),
+      ],
+      'c1',
+    );
+
+    expect(filas.map((f) => f.movimiento.id)).toEqual(['c', 'b', 'a']);
+    // Each row shows the balance AFTER itself, not before.
+    expect(filas.map((f) => f.saldoDespues)).toEqual([130000, 150000, 100000]);
+  });
+
+  it('breaks same-day ties by entry order', () => {
+    const filas = historialDeCajita(
+      [
+        mov({ id: 'segundo', occurredOn: '2026-08-01', deltaCop: 10000, createdAt: '2026-08-01T12:00:00.000Z' }),
+        mov({ id: 'primero', occurredOn: '2026-08-01', deltaCop: 90000, createdAt: '2026-08-01T09:00:00.000Z' }),
+      ],
+      'c1',
+    );
+
+    expect(filas.map((f) => f.movimiento.id)).toEqual(['segundo', 'primero']);
+    expect(filas.map((f) => f.saldoDespues)).toEqual([100000, 90000]);
+  });
+
+  it('ignores movements from other pockets', () => {
+    const filas = historialDeCajita(
+      [mov({ id: 'mio', cajitaId: 'c1' }), mov({ id: 'ajeno', cajitaId: 'c2' })],
+      'c1',
+    );
+
+    expect(filas).toHaveLength(1);
+    expect(filas[0].movimiento.id).toBe('mio');
+  });
+});
+
+describe('totalEnCajitas', () => {
+  it('adds up live pockets', () => {
+    const total = totalEnCajitas(
+      [caj({ id: 'c1' }), caj({ id: 'c2' })],
+      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 250000 })],
+    );
+
+    expect(total).toBe(350000);
+  });
+
+  it('leaves archived pockets out of the total', () => {
+    const total = totalEnCajitas(
+      [caj({ id: 'c1' }), caj({ id: 'c2', archivedAt: '2026-08-01T00:00:00.000Z' })],
+      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 100000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 250000 })],
+    );
+
+    expect(total).toBe(100000);
+  });
+});
+
+describe('resumenDeCajitas', () => {
+  it('sorts by balance, largest first', () => {
+    const resumen = resumenDeCajitas(
+      [caj({ id: 'c1', nombre: 'Chica' }), caj({ id: 'c2', nombre: 'Grande' })],
+      [mov({ id: 'a', cajitaId: 'c1', deltaCop: 10000 }), mov({ id: 'b', cajitaId: 'c2', deltaCop: 500000 })],
+    );
+
+    expect(resumen.map((r) => r.cajita.nombre)).toEqual(['Grande', 'Chica']);
+  });
+
+  it('reports progress against the pocket target', () => {
+    const [resumen] = resumenDeCajitas([caj({ metaCop: 400000 })], [mov({ deltaCop: 100000 })]);
+
+    expect(resumen.pct).toBe(25);
+  });
+
+  it('caps progress at 100 when the target is overshot', () => {
+    const [resumen] = resumenDeCajitas([caj({ metaCop: 100000 })], [mov({ deltaCop: 250000 })]);
+
+    expect(resumen.pct).toBe(100);
+    // The real balance is still reported in full — only the bar is capped.
+    expect(resumen.saldoCop).toBe(250000);
+  });
+
+  it('has no percentage without a target', () => {
+    const [resumen] = resumenDeCajitas([caj({ metaCop: null })], [mov({ deltaCop: 100000 })]);
+
+    expect(resumen.pct).toBeNull();
+  });
+});

@@ -1,27 +1,147 @@
-/* The finance app is a warm, light, colourful surface — deliberately nothing like
-   the portfolio's black. That is safe because /finanzas is a separate Vite HTML
-   entry with its own <head> and its own body class, so none of this can reach the
-   portfolio. The classes are stamped on <html>/<body> in finanzas/index.html
-   rather than set from an effect: a class is declarative, needs no cleanup, and
-   cannot leak across a StrictMode double-invoke.
+/* The finance app is a separate Vite HTML entry with its own <head> and body
+   class, so nothing here can reach the portfolio. The classes are stamped on
+   <html>/<body> in finanzas/index.html rather than set from an effect: a class
+   is declarative, needs no cleanup, and cannot leak across a StrictMode
+   double-invoke.
 
-   These selectors are all class-based (0,1,0) so they outrank index.css's
+   These selectors are class-based (0,1,0) so they outrank index.css's
    element-level `body {}` rules (0,0,1), and this file is imported after
    index.css so it also wins the `:root` tie. */
 
+/* ---------------------------------------------------------------- tokens ---
+   Every colour in the app resolves through one of these. They live on <html>
+   rather than on the app's root <div> for one specific reason: the login panel
+   renders OUTSIDE that div, and tokens scoped to it would leave the whole
+   signed-out experience unstyled.
+
+   Two axes, in priority order:
+     1. `data-tema` on <html> — an explicit choice by the user, always wins.
+     2. `prefers-color-scheme` — the system default when no choice was made. */
+
 .fin-html {
-  /* index.css sets `color-scheme: dark`, which would paint form controls,
-     scrollbars and the overscroll gutter dark on a light page. */
   color-scheme: light;
+
+  /* Surfaces */
+  --fin-bg: #fbf9f6;
+  --fin-bg-blur: rgb(251 249 246 / 0.85);
+  --fin-card: #ffffff;
+  --fin-soft: #f5f3f0;
+  --fin-line: #ede9e3;
+  --fin-scrim: rgb(28 25 23 / 0.4);
+
+  /* Text, darkest to lightest */
+  --fin-ink: #1c1917;
+  --fin-ink-soft: #78716c;
+  --fin-ink-faint: #a8a29e;
+  --fin-ink-ghost: #d6d3d1;
+
+  /* The primary button. Separate from --fin-ink because in dark mode text goes
+     light while this must go light-with-dark-text — opposite directions. */
+  --fin-accent: #1c1917;
+  --fin-accent-hover: #292524;
+  --fin-on-accent: #ffffff;
+
+  /* Money direction and severity. Colour never carries meaning alone here — an
+     emoji or a +/- sign always accompanies it — but these still have to stay
+     legible against their own backgrounds in both themes. */
+  --fin-in: #15803d;
+  --fin-in-bg: #f0fdf4;
+  --fin-out: #be123c;
+  --fin-out-bg: #fff1f2;
+  --fin-out-ink: #9f1239;
+  --fin-warn: #d97706;
+  --fin-warn-bg: #fef3c7;
+  --fin-warn-ink: #92400e;
+  --fin-media-bg: #fff7ed;
+  --fin-media-ink: #c2410c;
+  --fin-baja-bg: #fefce8;
+  --fin-baja-ink: #a16207;
+
   /* index.css sets `scroll-behavior: smooth` on html, which animates every
      programmatic scroll — visibly laggy when a row is appended. */
   scroll-behavior: auto;
-  background-color: #fbf9f6;
+  background-color: var(--fin-bg);
+}
+
+/* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,
+   and a neutral-cold dark would read as a different product. Surfaces step up in
+   lightness as they come forward (bg < card < soft), the inverse of light mode,
+   which is what makes depth legible without shadows. */
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']) {
+    color-scheme: dark;
+
+    --fin-bg: #1a1817;
+    --fin-bg-blur: rgb(26 24 23 / 0.85);
+    --fin-card: #232120;
+    --fin-soft: #2c2a28;
+    --fin-line: #35322f;
+    --fin-scrim: rgb(0 0 0 / 0.6);
+
+    --fin-ink: #f5f3f0;
+    --fin-ink-soft: #a8a29e;
+    --fin-ink-faint: #857f7a;
+    --fin-ink-ghost: #57534e;
+
+    --fin-accent: #f5f3f0;
+    --fin-accent-hover: #ffffff;
+    --fin-on-accent: #1a1817;
+
+    /* Lightened well past their light-mode values: #15803d on #232120 sits
+       around 2.5:1 and is unreadable. These clear 4.5:1 on the dark surfaces. */
+    --fin-in: #4ade80;
+    --fin-in-bg: rgb(74 222 128 / 0.12);
+    --fin-out: #fb7185;
+    --fin-out-bg: rgb(251 113 133 / 0.12);
+    --fin-out-ink: #fda4af;
+    --fin-warn: #fbbf24;
+    --fin-warn-bg: rgb(251 191 36 / 0.12);
+    --fin-warn-ink: #fcd34d;
+    --fin-media-bg: rgb(251 146 60 / 0.12);
+    --fin-media-ink: #fdba74;
+    --fin-baja-bg: rgb(250 204 21 / 0.12);
+    --fin-baja-ink: #fde047;
+  }
+}
+
+/* Explicit choice. Repeated rather than shared with the media query because a
+   `:is()` grouping would raise specificity and make the two rules fight. */
+.fin-html[data-tema='oscuro'] {
+  color-scheme: dark;
+
+  --fin-bg: #1a1817;
+  --fin-bg-blur: rgb(26 24 23 / 0.85);
+  --fin-card: #232120;
+  --fin-soft: #2c2a28;
+  --fin-line: #35322f;
+  --fin-scrim: rgb(0 0 0 / 0.6);
+
+  --fin-ink: #f5f3f0;
+  --fin-ink-soft: #a8a29e;
+  --fin-ink-faint: #857f7a;
+  --fin-ink-ghost: #57534e;
+
+  --fin-accent: #f5f3f0;
+  --fin-accent-hover: #ffffff;
+  --fin-on-accent: #1a1817;
+
+  --fin-in: #4ade80;
+  --fin-in-bg: rgb(74 222 128 / 0.12);
+  --fin-out: #fb7185;
+  --fin-out-bg: rgb(251 113 133 / 0.12);
+  --fin-out-ink: #fda4af;
+  --fin-warn: #fbbf24;
+  --fin-warn-bg: rgb(251 191 36 / 0.12);
+  --fin-warn-ink: #fcd34d;
+  --fin-media-bg: rgb(251 146 60 / 0.12);
+  --fin-media-ink: #fdba74;
+  --fin-baja-bg: rgb(250 204 21 / 0.12);
+  --fin-baja-ink: #fde047;
 }
 
 .fin-page {
-  background-color: #fbf9f6;
-  color: #1c1917;
+  background-color: var(--fin-bg);
+  color: var(--fin-ink);
   /* `body { overflow-x: hidden }` makes the UA compute overflow-y: auto on body,
      which turns body into the scroll container and breaks position: sticky
      descendants — the header in FinanzasApp is sticky. */
@@ -30,42 +150,31 @@
   overscroll-behavior-y: none;
 }
 
-.fin-root {
-  --fin-bg: #fbf9f6;
-  --fin-card: #ffffff;
-  --fin-ink: #1c1917;
-  --fin-ink-soft: #78716c;
-  --fin-ink-faint: #a8a29e;
-  --fin-line: #ede9e3;
-  --fin-in: #16a34a;
-  --fin-out: #e11d48;
-  --fin-warn: #d97706;
-}
-
 /* Selection and focus rings from index.css are tuned for white-on-black. */
 .fin-page ::selection {
-  background-color: rgb(28 25 23 / 0.12);
-  color: #1c1917;
+  background-color: color-mix(in srgb, var(--fin-ink) 14%, transparent);
+  color: var(--fin-ink);
 }
 
 .fin-page button:focus-visible,
 .fin-page a:focus-visible,
 .fin-page input:focus-visible,
+.fin-page select:focus-visible,
 .fin-page textarea:focus-visible {
-  outline: 2px solid #1c1917;
+  outline: 2px solid var(--fin-ink);
   outline-offset: 3px;
 }
 
 .fin-page ::-webkit-scrollbar-track {
-  background: #fbf9f6;
+  background: var(--fin-bg);
 }
 
 .fin-page ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
+  background: var(--fin-ink-ghost);
 }
 
 .fin-page ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: var(--fin-ink-faint);
 }
 
 /* Emoji render through the system colour-emoji font. Naming it explicitly keeps
@@ -75,4 +184,69 @@
     'Android Emoji', sans-serif;
   font-weight: 400;
   line-height: 1;
+}
+
+/* The login card's aurora. Two soft radial washes drifting behind a blurred
+   panel — cheap (no canvas, no JS) and it reads as depth rather than decoration.
+   Kept out of the component so the keyframes are not re-declared per render. */
+.fin-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fin-aurora::before,
+.fin-aurora::after {
+  content: '';
+  position: absolute;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+.fin-aurora::before {
+  background: radial-gradient(circle, #f59e0b, transparent 70%);
+  top: -12rem;
+  left: -10rem;
+  animation: fin-deriva 18s ease-in-out infinite alternate;
+}
+
+.fin-aurora::after {
+  background: radial-gradient(circle, #38bdf8, transparent 70%);
+  bottom: -14rem;
+  right: -10rem;
+  animation: fin-deriva 22s ease-in-out infinite alternate-reverse;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']) .fin-aurora::before,
+  .fin-html:not([data-tema='claro']) .fin-aurora::after {
+    opacity: 0.32;
+  }
+}
+
+.fin-html[data-tema='oscuro'] .fin-aurora::before,
+.fin-html[data-tema='oscuro'] .fin-aurora::after {
+  opacity: 0.32;
+}
+
+@keyframes fin-deriva {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3rem, 2rem, 0) scale(1.15);
+  }
+}
+
+/* Anyone who asked the system to stop animating means it — the aurora is pure
+   decoration and has no business overriding that. */
+@media (prefers-reduced-motion: reduce) {
+  .fin-aurora::before,
+  .fin-aurora::after {
+    animation: none;
+  }
 }

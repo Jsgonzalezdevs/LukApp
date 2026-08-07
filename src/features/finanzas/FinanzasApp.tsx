@@ -1,75 +1,164 @@
 import React, { useMemo, useState } from 'react';
+import { AlertTriangle, X } from 'lucide-react';
 import type { Transaction } from './types';
+import { COPY } from './copy';
 import { byCategory, forMonth, monthTotals } from './lib/aggregate';
 import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
+import { nuevoId } from './lib/id';
 import { parseTransaction } from './lib/parseTransaction';
 import type { ParsedTransaction } from './lib/parseTransaction';
+import { useAlmacen } from './data/useAlmacen';
+import { useSesion } from './data/useSesion';
+import { useTema } from './data/useTema';
+import { obtenerSupabase } from './data/supabase';
+import { RepositorioSupabase } from './data/repositorioSupabase';
+import { LoginPanel } from './components/LoginPanel';
 import { AnalistaView } from './components/AnalistaView';
+import { CajitasView } from './components/CajitasView';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
 import { DictationInput } from './components/DictationInput';
 import { FinanzasShell } from './components/FinanzasShell';
-import type { SectionId } from './sections';
+import { TemaToggle } from './components/TemaToggle';
+import { MetasView } from './components/MetasView';
+import { PESTANAS_AHORRO } from './sections';
+import type { PestanaAhorro, SectionId } from './sections';
+import type { Tema } from './data/useTema';
 import { KpiRow } from './components/KpiRow';
 import { MonthNav } from './components/MonthNav';
+import { TendenciasView } from './components/TendenciasView';
 import { TransactionList } from './components/TransactionList';
 import './finanzas.css';
 
-// `crypto.randomUUID` needs a secure context. Falls back so testing over a LAN
-// IP degrades instead of throwing.
-const newId = (): string => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+/**
+ * Rebuilds the parser's output shape from a stored row so editing can reuse
+ * ConfirmSheet untouched. Everything is reported as high confidence because the
+ * user already confirmed these values once — nothing here was guessed just now.
+ */
+const comoParseado = (tx: Transaction): ParsedTransaction => ({
+  kind: tx.kind,
+  amount: tx.amountCop,
+  category: tx.category,
+  description: tx.description,
+  raw: tx.rawTranscript,
+  confidence: 1,
+  needsReview: false,
+  signals: {
+    amountSource: 'digits',
+    kindSource: 'keyword',
+    categorySource: 'keyword',
+    ambiguousAmount: false,
+  },
+});
+
+/**
+ * Chooses how the app is reached before it renders anything.
+ *
+ * Three outcomes, and the local one matters most: with no Supabase project
+ * configured the tool must still work exactly as it does today, on device
+ * storage and with no login wall it has no way to satisfy.
+ */
+export const FinanzasApp: React.FC = () => {
+  const sesion = useSesion();
+  const { tema, setTema } = useTema();
+
+  if (sesion.estado.modo === 'cargando') {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
+        <p className="text-sm font-bold text-[var(--fin-ink-faint)]">{COPY.almacen.cargando}</p>
+      </div>
+    );
   }
-  return `tx-${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+
+  if (sesion.estado.modo === 'anonimo') {
+    return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
+  }
+
+  const cuenta =
+    sesion.estado.modo === 'autenticado'
+      ? { email: sesion.estado.email, onSalir: () => void sesion.salir() }
+      : undefined;
+
+  return (
+    <FinanzasPanel
+      // Remounts on account change, so one user's data can never be left on
+      // screen under another's session.
+      key={sesion.estado.modo === 'autenticado' ? sesion.estado.userId : 'local'}
+      userId={sesion.estado.modo === 'autenticado' ? sesion.estado.userId : null}
+      cuenta={cuenta}
+      tema={tema}
+      onCambiarTema={setTema}
+    />
+  );
 };
 
-export const FinanzasApp: React.FC = () => {
-  // Phase 1 keeps everything in memory on purpose: the goal is to get the parser
-  // onto a real phone with a real voice before any backend exists.
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+interface FinanzasPanelProps {
+  /** Null in local mode, where storage is this device's IndexedDB. */
+  userId: string | null;
+  cuenta?: { email: string; onSalir: () => void };
+  tema: Tema;
+  onCambiarTema: (tema: Tema) => void;
+}
+
+const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onCambiarTema }) => {
+  const repositorio = useMemo(() => {
+    if (!userId) return undefined;
+    const cliente = obtenerSupabase();
+    return cliente ? new RepositorioSupabase(cliente, userId) : undefined;
+  }, [userId]);
+
+  const almacen = useAlmacen(repositorio);
+  const { transacciones, cajitas, cajitaMovimientos, metas } = almacen.datos;
+
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
+  const [editando, setEditando] = useState<Transaction | null>(null);
   const [section, setSection] = useState<SectionId>('resumen');
+  const [pestanaAhorro, setPestanaAhorro] = useState<PestanaAhorro>('cajitas');
 
   const today = bogotaDate();
   const thisMonth = monthKey(today);
   const [month, setMonth] = useState(thisMonth);
 
   const { totals, gastos, ingresos, delMes } = useMemo(() => {
-    const mes = forMonth(transactions, month);
+    const mes = forMonth(transacciones, month);
     return {
       delMes: mes,
       totals: monthTotals(mes),
       gastos: byCategory(mes, 'gasto'),
       ingresos: byCategory(mes, 'ingreso'),
     };
-  }, [transactions, month]);
+  }, [transacciones, month]);
 
   const handleSubmit = (text: string) => setPending(parseTransaction(text));
 
   const handleSave = (draft: ConfirmDraft) => {
-    setTransactions((prev) => [
-      {
-        id: newId(),
-        kind: draft.kind,
-        amountCop: draft.amountCop,
-        category: draft.category,
-        description: draft.description,
-        occurredOn: bogotaDate(),
-        rawTranscript: draft.rawTranscript,
-        createdAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
+    void almacen.agregarTransaccion({
+      id: nuevoId('tx'),
+      kind: draft.kind,
+      amountCop: draft.amountCop,
+      category: draft.category,
+      description: draft.description,
+      occurredOn: bogotaDate(),
+      rawTranscript: draft.rawTranscript,
+      createdAt: new Date().toISOString(),
+    });
     // Jump back to the month the entry landed in, so a save is never invisible
     // because the user was browsing an older month.
     setMonth(thisMonth);
     setPending(null);
   };
 
-  const handleDelete = (id: string) => {
-    setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+  const handleUpdate = (draft: ConfirmDraft) => {
+    if (!editando) return;
+    void almacen.actualizarTransaccion({
+      ...editando,
+      kind: draft.kind,
+      amountCop: draft.amountCop,
+      category: draft.category,
+      description: draft.description,
+    });
+    setEditando(null);
   };
 
   const monthNav = (
@@ -77,20 +166,58 @@ export const FinanzasApp: React.FC = () => {
   );
 
   const registrar = (
-    <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
-      <h2 className="text-xs font-bold text-[#78716c]">✍️ Registrar un movimiento</h2>
+    <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+      <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">✍️ Registrar un movimiento</h2>
       <div className="mt-3">
         <DictationInput onSubmit={handleSubmit} />
       </div>
     </section>
   );
 
+  const conBarraDeMes = section === 'resumen' || section === 'movimientos';
+
+  if (almacen.cargando) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
+        <p className="text-sm font-bold text-[var(--fin-ink-faint)]">{COPY.almacen.cargando}</p>
+      </div>
+    );
+  }
+
   return (
     <FinanzasShell
       section={section}
       onSectionChange={setSection}
-      toolbar={section === 'analista' ? undefined : monthNav}
+      toolbar={conBarraDeMes ? monthNav : undefined}
+      cuenta={cuenta}
+      temaToggle={<TemaToggle tema={tema} onCambiar={onCambiarTema} />}
     >
+      {/* Storage that cannot remember has to say so — silently losing a month of
+          entries is far worse than an ugly banner. */}
+      {!almacen.persistente ? (
+        <div className="mx-auto mb-4 flex max-w-6xl items-start gap-2.5 rounded-2xl bg-[var(--fin-warn-bg)] px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]" strokeWidth={3} />
+          <p className="text-[11px] leading-relaxed text-[var(--fin-warn-ink)]">
+            {COPY.almacen.sinPersistencia}
+          </p>
+        </div>
+      ) : null}
+
+      {almacen.error ? (
+        <div className="mx-auto mb-4 flex max-w-6xl items-start gap-2.5 rounded-2xl bg-[var(--fin-out-bg)] px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" strokeWidth={3} />
+          <p className="flex-1 text-[11px] leading-relaxed text-[var(--fin-out-ink)]">{almacen.error}</p>
+          <button
+            type="button"
+            onClick={almacen.descartarError}
+            aria-label={COPY.almacen.descartar}
+            className="shrink-0 rounded-lg p-1 text-[var(--fin-out-ink)]"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={3} />
+          </button>
+        </div>
+      ) : null}
+
       {section === 'resumen' ? (
         // Mobile stacks; from `lg` the same blocks become a two-column dashboard
         // with the KPI row spanning the full width above them.
@@ -108,12 +235,13 @@ export const FinanzasApp: React.FC = () => {
             <div className="flex flex-col gap-5">
               <CategoryBreakdown slices={ingresos} title="🌱 De dónde entra" />
 
-              <section className="rounded-3xl border border-[#ede9e3] bg-white p-5">
-                <h2 className="text-xs font-bold text-[#78716c]">🕒 Últimos movimientos</h2>
+              <section className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5">
+                <h2 className="text-xs font-bold text-[var(--fin-ink-soft)]">🕒 Últimos movimientos</h2>
                 <div className="mt-3">
                   <TransactionList
                     transactions={delMes.slice(0, 5)}
-                    onDelete={handleDelete}
+                    onDelete={(id) => void almacen.borrarTransaccion(id)}
+                    onEdit={setEditando}
                   />
                 </div>
               </section>
@@ -126,20 +254,85 @@ export const FinanzasApp: React.FC = () => {
         <div className="mx-auto flex max-w-3xl flex-col gap-5">
           <div className="lg:hidden">{monthNav}</div>
           {registrar}
-          <TransactionList transactions={delMes} onDelete={handleDelete} />
+          <TransactionList
+            transactions={delMes}
+            onDelete={(id) => void almacen.borrarTransaccion(id)}
+            onEdit={setEditando}
+          />
+        </div>
+      ) : null}
+
+      {section === 'tendencias' ? (
+        <TendenciasView transacciones={transacciones} mes={month} />
+      ) : null}
+
+      {section === 'ahorro' ? (
+        <div className="mx-auto flex max-w-3xl flex-col gap-5">
+          <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-[var(--fin-soft)] p-1.5">
+            {PESTANAS_AHORRO.map((pestana) => {
+              const activa = pestanaAhorro === pestana.id;
+              return (
+                <button
+                  key={pestana.id}
+                  type="button"
+                  onClick={() => setPestanaAhorro(pestana.id)}
+                  aria-pressed={activa}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-colors ${
+                    activa ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'text-[var(--fin-ink-soft)]'
+                  }`}
+                >
+                  <span className="fin-emoji" aria-hidden="true">
+                    {pestana.emoji}
+                  </span>
+                  {pestana.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {pestanaAhorro === 'cajitas' ? (
+            <CajitasView
+              cajitas={cajitas}
+              movimientos={cajitaMovimientos}
+              onCrear={(datos) => void almacen.crearCajita(datos)}
+              onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+              onMovimiento={(cajitaId, kind, deltaCop) =>
+                void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
+              }
+              onEliminar={(id) => void almacen.borrarCajita(id)}
+            />
+          ) : (
+            <MetasView
+              metas={metas}
+              cajitas={cajitas}
+              movimientos={cajitaMovimientos}
+              onCrear={(datos) => void almacen.crearMeta(datos)}
+              onActualizar={(meta) => void almacen.actualizarMeta(meta)}
+              onEliminar={(id) => void almacen.borrarMeta(id)}
+            />
+          )}
         </div>
       ) : null}
 
       {section === 'analista' ? (
         <AnalistaView
-          existentes={transactions}
-          onImportar={(nuevos) => setTransactions((prev) => [...nuevos, ...prev])}
+          existentes={transacciones}
+          onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
         />
       ) : null}
 
       {/* Confirmation always gates the write — see ConfirmSheet for why. */}
       {pending ? (
         <ConfirmSheet parsed={pending} onSave={handleSave} onCancel={() => setPending(null)} />
+      ) : null}
+
+      {editando ? (
+        <ConfirmSheet
+          modo="editar"
+          parsed={comoParseado(editando)}
+          onSave={handleUpdate}
+          onCancel={() => setEditando(null)}
+        />
       ) : null}
     </FinanzasShell>
   );

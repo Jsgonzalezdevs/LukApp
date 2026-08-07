@@ -36,6 +36,20 @@ const bogotaDateFromUtcParts = (date: Date): string => {
   return `${y}-${m}-${d}`;
 };
 
+/**
+ * Whole days from `desde` to `hasta`, negative when `hasta` is earlier.
+ *
+ * Built on Date.UTC rather than local Date construction so it can never be off
+ * by one across a DST boundary — Colombia has no DST, but the browser running
+ * this might be anywhere.
+ */
+export const daysBetween = (desde: string, hasta: string): number => {
+  const [y1, m1, d1] = desde.split('-').map(Number);
+  const [y2, m2, d2] = hasta.split('-').map(Number);
+  const MS_POR_DIA = 86_400_000;
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / MS_POR_DIA);
+};
+
 /** "Hoy" / "Ayer" / "28 jul" for a day header. */
 export const dayLabel = (isoDate: string, today: string = bogotaDate()): string => {
   if (isoDate === today) return 'Hoy';

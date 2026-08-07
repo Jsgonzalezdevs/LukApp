@@ -18,11 +18,11 @@ interface Kpi {
 
 /** Bands for the savings-rate tile. Paired with an emoji and words, never colour alone. */
 const savingsBand = (rate: number | null): { emoji: string; hint: string; bg: string; ink: string } => {
-  if (rate === null) return { emoji: '🫥', hint: 'sin ingresos aún', bg: '#f5f3f0', ink: '#78716c' };
-  if (rate < 0) return { emoji: '🔴', hint: 'gastaste más de lo que entró', bg: '#fff1f2', ink: '#be123c' };
-  if (rate < 10) return { emoji: '🟠', hint: 'muy justo', bg: '#fff7ed', ink: '#c2410c' };
-  if (rate < 20) return { emoji: '🟡', hint: 'aceptable', bg: '#fefce8', ink: '#a16207' };
-  return { emoji: '🟢', hint: 'buen colchón', bg: '#f0fdf4', ink: '#15803d' };
+  if (rate === null) return { emoji: '🫥', hint: 'sin ingresos aún', bg: 'var(--fin-soft)', ink: 'var(--fin-ink-soft)' };
+  if (rate < 0) return { emoji: '🔴', hint: 'gastaste más de lo que entró', bg: 'var(--fin-out-bg)', ink: 'var(--fin-out)' };
+  if (rate < 10) return { emoji: '🟠', hint: 'muy justo', bg: 'var(--fin-media-bg)', ink: 'var(--fin-media-ink)' };
+  if (rate < 20) return { emoji: '🟡', hint: 'aceptable', bg: 'var(--fin-baja-bg)', ink: 'var(--fin-baja-ink)' };
+  return { emoji: '🟢', hint: 'buen colchón', bg: 'var(--fin-in-bg)', ink: 'var(--fin-in)' };
 };
 
 export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
@@ -35,24 +35,24 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
       label: 'Balance',
       value: formatCop(totals.balance),
       hint: positivo ? 'te sobró' : 'te faltó',
-      bg: positivo ? '#f0fdf4' : '#fff1f2',
-      ink: positivo ? '#15803d' : '#be123c',
+      bg: positivo ? 'var(--fin-in-bg)' : 'var(--fin-out-bg)',
+      ink: positivo ? 'var(--fin-in)' : 'var(--fin-out)',
     },
     {
       emoji: '💰',
       label: 'Ingresos',
       value: formatCop(totals.ingresos),
       hint: 'entró este mes',
-      bg: '#f0fdf4',
-      ink: '#15803d',
+      bg: 'var(--fin-in-bg)',
+      ink: 'var(--fin-in)',
     },
     {
       emoji: '💸',
       label: 'Gastos',
       value: formatCop(totals.gastos),
       hint: 'salió este mes',
-      bg: '#fff1f2',
-      ink: '#be123c',
+      bg: 'var(--fin-out-bg)',
+      ink: 'var(--fin-out)',
     },
     {
       emoji: band.emoji,
@@ -74,7 +74,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, delay: idx * 0.05, ease: 'easeOut' }}
-          className="rounded-2xl border border-[#ede9e3] bg-white p-4"
+          className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4"
         >
           <div className="flex items-center gap-2">
             <span
@@ -84,7 +84,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
             >
               {kpi.emoji}
             </span>
-            <span className="truncate text-[11px] font-bold text-[#78716c]">{kpi.label}</span>
+            <span className="truncate text-[11px] font-bold text-[var(--fin-ink-soft)]">{kpi.label}</span>
           </div>
 
           <p
@@ -93,7 +93,7 @@ export const KpiRow: React.FC<KpiRowProps> = ({ totals }) => {
           >
             {kpi.value}
           </p>
-          <p className="mt-0.5 truncate text-[11px] font-medium text-[#a8a29e]">{kpi.hint}</p>
+          <p className="mt-0.5 truncate text-[11px] font-medium text-[var(--fin-ink-faint)]">{kpi.hint}</p>
         </motion.div>
       ))}
     </div>

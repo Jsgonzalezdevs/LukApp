@@ -38,7 +38,7 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
         rows={2}
         // 16px minimum: anything smaller makes iOS auto-zoom on focus and never
         // zoom back out.
-        className="w-full resize-none rounded-2xl border border-[#ede9e3] bg-white px-4 py-3 text-base text-[#1c1917] placeholder:text-[#a8a29e] focus:border-[#a8a29e] focus:outline-none"
+        className="w-full resize-none rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
         aria-label={COPY.input.placeholder}
       />
 
@@ -48,7 +48,7 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
           disabled={!text.trim()}
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#1c1917] px-6 py-3.5 text-sm font-bold text-white transition-colors hover:bg-[#292524] disabled:opacity-30"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--fin-accent)] px-6 py-3.5 text-sm font-bold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
         >
           <span className="fin-emoji" aria-hidden="true">
             ✨
@@ -67,8 +67,8 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
             aria-label={listening ? COPY.input.stop : COPY.input.speak}
             className={`inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full transition-colors ${
               listening
-                ? 'bg-[#fff1f2] text-[#e11d48]'
-                : 'bg-[#1c1917] text-white hover:bg-[#292524]'
+                ? 'bg-[var(--fin-out-bg)] text-[var(--fin-out)]'
+                : 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] hover:bg-[var(--fin-accent-hover)]'
             }`}
           >
             {listening ? <Square className="h-5 w-5" strokeWidth={3} /> : <Mic className="h-6 w-6" strokeWidth={2.5} />}
@@ -77,7 +77,7 @@ export const DictationInput: React.FC<DictationInputProps> = ({ onSubmit }) => {
       </div>
 
       {/* Status line. aria-live so the parse outcome is announced, not just shown. */}
-      <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[#a8a29e]" aria-live="polite">
+      <p className="flex items-start gap-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]" aria-live="polite">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
         <span>
           {listening

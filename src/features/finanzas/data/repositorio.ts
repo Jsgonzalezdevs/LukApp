@@ -1,0 +1,125 @@
+import type { Transaction } from '../types';
+import type { Cajita, CajitaMovimiento, Meta } from './modelos';
+
+/**
+ * Everything the app is allowed to know about storage.
+ *
+ * Async throughout even though the local implementation could answer
+ * synchronously: the whole point of this seam is that a remote backend can drop
+ * in without touching a single call site, and a sync interface would make that a
+ * rewrite. The cost is one `await` per call today.
+ *
+ * Writes take whole records rather than patches. Reconciling partial updates is
+ * the one thing a two-writer setup (this device plus a server) gets wrong most
+ * easily, and full records keep that decision in one place later.
+ */
+export interface Repositorio {
+  cargarTodo(): Promise<Instantanea>;
+
+  guardarTransacciones(transacciones: readonly Transaction[]): Promise<void>;
+  borrarTransaccion(id: string): Promise<void>;
+
+  guardarCajita(cajita: Cajita): Promise<void>;
+  borrarCajita(id: string): Promise<void>;
+
+  guardarCajitaMovimientos(movimientos: readonly CajitaMovimiento[]): Promise<void>;
+  borrarCajitaMovimiento(id: string): Promise<void>;
+
+  guardarMeta(meta: Meta): Promise<void>;
+  borrarMeta(id: string): Promise<void>;
+
+  /** Wipes every store. Used by the restore flow before importing a backup. */
+  vaciar(): Promise<void>;
+}
+
+/** One read of everything. The dataset is a personal ledger — it fits in memory. */
+export interface Instantanea {
+  transacciones: Transaction[];
+  cajitas: Cajita[];
+  cajitaMovimientos: CajitaMovimiento[];
+  metas: Meta[];
+}
+
+export const instantaneaVacia = (): Instantanea => ({
+  transacciones: [],
+  cajitas: [],
+  cajitaMovimientos: [],
+  metas: [],
+});
+
+/**
+ * In-memory storage. Used by tests, and as the fallback when IndexedDB is
+ * unavailable (Firefox in private mode refuses to open a database at all) — the
+ * app stays usable for the session instead of failing to start.
+ */
+export class RepositorioMemoria implements Repositorio {
+  private datos: Instantanea = instantaneaVacia();
+
+  constructor(inicial?: Partial<Instantanea>) {
+    this.datos = { ...instantaneaVacia(), ...inicial };
+  }
+
+  async cargarTodo(): Promise<Instantanea> {
+    // Deep-copied on the way out, not merely a fresh array: IndexedDB returns
+    // structured clones, so a caller that mutates what it received can never
+    // reach back into that store. A shallow copy here would leave the two
+    // implementations subtly different — every record would still be shared.
+    // All four record types are flat, so one spread per item is a full copy.
+    return {
+      transacciones: this.datos.transacciones.map((t) => ({ ...t })),
+      cajitas: this.datos.cajitas.map((c) => ({ ...c })),
+      cajitaMovimientos: this.datos.cajitaMovimientos.map((m) => ({ ...m })),
+      metas: this.datos.metas.map((m) => ({ ...m })),
+    };
+  }
+
+  private upsert<T extends { id: string }>(lista: T[], entradas: readonly T[]): T[] {
+    const porId = new Map(lista.map((item) => [item.id, item]));
+    for (const entrada of entradas) porId.set(entrada.id, { ...entrada });
+    return [...porId.values()];
+  }
+
+  async guardarTransacciones(transacciones: readonly Transaction[]): Promise<void> {
+    this.datos.transacciones = this.upsert(this.datos.transacciones, transacciones);
+  }
+
+  async borrarTransaccion(id: string): Promise<void> {
+    this.datos.transacciones = this.datos.transacciones.filter((t) => t.id !== id);
+  }
+
+  async guardarCajita(cajita: Cajita): Promise<void> {
+    this.datos.cajitas = this.upsert(this.datos.cajitas, [cajita]);
+  }
+
+  async borrarCajita(id: string): Promise<void> {
+    this.datos.cajitas = this.datos.cajitas.filter((c) => c.id !== id);
+    // Movements outlive nothing: a pocket's history is meaningless without it,
+    // and leaving them behind would silently skew any later balance rebuild.
+    this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter(
+      (m) => m.cajitaId !== id,
+    );
+    this.datos.metas = this.datos.metas.map((meta) =>
+      meta.cajitaId === id ? { ...meta, cajitaId: null } : meta,
+    );
+  }
+
+  async guardarCajitaMovimientos(movimientos: readonly CajitaMovimiento[]): Promise<void> {
+    this.datos.cajitaMovimientos = this.upsert(this.datos.cajitaMovimientos, movimientos);
+  }
+
+  async borrarCajitaMovimiento(id: string): Promise<void> {
+    this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter((m) => m.id !== id);
+  }
+
+  async guardarMeta(meta: Meta): Promise<void> {
+    this.datos.metas = this.upsert(this.datos.metas, [meta]);
+  }
+
+  async borrarMeta(id: string): Promise<void> {
+    this.datos.metas = this.datos.metas.filter((m) => m.id !== id);
+  }
+
+  async vaciar(): Promise<void> {
+    this.datos = instantaneaVacia();
+  }
+}
