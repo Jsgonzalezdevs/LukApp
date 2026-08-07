@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, ShieldAlert, Edit2, Trash2, Plus, Search, Loader2, X, AlertTriangle } from 'lucide-react';
 import { TemaToggle } from '../features/finanzas/components/TemaToggle';
 import type { Tema } from '../features/finanzas/data/useTema';
 import { obtenerSupabase } from '../features/finanzas/data/supabase';
@@ -22,25 +22,84 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  
+  // Form states
+  const [nuevoEmail, setNuevoEmail] = useState('');
+  const [nuevoUsuario, setNuevoUsuario] = useState('');
+  const [nuevaPassword, setNuevaPassword] = useState('');
+  const [nuevoRol, setNuevoRol] = useState<'admin' | 'usuario'>('usuario');
+
+  const fetchUsuarios = async () => {
+    setLoading(true);
+    const cliente = obtenerSupabase();
+    if (!cliente) return;
+    
+    const { data, error } = await cliente
+      .from('perfiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+      
+    if (data && !error) {
+      setUsuarios(data as Perfil[]);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchUsuarios = async () => {
-      const cliente = obtenerSupabase();
-      if (!cliente) return;
-      
-      const { data, error } = await cliente
-        .from('perfiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (data && !error) {
-        setUsuarios(data as Perfil[]);
-      }
-      setLoading(false);
-    };
-    
     fetchUsuarios();
   }, []);
+
+  const handleCrearUsuario = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setIsSubmitting(true);
+    
+    try {
+      const cliente = obtenerSupabase();
+      const { data: { session } } = await cliente!.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No hay sesión activa');
+      }
+
+      const res = await fetch('/.netlify/functions/crear-usuario', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          email: nuevoEmail,
+          usuario: nuevoUsuario,
+          password: nuevaPassword,
+          rol: nuevoRol
+        })
+      });
+
+      const result = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(result.error || 'Error al crear usuario');
+      }
+
+      // Éxito
+      setIsModalOpen(false);
+      setNuevoEmail('');
+      setNuevoUsuario('');
+      setNuevaPassword('');
+      setNuevoRol('usuario');
+      fetchUsuarios(); // Recargar la lista
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const filteredUsuarios = usuarios.filter(u => 
     u.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -82,7 +141,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
               </p>
             </div>
             
-            <button className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:shadow-purple-500/40 hover:-translate-y-0.5">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:shadow-purple-500/40 hover:-translate-y-0.5"
+            >
               <Plus className="h-4 w-4" />
               Nuevo Usuario
             </button>
@@ -174,6 +236,122 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
           </div>
         </div>
       </main>
+
+      {/* Modal Crear Usuario */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm transition-all duration-300">
+          <div className="w-full max-w-md scale-100 overflow-hidden rounded-3xl bg-[var(--fin-card)] shadow-2xl shadow-purple-500/10">
+            <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-6 py-4">
+              <h3 className="text-lg font-bold tracking-tight">Crear Nuevo Usuario</h3>
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="rounded-lg p-2 text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCrearUsuario} className="p-6">
+              {formError && (
+                <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-[var(--fin-out-bg)] px-4 py-3">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" />
+                  <p className="text-sm font-medium text-[var(--fin-out-ink)]">{formError}</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-[var(--fin-ink-soft)]">Correo Electrónico</label>
+                  <input
+                    type="email"
+                    required
+                    value={nuevoEmail}
+                    onChange={(e) => setNuevoEmail(e.target.value)}
+                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    placeholder="ejemplo@correo.com"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-[var(--fin-ink-soft)]">Nombre de Usuario</label>
+                  <input
+                    type="text"
+                    required
+                    value={nuevoUsuario}
+                    onChange={(e) => setNuevoUsuario(e.target.value)}
+                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    placeholder="MiUsuario"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-[var(--fin-ink-soft)]">Contraseña</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    value={nuevaPassword}
+                    onChange={(e) => setNuevaPassword(e.target.value)}
+                    className="block w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5 text-sm transition-colors focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold text-[var(--fin-ink-soft)]">Rol</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setNuevoRol('usuario')}
+                      className={`rounded-xl border py-2.5 text-sm font-bold transition-all ${
+                        nuevoRol === 'usuario' 
+                          ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300' 
+                          : 'border-[var(--fin-line)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                      }`}
+                    >
+                      Usuario Normal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNuevoRol('admin')}
+                      className={`flex items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-bold transition-all ${
+                        nuevoRol === 'admin' 
+                          ? 'border-purple-500 bg-purple-50 text-purple-700 dark:border-purple-400 dark:bg-purple-900/30 dark:text-purple-300' 
+                          : 'border-[var(--fin-line)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                      }`}
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                      Admin
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-xl px-5 py-2.5 text-sm font-bold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all hover:bg-purple-700 hover:shadow-purple-500/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creando...
+                    </>
+                  ) : (
+                    'Crear Usuario'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
