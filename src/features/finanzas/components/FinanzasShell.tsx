@@ -71,7 +71,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
                     : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
                 }`}
               >
-                <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <item.icon className={`h-4 w-4 shrink-0 ${item.color}`} aria-hidden="true" />
                 {item.label}
               </button>
             );
@@ -164,7 +164,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
               }`}
               aria-hidden="true"
             >
-              <item.icon className="h-5 w-5" />
+              <item.icon className={`h-5 w-5 ${active ? item.color : ''}`} />
             </span>
             <span
               className={`max-w-full truncate text-[9px] transition-colors ${

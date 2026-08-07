@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { tokenValido } from './_lib/auth.js';
+
 
 export default async (req: Request) => {
   if (req.method !== 'POST') {
@@ -38,7 +38,7 @@ export default async (req: Request) => {
   });
 
   try {
-    const { email, password, usuario, rol, adminAccessToken } = await req.json();
+    const { email, password, usuario, rol } = await req.json();
 
     // 1. Validar que el usuario que hace la petición realmente es un admin de supabase
     // Obtenemos el usuario que hace la petición

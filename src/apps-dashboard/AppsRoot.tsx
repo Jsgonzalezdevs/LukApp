@@ -22,11 +22,20 @@ export const AppsRoot: React.FC = () => {
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [loadingRol, setLoadingRol] = useState(true);
 
-  // Sync URL with state changes
+  // Sync URL and Title with state changes
   useEffect(() => {
     const path = activeApp === 'finanzas' ? '/finanzas' : activeApp === 'superadmin' ? '/superadmin' : '/ecosistema';
     if (window.location.pathname !== path) {
       window.history.pushState(null, '', path);
+    }
+    
+    // Actualizar el título de la pestaña
+    if (activeApp === 'finanzas') {
+      document.title = 'Finanzas | Ecosistema';
+    } else if (activeApp === 'superadmin') {
+      document.title = 'Superadmin | Ecosistema';
+    } else {
+      document.title = 'Ecosistema de Apps';
     }
   }, [activeApp]);
 
@@ -48,7 +57,11 @@ export const AppsRoot: React.FC = () => {
         const cliente = obtenerSupabase();
         if (cliente && sesion.estado.modo === 'autenticado') {
           // Si el correo es el del admin principal, otorgar acceso directamente en la UI.
-          if (sesion.estado.email === 'Jsgonzalez1658@gmail.com' || sesion.estado.email === 'jsgonzalez1658@gmail.com') {
+          const emailUser = sesion.estado.email?.toLowerCase();
+          if (
+            emailUser === 'jsgonzalez1658@gmail.com' || 
+            emailUser === 'jsgonzalezdevs@gmail.com'
+          ) {
             setRol('admin');
             setLoadingRol(false);
             return;

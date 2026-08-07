@@ -292,7 +292,7 @@ const FinanzasPanel: React.FC<FinanzasPanelProps> = ({ userId, cuenta, tema, onC
                     activa ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'text-[var(--fin-ink-soft)]'
                   }`}
                 >
-                  <pestana.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <pestana.icon className={`h-4 w-4 shrink-0 ${activa ? pestana.color : ''}`} aria-hidden="true" />
                   {pestana.label}
                 </button>
               );
