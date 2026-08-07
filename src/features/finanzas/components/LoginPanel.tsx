@@ -70,11 +70,11 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             <BrandMark className="h-7 w-7" />
           </span>
           <h1 className="mt-4 font-display text-2xl font-extrabold tracking-tight text-[var(--fin-ink)]">
-            Finanzas
+            Apps Personalizadas
           </h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             {modo === 'entrar'
-              ? 'Tus movimientos, en cualquier dispositivo.'
+              ? 'Accede a tu ecosistema.'
               : 'Crea tu cuenta para empezar.'}
           </p>
         </div>
@@ -216,9 +216,6 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           </motion.button>
         </form>
 
-        <p className="mt-6 text-center text-[11px] text-[var(--fin-ink-faint)]">
-          🔒 Privado · solo para ti
-        </p>
       </motion.div>
     </div>
   );

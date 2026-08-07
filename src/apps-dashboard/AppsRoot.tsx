@@ -83,23 +83,34 @@ export const AppsRoot: React.FC = () => {
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
   }
 
-  // If inside an app, render it with a way to go back
   if (activeApp === 'finanzas') {
-    return <FinanzasApp onBack={() => setActiveApp(null)} />;
+    // Si el usuario NO es admin, no le mostramos el botón de "Volver al ecosistema"
+    return <FinanzasApp onBack={rol === 'admin' ? () => setActiveApp(null) : undefined} />;
   }
 
   if (activeApp === 'superadmin') {
+    if (rol !== 'admin') {
+      // Bloquear acceso por URL si no es admin
+      setActiveApp('finanzas');
+      return null;
+    }
     return <SuperadminPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />;
   }
 
-  // Launcher dashboard
-  return (
-    <AppLauncher 
-      rol={rol} 
-      onSelectApp={setActiveApp} 
-      tema={tema} 
-      onCambiarTema={setTema}
-      onSalir={() => sesion.salir()} 
-    />
-  );
+  // Launcher dashboard (solo para el admin)
+  if (rol === 'admin') {
+    return (
+      <AppLauncher 
+        rol={rol} 
+        onSelectApp={setActiveApp} 
+        tema={tema} 
+        onCambiarTema={setTema}
+        onSalir={() => sesion.salir()} 
+      />
+    );
+  }
+
+  // Si es un usuario normal y por alguna razón llega aquí (ej: a /ecosistema), lo mandamos a finanzas
+  setActiveApp('finanzas');
+  return null;
 };
