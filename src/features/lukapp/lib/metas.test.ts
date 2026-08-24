@@ -50,7 +50,7 @@ describe('progresoDeMeta', () => {
     expect(progreso.pct).toBe(100);
   });
 
-  it('computes the monthly pace needed to hit the date', () => {
+  it('computes the monthly and biweekly pace needed to hit the date', () => {
     // 1.000.000 still to save over roughly 3 months.
     const progreso = progresoDeMeta(
       meta({ fechaObjetivo: '2026-11-04', ahorradoCop: 0 }),
@@ -61,6 +61,9 @@ describe('progresoDeMeta', () => {
     expect(progreso.diasRestantes).toBe(90);
     // 1.000.000 / (90 / 30.44) ≈ 338.223
     expect(progreso.ritmoMensualCop).toBe(338223);
+    // 1.000.000 / (90 / 15.22) ≈ 169.112
+    expect(progreso.ritmoQuincenalCop).toBe(169112);
+    expect(progreso.ritmoDiarioCop).toBe(11112);
   });
 
   it('has no pace for an open-ended goal', () => {

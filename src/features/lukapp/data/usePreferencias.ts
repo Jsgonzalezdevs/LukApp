@@ -12,6 +12,9 @@ import type { RegimenGmf, ValorUvt } from '../lib/gmf';
  */
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
 const CLAVE_EFECTIVO_SEPARADO = 'finanzas:resumen:efectivo-separado';
+const CLAVE_MODO_PRIVACIDAD = 'finanzas:modo-privacidad';
+const CLAVE_RECORDATORIO_ACTIVO = 'finanzas:recordatorio-racha:activo';
+const CLAVE_RECORDATORIO_HORA = 'finanzas:recordatorio-racha:hora';
 const CLAVE_NOMBRE = 'finanzas:onboarding:nombre';
 const CLAVE_ONBOARDING = 'finanzas:onboarding:terminado';
 const CLAVE_GUIA_BASICA = 'finanzas:guia:basica';
@@ -148,6 +151,114 @@ export const useMostrarEfectivoSeparado = () => {
   }, []);
 
   return { mostrarEfectivoSeparado, setMostrarEfectivoSeparado };
+};
+
+/**
+ * Modo Privacidad: Oculta los saldos y cifras numéricas en pantalla con "$ ••••••"
+ * para usar la app cómodamente en lugares públicos o transporte.
+ */
+export const useModoPrivacidad = () => {
+  const [modoPrivacidad, setEstado] = useState(() =>
+    leerBooleano(CLAVE_MODO_PRIVACIDAD, false),
+  );
+
+  const setModoPrivacidad = useCallback((valor: boolean) => {
+    setEstado(valor);
+    guardarBooleano(CLAVE_MODO_PRIVACIDAD, valor);
+  }, []);
+
+  const alternarPrivacidad = useCallback(() => {
+    setEstado((prev) => {
+      const nuevo = !prev;
+      guardarBooleano(CLAVE_MODO_PRIVACIDAD, nuevo);
+      return nuevo;
+    });
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== CLAVE_MODO_PRIVACIDAD) return;
+      setEstado(leerBooleano(CLAVE_MODO_PRIVACIDAD, false));
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { modoPrivacidad, setModoPrivacidad, alternarPrivacidad };
+};
+
+/**
+ * Recordatorio de Racha: Envía una notificación diaria si el usuario aún no ha anotado gastos hoy.
+ */
+export const useRecordatorioRacha = () => {
+  const [activo, setActivoState] = useState(() => leerBooleano(CLAVE_RECORDATORIO_ACTIVO, false));
+  const [hora, setHoraState] = useState(() => leerTexto(CLAVE_RECORDATORIO_HORA) ?? '20:30');
+  const [permiso, setPermiso] = useState<string>(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'denied';
+    return Notification.permission;
+  });
+
+  const refrescarPermiso = useCallback(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermiso(Notification.permission);
+    }
+  }, []);
+
+  const activarRecordatorio = useCallback(async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return false;
+    }
+    try {
+      const res = await Notification.requestPermission();
+      setPermiso(res);
+      if (res === 'granted') {
+        setActivoState(true);
+        guardarBooleano(CLAVE_RECORDATORIO_ACTIVO, true);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const desactivarRecordatorio = useCallback(() => {
+    setActivoState(false);
+    guardarBooleano(CLAVE_RECORDATORIO_ACTIVO, false);
+  }, []);
+
+  const cambiarHora = useCallback((nuevaHora: string) => {
+    setHoraState(nuevaHora);
+    try {
+      localStorage.setItem(CLAVE_RECORDATORIO_HORA, nuevaHora);
+      guardarEnSupabase(CLAVE_RECORDATORIO_HORA, nuevaHora);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (
+        e.key !== null &&
+        e.key !== CLAVE_RECORDATORIO_ACTIVO &&
+        e.key !== CLAVE_RECORDATORIO_HORA
+      )
+        return;
+      setActivoState(leerBooleano(CLAVE_RECORDATORIO_ACTIVO, false));
+      setHoraState(leerTexto(CLAVE_RECORDATORIO_HORA) ?? '20:30');
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return {
+    activo,
+    hora,
+    permiso,
+    activarRecordatorio,
+    desactivarRecordatorio,
+    cambiarHora,
+    refrescarPermiso,
+  };
 };
 
 /**

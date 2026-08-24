@@ -13,8 +13,12 @@ export interface Sesion {
   estado: EstadoSesion;
   error: string | null;
   ocupado: boolean;
+  enRecuperacion: boolean;
+  finalizarRecuperacion: () => void;
   entrar: (email: string, password: string) => Promise<void>;
   registrarse: (email: string, password: string, usuario?: string) => Promise<void>;
+  recuperarPassword: (email: string) => Promise<boolean>;
+  actualizarPassword: (nuevaPassword: string) => Promise<boolean>;
   /** True cuando el apodo está libre. Ver la implementación para el caso de fallo. */
   usuarioDisponible: (usuario: string) => Promise<boolean>;
   salir: () => Promise<void>;
@@ -38,6 +42,12 @@ export const useSesion = (): Sesion => {
   );
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [enRecuperacion, setEnRecuperacion] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const hash = window.location.hash;
+    const search = window.location.search;
+    return hash.includes('type=recovery') || search.includes('type=recovery');
+  });
 
   useEffect(() => {
     if (!cliente) return;
@@ -56,8 +66,11 @@ export const useSesion = (): Sesion => {
 
     // Covers token refresh and sign-out from another tab, so a session that
     // expires elsewhere does not leave this tab writing into a dead client.
-    const { data: sub } = cliente.auth.onAuthStateChange((_evento, sesion) => {
+    const { data: sub } = cliente.auth.onAuthStateChange((evento, sesion) => {
       setEstado(aEstado(sesion));
+      if (evento === 'PASSWORD_RECOVERY') {
+        setEnRecuperacion(true);
+      }
       if (sesion?.user?.user_metadata) {
         import('./usePreferencias').then((m) =>
           m.sincronizarDesdeSupabase(sesion.user.user_metadata),
@@ -92,6 +105,8 @@ export const useSesion = (): Sesion => {
     estado,
     error,
     ocupado,
+    enRecuperacion,
+    finalizarRecuperacion: useCallback(() => setEnRecuperacion(false), []),
     limpiarError: useCallback(() => setError(null), []),
 
     /**
@@ -125,6 +140,56 @@ export const useSesion = (): Sesion => {
           }),
         ),
       [cliente, ejecutar],
+    ),
+
+    recuperarPassword: useCallback(
+      async (email: string) => {
+        if (!cliente) return false;
+        setOcupado(true);
+        setError(null);
+        try {
+          const redirectTo =
+            typeof window !== 'undefined' ? `${window.location.origin}/entrar` : undefined;
+          const { error: fallo } = await conTiempoLimite(
+            cliente.auth.resetPasswordForEmail(email.trim(), { redirectTo }),
+          );
+          if (fallo) {
+            setError(traducir(fallo.message));
+            return false;
+          }
+          return true;
+        } catch (e) {
+          setError(traducir(e instanceof Error ? e.message : ''));
+          return false;
+        } finally {
+          setOcupado(false);
+        }
+      },
+      [cliente],
+    ),
+
+    actualizarPassword: useCallback(
+      async (nuevaPassword: string) => {
+        if (!cliente) return false;
+        setOcupado(true);
+        setError(null);
+        try {
+          const { error: fallo } = await conTiempoLimite(
+            cliente.auth.updateUser({ password: nuevaPassword }),
+          );
+          if (fallo) {
+            setError(traducir(fallo.message));
+            return false;
+          }
+          return true;
+        } catch (e) {
+          setError(traducir(e instanceof Error ? e.message : ''));
+          return false;
+        } finally {
+          setOcupado(false);
+        }
+      },
+      [cliente],
     ),
 
     /**

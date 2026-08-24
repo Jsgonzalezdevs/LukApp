@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatAmountInput, formatCop, formatSigned, parseAmountInput } from './formatCop';
+import { formatAmountInput, formatCop, formatCopOculto, formatSigned, parseAmountInput } from './formatCop';
 
 describe('formatCop', () => {
   it('groups thousands with dots, es-CO style', () => {
@@ -16,6 +16,16 @@ describe('formatCop', () => {
 
   it('keeps the sign outside the currency symbol', () => {
     expect(formatCop(-45000)).toBe('-$45.000');
+  });
+});
+
+describe('formatCopOculto', () => {
+  it('masks number when oculto is true', () => {
+    expect(formatCopOculto(1234567, true)).toBe('$ ••••••');
+  });
+
+  it('formats normal number when oculto is false', () => {
+    expect(formatCopOculto(1234567, false)).toBe('$1.234.567');
   });
 });
 

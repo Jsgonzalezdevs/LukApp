@@ -1,6 +1,7 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { Loader2, Mic, Plus, Search, Square } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Camera, Loader2, Mic, Plus, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
+import { useImageOCR } from '../hooks/useImageOCR';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { RippleButton } from './RippleButton';
@@ -14,37 +15,25 @@ interface BotonAnotarProps {
   onManual: () => void;
   /** Abrir el buscador. */
   onBuscar: () => void;
+  /** Si cambia con un timestamp > 0, dispara el dictado por voz y abre el overlay inmediatamente. */
+  autoStartTrigger?: number;
 }
 
 /**
- * La barra flotante de abajo: anotar a mano, buscar, y el micrófono.
- *
- * Vive aquí, en el armazón de la app, y no dentro de una sección. Antes el
- * bloque de registrar solo existía en Resumen y en Movimientos, así que desde
- * las otras nueve secciones no había forma de anotar un gasto sin navegar
- * primero. Ahora el botón está siempre en el mismo sitio, se ve sin mirar y se
- * alcanza con el pulgar.
- *
- * El micrófono tiene TRES estados visibles, y eso es lo importante: quieto,
- * escuchando y transcribiendo. Antes solo se distinguían dos, y como el estado
- * "escuchando" se comparaba contra un valor que el motor nunca devolvía, el
- * botón se quedaba pintado como quieto mientras el micrófono seguía abierto —
- * así que tocarlo otra vez volvía a intentar empezar en vez de parar, y la
- * grabación no terminaba nunca. Se veía exactamente como si se prendiera y se
- * apagara solo.
+ * La barra flotante de abajo: anotar a mano, buscar, escanear foto y el micrófono.
  */
-export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, onBuscar }) => {
+export const BotonAnotar: React.FC<BotonAnotarProps> = ({
+  onDictado,
+  onManual,
+  onBuscar,
+  autoStartTrigger,
+}) => {
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // La pantalla completa se abre sola al empezar a grabar y se cierra sola al
-  // terminar de revelar el texto o al cancelar -- nunca queda desincronizada
-  // de `dictation.status` porque ambas cosas se disparan desde los mismos
-  // toques (ver `alTocarMicrofono`, `cancelarDictado`, `revelarCompleto`).
   const [overlayAbierto, setOverlayAbierto] = useState(false);
   const [textoRevelado, setTextoRevelado] = useState<string | null>(null);
-  // Si se cancela justo cuando Whisper ya iba a contestar, la respuesta que
-  // llegue tarde se descarta en vez de abrir el confirmador solo.
   const descartadoRef = useRef(false);
 
   const manejarTextoFinal = useCallback((texto: string) => {
@@ -56,12 +45,35 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
   }, []);
 
   const dictation = useDictation(manejarTextoFinal);
+  const { scanImage, isScanning, progress: ocrProgress, error: ocrError } = useImageOCR((ocrText) => {
+    haptic.trigger('medium');
+    audio.play('click');
+    onDictado(ocrText);
+  });
 
   const escuchando = dictation.status === 'listening';
   const procesando = dictation.status === 'processing';
 
+  // Si se solicita el inicio automático desde el onboarding u otra acción
+  useEffect(() => {
+    if (!autoStartTrigger) return;
+    if (procesando) return;
+
+    if (!dictation.supported) {
+      onManual();
+      return;
+    }
+
+    if (!escuchando) {
+      haptic.trigger('heavy');
+      audio.play('warning');
+      setOverlayAbierto(true);
+      dictation.start();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartTrigger]);
+
   const alTocarMicrofono = () => {
-    // Mientras sube el audio no hay nada que empezar ni que parar.
     if (procesando) return;
 
     if (!dictation.supported) {
@@ -110,11 +122,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
 
   return (
     <div
-      // Encima del menú, no encima del borde de la pantalla: antes vivía en
-      // bottom-0 y se metía en un hueco que la barra de navegación dejaba
-      // vacío abajo, así que quedaba por debajo de "Inicio"/"Dinero"/etc en
-      // vez de arriba. Ahora se separa del fondo por la altura de esa barra
-      // (`--fin-nav-h`) más su franja segura y un respiro propio.
       className="pointer-events-none fixed inset-x-0 z-30 flex flex-col items-center gap-2"
       style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.75rem)' }}
       aria-hidden={overlayAbierto}
@@ -123,10 +130,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
         abierto={overlayAbierto}
         fase={faseOverlay}
         nivelAudio={dictation.level}
-        // Mientras se escucha o se procesa, lo que se ve es el parcial que
-        // useAudioCapture manda a transcribir cada ~1.6s. Apenas Whisper
-        // confirma la versión definitiva (`textoRevelado`), esa gana -- el
-        // mismo texto, sin ningún salto visible entre una y otra.
         texto={textoRevelado ?? dictation.interim}
         error={dictation.error}
         onCancelar={cancelarDictado}
@@ -134,9 +137,37 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
         onRevelado={revelarCompleto}
       />
 
-      {/* `data-guia` ancla el globo de la guía de bienvenida al bloque entero
-   —píldora y micrófono—, que es como se explica: los tres botones son
-   la misma idea, anotar. */}
+      {/* Hidden File Input for Receipt/Photo Scanning */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            haptic.trigger('medium');
+            audio.play('click');
+            void scanImage(file);
+            e.target.value = '';
+          }
+        }}
+      />
+
+      {/* Floating Scanning Progress Toast */}
+      {isScanning ? (
+        <div className="pointer-events-auto mb-1 flex items-center gap-2.5 rounded-full border border-amber-500/30 bg-[var(--fin-card)] px-4 py-2 shadow-xl backdrop-blur-xl animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+          <span className="text-[13px] font-semibold text-[var(--fin-ink)]">
+            Escaneando comprobante… {Math.round(ocrProgress * 100)}%
+          </span>
+        </div>
+      ) : ocrError ? (
+        <div className="pointer-events-auto mb-1 flex items-center gap-2 rounded-full border border-red-500/30 bg-[var(--fin-card)] px-4 py-2 text-[12.5px] font-medium text-red-400 shadow-xl backdrop-blur-xl">
+          {ocrError}
+        </div>
+      ) : null}
+
       <div data-guia="anotar" className="pointer-events-auto flex items-center gap-2.5">
         <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
           <button
@@ -147,6 +178,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
               onManual();
             }}
             aria-label="Anotar a mano"
+            title="Anotar a mano"
             className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
@@ -156,9 +188,28 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
             onClick={() => {
               haptic.trigger('light');
               audio.play('click');
+              fileInputRef.current?.click();
+            }}
+            aria-label="Escanear comprobante o foto"
+            title="Escanear recibo o comprobante de Nequi / Bancolombia"
+            disabled={isScanning}
+            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90 disabled:opacity-50"
+          >
+            {isScanning ? (
+              <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
+            ) : (
+              <Camera className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              haptic.trigger('light');
+              audio.play('click');
               onBuscar();
             }}
             aria-label="Buscar un movimiento"
+            title="Buscar movimientos"
             className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Search className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
@@ -184,21 +235,18 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({ onDictado, onManual, o
             aria-label={
               procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
             }
-            // Es el único objeto rojo de la app que no es una cifra, y por eso se
-            // reconoce sin leer nada. Mientras escucha late, para que se note que
-            // el micrófono está abierto sin tener que decirlo con palabras.
             className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
               escuchando ? 'animate-pulse' : ''
             }`}
             style={{ backgroundColor: 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
           >
-          {procesando ? (
-            <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
-          ) : escuchando ? (
-            <Square className="h-6 w-6" strokeWidth={3} aria-hidden="true" />
-          ) : (
-            <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
-          )}
+            {procesando ? (
+              <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
+            ) : escuchando ? (
+              <Square className="h-6 w-6" strokeWidth={3} aria-hidden="true" />
+            ) : (
+              <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
+            )}
           </RippleButton>
         </div>
       </div>

@@ -18,9 +18,14 @@ export interface ProgresoMeta {
    * showing an enormous one would be worse than showing none.
    */
   ritmoMensualCop: number | null;
+  /** Ahorro sugerido por quincena (15 días) para el contexto de pago colombiano. */
+  ritmoQuincenalCop: number | null;
+  /** Ahorro diario equivalente. */
+  ritmoDiarioCop: number | null;
 }
 
 const DIAS_POR_MES = 30.44; // average civil month, so a 90-day goal reads as ~3
+const DIAS_POR_QUINCENA = 15.22;
 
 /**
  * Where a goal stands.
@@ -44,8 +49,13 @@ export const progresoDeMeta = (
   const diasRestantes = meta.fechaObjetivo ? daysBetween(hoy, meta.fechaObjetivo) : null;
 
   let ritmoMensualCop: number | null = null;
+  let ritmoQuincenalCop: number | null = null;
+  let ritmoDiarioCop: number | null = null;
+
   if (!completada && diasRestantes !== null && diasRestantes > 0) {
     ritmoMensualCop = Math.ceil(faltaCop / (diasRestantes / DIAS_POR_MES));
+    ritmoQuincenalCop = Math.ceil(faltaCop / Math.max(1, diasRestantes / DIAS_POR_QUINCENA));
+    ritmoDiarioCop = Math.ceil(faltaCop / Math.max(1, diasRestantes));
   }
 
   return {
@@ -56,6 +66,8 @@ export const progresoDeMeta = (
     completada,
     diasRestantes,
     ritmoMensualCop,
+    ritmoQuincenalCop,
+    ritmoDiarioCop,
   };
 };
 

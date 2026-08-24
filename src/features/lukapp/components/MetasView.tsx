@@ -320,13 +320,18 @@ export const MetasView: React.FC<MetasViewProps> = ({
                         {COPY.metas.falta} {formatCop(progreso.faltaCop)}
                       </p>
                       {progreso.ritmoMensualCop !== null ? (
-                        <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">
-                          {COPY.metas.ritmo}{' '}
-                          <span className="font-semibold tabular-nums text-[var(--fin-ink)]">
-                            {formatCop(progreso.ritmoMensualCop)}
-                          </span>{' '}
-                          {COPY.metas.porMes} · {progreso.diasRestantes} {COPY.metas.diasRestantes}
-                        </p>
+                        <div className="mt-2.5 flex flex-col gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)]/80 border border-[var(--fin-line)]/50 p-2.5">
+                          <div className="flex items-center justify-between text-[12.5px]">
+                            <span className="text-[var(--fin-ink-soft)] font-medium">💡 Aparta por quincena:</span>
+                            <span className="font-bold tabular-nums text-amber-500">
+                              {formatCop(progreso.ritmoQuincenalCop ?? Math.ceil(progreso.ritmoMensualCop / 2))}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11.5px] text-[var(--fin-ink-faint)] border-t border-[var(--fin-line)]/30 pt-1.5">
+                            <span>{formatCop(progreso.ritmoMensualCop)} / mes</span>
+                            <span>{progreso.diasRestantes} días restantes</span>
+                          </div>
+                        </div>
                       ) : progreso.diasRestantes !== null && progreso.diasRestantes <= 0 ? (
                         <p className="mt-1 text-[13px] font-semibold text-[var(--fin-warn)]">
                           {COPY.metas.vencida}

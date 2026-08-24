@@ -40,6 +40,39 @@ describe('parseTransaction — expenses', () => {
     expect(r.category).toBe('transferencia');
     expect(r.description).toBe('Retiré');
   });
+
+  it('reads newly added Colombian brands and merchants', () => {
+    const r1 = parseTransaction('pagué 80 mil en Crepes & Waffles');
+    expect(r1.amount).toBe(80000);
+    expect(r1.category).toBe('comida');
+    expect(r1.description).toContain('Crepes & Waffles');
+
+    const r2 = parseTransaction('compré 45 mil en Farmatodo');
+    expect(r2.amount).toBe(45000);
+    expect(r2.category).toBe('salud');
+    expect(r2.description).toContain('Farmatodo');
+
+    const r3 = parseTransaction('15 mil en el Oxxo');
+    expect(r3.amount).toBe(15000);
+    expect(r3.category).toBe('mercado');
+    expect(r3.description).toContain('Oxxo');
+
+    const r4 = parseTransaction('suscripción de ChatGPT por 85 mil');
+    expect(r4.amount).toBe(85000);
+    expect(r4.category).toBe('servicios');
+    expect(r4.description).toContain('ChatGPT');
+  });
+
+  it('reads 2.5m abbreviations and implicit thousands in full transactions', () => {
+    const r1 = parseTransaction('2.5m de arriendo');
+    expect(r1.amount).toBe(2500000);
+    expect(r1.category).toBe('servicios');
+
+    const r2 = parseTransaction('me pagaron 2 palos 400 de sueldo');
+    expect(r2.kind).toBe('ingreso');
+    expect(r2.amount).toBe(2400000);
+    expect(r2.category).toBe('ingreso');
+  });
 });
 
 // "me" starts both income and expense phrases. Longest-first matching is what

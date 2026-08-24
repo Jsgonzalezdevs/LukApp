@@ -23,6 +23,7 @@ interface TransactionListProps {
    * Opcional para los listados que solo se leen.
    */
   onAbrir?: (tx: Transaction) => void;
+  modoPrivacidad?: boolean;
 }
 
 interface DayGroup {
@@ -75,6 +76,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   conSenal,
   onAbrir,
+  modoPrivacidad = false,
 }) => {
   const catalogo = useCatalogo();
 
@@ -110,7 +112,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               {dayLabel(group.date)}
             </h3>
             <span className="text-[13px] tabular-nums text-[var(--fin-ink-faint)]">
-              {formatCop(group.net)}
+              {modoPrivacidad ? '$ ••••••' : formatCop(group.net)}
             </span>
           </div>
 
@@ -173,7 +175,9 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       className="shrink-0 text-[17px] font-semibold tabular-nums"
                       style={{ color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)' }}
                     >
-                      {formatSigned(tx.amountCop, tx.kind)}
+                      {modoPrivacidad
+                        ? `${esIngreso ? '+' : '−'}$ ••••••`
+                        : formatSigned(tx.amountCop, tx.kind)}
                     </span>
                   </motion.button>
                 </li>

@@ -83,7 +83,15 @@ const THOUSAND_WORDS = [
   'barras',
   'k',
 ] as const;
-const MILLION_WORDS = ['millon', 'millones', 'palo', 'palos', 'melon', 'melones'] as const;
+const MILLION_WORDS = [
+  'millon',
+  'millones',
+  'palo',
+  'palos',
+  'melon',
+  'melones',
+  'm',
+] as const;
 const SLANG_WORDS: ReadonlySet<string> = new Set([
   'luca',
   'lucas',
@@ -101,7 +109,12 @@ const SCALES: Record<string, number> = {};
 for (const w of THOUSAND_WORDS) SCALES[w] = 1_000;
 for (const w of MILLION_WORDS) SCALES[w] = 1_000_000;
 
-const HALVES: Record<string, number> = { medio: 0.5, media: 0.5 };
+const HALVES: Record<string, number> = {
+  medio: 0.5,
+  media: 0.5,
+  cuarto: 0.25,
+  cuarta: 0.25,
+};
 
 const CONNECTOR = 'y';
 
@@ -151,9 +164,9 @@ export const normalizeNumericToken = (token: string): string[] => {
   // 45,5 -> 45.5 (comma is the decimal separator in es-CO)
   t = t.replace(/(\d),(\d)/g, '$1.$2');
 
-  // 20mil -> 20 mil, 45k -> 45 k
+  // 20mil -> 20 mil, 45k -> 45 k, 2.5m -> 2.5 m
   const split = t.match(
-    /^(\d+(?:\.\d+)?)(mil|miles|millon|millones|lucas?|luquitas?|palos?|melones?|barras?|k)$/,
+    /^(\d+(?:\.\d+)?)(mil|miles|millon|millones|lucas?|luquitas?|palos?|melones?|barras?|k|m)$/,
   );
   if (split) return [split[1], split[2]];
 
@@ -208,6 +221,14 @@ export const readNumberAt = (tokens: readonly string[], start: number): NumberMa
       continue;
     }
 
+    if (t === 'de') {
+      // Connects fraction or quantifier to scale ("cuarto de millón", "medio de millón")
+      if (sawAny && current > 0 && i + 1 < tokens.length && tokens[i + 1] in SCALES) {
+        continue;
+      }
+      break;
+    }
+
     if (t in HALVES) {
       if (current === 0 && lastScale > 0) {
         // "dos millones y medio" — halves the scale that was just applied.
@@ -215,9 +236,16 @@ export const readNumberAt = (tokens: readonly string[], start: number): NumberMa
         if (lastScale >= 1_000_000) result += half;
         else groupTotal += half;
       } else {
-        // "medio millón" — waits in `current` for a scale to multiply it.
-        if (current === 0) currentStart = i;
-        current += HALVES[t];
+        // "medio millón", "un cuarto de millón" — waits in `current` for a scale to multiply it.
+        if (current === 0) {
+          currentStart = i;
+          current = HALVES[t];
+        } else if (current === 1) {
+          // "un cuarto" -> 0.25
+          current = HALVES[t];
+        } else {
+          current += HALVES[t];
+        }
       }
       usedWords = true;
       sawAny = true;
@@ -283,7 +311,15 @@ export const readNumberAt = (tokens: readonly string[], start: number): NumberMa
 
   if (!sawAny) return null;
 
-  const total = result + groupTotal + current;
+  // Si se mencionó millones (result >= 1_000_000) y no se usó el grupo de miles (groupTotal === 0)
+  // pero quedó un número menor a 1.000 al final (ej: "dos millones cuatrocientos", "un palo trescientos"),
+  // en la jerga y lenguaje coloquial colombiano ese número corresponde a miles (400 -> 400.000).
+  let finalCurrent = current;
+  if (result >= 1_000_000 && groupTotal === 0 && current > 0 && current < 1_000) {
+    finalCurrent = current * 1_000;
+  }
+
+  const total = result + groupTotal + finalCurrent;
   // Rejects a bare "medio" (0.5) while keeping "medio millón".
   if (!hasScale && total < 1) return null;
 

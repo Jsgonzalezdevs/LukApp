@@ -4,6 +4,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Eye,
+  EyeOff,
   MessageSquare,
   RefreshCw,
   Search,
@@ -18,6 +20,8 @@ import { TransactionList } from './TransactionList';
 import { AnimatedNumber } from './AnimatedNumber';
 import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
+import { calcularRacha } from '../lib/racha';
+import { RachaModal } from './RachaModal';
 
 interface InicioViewProps {
   /** El mes que se está mirando, en formato YYYY-MM. */
@@ -43,6 +47,9 @@ interface InicioViewProps {
   mostrarEfectivoSeparado?: boolean;
   saldoEfectivoCop?: number;
   saldoCuentasSinEfectivoCop?: number;
+  modoPrivacidad?: boolean;
+  onTogglePrivacidad?: () => void;
+  today?: string;
 }
 
 export const InicioView: React.FC<InicioViewProps> = ({
@@ -64,9 +71,13 @@ export const InicioView: React.FC<InicioViewProps> = ({
   mostrarEfectivoSeparado,
   saldoEfectivoCop,
   saldoCuentasSinEfectivoCop,
+  modoPrivacidad = false,
+  onTogglePrivacidad,
+  today,
 }) => {
   const { isDismissed, dismiss } = useDismissedInsights();
   const [indiceRotacion, setIndiceRotacion] = useState(0);
+  const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
   const [minimizado, setMinimizado] = useState(() => {
     try {
       return localStorage.getItem('lukapp-tips-minimizado') === 'true';
@@ -74,6 +85,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
       return false;
     }
   });
+
+  const infoRacha = useMemo(
+    () => calcularRacha(movimientos, today || new Date().toISOString().slice(0, 10)),
+    [movimientos, today],
+  );
 
   const toggleMinimizado = (val: boolean) => {
     setMinimizado(val);
@@ -119,7 +135,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
   return (
     <div className="flex flex-col">
-      {/* Arriba: el mes a la izquierda, dos botones a la derecha */}
+      {/* Arriba: el mes a la izquierda, botones de privacidad, búsqueda y ajustes a la derecha */}
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -134,7 +150,44 @@ export const InicioView: React.FC<InicioViewProps> = ({
           />
         </button>
 
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Botón de Racha interactivo en la cabecera */}
+          <button
+            type="button"
+            onClick={() => setMostrarRachaModal(true)}
+            aria-label={infoRacha.anotadoHoy ? `Racha de ${infoRacha.rachaActual} días asegurada hoy` : 'Racha: anota un movimiento hoy'}
+            title={infoRacha.anotadoHoy ? `🔥 Racha de ${infoRacha.rachaActual} días asegurada hoy` : '🔥 Toca para ver tu racha y medallas'}
+            className={`flex h-9 items-center gap-1.5 rounded-[var(--fin-r-pill)] px-2.5 text-[13px] font-bold transition-all active:scale-95 ${
+              infoRacha.anotadoHoy
+                ? 'border border-orange-500/80 bg-gradient-to-r from-orange-500/20 to-amber-500/15 text-orange-400 ring-1 ring-orange-500/40 shadow-[0_0_12px_rgba(249,115,22,0.3)]'
+                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-faint)] opacity-85 hover:border-[var(--fin-ink-ghost)] hover:text-[var(--fin-ink)]'
+            }`}
+          >
+            <span className={`text-[15px] transition-transform ${infoRacha.anotadoHoy ? 'scale-110 drop-shadow-[0_0_6px_rgba(249,115,22,0.8)]' : 'grayscale opacity-75'}`}>
+              🔥
+            </span>
+            <span className="tabular-nums font-extrabold">{infoRacha.rachaActual}</span>
+          </button>
+
+          {onTogglePrivacidad && (
+            <button
+              type="button"
+              onClick={onTogglePrivacidad}
+              aria-label={modoPrivacidad ? 'Mostrar saldos' : 'Ocultar saldos (Modo Privacidad)'}
+              title={modoPrivacidad ? 'Mostrar cifras' : 'Ocultar cifras (Modo Privacidad en la calle)'}
+              className={`flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] transition-all active:scale-95 ${
+                modoPrivacidad
+                  ? 'bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30'
+                  : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              {modoPrivacidad ? (
+                <EyeOff className="h-[18px] w-[18px]" strokeWidth={2.2} />
+              ) : (
+                <Eye className="h-[18px] w-[18px]" strokeWidth={2.2} />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={onBuscar}
@@ -155,7 +208,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
       </div>
 
       {/* El número principal */}
-      <p className="mt-6 text-center text-[13px] text-[var(--fin-ink-faint)]">Tienes en total</p>
+      <p className="mt-6 text-center text-[13px] text-[var(--fin-ink-faint)]">
+        {modoPrivacidad ? 'Tienes en total (cifras ocultas)' : 'Tienes en total'}
+      </p>
       <button
         type="button"
         data-guia="saldo"
@@ -163,7 +218,10 @@ export const InicioView: React.FC<InicioViewProps> = ({
         className="mt-1 self-center text-center tabular-nums text-[var(--fin-ink)]"
         style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
       >
-        <AnimatedNumber value={patrimonioCop} format={formatCop} />
+        <AnimatedNumber
+          value={patrimonioCop}
+          format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
+        />
       </button>
 
       {mostrarEfectivoSeparado && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
@@ -173,13 +231,13 @@ export const InicioView: React.FC<InicioViewProps> = ({
             <span
               className={`font-semibold tabular-nums ${saldoCuentasSinEfectivoCop < 0 ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink)]'}`}
             >
-              {formatCop(saldoCuentasSinEfectivoCop)}
+              {modoPrivacidad ? '$ ••••••' : formatCop(saldoCuentasSinEfectivoCop)}
             </span>
           </div>
           <div className="text-[var(--fin-ink-soft)]">
             Efectivo:{' '}
             <span className="font-semibold tabular-nums text-[var(--fin-ink)]">
-              {formatCop(saldoEfectivoCop)}
+              {modoPrivacidad ? '$ ••••••' : formatCop(saldoEfectivoCop)}
             </span>
           </div>
         </div>
@@ -194,7 +252,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
             className="px-4 py-2.5 text-[17px] font-semibold tabular-nums transition-colors hover:opacity-85"
             style={{ color: 'var(--fin-out)' }}
           >
-            ↓ <AnimatedNumber value={gastosCop} format={formatCop} />
+            ↓{' '}
+            <AnimatedNumber
+              value={gastosCop}
+              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
+            />
           </button>
           <button
             type="button"
@@ -202,7 +264,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
             className="border-l border-[var(--fin-line)] px-4 py-2.5 text-[17px] font-semibold tabular-nums transition-colors hover:opacity-85"
             style={{ color: 'var(--fin-in)' }}
           >
-            ↑ <AnimatedNumber value={ingresosCop} format={formatCop} />
+            ↑{' '}
+            <AnimatedNumber
+              value={ingresosCop}
+              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
+            />
           </button>
         </div>
       </div>
@@ -354,12 +420,21 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       ) : null}
 
+      {/* Modal de detalles de racha */}
+      {mostrarRachaModal && (
+        <RachaModal
+          infoRacha={infoRacha}
+          onCerrar={() => setMostrarRachaModal(false)}
+        />
+      )}
+
       {/* Lista de movimientos */}
-      <div className="mt-7">
+      <div className="mt-6">
         <TransactionList
           transactions={movimientos}
           conSenal={conSenal}
           onAbrir={onAbrirMovimiento}
+          modoPrivacidad={modoPrivacidad}
         />
       </div>
     </div>

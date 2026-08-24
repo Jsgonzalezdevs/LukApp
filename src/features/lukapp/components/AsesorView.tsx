@@ -1,5 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, BrainCircuit, ThumbsUp, ThumbsDown } from 'lucide-react';
+import {
+  Send,
+  Bot,
+  User,
+  BrainCircuit,
+  ThumbsUp,
+  ThumbsDown,
+  Copy,
+  Check,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+  Share2,
+} from 'lucide-react';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
@@ -115,10 +129,162 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   ]);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
+  const haptic = useHapticFeedback();
+  const [copiadoId, setCopiadoId] = useState<string | null>(null);
+  const [compartidoId, setCompartidoId] = useState<string | null>(null);
+  const [hablandoId, setHablandoId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  const mostrarToast = (mensaje: string) => {
+    setToast(mensaje);
+    setTimeout(() => {
+      setToast((prev) => (prev === mensaje ? null : prev));
+    }, 3000);
+  };
+
+  // Detener voz si el componente se desmonta o cambia de pestaña
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      // Precargar voces del navegador (en Chrome/Brave cargan asíncronamente)
+      window.speechSynthesis.getVoices();
+      const onVoicesChanged = () => window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener('voiceschanged', onVoicesChanged);
+
+      return () => {
+        window.speechSynthesis.removeEventListener('voiceschanged', onVoicesChanged);
+        window.speechSynthesis.cancel();
+      };
+    }
+  }, []);
+
+  const handleFeedback = (msgId: string, tipo: 'like' | 'dislike') => {
+    haptic.trigger('selection');
+    setFeedback((prev) => {
+      const next = new Map(prev);
+      if (next.get(msgId) === tipo) {
+        next.delete(msgId);
+      } else {
+        next.set(msgId, tipo);
+      }
+      return next;
+    });
+  };
+
+  const handleCopiar = async (msgId: string, texto: string) => {
+    try {
+      await navigator.clipboard.writeText(limpiarTextoChat(texto));
+      setCopiadoId(msgId);
+      mostrarToast('✓ Copiado al portapapeles');
+      haptic.trigger('light');
+      setTimeout(() => {
+        setCopiadoId((prev) => (prev === msgId ? null : prev));
+      }, 2000);
+    } catch {
+      mostrarToast('No se pudo copiar el texto.');
+    }
+  };
+
+  const handleLeerEnVozAlta = (msgId: string, texto: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      mostrarToast('Tu navegador no soporta lectura en voz alta');
+      return;
+    }
+
+    if (hablandoId === msgId) {
+      window.speechSynthesis.cancel();
+      setHablandoId(null);
+      mostrarToast('Lectura pausada');
+      return;
+    }
+
+    // Cancelar cualquier audio anterior y reanudar estado
+    window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+
+    const clean = limpiarTextoChat(texto);
+    if (!clean) return;
+
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+
+    const voces = window.speechSynthesis.getVoices();
+    if (voces && voces.length > 0) {
+      const vozEs = voces.find((v) => v.lang.toLowerCase().startsWith('es'));
+      if (vozEs) utterance.voice = vozEs;
+    }
+
+    utterance.onstart = () => {
+      setHablandoId(msgId);
+      mostrarToast('🔊 Leyendo consejo...');
+    };
+
+    utterance.onend = () => {
+      setHablandoId((prev) => (prev === msgId ? null : prev));
+    };
+
+    utterance.onerror = (e) => {
+      console.warn('Speech error:', e);
+      setHablandoId((prev) => (prev === msgId ? null : prev));
+    };
+
+    setHablandoId(msgId);
+    window.speechSynthesis.speak(utterance);
+    haptic.trigger('light');
+  };
+
+  const handleCompartir = async (msgId: string, texto: string) => {
+    haptic.trigger('medium');
+    const clean = limpiarTextoChat(texto);
+    const textoCompartir = `💡 *Consejo de mi Asesor en LukApp*:\n\n"${clean}"\n\n━━━━━━━━━━━━━━━━━━━━\n🚀 Estoy gestionando mis finanzas con *LukApp* (control de gastos por voz, metas y asistente IA).\n👉 Pruébalo gratis en: https://lukapp.app`;
+
+    // Intentar Web Share API nativo si está disponible
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Consejo Financiero · LukApp',
+          text: textoCompartir,
+          url: 'https://lukapp.app',
+        });
+        setCompartidoId(msgId);
+        mostrarToast('✨ ¡Consejo compartido con éxito!');
+        setTimeout(() => setCompartidoId((prev) => (prev === msgId ? null : prev)), 2500);
+        return;
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return; // Cancelado por usuario
+      }
+    }
+
+    // Fallback para computadores o navegadores sin API de compartir
+    try {
+      await navigator.clipboard.writeText(textoCompartir);
+      setCompartidoId(msgId);
+      mostrarToast('📋 ¡Copiado con formato de LukApp listo para WhatsApp!');
+      setTimeout(() => setCompartidoId((prev) => (prev === msgId ? null : prev)), 2500);
+    } catch {
+      mostrarToast('No se pudo copiar el texto');
+    }
+  };
+
+  const handleRegenerar = (botMsgId: string) => {
+    haptic.trigger('medium');
+    const idx = messages.findIndex((m) => m.id === botMsgId);
+    if (idx === -1) return;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        void handleSend(messages[i].text);
+        return;
+      }
+    }
+    void handleSend('Dame un resumen de mis finanzas');
+  };
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -483,36 +649,96 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                     </div>
                   )}
                   {msg.role === 'bot' && (
-                    <div className="mt-2 flex gap-1.5 border-t border-[var(--fin-line)] pt-2">
+                    <div className="mt-3 flex items-center gap-1 border-t border-[var(--fin-line)] pt-2 text-[var(--fin-ink-faint)]">
+                      {/* Copiar texto */}
                       <button
-                        onClick={() => {
-                          const nuevoFeedback = new Map(feedback);
-                          nuevoFeedback.set(msg.id, 'like');
-                          setFeedback(nuevoFeedback);
-                        }}
-                        className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
+                        type="button"
+                        onClick={() => handleCopiar(msg.id, msg.text)}
+                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
+                        title={copiadoId === msg.id ? 'Copiado al portapapeles' : 'Copiar respuesta'}
+                        aria-label="Copiar"
+                      >
+                        {copiadoId === msg.id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" strokeWidth={2} />
+                        )}
+                      </button>
+
+                      {/* Me gusta */}
+                      <button
+                        type="button"
+                        onClick={() => handleFeedback(msg.id, 'like')}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
                           feedback.get(msg.id) === 'like'
-                            ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
-                            : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
                         }`}
+                        title="Buena respuesta"
                         aria-label="Útil"
                       >
-                        <ThumbsUp className="h-3 w-3" strokeWidth={2.5} />
+                        <ThumbsUp className="h-3.5 w-3.5" strokeWidth={2} />
                       </button>
+
+                      {/* No me gusta */}
                       <button
-                        onClick={() => {
-                          const nuevoFeedback = new Map(feedback);
-                          nuevoFeedback.set(msg.id, 'dislike');
-                          setFeedback(nuevoFeedback);
-                        }}
-                        className={`flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-1 text-[12px] transition-colors ${
+                        type="button"
+                        onClick={() => handleFeedback(msg.id, 'dislike')}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
                           feedback.get(msg.id) === 'dislike'
-                            ? 'bg-[var(--fin-warn)] text-[var(--fin-on-accent)]'
-                            : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                            : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
                         }`}
+                        title="Mala respuesta"
                         aria-label="No fue útil"
                       >
-                        <ThumbsDown className="h-3 w-3" strokeWidth={2.5} />
+                        <ThumbsDown className="h-3.5 w-3.5" strokeWidth={2} />
+                      </button>
+
+                      {/* Leer en voz alta */}
+                      <button
+                        type="button"
+                        onClick={() => handleLeerEnVozAlta(msg.id, msg.text)}
+                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                          hablandoId === msg.id
+                            ? 'bg-blue-500/20 text-blue-500 animate-pulse'
+                            : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
+                        }`}
+                        title={hablandoId === msg.id ? 'Detener lectura' : 'Leer en voz alta'}
+                        aria-label={hablandoId === msg.id ? 'Detener lectura' : 'Leer en voz alta'}
+                      >
+                        {hablandoId === msg.id ? (
+                          <VolumeX className="h-3.5 w-3.5" strokeWidth={2} />
+                        ) : (
+                          <Volume2 className="h-3.5 w-3.5" strokeWidth={2} />
+                        )}
+                      </button>
+
+                      {/* Compartir */}
+                      <button
+                        type="button"
+                        onClick={() => handleCompartir(msg.id, msg.text)}
+                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
+                        title={compartidoId === msg.id ? '¡Consejo copiado con formato de LukApp!' : 'Compartir consejo de LukApp'}
+                        aria-label="Compartir"
+                      >
+                        {compartidoId === msg.id ? (
+                          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+                        ) : (
+                          <Share2 className="h-3.5 w-3.5" strokeWidth={2} />
+                        )}
+                      </button>
+
+                      {/* Regenerar respuesta */}
+                      <button
+                        type="button"
+                        onClick={() => handleRegenerar(msg.id)}
+                        disabled={pensando}
+                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95 disabled:opacity-40"
+                        title="Regenerar respuesta"
+                        aria-label="Regenerar"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
                       </button>
                     </div>
                   )}
@@ -573,6 +799,17 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           LukApp es una IA y puede cometer errores. Verifica cualquier consejo sobre dinero antes de actuar.
         </p>
       </div>
+
+      {/* Notificación Toast flotante */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[12px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
+        >
+          <span>{toast}</span>
+        </div>
+      )}
     </div>
   );
 };

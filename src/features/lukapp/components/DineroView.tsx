@@ -15,6 +15,7 @@ interface DineroViewProps {
   /** Abre el detalle de una cuenta: historial, saldo, editar. */
   onAbrir: (cajita: Cajita) => void;
   onCrear: () => void;
+  modoPrivacidad?: boolean;
 }
 
 /**
@@ -52,6 +53,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
   mostrarAhorro,
   onAbrir,
   onCrear,
+  modoPrivacidad = false,
 }) => {
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
@@ -63,12 +65,17 @@ export const DineroView: React.FC<DineroViewProps> = ({
  propósito: tocaste un número y sigues viendo ese número, así que se
  entiende que entraste a su detalle y no a otra parte. */}
       <div>
-        <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">Tienes en total</p>
+        <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">
+          {modoPrivacidad ? 'Tienes en total (cifras ocultas)' : 'Tienes en total'}
+        </p>
         <p
           className="mt-1 text-center tabular-nums text-[var(--fin-ink)]"
           style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
         >
-          <AnimatedNumber value={totalCop} format={formatCop} />
+          <AnimatedNumber
+            value={totalCop}
+            format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
+          />
         </p>
       </div>
 
@@ -158,7 +165,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
                         className="shrink-0 text-[17px] font-semibold tabular-nums"
                         style={{ color: pasivo ? 'var(--fin-out)' : 'var(--fin-ink)' }}
                       >
-                        {formatCop(saldo)}
+                        {modoPrivacidad ? '$ ••••••' : formatCop(saldo)}
                       </span>
                     </button>
                   </li>

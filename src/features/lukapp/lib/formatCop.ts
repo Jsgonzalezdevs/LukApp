@@ -9,6 +9,12 @@ export const formatCop = (value: number): string => {
   return `${sign}$${groupThousands(String(Math.abs(rounded)))}`;
 };
 
+/** Formatea o enmascara la cifra si el Modo Privacidad está activo. */
+export const formatCopOculto = (value: number, oculto?: boolean): string => {
+  if (oculto) return '$ ••••••';
+  return formatCop(value);
+};
+
 /** Same, prefixed with an explicit direction sign for ledger rows. */
 export const formatSigned = (value: number, kind: 'gasto' | 'ingreso'): string =>
   `${kind === 'ingreso' ? '+' : '−'}${formatCop(Math.abs(value))}`;

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './styles/premium-effects.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
@@ -9,9 +9,11 @@ import { totalVisible, saldoEfectivo, saldoCuentasSinEfectivo } from './lib/caji
 import { formatCop } from './lib/formatCop';
 import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
 import { nuevoId } from './lib/id';
-import { movimientoEnBlanco, parseTransaction } from './lib/parseTransaction';
+import { movimientoEnBlanco } from './lib/parseTransaction';
+import { parseMultipleTransactions } from './lib/parseMultipleTransactions';
 import type { ParsedTransaction } from './lib/parseTransaction';
 import { ReporteFinancieroModal } from './components/ReporteFinancieroModal';
+import { MultiCapturaModal } from './components/MultiCapturaModal';
 import { aprenderDe } from './lib/aprendizaje';
 import { useAlmacen } from './data/useAlmacen';
 import { useSincronizacion } from './data/useSincronizacion';
@@ -33,16 +35,21 @@ import { PanelGmf } from './components/PanelGmf';
 import { PanelRespaldo } from './components/PanelRespaldo';
 import { PresupuestosView } from './components/PresupuestosView';
 import { RecurrentesView } from './components/RecurrentesView';
-import { useAjustesGmf } from './data/usePreferencias';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
-import { contactoPorApodo } from './lib/contactos';
 import {
+  useAjustesGmf,
   useGuiaApp,
+  useModoPrivacidad,
   useMostrarAhorro,
   useMostrarEfectivoSeparado,
   useOnboarding,
+  useRecordatorioRacha,
 } from './data/usePreferencias';
+import { contactoPorApodo } from './lib/contactos';
+import { DivisionCuentasModal } from './components/DivisionCuentasModal';
+import { calcularRacha } from './lib/racha';
+import { verificarRecordatorioRacha } from './lib/recordatorioRacha';
 import { ConfiguracionView } from './components/ConfiguracionView';
 import { CategoriasEditor } from './components/CategoriasEditor';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
@@ -222,11 +229,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   useSincronizacion({ activo: true, recargar: almacen.recargar });
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
   const { mostrarEfectivoSeparado, setMostrarEfectivoSeparado } = useMostrarEfectivoSeparado();
+  const { modoPrivacidad, alternarPrivacidad } = useModoPrivacidad();
   const onboarding = useOnboarding();
   const gmf = useAjustesGmf();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
+  const [multiPending, setMultiPending] = useState<ParsedTransaction[] | null>(null);
   const [editando, setEditando] = useState<Transaction | null>(null);
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
   // Una sola variable de navegación. Antes eran tres a la vez (la sección, la
@@ -250,6 +259,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
+  const [dictadoTrigger, setDictadoTrigger] = useState(0);
   const guia = useGuiaApp();
 
   /* CUÁNDO SALE LA GUÍA
@@ -277,6 +287,36 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   const today = bogotaDate();
   const thisMonth = monthKey(today);
+
+  const { activo: recordatorioActivo, hora: recordatorioHora } = useRecordatorioRacha();
+  const infoRacha = useMemo(
+    () => calcularRacha(transacciones, today),
+    [transacciones, today],
+  );
+
+  // Verificación periódica del recordatorio de racha en segundo plano
+  useEffect(() => {
+    if (!recordatorioActivo) return;
+    void verificarRecordatorioRacha(
+      recordatorioActivo,
+      recordatorioHora,
+      infoRacha.anotadoHoy,
+      infoRacha.rachaActual,
+      today,
+    );
+
+    const intervalo = setInterval(() => {
+      void verificarRecordatorioRacha(
+        recordatorioActivo,
+        recordatorioHora,
+        infoRacha.anotadoHoy,
+        infoRacha.rachaActual,
+        today,
+      );
+    }, 15 * 60 * 1000);
+
+    return () => clearInterval(intervalo);
+  }, [recordatorioActivo, recordatorioHora, infoRacha.anotadoHoy, infoRacha.rachaActual, today]);
   const [month, setMonth] = useState(thisMonth);
 
   const { totals, gastos, ingresos, delMes } = useMemo(() => {
@@ -346,13 +386,16 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   }, [cajitas, cajitaMovimientos, transacciones]);
 
   const handleSubmit = (text: string) => {
-    const parseado = parseTransaction(text, cuentasParaElegir, categorias, lexico, transacciones);
-
-    // Tú dices "le mandé 20 mil a mi pa" y en el libro queda "Wilson Gonzalez".
-    // El apodo sirve para reconocer de quién hablas; el nombre completo es lo
-    // que hay que dejar escrito, o dentro de un año la fila no dice nada.
-    const quien = contactoPorApodo(text, almacen.datos.contactos);
-    setPending(quien ? { ...parseado, description: quien.nombre } : parseado);
+    const parseados = parseMultipleTransactions(text, cuentasParaElegir, categorias, lexico, transacciones);
+    if (parseados.length > 1) {
+      setMultiPending(parseados);
+      return;
+    }
+    if (parseados.length === 1) {
+      const parseado = parseados[0];
+      const quien = contactoPorApodo(text, almacen.datos.contactos);
+      setPending(quien ? { ...parseado, description: quien.nombre } : parseado);
+    }
   };
 
   const handleSave = (draft: ConfirmDraft, esPrueba = false) => {
@@ -525,6 +568,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onDictado={handleSubmit}
             onManual={() => setPending(movimientoEnBlanco())}
             onBuscar={() => setCapa('buscar')}
+            autoStartTrigger={dictadoTrigger}
           />
         }
       >
@@ -612,6 +656,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             saldoEfectivoCop={saldoEfectivoCop}
             saldoCuentasSinEfectivoCop={saldoCuentasSinEfectivoCop}
+            modoPrivacidad={modoPrivacidad}
+            onTogglePrivacidad={alternarPrivacidad}
+            today={today}
           />
         ) : null}
 
@@ -622,6 +669,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             cajitas={cajitas}
             movimientos={cajitaMovimientos}
             mostrarAhorro={mostrarAhorro}
+            modoPrivacidad={modoPrivacidad}
             onAbrir={(cajita) => {
               setPanelDineroCajitaId(cajita.id);
               setPanelDinero(
@@ -837,6 +885,24 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 onBorrar={(id) => void almacen.borrarRecurrente(id)}
                 onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
               />
+            ) : panelAjustes === 'dividir-cuenta' ? (
+              <DivisionCuentasModal
+                onCerrar={() => setPanelAjustes(null)}
+                onAnotarMiParte={(montoCop, descripcion) => {
+                  setPanelAjustes(null);
+                  const base = movimientoEnBlanco();
+                  setPending({
+                    ...base,
+                    kind: 'gasto',
+                    amount: montoCop,
+                    category: 'comida',
+                    description: descripcion,
+                    dateOverride: undefined,
+                    cuentaId: cuentaPorDefecto,
+                    raw: `${montoCop} de ${descripcion}`,
+                  });
+                }}
+              />
             ) : panelAjustes === 'extractos' ? (
               <AnalistaView
                 existentes={transacciones}
@@ -876,6 +942,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             ) : (
               <PanelRespaldo
                 datos={almacen.datos}
+                cajitasBalances={cajitasBalances}
                 hoy={today}
                 onRestaurar={(d) => void almacen.restaurar(d)}
                 onGenerarInforme={() => {
@@ -931,6 +998,39 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               setEsPrimeraPrueba(false);
               cerrarCaptura();
             }}
+          />
+        ) : null}
+
+        {/* Modal de confirmación para dictados/entradas múltiples */}
+        {multiPending ? (
+          <MultiCapturaModal
+            parsedList={multiPending}
+            cajitas={cajitas}
+            cuentaPorDefecto={cuentaPorDefecto}
+            onSaveAll={(drafts) => {
+              drafts.forEach((draft) => {
+                const id = nuevoId('tx');
+                void almacen.agregarTransaccion({
+                  id,
+                  kind: draft.kind,
+                  amountCop: draft.amountCop,
+                  category: draft.category,
+                  description: draft.description,
+                  occurredOn: draft.occurredOn || bogotaDate(),
+                  cuentaId: draft.cuentaId,
+                  rawTranscript: draft.rawTranscript,
+                  createdAt: new Date().toISOString(),
+                });
+              });
+              setMonth(bogotaDate().slice(0, 7));
+              setMultiPending(null);
+              setGuardado({
+                id: 'multi',
+                texto: `✨ Se guardaron ${drafts.length} movimientos`,
+                aviso: 'Todos los registros quedaron anotados correctamente.',
+              });
+            }}
+            onCancel={() => setMultiPending(null)}
           />
         ) : null}
 
@@ -1009,6 +1109,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             }}
             onAnotarHablando={() => {
               setEsPrimeraPrueba(true);
+              setDictadoTrigger(Date.now());
+            }}
+            onAnotarManual={() => {
+              setEsPrimeraPrueba(false);
               setPending(movimientoEnBlanco());
             }}
           />

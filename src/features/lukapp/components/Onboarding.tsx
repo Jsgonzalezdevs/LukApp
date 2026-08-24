@@ -6,8 +6,10 @@ import { TecladoNumerico } from './TecladoNumerico';
 
 interface OnboardingProps {
   onTerminar: (datos: { nombre: string; banco: string | null; saldoCop: number | null }) => void;
-  /** Abre la pantalla de anotar con el micrófono ya escuchando. */
+  /** Abre la pantalla de dictado por voz para hablarle de inmediato. */
   onAnotarHablando: () => void;
+  /** Abre la pantalla de anotación manual si prefiere escribir. */
+  onAnotarManual?: () => void;
 }
 
 /** Los bancos que más se usan en Colombia, para no hacer escribir a nadie. */
@@ -15,22 +17,12 @@ const BANCOS = ['Nequi', 'Daviplata', 'Bancolombia', 'Nu', 'Efectivo', 'Otro'];
 
 /**
  * La bienvenida: cuatro pantallas, UNA pregunta en cada una.
- *
- * Lo que había antes era una tarjeta que anunciaba que había que hacer algo
- * ("Empecemos por lo básico") y al tocarla te mandaba a otra pantalla donde
- * volvía a preguntar. Dos pasos para una sola pregunta. Y encima prometía
- * "agrega tu primera cuenta" cuando la app ya te había creado una llamada
- * Efectivo, así que la promesa se rompía en el primer toque.
- *
- * Aquí la tarjeta ES la pregunta. Y de todo lo que se podría preguntar, solo se
- * preguntan tres cosas: cómo te llamas, dónde tienes la plata y cuánta. El
- * resto se aprende usando la app.
- *
- * El último paso no pregunta nada: enseña el gesto principal. Es el único
- * momento de toda la app donde se dice con letras que puedes hablarle, porque
- * un micrófono sin etiqueta no lo adivina nadie.
  */
-export const Onboarding: React.FC<OnboardingProps> = ({ onTerminar, onAnotarHablando }) => {
+export const Onboarding: React.FC<OnboardingProps> = ({
+  onTerminar,
+  onAnotarHablando,
+  onAnotarManual,
+}) => {
   const [paso, setPaso] = useState(0);
   const [nombre, setNombre] = useState('');
   const [banco, setBanco] = useState<string | null>(null);
@@ -43,10 +35,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onTerminar, onAnotarHabl
   const siguiente = () => setPaso((p) => Math.min(p + 1, pasos.length - 1));
   const cerrar = () => onTerminar({ nombre: nombre.trim(), banco: bancoFinal, saldoCop });
 
-  // Cada paso es {titulo, ayuda, cuerpo, boton, salida}. Tenerlos como datos y
-  // no como un if gigante hace obvio de un vistazo que son cuatro y que todos
-  // tienen la misma forma — incluida la salida, que nunca falta: en ninguna
-  // pantalla se puede quedar alguien atrapado.
   const pasos = [
     {
       titulo: '¿Cómo te llamas?',
@@ -140,10 +128,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onTerminar, onAnotarHabl
     },
   ];
 
-  // El índice se recorta al rango. Sin esto, cualquier cosa que adelantara el
-  // paso de más —un doble toque, una animación a medias— dejaba `actual` en
-  // undefined y tumbaba la app entera con la pantalla en blanco. Una bienvenida
-  // nunca debe poder hacer eso: es lo primero que ve alguien que llega.
   const indice = Math.min(Math.max(paso, 0), pasos.length - 1);
   const actual = pasos[indice];
   const ultimo = indice === pasos.length - 1;
@@ -166,8 +150,6 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onTerminar, onAnotarHabl
           transition={{ duration: 0.18, ease: 'easeOut' }}
           className="fin-glass w-full max-w-sm rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:pb-6"
         >
-          {/* Cuántas pantallas faltan, en puntos. Sin esto la gente no sabe si
- esto son dos preguntas o veinte, y abandona por si acaso. */}
           <div className="flex gap-1.5" aria-label={`Paso ${indice + 1} de ${pasos.length}`}>
             {pasos.map((_, i) => (
               <span
@@ -217,7 +199,14 @@ export const Onboarding: React.FC<OnboardingProps> = ({ onTerminar, onAnotarHabl
 
           <button
             type="button"
-            onClick={() => (ultimo ? cerrar() : siguiente())}
+            onClick={() => {
+              if (ultimo) {
+                cerrar();
+                onAnotarManual?.();
+              } else {
+                siguiente();
+              }
+            }}
             className="mt-1 w-full rounded-[var(--fin-r-control)] py-2.5 text-[15px] text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
           >
             {actual.salida}

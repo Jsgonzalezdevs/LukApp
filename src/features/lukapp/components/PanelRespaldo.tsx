@@ -14,6 +14,7 @@ import { descargarExcel } from '../lib/exportarExcel';
 interface PanelRespaldoProps {
   datos: Instantanea;
   hoy: string;
+  cajitasBalances?: Record<string, number>;
   onRestaurar: (datos: Instantanea) => void;
   onGenerarInforme: () => void;
 }
@@ -38,6 +39,7 @@ const descargar = (contenido: string, nombre: string, tipo: string) => {
 export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
   datos,
   hoy,
+  cajitasBalances = {},
   onRestaurar,
   onGenerarInforme,
 }) => {
@@ -104,7 +106,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
 
         <button
           type="button"
-          onClick={() => descargarExcel(datos, {}, hoy)}
+          onClick={() => descargarExcel(datos, cajitasBalances, undefined)}
           className="mt-1 flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)]"
         >
           <Download className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />

@@ -1,5 +1,48 @@
 import { useState } from 'react';
 
+const prepararImagen = async (file: File): Promise<Blob | File> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX_DIM = 1200;
+      let width = img.width;
+      let height = img.height;
+      if (width > MAX_DIM || height > MAX_DIM) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIM) / width);
+          width = MAX_DIM;
+        } else {
+          width = Math.round((width * MAX_DIM) / height);
+          height = MAX_DIM;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          resolve(blob ?? file);
+        },
+        'image/jpeg',
+        0.85,
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+};
+
 export const useImageOCR = (onSuccess: (text: string) => void) => {
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -7,18 +50,15 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
 
   const scanImage = async (file: File) => {
     setIsScanning(true);
-    setProgress(0);
+    setProgress(0.05);
     setError(null);
 
     try {
-      // Import dinámico a propósito: Tesseract pesa varios MB entre el motor
-      // wasm y el modelo de español, y la mayoría de quienes abren el
-      // dictado nunca escanean un recibo. Con import estático ese peso
-      // entraba al bundle principal y lo cargaba todo el mundo, lo usara o
-      // no — ahora solo se descarga la primera vez que alguien de verdad
-      // toca "escanear".
+      const optimizado = await prepararImagen(file);
+
+      // Import dinámico a propósito: Tesseract solo se descarga cuando se usa
       const { default: Tesseract } = await import('tesseract.js');
-      const result = await Tesseract.recognize(file, 'spa', {
+      const result = await Tesseract.recognize(optimizado, 'spa', {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setProgress(m.progress);
@@ -27,14 +67,12 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
       });
 
       const text = result.data.text;
-
-      // 2. Replace newlines with spaces so it looks like a continuous sentence
-      const cleanText = text.replace(/\n/g, ' ').trim();
+      const cleanText = text.replace(/\n+/g, ' ').trim();
 
       onSuccess(`[OCR] ${cleanText}`);
     } catch (err) {
-      console.error(err);
-      setError('No se pudo analizar la imagen.');
+      console.error('Error procesando imagen con OCR:', err);
+      setError('No se pudo analizar la imagen. Intenta con otra foto más nítida.');
     } finally {
       setIsScanning(false);
       setProgress(0);
@@ -43,3 +81,4 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
 
   return { scanImage, isScanning, progress, error };
 };
+

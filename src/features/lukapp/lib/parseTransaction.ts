@@ -307,7 +307,23 @@ export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
     }
 
     // "compré 2 pizzas por 30 mil" — the 2 is a quantity, not the amount.
-    if (after && COUNT_NOUNS.has(after)) score -= 2;
+    if (after && COUNT_NOUNS.has(after)) score -= 6;
+
+    // "un café / una empanada" — "un/una/uno" is an indefinite article, not $1 COP
+    if (match.value === 1 && match.usedWords && !match.hasScale) {
+      const isExplicitOneCurrency =
+        after === 'peso' ||
+        after === 'pesos' ||
+        after === 'dolar' ||
+        after === 'dolares' ||
+        after === 'usd' ||
+        after === 'cop' ||
+        after === 'euro' ||
+        after === 'euros';
+      if (!isExplicitOneCurrency) {
+        score -= 10;
+      }
+    }
 
     out.push({
       value: finalValue,
@@ -329,7 +345,15 @@ export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
 const pickBest = (candidates: readonly Candidate[]): Candidate | null => {
   if (candidates.length === 0) return null;
 
-  return candidates.reduce((best, c) => {
+  const valid = candidates.filter((c) => c.score >= 0);
+  if (valid.length === 0) {
+    // If all candidates are heavily penalized (e.g. bare "un café"), do not pick a bogus amount
+    const nonBogus = candidates.filter((c) => !(c.value === 1 && c.usedWords && !c.hasScale));
+    if (nonBogus.length === 0) return null;
+    return nonBogus.reduce((best, c) => (c.score > best.score ? c : best));
+  }
+
+  return valid.reduce((best, c) => {
     if (c.score !== best.score) return c.score > best.score ? c : best;
     if (c.hasScale !== best.hasScale) return c.hasScale ? c : best;
     if (c.value !== best.value) return c.value > best.value ? c : best;

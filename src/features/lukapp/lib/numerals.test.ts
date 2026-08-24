@@ -129,11 +129,26 @@ describe('parseAmount — Colombian slang', () => {
     expect(parseAmount('2 palos')).toBe(2000000);
     expect(parseAmount('un melón')).toBe(1000000);
   });
+
+  it('reads implicit thousands following a million scale in Colombian speech', () => {
+    expect(parseAmount('dos millones cuatrocientos')).toBe(2400000);
+    expect(parseAmount('tres palos quinientos')).toBe(3500000);
+    expect(parseAmount('un palo doscientos')).toBe(1200000);
+    expect(parseAmount('dos millones cien')).toBe(2100000);
+  });
+
+  it('reads the "m" abbreviation for millions', () => {
+    expect(parseAmount('2.5m')).toBe(2500000);
+    expect(parseAmount('2,5m')).toBe(2500000);
+    expect(parseAmount('1.2m')).toBe(1200000);
+    expect(parseAmount('3m')).toBe(3000000);
+  });
 });
 
 describe('parseAmount — halves and decimals', () => {
-  it('reads medio/media applied to a scale', () => {
+  it('reads medio/media and cuarto applied to a scale', () => {
     expect(parseAmount('medio millón')).toBe(500000);
+    expect(parseAmount('cuarto de millón')).toBe(250000);
     expect(parseAmount('media luca')).toBe(500);
   });
 

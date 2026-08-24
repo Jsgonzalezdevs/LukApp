@@ -2,10 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   Check,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
   Lock,
   Mail,
@@ -25,9 +27,11 @@ interface LoginPanelProps {
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
   permitirRegistro?: boolean;
+  modoInicial?: Modo;
+  onVolverInicio?: () => void;
 }
 
-type Modo = 'entrar' | 'registrarse';
+type Modo = 'entrar' | 'registrarse' | 'recuperar' | 'actualizar';
 type EstadoApodo = 'vacio' | 'corto' | 'comprobando' | 'libre' | 'cogido';
 const APODO_MINIMO = 3;
 const MINIMO_PASSWORD = 6;
@@ -37,14 +41,42 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   tema,
   onCambiarTema,
   permitirRegistro = true,
+  modoInicial,
+  onVolverInicio,
 }) => {
-  const [modo, setModo] = useState<Modo>('entrar');
-  const [identidad, setIdentidad] = useState('');
+  const [modo, setModo] = useState<Modo>(() => modoInicial ?? (sesion.enRecuperacion ? 'actualizar' : 'entrar'));
+  const [recordarme, setRecordarme] = useState(() => {
+    try {
+      return localStorage.getItem('lukapp_recordar_usuario') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  const [identidad, setIdentidad] = useState(() => {
+    try {
+      return localStorage.getItem('lukapp_correo_guardado') || '';
+    } catch {
+      return '';
+    }
+  });
   const [password, setPassword] = useState('');
   const [usuario, setUsuario] = useState('');
   const [verPassword, setVerPassword] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [recuperadoEnviado, setRecuperadoEnviado] = useState(false);
+  const [passwordActualizada, setPasswordActualizada] = useState(false);
   const [apodo, setApodo] = useState<EstadoApodo>('vacio');
+
+  useEffect(() => {
+    // Detectar si el usuario llega desde un enlace de recuperación de contraseña
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const params = new URLSearchParams(window.location.search);
+      if (hash.includes('type=recovery') || params.get('type') === 'recovery' || sesion.enRecuperacion) {
+        setModo('actualizar');
+      }
+    }
+  }, [sesion.enRecuperacion]);
 
   const peticion = useRef(0);
   useEffect(() => {
@@ -73,16 +105,37 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   const listo =
     modo === 'entrar'
       ? identidad.trim() !== '' && password.length > 0
-      : correoValido && password.length >= MINIMO_PASSWORD && apodo === 'libre' && !sesion.ocupado;
+      : modo === 'registrarse'
+      ? correoValido && password.length >= MINIMO_PASSWORD && apodo === 'libre' && !sesion.ocupado
+      : modo === 'recuperar'
+      ? correoValido && !sesion.ocupado
+      : password.length >= MINIMO_PASSWORD && !sesion.ocupado;
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!listo) return;
     if (modo === 'entrar') {
+      try {
+        if (recordarme && identidad.trim()) {
+          localStorage.setItem('lukapp_correo_guardado', identidad.trim());
+          localStorage.setItem('lukapp_recordar_usuario', 'true');
+        } else {
+          localStorage.removeItem('lukapp_correo_guardado');
+          localStorage.setItem('lukapp_recordar_usuario', 'false');
+        }
+      } catch {
+        // Ignorar si localStorage no está disponible
+      }
       await sesion.entrar(identidad.trim(), password);
-    } else {
+    } else if (modo === 'registrarse') {
       await sesion.registrarse(identidad.trim(), password, usuario.trim());
       setEnviado(true);
+    } else if (modo === 'recuperar') {
+      const ok = await sesion.recuperarPassword(identidad.trim());
+      if (ok) setRecuperadoEnviado(true);
+    } else if (modo === 'actualizar') {
+      const ok = await sesion.actualizarPassword(password);
+      if (ok) setPasswordActualizada(true);
     }
   };
 
@@ -90,6 +143,8 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
     setModo(siguiente);
     sesion.limpiarError();
     setEnviado(false);
+    setRecuperadoEnviado(false);
+    setPasswordActualizada(false);
   };
 
   const campo =
@@ -129,6 +184,23 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         aria-hidden="true"
       />
 
+      {/* Botón Volver al inicio / Landing */}
+      <div className="absolute left-5 top-5 z-20">
+        <button
+          type="button"
+          onClick={() => {
+            if (onVolverInicio) onVolverInicio();
+            else window.location.href = '/';
+          }}
+          className="group flex items-center gap-2 rounded-full border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-3.5 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
+          title="Volver a la página principal"
+          aria-label="Volver al inicio"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.25} />
+          <span>Volver al inicio</span>
+        </button>
+      </div>
+
       <div className="absolute right-5 top-5 z-20">
         <TemaToggle tema={tema} onCambiar={onCambiarTema} />
       </div>
@@ -141,7 +213,15 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       >
         {/* Brand Header */}
         <div className="mb-7 flex flex-col items-center text-center">
-          <div className="relative mb-3.5 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (onVolverInicio) onVolverInicio();
+              else window.location.href = '/';
+            }}
+            className="group relative mb-3.5 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            title="Volver al inicio"
+          >
             <span className="absolute -inset-2.5 rounded-3xl bg-gradient-to-r from-amber-500/30 via-sky-500/20 to-emerald-500/30 blur-xl animate-pulse" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
               <span
@@ -154,7 +234,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               />
               <BrandMark className="relative h-8 w-8" />
             </span>
-          </div>
+          </button>
 
           <h1 className="text-[32px] font-extrabold tracking-tight text-[var(--fin-ink)]">
             LukApp
@@ -192,9 +272,57 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
               </button>
             </motion.div>
+          ) : modo === 'recuperar' && recuperadoEnviado && !sesion.error && !sesion.ocupado ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center py-2 text-center"
+            >
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 shadow-inner">
+                <MailCheck size={32} strokeWidth={2} />
+              </div>
+              <h2 className="text-[22px] font-bold text-[var(--fin-ink)]">¡Enlace enviado!</h2>
+              <p className="mt-2.5 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">
+                Te enviamos un enlace para restaurar tu contraseña a{' '}
+                <strong className="text-[var(--fin-ink)]">{identidad.trim()}</strong>. Ábrelo para ingresar tu nueva contraseña. Si no lo ves en unos minutos, revisa tu carpeta de spam.
+              </p>
+              <button
+                type="button"
+                onClick={() => cambiarModo('entrar')}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-3.5 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
+              >
+                Volver a Iniciar sesión
+                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            </motion.div>
+          ) : modo === 'actualizar' && passwordActualizada && !sesion.error && !sesion.ocupado ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center py-2 text-center"
+            >
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 shadow-inner">
+                <Check size={32} strokeWidth={2.5} />
+              </div>
+              <h2 className="text-[22px] font-bold text-[var(--fin-ink)]">¡Contraseña actualizada!</h2>
+              <p className="mt-2.5 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">
+                Tu contraseña ha sido cambiada correctamente. Ya puedes acceder con tus nuevas credenciales.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  sesion.finalizarRecuperacion();
+                  cambiarModo('entrar');
+                }}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-3.5 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
+              >
+                Entrar a LukApp
+                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            </motion.div>
           ) : (
             <form onSubmit={enviar} noValidate>
-              {permitirRegistro ? (
+              {permitirRegistro && (modo === 'entrar' || modo === 'registrarse') ? (
                 <div className="mb-6 grid grid-cols-2 gap-1 rounded-[var(--fin-r-card)] border border-[var(--fin-line)]/50 bg-[var(--fin-soft)] p-1">
                   {(
                     [
@@ -225,6 +353,28 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                       </span>
                     </button>
                   ))}
+                </div>
+              ) : null}
+
+              {modo === 'recuperar' ? (
+                <div className="mb-5 flex items-center justify-between border-b border-[var(--fin-line)]/50 pb-3">
+                  <div className="flex items-center gap-2 text-[14px] font-bold text-[var(--fin-ink)]">
+                    <KeyRound className="h-4 w-4 text-amber-500" />
+                    Restaurar contraseña
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => cambiarModo('entrar')}
+                    className="flex items-center gap-1 text-[12px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Volver
+                  </button>
+                </div>
+              ) : modo === 'actualizar' ? (
+                <div className="mb-5 flex items-center gap-2 border-b border-[var(--fin-line)]/50 pb-3 text-[14px] font-bold text-[var(--fin-ink)]">
+                  <Lock className="h-4 w-4 text-amber-500" />
+                  Ingresa tu nueva contraseña
                 </div>
               ) : null}
 
@@ -266,77 +416,104 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                     </div>
                   ) : null}
 
-                  {/* Field: Tu Correo */}
-                  <div>
-                    <label
-                      htmlFor="login-identidad"
-                      className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
-                    >
-                      Tu correo
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]" />
-                      <input
-                        id="login-identidad"
-                        type="email"
-                        value={identidad}
-                        onChange={(e) => setIdentidad(e.target.value)}
-                        placeholder="tu@correo.com"
-                        autoComplete="email"
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        required
-                        className={campo}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Field: Contraseña */}
-                  <div>
-                    <div className="mb-1.5 flex items-center justify-between">
+                  {/* Field: Tu Correo (Not needed in 'actualizar') */}
+                  {modo !== 'actualizar' ? (
+                    <div>
                       <label
-                        htmlFor="login-password"
-                        className="block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+                        htmlFor="login-identidad"
+                        className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
                       >
-                        Contraseña
+                        Tu correo
                       </label>
-                      {modo === 'registrarse' ? (
-                        <span className="text-[11px] font-medium text-[var(--fin-ink-faint)]">
-                          {password.length > 0 && password.length < MINIMO_PASSWORD
-                            ? `Faltan ${MINIMO_PASSWORD - password.length} caráct.`
-                            : `Mín. ${MINIMO_PASSWORD} caráct.`}
-                        </span>
-                      ) : null}
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]" />
+                        <input
+                          id="login-identidad"
+                          type="email"
+                          value={identidad}
+                          onChange={(e) => setIdentidad(e.target.value)}
+                          placeholder="tu@correo.com"
+                          autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          required
+                          className={campo}
+                        />
+                      </div>
                     </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]" />
-                      <input
-                        id="login-password"
-                        type={verPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
-                        required
-                        minLength={MINIMO_PASSWORD}
-                        className={`${campo} pr-12`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setVerPassword((v) => !v)}
-                        aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                        aria-pressed={verPassword}
-                        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[var(--fin-r-control)] p-2.5 text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
-                      >
-                        {verPassword ? (
-                          <EyeOff className="h-4 w-4" strokeWidth={2.25} />
+                  ) : null}
+
+                  {/* Field: Contraseña (Not needed in 'recuperar') */}
+                  {modo !== 'recuperar' ? (
+                    <div>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <label
+                          htmlFor="login-password"
+                          className="block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+                        >
+                          {modo === 'actualizar' ? 'Nueva contraseña' : 'Contraseña'}
+                        </label>
+                        {modo === 'entrar' ? (
+                          <button
+                            type="button"
+                            onClick={() => cambiarModo('recuperar')}
+                            className="text-[12px] font-semibold text-amber-500 transition-colors hover:text-amber-400"
+                          >
+                            ¿Olvidaste tu contraseña?
+                          </button>
                         ) : (
-                          <Eye className="h-4 w-4" strokeWidth={2.25} />
+                          <span className="text-[11px] font-medium text-[var(--fin-ink-faint)]">
+                            {password.length > 0 && password.length < MINIMO_PASSWORD
+                              ? `Faltan ${MINIMO_PASSWORD - password.length} caráct.`
+                              : `Mín. ${MINIMO_PASSWORD} caráct.`}
+                          </span>
                         )}
-                      </button>
+                      </div>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]" />
+                        <input
+                          id="login-password"
+                          type={verPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="••••••••"
+                          autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
+                          required
+                          minLength={MINIMO_PASSWORD}
+                          className={`${campo} pr-12`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setVerPassword((v) => !v)}
+                          aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                          aria-pressed={verPassword}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[var(--fin-r-control)] p-2.5 text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+                        >
+                          {verPassword ? (
+                            <EyeOff className="h-4 w-4" strokeWidth={2.25} />
+                          ) : (
+                            <Eye className="h-4 w-4" strokeWidth={2.25} />
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : null}
+
+                  {/* Recuérdame (solo al entrar) */}
+                  {modo === 'entrar' ? (
+                    <div className="flex items-center justify-between pt-0.5">
+                      <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={recordarme}
+                          onChange={(e) => setRecordarme(e.target.checked)}
+                          className="h-4 w-4 rounded border-[var(--fin-line)] bg-[var(--fin-bg)] text-amber-500 focus:ring-amber-500/30 accent-amber-500 cursor-pointer"
+                        />
+                        <span>Recuérdame</span>
+                      </label>
+                    </div>
+                  ) : null}
                 </motion.div>
               </AnimatePresence>
 
@@ -368,11 +545,23 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                 {sesion.ocupado ? (
                   <>
                     <Loader2 className="h-4.5 w-4.5 animate-spin" strokeWidth={2.5} />
-                    {modo === 'entrar' ? 'Entrando…' : 'Creando tu cuenta…'}
+                    {modo === 'entrar'
+                      ? 'Entrando…'
+                      : modo === 'registrarse'
+                      ? 'Creando tu cuenta…'
+                      : modo === 'recuperar'
+                      ? 'Enviando enlace…'
+                      : 'Guardando nueva contraseña…'}
                   </>
                 ) : (
                   <>
-                    {modo === 'entrar' ? 'Entrar' : 'Crear mi cuenta'}
+                    {modo === 'entrar'
+                      ? 'Entrar'
+                      : modo === 'registrarse'
+                      ? 'Crear mi cuenta'
+                      : modo === 'recuperar'
+                      ? 'Restaurar contraseña'
+                      : 'Guardar contraseña'}
                     <ArrowRight
                       className="h-4.5 w-4.5 transition-transform group-hover:translate-x-1"
                       strokeWidth={2.5}
@@ -382,7 +571,20 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               </motion.button>
 
               {/* Switch Mode Toggle Link */}
-              {permitirRegistro ? (
+              {modo === 'recuperar' ? (
+                <div className="mt-5 text-center">
+                  <button
+                    type="button"
+                    onClick={() => cambiarModo('entrar')}
+                    className="text-[13px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+                  >
+                    ¿Recordaste tu contraseña?{' '}
+                    <span className="text-amber-500 underline underline-offset-2 hover:text-amber-400">
+                      Iniciar sesión
+                    </span>
+                  </button>
+                </div>
+              ) : permitirRegistro && (modo === 'entrar' || modo === 'registrarse') ? (
                 <div className="mt-5 text-center">
                   <button
                     type="button"

@@ -1,16 +1,19 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Sparkles, Wallet, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Loader2, Sparkles, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, TxKind } from '../types';
 import type { Cajita } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { formatAmountInput } from '../lib/formatCop';
+import { parseTransaction } from '../lib/parseTransaction';
+import { LEXICO_VACIO } from '../lib/aprendizaje';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
+import { useImageOCR } from '../hooks/useImageOCR';
 import { TecladoNumerico } from './TecladoNumerico';
 import { AnimatedNumber } from './AnimatedNumber';
 import { RippleButton } from './RippleButton';
@@ -73,9 +76,31 @@ export const Captura: React.FC<CapturaProps> = ({
 
   const descRef = useRef<HTMLTextAreaElement>(null);
   const capturaRef = useRef<HTMLDivElement>(null);
+  const fotoInputRef = useRef<HTMLInputElement>(null);
   const catalogo = useCatalogo();
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+
+  const { scanImage: escanearEnCaptura, isScanning: escaneandoFoto, progress: progresoFoto } = useImageOCR((ocrText) => {
+    haptic.trigger('medium');
+    audio.play('click');
+    const reparseado = parseTransaction(ocrText, cuentasActivas, [], LEXICO_VACIO, []);
+    if (reparseado.amount !== null) {
+      setDigitos(String(Math.round(reparseado.amount)));
+    }
+    if (reparseado.category) {
+      setCategory(reparseado.category);
+    }
+    if (reparseado.description) {
+      setDescription(reparseado.description);
+    }
+    if (reparseado.kind) {
+      setKind(reparseado.kind);
+    }
+    if (reparseado.cuentaId) {
+      setCuentaId(reparseado.cuentaId);
+    }
+  });
 
   useSwipeGesture(capturaRef as React.RefObject<HTMLElement>, {
     onSwipeRight: () => {
@@ -135,7 +160,7 @@ export const Captura: React.FC<CapturaProps> = ({
       aria-modal="true"
       aria-label="Anotar un movimiento"
     >
-      {/* Banner de primera prueba por micrófono */}
+      {/* Banner de primera prueba */}
       {esPrimeraPrueba ? (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -144,10 +169,21 @@ export const Captura: React.FC<CapturaProps> = ({
         >
           <Sparkles className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
           <div className="leading-snug">
-            <span className="font-bold">🎤 ¡Esta es tu primera prueba por voz!</span>
-            <p className="mt-1 text-[12px] opacity-90">
-              Di una frase como <em>«gasté 20 mil en almuerzo»</em>. Este registro es una prueba temporal para que conozcas la app y podrás editarlo o borrarlo fácilmente con un toque.
-            </p>
+            {parsed.raw ? (
+              <>
+                <span className="font-bold">✨ ¡Prueba por voz reconocida!</span>
+                <p className="mt-1 text-[12px] opacity-90">
+                  Detectamos «{parsed.raw}». Revisa los datos y pulsa <strong>Guardar</strong> para confirmar tu primer movimiento de prueba.
+                </p>
+              </>
+            ) : (
+              <>
+                <span className="font-bold">📝 Tu primer movimiento de prueba</span>
+                <p className="mt-1 text-[12px] opacity-90">
+                  Ingresa un monto y categoría para conocer la app. Podrás editarlo o borrarlo fácilmente con un toque.
+                </p>
+              </>
+            )}
           </div>
         </motion.div>
       ) : null}
@@ -199,15 +235,59 @@ export const Captura: React.FC<CapturaProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onCancel}
-          aria-label="Cerrar sin guardar"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
-        >
-          <X className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <input
+            ref={fotoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                haptic.trigger('medium');
+                audio.play('click');
+                void escanearEnCaptura(file);
+                e.target.value = '';
+              }
+            }}
+          />
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onFoto) onFoto();
+              else fotoInputRef.current?.click();
+            }}
+            disabled={escaneandoFoto}
+            aria-label="Escanear comprobante"
+            title="Escanear recibo o comprobante"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)] disabled:opacity-50"
+          >
+            {escaneandoFoto ? (
+              <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+            ) : (
+              <Camera className="h-4 w-4" strokeWidth={2.25} />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Cerrar sin guardar"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
+          >
+            <X className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+          </button>
+        </div>
       </div>
+
+      {/* Indicador de escaneo activo en Captura */}
+      {escaneandoFoto ? (
+        <div className="mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-amber-500/10 border border-amber-500/20 py-2 px-3 text-[12.5px] font-semibold text-amber-500 animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Escaneando comprobante con IA… {Math.round(progresoFoto * 100)}%
+        </div>
+      ) : null}
 
       {/* Selector Plegable de Banco / Cuenta */}
       {cuentasActivas.length > 0 && (

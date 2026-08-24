@@ -1,6 +1,8 @@
 import React from 'react';
 import {
+  Bell,
   ChevronRight,
+  Clock,
   FileUp,
   HardDriveDownload,
   Flag,
@@ -13,10 +15,12 @@ import {
   Tag,
   Target,
   Users,
+  UtensilsCrossed,
   Wallet,
 } from 'lucide-react';
 import { PANELES_AJUSTES } from '../sections';
 import type { PanelAjustes } from '../sections';
+import { useRecordatorioRacha } from '../data/usePreferencias';
 
 interface AjustesViewProps {
   onAbrir: (panel: PanelAjustes) => void;
@@ -41,6 +45,7 @@ const ICONOS: Record<
   topes: Target,
   metas: Flag,
   recurrentes: Repeat,
+  'dividir-cuenta': UtensilsCrossed,
   extractos: FileUp,
   atajos: Smartphone,
   gmf: Landmark,
@@ -53,7 +58,7 @@ const ICONOS: Record<
  * que leer las nueve filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
   { titulo: 'Tu dinero', paneles: ['cuentas', 'categorias', 'topes', 'metas', 'recurrentes'] },
-  { titulo: 'Herramientas', paneles: ['extractos', 'atajos', 'gmf'] },
+  { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
 ];
 
@@ -118,14 +123,17 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   mostrarEfectivoSeparado,
   onMostrarEfectivoSeparado,
   onVolverAVerGuia,
-}) => (
-  <div className="flex flex-col gap-7">
-    <h1
-      className="px-1 text-[var(--fin-ink)]"
-      style={{ font: 'var(--fin-t-titulo-xl)', letterSpacing: 'var(--fin-track-titulo-xl)' }}
-    >
-      Ajustes
-    </h1>
+}) => {
+  const recordatorio = useRecordatorioRacha();
+
+  return (
+    <div className="flex flex-col gap-7">
+      <h1
+        className="px-1 text-[var(--fin-ink)]"
+        style={{ font: 'var(--fin-t-titulo-xl)', letterSpacing: 'var(--fin-track-titulo-xl)' }}
+      >
+        Ajustes
+      </h1>
 
     {BLOQUES.map((bloque) => (
       <section key={bloque.titulo}>
@@ -211,6 +219,64 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           />
         </label>
 
+        {/* Recordatorio de Racha */}
+        <div
+          className="flex flex-col px-4 py-3.5"
+          style={{
+            boxShadow:
+              onVolverAVerGuia || temaToggle || cuenta
+                ? 'inset 0 -1px 0 0 var(--fin-line)'
+                : undefined,
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+                aria-hidden="true"
+              >
+                <Bell className="h-[18px] w-[18px] text-amber-500" strokeWidth={2} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
+                  Recordatorio diario de racha
+                </span>
+                <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+                  Notificación si aún no has anotado gastos hoy
+                </span>
+              </div>
+            </div>
+
+            <input
+              type="checkbox"
+              checked={recordatorio.activo}
+              onChange={async (e) => {
+                if (e.target.checked) {
+                  await recordatorio.activarRecordatorio();
+                } else {
+                  recordatorio.desactivarRecordatorio();
+                }
+              }}
+              className="h-6 w-6 shrink-0 accent-amber-500"
+            />
+          </div>
+
+          {recordatorio.activo && (
+            <div className="mt-3 ml-12 flex items-center justify-between border-t border-[var(--fin-line)]/50 pt-2.5">
+              <span className="text-[13px] font-medium text-[var(--fin-ink-soft)] flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-amber-500" />
+                Hora de aviso:
+              </span>
+              <input
+                type="time"
+                value={recordatorio.hora}
+                onChange={(e) => recordatorio.cambiarHora(e.target.value)}
+                className="rounded-lg border border-[var(--fin-line)] bg-[var(--fin-bg)] px-2.5 py-1 text-[16px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none focus:ring-1 focus:ring-amber-500"
+              />
+            </div>
+          )}
+        </div>
+
         {onVolverAVerGuia ? (
           <button
             type="button"
@@ -269,6 +335,6 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
         ) : null}
       </div>
     </section>
-
   </div>
-);
+  );
+};

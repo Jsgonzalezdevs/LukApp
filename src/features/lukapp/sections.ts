@@ -52,6 +52,11 @@ export const PANELES_AJUSTES = [
   { id: 'topes', label: 'Topes de gasto', ayuda: 'Te avisa antes de que te pases' },
   { id: 'metas', label: 'Metas de ahorro', ayuda: 'Ponte un objetivo y mira cuánto te falta' },
   { id: 'recurrentes', label: 'Pagos fijos', ayuda: 'Lo que te cobran todos los meses' },
+  {
+    id: 'dividir-cuenta',
+    label: 'Dividir cuenta y propina',
+    ayuda: 'Calcula cuánto le toca a cada uno en salidas y anota tu parte',
+  },
   { id: 'extractos', label: 'Importar extractos', ayuda: 'Sube el PDF que te manda el banco' },
   { id: 'atajos', label: 'Registro automático', ayuda: 'Que Apple Pay anote el gasto solo' },
   { id: 'gmf', label: 'Impuesto 4x1000', ayuda: 'Cuánto te está costando y en qué cuenta' },

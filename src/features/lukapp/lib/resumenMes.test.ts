@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
-import { resumenDelMes, textoParaCompartir } from './resumenMes';
+import {
+  resumenDelMes,
+  textoParaCompartir,
+  esResumenMesHabilitado,
+  diaDesbloqueoResumen,
+} from './resumenMes';
 import type { TarjetaResumen } from './resumenMes';
 
 const nombreDe = (c: string): string => c.charAt(0).toUpperCase() + c.slice(1);
@@ -306,5 +311,38 @@ describe('textoParaCompartir', () => {
     const r = resumenDelMes([], '2026-08', '2026-08-15');
     expect(() => textoParaCompartir(r, nombreDe)).not.toThrow();
     expect(textoParaCompartir(r, nombreDe)).toContain('agosto 2026');
+  });
+});
+
+describe('esResumenMesHabilitado — disponible solo 2 días antes de fin de mes', () => {
+  it('meses pasados siempre están habilitados', () => {
+    expect(esResumenMesHabilitado('2026-07', '2026-08-15')).toBe(true);
+    expect(esResumenMesHabilitado('2026-01', '2026-08-24')).toBe(true);
+  });
+
+  it('meses futuros nunca están habilitados', () => {
+    expect(esResumenMesHabilitado('2026-09', '2026-08-24')).toBe(false);
+  });
+
+  it('en un mes de 31 días (agosto) se habilita desde el día 29 (31 - 2)', () => {
+    expect(diaDesbloqueoResumen('2026-08')).toBe(29);
+    expect(esResumenMesHabilitado('2026-08', '2026-08-24')).toBe(false);
+    expect(esResumenMesHabilitado('2026-08', '2026-08-28')).toBe(false);
+    expect(esResumenMesHabilitado('2026-08', '2026-08-29')).toBe(true);
+    expect(esResumenMesHabilitado('2026-08', '2026-08-30')).toBe(true);
+    expect(esResumenMesHabilitado('2026-08', '2026-08-31')).toBe(true);
+  });
+
+  it('en un mes de 30 días (septiembre) se habilita desde el día 28 (30 - 2)', () => {
+    expect(diaDesbloqueoResumen('2026-09')).toBe(28);
+    expect(esResumenMesHabilitado('2026-09', '2026-09-27')).toBe(false);
+    expect(esResumenMesHabilitado('2026-09', '2026-09-28')).toBe(true);
+    expect(esResumenMesHabilitado('2026-09', '2026-09-30')).toBe(true);
+  });
+
+  it('en febrero no bisiesto (28 días) se habilita desde el día 26 (28 - 2)', () => {
+    expect(diaDesbloqueoResumen('2026-02')).toBe(26);
+    expect(esResumenMesHabilitado('2026-02', '2026-02-25')).toBe(false);
+    expect(esResumenMesHabilitado('2026-02', '2026-02-26')).toBe(true);
   });
 });

@@ -39,9 +39,35 @@ export type TarjetaResumen =
   | { tipo: 'cierre'; totals: MonthTotals; tono: Tono; frase: string };
 
 /** Días del mes 'YYYY-MM', sin depender de qué mes trae `Date` puesto localmente. */
-const diasEnMes = (mes: string): number => {
+export const diasEnMes = (mes: string): number => {
   const [y, m] = mes.split('-').map(Number);
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
+};
+
+/**
+ * El resumen del mes (estilo Wrapped) solo se habilita:
+ * 1. Para meses pasados (mes < mesActual): siempre disponible.
+ * 2. Para el mes en curso (mes === mesActual): a partir de 2 días antes de que termine el mes
+ *    (ej: desde el día 29 en meses de 31 días, día 28 en meses de 30 días, etc.).
+ * 3. Para meses futuros: deshabilitado.
+ */
+export const esResumenMesHabilitado = (mes: string, hoy: string): boolean => {
+  const mesActual = hoy.slice(0, 7);
+  if (mes < mesActual) return true;
+  if (mes > mesActual) return false;
+
+  const totalDias = diasEnMes(mes);
+  const diaHoy = Number(hoy.slice(8, 10));
+  const primerDiaHabilitado = totalDias - 2;
+
+  return diaHoy >= primerDiaHabilitado;
+};
+
+/**
+ * Devuelve el número del día en que se desbloquea el resumen para este mes.
+ */
+export const diaDesbloqueoResumen = (mes: string): number => {
+  return diasEnMes(mes) - 2;
 };
 
 /**

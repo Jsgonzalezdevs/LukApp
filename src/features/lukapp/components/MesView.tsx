@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Lock, Sparkles } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { CategorySlice, MonthTotals } from '../lib/aggregate';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel } from '../lib/localDate';
-import { resumenDelMes } from '../lib/resumenMes';
+import { resumenDelMes, esResumenMesHabilitado, diaDesbloqueoResumen } from '../lib/resumenMes';
+import { descargarExcel } from '../lib/exportarExcel';
 import { CategoryBreakdown } from './CategoryBreakdown';
 import { DetalleMes } from './DetalleMes';
 import { ResumenWrapped } from './ResumenWrapped';
@@ -60,12 +61,15 @@ export const MesView: React.FC<MesViewProps> = ({
   const haySiguiente = siguiente <= maxMonth;
 
   const [resumenAbierto, setResumenAbierto] = useState(false);
+  const habilitado = useMemo(() => esResumenMesHabilitado(month, hoy), [month, hoy]);
+  const diaDesbloqueo = useMemo(() => diaDesbloqueoResumen(month), [month]);
+
   // Se calcula solo al abrir: recorre todo el historial (para el promedio de
   // comparación), y esta pantalla se renderiza mucho más seguido de lo que
   // alguien va a tocar "Tu resumen".
   const tarjetasResumen = useMemo(
-    () => (resumenAbierto ? resumenDelMes(transacciones, month, hoy) : []),
-    [resumenAbierto, transacciones, month, hoy],
+    () => (resumenAbierto && habilitado ? resumenDelMes(transacciones, month, hoy) : []),
+    [resumenAbierto, habilitado, transacciones, month, hoy],
   );
 
   return (
@@ -98,21 +102,44 @@ export const MesView: React.FC<MesViewProps> = ({
         </button>
       </div>
 
-      <RippleButton
-        type="button"
-        onClick={() => setResumenAbierto(true)}
-        rippleColor="rgba(255,255,255,0.5)"
-        className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-3.5 text-left text-[var(--fin-on-accent)]"
-      >
-        <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
-        <span className="min-w-0 flex-1">
-          <span className="block text-[15px] font-semibold">Tu resumen de {monthKeyLabel(month)}</span>
-          <span className="mt-0.5 block text-[13px] opacity-70">
-            Lo mejor y lo raro del mes, en una historia
+      {habilitado ? (
+        <RippleButton
+          type="button"
+          onClick={() => setResumenAbierto(true)}
+          rippleColor="rgba(255,255,255,0.5)"
+          className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-3.5 text-left text-[var(--fin-on-accent)] transition-transform active:scale-[0.99]"
+        >
+          <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-semibold">Tu resumen de {monthKeyLabel(month)}</span>
+            <span className="mt-0.5 block text-[13px] opacity-70">
+              Lo mejor y lo raro del mes, en una historia
+            </span>
           </span>
-        </span>
-        <ChevronRight className="h-4 w-4 shrink-0 opacity-60" strokeWidth={2.5} aria-hidden="true" />
-      </RippleButton>
+          <ChevronRight className="h-4 w-4 shrink-0 opacity-60" strokeWidth={2.5} aria-hidden="true" />
+        </RippleButton>
+      ) : (
+        <div
+          className="flex items-center gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-left text-[var(--fin-ink-faint)] select-none opacity-80"
+          title={`El resumen se habilita el día ${diaDesbloqueo} de ${monthKeyLabel(month)}`}
+        >
+          <Sparkles className="h-5 w-5 shrink-0 opacity-30 text-[var(--fin-ink-ghost)]" strokeWidth={2} aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="block text-[14px] font-semibold text-[var(--fin-ink-soft)]">
+                Tu resumen de {monthKeyLabel(month)}
+              </span>
+              <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--fin-ink-faint)] uppercase">
+                Próximamente
+              </span>
+            </div>
+            <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
+              Se habilita el {diaDesbloqueo} de {monthKeyLabel(month).split(' ')[0]} (2 días antes de fin de mes)
+            </span>
+          </span>
+          <Lock className="h-4 w-4 shrink-0 opacity-40 text-[var(--fin-ink-ghost)]" strokeWidth={2} aria-hidden="true" />
+        </div>
+      )}
 
       <div>
         <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">
@@ -145,6 +172,34 @@ export const MesView: React.FC<MesViewProps> = ({
       <DetalleMes delMes={delMes} transacciones={transacciones} mes={month} />
 
       <TendenciasView transacciones={transacciones} mes={month} />
+
+      {delMes.length > 0 ? (
+        <div className="flex items-center justify-center pt-2 pb-1">
+          <button
+            type="button"
+            onClick={() => {
+              descargarExcel(
+                {
+                  transacciones: delMes as any,
+                  cajitas: [],
+                  cajitaMovimientos: [],
+                  contactos: [],
+                  presupuestos: [],
+                  metas: [],
+                  recurrentes: [],
+                  categorias: [],
+                },
+                {},
+                month,
+              );
+            }}
+            className="flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm transition-all hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] active:scale-95"
+          >
+            <Download className="h-4 w-4" strokeWidth={2.25} />
+            Exportar {monthKeyLabel(month)} a Excel (.xls)
+          </button>
+        </div>
+      ) : null}
 
       {resumenAbierto ? (
         <ResumenWrapped tarjetas={tarjetasResumen} onCerrar={() => setResumenAbierto(false)} />
