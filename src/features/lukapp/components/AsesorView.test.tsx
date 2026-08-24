@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { AsesorView, etiquetaConexion } from './AsesorView';
+import { AsesorView } from './AsesorView';
+import { etiquetaConexion } from '../lib/localDate';
 import { LEXICO_VACIO } from '../lib/aprendizaje';
 import * as supabaseData from '../data/supabase';
 

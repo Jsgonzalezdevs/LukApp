@@ -234,11 +234,15 @@ export const hacerCatalogo = (personales: readonly CategoriaPersonal[] = []): Ca
 /** The empty catalogue, for code paths that never got user categories. */
 export const CATALOGO_BASE = hacerCatalogo([]);
 
+let contadorClave = 0;
+
 /**
  * A stable key for a new category. Prefixed so it can never collide with a
  * built-in slug, now or when a built-in is added later.
  */
-export const nuevaClaveCategoria = (): string =>
-  `p-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+export const nuevaClaveCategoria = (): string => {
+  contadorClave = (contadorClave + 1) % 1000000;
+  return `p-${Date.now().toString(36)}-${contadorClave.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+};
 
 export const ES_CLAVE_PROPIA = (clave: CategoriaClave): boolean => clave.startsWith('p-');

@@ -50,6 +50,19 @@ export const asesorEnHorario = (now: Date = new Date()): boolean => {
   return h >= ASESOR_DESDE && h <= ASESOR_HASTA;
 };
 
+export type EstadoConexion = 'despertando' | 'en-linea' | 'local';
+
+export const etiquetaConexion = (estado: EstadoConexion, ahora: Date = new Date()): string => {
+  if (estado === 'en-linea') return 'En línea';
+  const enHorario = asesorEnHorario(ahora);
+  if (estado === 'despertando') {
+    return enHorario ? 'Conectando…' : 'Despertando… puede tardar un momento';
+  }
+  return enHorario
+    ? 'Sin conexión · responde el modo local'
+    : `Descansando hasta las ${ASESOR_DESDE} a. m. · responde el modo local`;
+};
+
 const MONTHS_SHORT = [
   'ene',
   'feb',

@@ -74,50 +74,54 @@ const nombreSegunTipo = (tipo: string): string => {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
 
-  const elegido = PROVEEDORES.map((p) => ({ ...p, llave: process.env[p.variable] })).find(
-    (p) => Boolean(p.llave),
-  );
-  if (!elegido) return noSePudo('Falta llave de transcripción');
+  const disponibles = PROVEEDORES.map((p) => ({
+    ...p,
+    llave: process.env[p.variable],
+  })).filter((p) => Boolean(p.llave));
+
+  if (disponibles.length === 0) return noSePudo('Falta llave de transcripción');
 
   const audio = await req.blob();
   if (audio.size === 0) return noSePudo('No llegó audio');
 
   const tipo = req.headers.get('content-type') ?? 'audio/webm';
 
-  const formulario = new FormData();
-  formulario.append('file', audio, nombreSegunTipo(tipo));
-  formulario.append('model', elegido.modelo);
-  // Fijo, no detectado: esta app se habla en español y punto. Dejar que el
-  // modelo adivine el idioma es lo que producía frases fonéticas sin sentido.
-  formulario.append('language', 'es');
-  formulario.append('prompt', CONTEXTO_ES);
-  // Sin creatividad: que transcriba lo que oyó, no lo que le parecería probable.
-  formulario.append('temperature', '0');
+  for (const elegido of disponibles) {
+    const formulario = new FormData();
+    formulario.append('file', audio, nombreSegunTipo(tipo));
+    formulario.append('model', elegido.modelo);
+    // Fijo, no detectado: esta app se habla en español y punto. Dejar que el
+    // modelo adivine el idioma es lo que producía frases fonéticas sin sentido.
+    formulario.append('language', 'es');
+    formulario.append('prompt', CONTEXTO_ES);
+    // Sin creatividad: que transcriba lo que oyó, no lo que le parecería probable.
+    formulario.append('temperature', '0');
 
-  try {
-    const respuesta = await fetch(elegido.url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${elegido.llave}` },
-      body: formulario,
-    });
+    try {
+      const respuesta = await fetch(elegido.url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${elegido.llave}` },
+        body: formulario,
+      });
 
-    if (!respuesta.ok) {
-      // El cuerpo del error puede traer el audio de vuelta; solo se registra el
-      // principio, y nunca se le devuelve a quien llamó.
-      const detalle = await respuesta.text();
-      console.error(
-        `[transcribir] ${elegido.nombre} ${respuesta.status}: ${detalle.slice(0, 200)}`,
-      );
-      return noSePudo('No se pudo transcribir');
+      if (!respuesta.ok) {
+        const detalle = await respuesta.text();
+        console.error(
+          `[transcribir] ${elegido.nombre} ${respuesta.status}: ${detalle.slice(0, 200)}`,
+        );
+        continue;
+      }
+
+      const { text } = (await respuesta.json()) as { text?: string };
+      return new Response(JSON.stringify({ success: true, text: text ?? '' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error(`[transcribir] ${elegido.nombre} error:`, error);
+      continue;
     }
-
-    const { text } = (await respuesta.json()) as { text?: string };
-    return new Response(JSON.stringify({ success: true, text: text ?? '' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('[transcribir]', error);
-    return noSePudo('No se pudo transcribir');
   }
+
+  return noSePudo('No se pudo transcribir');
 }

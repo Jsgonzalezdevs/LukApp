@@ -24,7 +24,7 @@ import { hacerCatalogo, type CategoriaPersonal } from '../categorias';
 
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
-import { bogotaDate, asesorEnHorario, ASESOR_DESDE } from '../lib/localDate';
+import { bogotaDate, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 
 interface Message {
@@ -36,34 +36,6 @@ interface Message {
   actions?: ParsedTransaction[];
   suggestions?: string[];
 }
-
-/**
- * Si hay un modelo detrás del asesor o si contesta el motor local.
- *
- * `despertando` es un estado real, no un adorno: en el plan gratuito de Render el
- * servicio se duerme y la primera petición tarda hasta ~40 s. Sin este estado esa
- * espera parecía que la app se hubiera colgado.
- */
-type EstadoConexion = 'despertando' | 'en-linea' | 'local';
-
-/**
- * Cómo se le cuenta el estado a quien está mirando.
- *
- * Fuera del horario de servicio no se dice "sin conexión", porque no está roto:
- * el ping que lo mantiene despierto solo corre de día, así que de noche duerme a
- * propósito. Llamarlo "descansando" y decir a qué hora vuelve es la verdad, y
- * además explica por qué el primer mensaje va a tardar.
- */
-export const etiquetaConexion = (estado: EstadoConexion, ahora: Date = new Date()): string => {
-  if (estado === 'en-linea') return 'En línea';
-  const enHorario = asesorEnHorario(ahora);
-  if (estado === 'despertando') {
-    return enHorario ? 'Conectando…' : 'Despertando… puede tardar un momento';
-  }
-  return enHorario
-    ? 'Sin conexión · responde el modo local'
-    : `Descansando hasta las ${ASESOR_DESDE} a. m. · responde el modo local`;
-};
 
 interface AsesorViewProps {
   transacciones: readonly Transaction[];

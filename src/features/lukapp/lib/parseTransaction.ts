@@ -147,7 +147,14 @@ export const limpiarDescripcionFinanciera = (desc: string): string => {
     t = t.replace(/^[,.\-•\s]+|[,.\-•\s]+$/g, '').trim();
   }
 
-  if (!t || t.length < 2) return desc;
+  const STOPWORDS_RESIDUALS = new Set([
+    'me', 'te', 'se', 'le', 'nos', 'de', 'en', 'un', 'una', 'el', 'la', 'los', 'las',
+    'por', 'para', 'con', 'y', 'o', 'que', 'mi', 'mis', 'tu', 'tus', 'su', 'sus'
+  ]);
+
+  if (!t || t.length < 2 || STOPWORDS_RESIDUALS.has(t.toLowerCase())) {
+    return '';
+  }
 
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
@@ -1165,6 +1172,9 @@ export const parseTransaction = (
 
   if (!isOCR) {
     description = limpiarDescripcionFinanciera(description);
+    if (!description || description.trim().length === 0) {
+      description = CATEGORY_LABELS[category as Category] ?? category;
+    }
   }
 
   const timeMatch = raw.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
