@@ -1,0 +1,1042 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { Category, Transaction } from '../types';
+import { bogotaDate } from '../lib/localDate';
+import { nuevoId } from '../lib/id';
+import { nuevaClaveCategoria } from '../categorias';
+import type { CategoriaPersonal } from '../categorias';
+import type { Contacto } from '../lib/contactos';
+import type { Presupuesto } from '../lib/presupuestos';
+import type { Pendiente, Recurrente } from '../lib/recurrentes';
+import { comoTransaccion } from '../lib/recurrentes';
+import { normalizarNombre } from '../lib/contactos';
+import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
+import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
+import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, cuentaEfectivo } from './modelos';
+import type { Instantanea, Repositorio } from './repositorio';
+import { tieneSincronizacion } from './repositorioConCola';
+import { instantaneaVacia } from './repositorio';
+import { crearRepositorio } from './crearRepositorio';
+
+export interface Almacen {
+  datos: Instantanea;
+  cargando: boolean;
+  /** False when storage is memory-only, so the UI can warn instead of lying. */
+  persistente: boolean;
+  error: string | null;
+  descartarError: () => void;
+  /**
+   * Vuelve a leer todo del almacenamiento, en silencio y de fondo.
+   * Lo llama `useSincronizacion` cuando vuelves a la app.
+   */
+  recargar: () => Promise<void>;
+  /**
+   * Cuántos cambios hechos sin conexión siguen esperando subir. Cero con
+   * cualquier repositorio que no sea `RepositorioConCola` — no hay nada que
+   * esperar cuando no hay una cola de por medio.
+   */
+  cambiosPendientes: number;
+
+  agregarTransaccion: (tx: Transaction) => Promise<void>;
+  importarTransacciones: (txs: readonly Transaction[]) => Promise<void>;
+  actualizarTransaccion: (tx: Transaction) => Promise<void>;
+  borrarTransaccion: (id: string) => Promise<void>;
+
+  crearCajita: (datos: {
+    nombre: string;
+    icon: string;
+    tipo: CajitaTipo;
+    metaCop: number | null;
+    tasaEaPct: number | null;
+    /** What is already in the pocket. Recorded as its opening movement. */
+    saldoInicialCop: number;
+  }) => Promise<void>;
+  actualizarCajita: (cajita: Cajita) => Promise<void>;
+  borrarCajita: (id: string) => Promise<void>;
+
+  registrarMovimiento: (datos: {
+    cajitaId: string;
+    kind: CajitaMovKind;
+    deltaCop: number;
+    occurredOn?: string;
+    nota?: string;
+    categoria?: Category | null;
+  }) => Promise<void>;
+  /**
+   * Pays down a debt with money from a real account.
+   *
+   * One call, two movements, one write: the debt goes down and the account it
+   * came out of goes down with it. Recorded as a pair rather than a ledger
+   * expense because paying a debt is not new consumption — it moves money that
+   * was already counted, and booking it as a gasto would inflate the month
+   * every time a card gets paid.
+   */
+  abonarDeuda: (datos: {
+    deudaId: string;
+    cuentaId: string;
+    montoCop: number;
+    occurredOn?: string;
+  }) => Promise<void>;
+  /**
+   * Moves money between two balances of your own.
+   *
+   * A pair of pocket movements, never a ledger entry: money leaving Nequi for a
+   * savings pocket is not spending and its arrival is not income. Booked as
+   * transactions it would inflate BOTH sides of the month and make the summary
+   * report activity that never happened.
+   */
+  transferirEntreCuentas: (datos: {
+    origenId: string;
+    destinoId: string;
+    montoCop: number;
+    occurredOn?: string;
+  }) => Promise<void>;
+  /** "I have X in this pocket" — records the delta needed to reach X. */
+  fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<void>;
+  borrarMovimiento: (id: string) => Promise<void>;
+
+  crearMeta: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<void>;
+  actualizarMeta: (meta: Meta) => Promise<void>;
+  borrarMeta: (id: string) => Promise<void>;
+
+  crearCategoria: (
+    datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>,
+  ) => Promise<void>;
+  actualizarCategoria: (categoria: CategoriaPersonal) => Promise<void>;
+  /** Archives it. The movements filed under it keep pointing here. */
+  archivarCategoria: (id: string) => Promise<void>;
+  /**
+   * Removes the row outright. Only offered for a category nothing uses — with
+   * movements attached, archiving is the only honest option, since the key
+   * would otherwise survive with nothing left to explain it.
+   */
+  borrarCategoria: (id: string) => Promise<void>;
+
+  /**
+   * Says two spellings are one person. Idempotent, and merges whatever contacts
+   * already held either name so answering twice cannot create a third row.
+   */
+  unirContactos: (a: string, b: string, nombre: string) => Promise<void>;
+  /** Says they are NOT the same, so the question is never asked again. */
+  separarContactos: (a: string, b: string, nombre: string) => Promise<void>;
+  actualizarContacto: (contacto: Contacto) => Promise<void>;
+  /** Undoes a merge: the spellings go back to standing on their own. */
+  borrarContacto: (id: string) => Promise<void>;
+  /**
+   * Le pone (o le quita) un apodo a una contraparte, exista ya como contacto o
+   * no. La mayoría de las filas de la lista nunca se unieron con nada, así que
+   * exigir un contacto guardado dejaría los apodos para unas pocas.
+   */
+  apodarParte: (clave: string, nombre: string, apodo: string, quitar?: boolean) => Promise<void>;
+
+  /** Fija el tope de una categoría. Vuelve a fijarlo si ya tenía uno. */
+  fijarPresupuesto: (categoria: string, montoCop: number) => Promise<void>;
+  quitarPresupuesto: (categoria: string) => Promise<void>;
+
+  crearRecurrente: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => Promise<void>;
+  actualizarRecurrente: (recurrente: Recurrente) => Promise<void>;
+  borrarRecurrente: (id: string) => Promise<void>;
+  /** Convierte un pendiente en un movimiento real, con la fecha que le tocaba. */
+  confirmarRecurrente: (pendiente: Pendiente) => Promise<void>;
+
+  /**
+   * Reemplaza TODO por lo que traiga un respaldo.
+   *
+   * Vacía primero y escribe después, en ese orden: mezclar lo viejo con lo
+   * nuevo dejaría duplicados imposibles de distinguir de movimientos reales.
+   */
+  restaurar: (datos: Instantanea) => Promise<void>;
+}
+
+const mensajeDeError = (e: unknown): string =>
+  e instanceof Error ? e.message : 'No se pudo guardar el cambio.';
+
+export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
+  const elegido = useMemo(
+    () =>
+      repositorioInyectado
+        ? { repositorio: repositorioInyectado, persistente: true }
+        : crearRepositorio(),
+    [repositorioInyectado],
+  );
+
+  const [datos, setDatos] = useState<Instantanea>(instantaneaVacia());
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [persistente, setPersistente] = useState(elegido.persistente);
+  const [cambiosPendientes, setCambiosPendientes] = useState(0);
+
+  // Held in a ref so the recovery path can re-read storage without every action
+  // callback depending on the latest snapshot.
+  const repo = elegido.repositorio;
+  const montado = useRef(true);
+
+  /**
+   * Cuántas escrituras hay ahora mismo en el aire.
+   *
+   * Sirve para una cosa muy concreta: `recargar()` no puede pisar un cambio que
+   * se acaba de hacer. Si guardas un gasto y justo en ese instante llega una
+   * recarga, el servidor todavía no conoce ese gasto, así que su respuesta
+   * llegaría SIN él y lo borraría de la pantalla — el movimiento parecería
+   * haberse perdido aunque sí se guardó.
+   *
+   * Es un contador y no un booleano porque puede haber varias escrituras a la
+   * vez (guardar un movimiento que además ajusta el saldo de una cuenta).
+   */
+  const escrituras = useRef(0);
+
+  /**
+   * Vuelve a preguntarle al repositorio cuántos cambios sin subir tiene. No
+   * pasa nada si `repo` no lo soporta (todo lo que no sea `RepositorioConCola`
+   * — sin cola no hay nada que contar) ni si falla la propia pregunta.
+   */
+  const actualizarPendientes = useCallback(async () => {
+    if (!tieneSincronizacion(repo)) return;
+    try {
+      const n = await repo.cambiosPendientes();
+      if (montado.current) setCambiosPendientes(n);
+    } catch {
+      // No es grave: el número solo se queda desactualizado un momento.
+    }
+  }, [repo]);
+
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+    };
+  }, []);
+
+  /**
+   * Vuelve a leerlo todo del almacenamiento.
+   *
+   * La app lee al abrirse y a partir de ahí solo escribe, así que sin esto un
+   * dispositivo se queda con la foto del momento en que se abrió. Eso se nota
+   * sobre todo con la app instalada en la pantalla de inicio: volver a ella no
+   * la vuelve a montar, así que puede llevar horas mostrando saldos viejos
+   * mientras en otro aparato ya cambiaron.
+   *
+   * No avisa de que está cargando a propósito: esto ocurre de fondo y poner la
+   * pantalla en "cargando…" cada vez que vuelves a la app sería peor que el
+   * problema que arregla.
+   */
+  const recargar = useCallback(async () => {
+    if (escrituras.current > 0) return;
+    try {
+      const fresco = await repo.cargarTodo();
+      if (montado.current && escrituras.current === 0) setDatos(fresco);
+    } catch {
+      // Sin internet o con el servidor caído se sigue viendo lo que ya había,
+      // que es correcto: son datos de verdad, solo que de hace un rato.
+    }
+    // `cargarTodo()` de `RepositorioConCola` intenta subir la cola antes de
+    // leer, así que este es también el momento natural de refrescar cuántos
+    // cambios quedaron pendientes después de ese intento.
+    await actualizarPendientes();
+  }, [repo, actualizarPendientes]);
+
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      try {
+        const cargado = await repo.cargarTodo();
+        if (cancelado) return;
+
+        // La cuenta de Efectivo nació con el id 'efectivo', que es legible pero
+        // no es un UUID — y `cajitas.id` en Postgres sí lo es. La cuenta nunca
+        // llegó a guardarse y cualquier movimiento que la nombrara moría con
+        // "invalid input syntax for type uuid". Aquí se reescribe todo lo que
+        // haya quedado apuntando al id viejo, antes de tocar nada más.
+        const tocado =
+          cargado.cajitas.some((c) => c.id === ID_EFECTIVO_VIEJO) ||
+          cargado.transacciones.some((t) => t.cuentaId === ID_EFECTIVO_VIEJO) ||
+          cargado.cajitaMovimientos.some((m) => m.cajitaId === ID_EFECTIVO_VIEJO);
+
+        if (tocado) {
+          const arregladas = cargado.cajitas.map((c) =>
+            c.id === ID_EFECTIVO_VIEJO ? { ...c, id: ID_EFECTIVO } : c,
+          );
+          const arregladasTx = cargado.transacciones.map((t) =>
+            t.cuentaId === ID_EFECTIVO_VIEJO ? { ...t, cuentaId: ID_EFECTIVO } : t,
+          );
+          const arregladosMov = cargado.cajitaMovimientos.map((m) =>
+            m.cajitaId === ID_EFECTIVO_VIEJO ? { ...m, cajitaId: ID_EFECTIVO } : m,
+          );
+
+          cargado.cajitas = arregladas;
+          cargado.transacciones = arregladasTx;
+          cargado.cajitaMovimientos = arregladosMov;
+
+          // Se borra la fila vieja ANTES de escribir la nueva: en IndexedDB son
+          // dos claves distintas y quedarían las dos, con la misma cuenta
+          // duplicada y los saldos partidos entre ellas.
+          await repo.borrarCajita(ID_EFECTIVO_VIEJO);
+          const efectivo = arregladas.find((c) => c.id === ID_EFECTIVO);
+          if (efectivo) await repo.guardarCajita(efectivo);
+          await repo.guardarTransacciones(arregladasTx.filter((t) => t.cuentaId === ID_EFECTIVO));
+          await repo.guardarCajitaMovimientos(
+            arregladosMov.filter((m) => m.cajitaId === ID_EFECTIVO),
+          );
+        }
+
+        /* LOS EFECTIVOS DUPLICADOS
+           El sembrado de abajo dejó de ser idempotente el día que se le pasó
+           `nuevoId('caj')` en vez del `ID_EFECTIVO` que `cuentaEfectivo` trae
+           por defecto. Ese cambio arreglaba un choque real de clave primaria
+           —con un id fijo, el Efectivo de un usuario colisionaba con el de
+           otro en Postgres— pero a cambio dejó al id sin poder identificar
+           nunca la cuenta ya sembrada: de las tres condiciones de la guarda,
+           las dos de id son ahora inalcanzables y solo queda comparar el
+           nombre, que depende de haber leído antes lo que ya existe.
+
+           Y hay dos momentos en que no se ha leído: un aparato nuevo cuya
+           primera carga se cae a la caché local por un fallo de red —la caché
+           está vacía, así que siembra otro— y el doble montaje de StrictMode.
+           Los dos acaban con dos filas «Efectivo» de ids distintos que luego
+           se sincronizan tan campantes.
+
+           Aquí se colapsan. El superviviente es el MÁS VIEJO, y a igualdad de
+           fecha el de id menor: tiene que ser una regla determinista o dos
+           aparatos elegirían supervivientes distintos y se borrarían el uno al
+           otro en bucle. Y solo se retiran los que no tienen nada dentro: si
+           un duplicado llegó a tener saldo o movimientos se deja en paz y que
+           lo resuelva su dueño. Enseñar dos cuentas es feo; mover la plata de
+           alguien sin preguntarle es otra cosa. */
+        const esEfectivo = (c: (typeof cargado.cajitas)[number]) =>
+          c.id === ID_EFECTIVO ||
+          c.id === ID_EFECTIVO_VIEJO ||
+          c.nombre.trim().toLowerCase() === 'efectivo';
+
+        const efectivos = cargado.cajitas.filter(esEfectivo);
+        if (efectivos.length > 1) {
+          const porAntiguedad = [...efectivos].sort((a, b) =>
+            a.createdAt === b.createdAt
+              ? a.id.localeCompare(b.id)
+              : a.createdAt.localeCompare(b.createdAt),
+          );
+
+          const vacia = (id: string) =>
+            !cargado.cajitaMovimientos.some((m) => m.cajitaId === id) &&
+            !cargado.transacciones.some((t) => t.cuentaId === id);
+
+          const sobrantes = porAntiguedad.slice(1).filter((c) => vacia(c.id));
+          if (sobrantes.length > 0) {
+            const fuera = new Set(sobrantes.map((c) => c.id));
+            cargado.cajitas = cargado.cajitas.filter((c) => !fuera.has(c.id));
+            for (const c of sobrantes) {
+              try {
+                await repo.borrarCajita(c.id);
+              } catch {
+                // Sin conexión se queda en la cola. La lista de arriba ya está
+                // limpia, así que el duplicado deja de verse igualmente.
+              }
+            }
+          }
+        }
+
+        // Cash is seeded rather than shipped as a synthetic entry, so it behaves
+        // like every other account: it holds a balance, appears in Configuración,
+        // and can be renamed or archived. Keyed uniquely per user so multiple accounts
+        // do not collide on the primary key in Postgres.
+        if (!cargado.cajitas.some(esEfectivo)) {
+          const efectivo = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
+          cargado.cajitas = [...cargado.cajitas, efectivo];
+          try {
+            await repo.guardarCajita(efectivo);
+          } catch (e) {
+            console.warn('No se pudo persistir la cuenta de efectivo inicial:', e);
+          }
+        }
+
+        setDatos(cargado);
+        await actualizarPendientes();
+      } catch (e) {
+        if (!cancelado) {
+          setError(mensajeDeError(e));
+          // Storage exists but would not open. The session still works; it just
+          // will not survive a reload, and the banner has to say that.
+          setPersistente(false);
+        }
+      } finally {
+        if (!cancelado) setCargando(false);
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [repo, actualizarPendientes]);
+
+  /**
+   * Applies a change to the screen first, then writes it.
+   *
+   * If the write fails the optimistic state is thrown away and storage is
+   * re-read, so the UI can never end up showing a movement that was never
+   * actually saved — the one outcome that would quietly corrupt a ledger.
+   */
+  const aplicar = useCallback(
+    async (siguiente: Instantanea, escribir: () => Promise<void>) => {
+      const anterior = datos;
+      setDatos(siguiente);
+      // Se apunta ANTES de escribir y se descuenta en el finally, pase lo que
+      // pase. Mientras esté por encima de cero, `recargar` se abstiene: una
+      // respuesta del servidor pedida antes de esta escritura no la conoce, y
+      // aplicarla borraría de la pantalla algo que sí se guardó.
+      escrituras.current += 1;
+      try {
+        await escribir();
+      } catch (e) {
+        if (!montado.current) return;
+        setError(mensajeDeError(e));
+        try {
+          setDatos(await repo.cargarTodo());
+        } catch {
+          setDatos(anterior);
+        }
+      } finally {
+        escrituras.current -= 1;
+      }
+      // Si la escritura no pudo subir y quedó en cola, o si al reintentar el
+      // resto de la cola alguna terminó de subir, el número visible cambia
+      // aquí mismo — no hay que esperar a la siguiente vez que vuelvas a la
+      // app para verlo.
+      await actualizarPendientes();
+    },
+    [datos, repo, actualizarPendientes],
+  );
+
+  const agregarTransaccion = useCallback(
+    async (tx: Transaction) => {
+      await aplicar({ ...datos, transacciones: [tx, ...datos.transacciones] }, () =>
+        repo.guardarTransacciones([tx]),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const importarTransacciones = useCallback(
+    async (txs: readonly Transaction[]) => {
+      if (txs.length === 0) return;
+      await aplicar({ ...datos, transacciones: [...txs, ...datos.transacciones] }, () =>
+        repo.guardarTransacciones(txs),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarTransaccion = useCallback(
+    async (tx: Transaction) => {
+      await aplicar(
+        {
+          ...datos,
+          transacciones: datos.transacciones.map((t) => (t.id === tx.id ? tx : t)),
+        },
+        () => repo.guardarTransacciones([tx]),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarTransaccion = useCallback(
+    async (id: string) => {
+      await aplicar(
+        { ...datos, transacciones: datos.transacciones.filter((t) => t.id !== id) },
+        () => repo.borrarTransaccion(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const crearCajita = useCallback(
+    async ({
+      nombre,
+      icon,
+      tipo,
+      metaCop,
+      tasaEaPct,
+      saldoInicialCop,
+    }: {
+      nombre: string;
+      icon: string;
+      tipo: CajitaTipo;
+      metaCop: number | null;
+      tasaEaPct: number | null;
+      saldoInicialCop: number;
+    }) => {
+      const cajita: Cajita = {
+        id: nuevoId('caj'),
+        nombre,
+        icon,
+        tipo,
+        metaCop,
+        tasaEaPct,
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+      // An opening balance is a movement, not a stored field — the invariant is
+      // that a balance is the sum of its movements, and this is what the yield
+      // calculation walks to know since when the money has been earning.
+      const apertura: CajitaMovimiento[] =
+        saldoInicialCop > 0
+          ? [
+              {
+                id: nuevoId('mov'),
+                cajitaId: cajita.id,
+                kind: 'deposito',
+                deltaCop: saldoInicialCop,
+                categoria: null,
+                occurredOn: bogotaDate(),
+                nota: 'Saldo inicial',
+                createdAt: new Date().toISOString(),
+              },
+            ]
+          : [];
+
+      await aplicar(
+        {
+          ...datos,
+          cajitas: [...datos.cajitas, cajita],
+          cajitaMovimientos: [...datos.cajitaMovimientos, ...apertura],
+        },
+        async () => {
+          await repo.guardarCajita(cajita);
+          await repo.guardarCajitaMovimientos(apertura);
+        },
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarCajita = useCallback(
+    async (cajita: Cajita) => {
+      await aplicar(
+        { ...datos, cajitas: datos.cajitas.map((c) => (c.id === cajita.id ? cajita : c)) },
+        () => repo.guardarCajita(cajita),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarCajita = useCallback(
+    async (id: string) => {
+      await aplicar(
+        {
+          ...datos,
+          cajitas: datos.cajitas.filter((c) => c.id !== id),
+          cajitaMovimientos: datos.cajitaMovimientos.filter((m) => m.cajitaId !== id),
+          // Mirrors the repository's cascade: the goal survives, the link does not.
+          metas: datos.metas.map((m) => (m.cajitaId === id ? { ...m, cajitaId: null } : m)),
+        },
+        () => repo.borrarCajita(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const registrarMovimiento = useCallback(
+    async ({
+      cajitaId,
+      kind,
+      deltaCop,
+      occurredOn,
+      nota,
+      categoria,
+    }: {
+      cajitaId: string;
+      kind: CajitaMovKind;
+      deltaCop: number;
+      occurredOn?: string;
+      nota?: string;
+      categoria?: Category | null;
+    }) => {
+      const movimiento: CajitaMovimiento = {
+        id: nuevoId('mov'),
+        cajitaId,
+        kind,
+        deltaCop,
+        occurredOn: occurredOn ?? bogotaDate(),
+        nota: nota ?? '',
+        categoria: categoria ?? null,
+        createdAt: new Date().toISOString(),
+      };
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, movimiento] }, () =>
+        repo.guardarCajitaMovimientos([movimiento]),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const abonarDeuda = useCallback(
+    async ({
+      deudaId,
+      cuentaId,
+      montoCop,
+      occurredOn,
+    }: {
+      deudaId: string;
+      cuentaId: string;
+      montoCop: number;
+      occurredOn?: string;
+    }) => {
+      const monto = Math.abs(montoCop);
+      if (monto === 0) return;
+
+      const nombreDe = (id: string) => datos.cajitas.find((c) => c.id === id)?.nombre ?? '';
+      const fecha = occurredOn ?? bogotaDate();
+      const creado = new Date().toISOString();
+
+      const base = { occurredOn: fecha, categoria: null, createdAt: creado };
+      const enLaDeuda: CajitaMovimiento = {
+        ...base,
+        id: nuevoId('mov'),
+        cajitaId: deudaId,
+        kind: 'abono',
+        deltaCop: -monto,
+        nota: `Pagado desde ${nombreDe(cuentaId)}`.trim(),
+      };
+      const enLaCuenta: CajitaMovimiento = {
+        ...base,
+        id: nuevoId('mov'),
+        cajitaId: cuentaId,
+        kind: 'retiro',
+        deltaCop: -monto,
+        nota: `Abono a ${nombreDe(deudaId)}`.trim(),
+      };
+
+      const par = [enLaDeuda, enLaCuenta];
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, ...par] }, () =>
+        repo.guardarCajitaMovimientos(par),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const transferirEntreCuentas = useCallback(
+    async ({
+      origenId,
+      destinoId,
+      montoCop,
+      occurredOn,
+    }: {
+      origenId: string;
+      destinoId: string;
+      montoCop: number;
+      occurredOn?: string;
+    }) => {
+      const monto = Math.abs(montoCop);
+      // Moving money to itself is not a transfer; recording it would leave two
+      // rows in the history that cancel out and explain nothing.
+      if (monto === 0 || origenId === destinoId) return;
+
+      const nombreDe = (id: string) => datos.cajitas.find((c) => c.id === id)?.nombre ?? '';
+      const base = {
+        occurredOn: occurredOn ?? bogotaDate(),
+        categoria: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      const par: CajitaMovimiento[] = [
+        {
+          ...base,
+          id: nuevoId('mov'),
+          cajitaId: origenId,
+          kind: 'retiro',
+          deltaCop: -monto,
+          nota: `Enviado a ${nombreDe(destinoId)}`.trim(),
+        },
+        {
+          ...base,
+          id: nuevoId('mov'),
+          cajitaId: destinoId,
+          kind: 'deposito',
+          deltaCop: monto,
+          nota: `Recibido de ${nombreDe(origenId)}`.trim(),
+        },
+      ];
+
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, ...par] }, () =>
+        repo.guardarCajitaMovimientos(par),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const fijarSaldo = useCallback(
+    async (cajitaId: string, saldoObjetivo: number, nota?: string) => {
+      // Measured against the EFFECTIVE balance — pocket movements plus anything
+      // attributed to it. Against the raw sum, the adjustment would fight every
+      // recorded transaction and the correction would never land where asked.
+      const actual = saldoDeCajita(datos.cajitaMovimientos, cajitaId, datos.transacciones);
+      const delta = ajusteHacia(actual, saldoObjetivo);
+      // Nothing changed: recording a zero-delta row would clutter the history
+      // with movements that say nothing happened.
+      if (delta === 0) return;
+
+      await registrarMovimiento({
+        cajitaId,
+        kind: 'ajuste',
+        deltaCop: delta,
+        nota: nota ?? 'Saldo actualizado',
+      });
+    },
+    [datos.cajitaMovimientos, datos.transacciones, registrarMovimiento],
+  );
+
+  const borrarMovimiento = useCallback(
+    async (id: string) => {
+      await aplicar(
+        { ...datos, cajitaMovimientos: datos.cajitaMovimientos.filter((m) => m.id !== id) },
+        () => repo.borrarCajitaMovimiento(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const crearMeta = useCallback(
+    async (entrada: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => {
+      const meta: Meta = {
+        ...entrada,
+        id: nuevoId('meta'),
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+      };
+      await aplicar({ ...datos, metas: [...datos.metas, meta] }, () => repo.guardarMeta(meta));
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarMeta = useCallback(
+    async (meta: Meta) => {
+      await aplicar(
+        { ...datos, metas: datos.metas.map((m) => (m.id === meta.id ? meta : m)) },
+        () => repo.guardarMeta(meta),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarMeta = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, metas: datos.metas.filter((m) => m.id !== id) }, () =>
+        repo.borrarMeta(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const crearCategoria = useCallback(
+    async (entrada: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => {
+      const categoria: CategoriaPersonal = {
+        ...entrada,
+        id: nuevaClaveCategoria(),
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+      await aplicar({ ...datos, categorias: [...datos.categorias, categoria] }, () =>
+        repo.guardarCategoria(categoria),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const guardarCategoria = useCallback(
+    async (categoria: CategoriaPersonal) => {
+      await aplicar(
+        {
+          ...datos,
+          categorias: datos.categorias.map((c) => (c.id === categoria.id ? categoria : c)),
+        },
+        () => repo.guardarCategoria(categoria),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const archivarCategoria = useCallback(
+    async (id: string) => {
+      const actual = datos.categorias.find((c) => c.id === id);
+      if (!actual) return;
+      await guardarCategoria({ ...actual, archivedAt: new Date().toISOString() });
+    },
+    [datos.categorias, guardarCategoria],
+  );
+
+  const borrarCategoria = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, categorias: datos.categorias.filter((c) => c.id !== id) }, () =>
+        repo.borrarCategoria(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const unirContactos = useCallback(
+    async (a: string, b: string, nombre: string) => {
+      const claveA = normalizarNombre(a);
+      const claveB = normalizarNombre(b);
+      if (claveA === '' || claveB === '' || claveA === claveB) return;
+
+      // Any existing contact holding either name is absorbed, not left beside
+      // the new one — otherwise the same person ends up split across two rows
+      // by the very action meant to join them.
+      const tocados = datos.contactos.filter(
+        (c) => c.alias.includes(claveA) || c.alias.includes(claveB),
+      );
+      const resto = datos.contactos.filter((c) => !tocados.includes(c));
+
+      const unido: Contacto = {
+        id: tocados[0]?.id ?? nuevoId('contacto'),
+        nombre,
+        alias: [...new Set([claveA, claveB, ...tocados.flatMap((c) => c.alias)])],
+        separadoDe: [...new Set(tocados.flatMap((c) => c.separadoDe))].filter(
+          (n) => n !== claveA && n !== claveB,
+        ),
+        // Los apodos de ambos sobreviven la unión: eran formas de nombrar a la
+        // misma persona, que es justamente lo que se acaba de confirmar.
+        apodos: [...new Set(tocados.flatMap((c) => c.apodos))],
+        createdAt: tocados[0]?.createdAt ?? new Date().toISOString(),
+        archivedAt: null,
+      };
+
+      await aplicar({ ...datos, contactos: [...resto, unido] }, async () => {
+        await repo.guardarContacto(unido);
+        for (const viejo of tocados.slice(1)) await repo.borrarContacto(viejo.id);
+      });
+    },
+    [aplicar, datos, repo],
+  );
+
+  const separarContactos = useCallback(
+    async (a: string, b: string, nombre: string) => {
+      const claveA = normalizarNombre(a);
+      const claveB = normalizarNombre(b);
+      if (claveA === '' || claveB === '' || claveA === claveB) return;
+
+      // Recorded on a contact for A. A rejection has to live somewhere durable,
+      // and the contact row is the only thing that outlives a reload.
+      const existente = datos.contactos.find((c) => c.alias.includes(claveA));
+      const contacto: Contacto = existente
+        ? { ...existente, separadoDe: [...new Set([...existente.separadoDe, claveB])] }
+        : {
+            id: nuevoId('contacto'),
+            // The display spelling, never the normalized key: the key is a
+            // join column, and showing it turns "Juan Carlos Perez" into
+            // "juan carlos perez" on screen.
+            nombre,
+            alias: [claveA],
+            separadoDe: [claveB],
+            apodos: [],
+            createdAt: new Date().toISOString(),
+            archivedAt: null,
+          };
+
+      await aplicar(
+        {
+          ...datos,
+          contactos: existente
+            ? datos.contactos.map((c) => (c.id === contacto.id ? contacto : c))
+            : [...datos.contactos, contacto],
+        },
+        () => repo.guardarContacto(contacto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const apodarParte = useCallback(
+    async (clave: string, nombre: string, apodo: string, quitar = false) => {
+      const limpio = normalizarNombre(apodo);
+      if (limpio === '') return;
+
+      const existente = datos.contactos.find((c) => c.alias.includes(clave));
+      const base: Contacto = existente ?? {
+        id: nuevoId('contacto'),
+        nombre,
+        alias: [clave],
+        separadoDe: [],
+        apodos: [],
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+
+      const contacto: Contacto = {
+        ...base,
+        apodos: quitar
+          ? base.apodos.filter((a) => a !== limpio)
+          : [...new Set([...base.apodos, limpio])],
+      };
+
+      await aplicar(
+        {
+          ...datos,
+          contactos: existente
+            ? datos.contactos.map((c) => (c.id === contacto.id ? contacto : c))
+            : [...datos.contactos, contacto],
+        },
+        () => repo.guardarContacto(contacto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarContacto = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, contactos: datos.contactos.filter((c) => c.id !== id) }, () =>
+        repo.borrarContacto(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const fijarPresupuesto = useCallback(
+    async (categoria: string, montoCop: number) => {
+      // Un tope de cero no es un presupuesto, es quitarlo — y la base lo
+      // rechazaría de todos modos.
+      if (montoCop <= 0) return;
+
+      const previo = datos.presupuestos.find((p) => p.categoria === categoria);
+      const presupuesto: Presupuesto = {
+        categoria,
+        montoCop,
+        // Se conserva la fecha original al reajustar el tope: la categoría lleva
+        // presupuestada desde entonces, aunque el número haya cambiado.
+        createdAt: previo?.createdAt ?? new Date().toISOString(),
+      };
+
+      await aplicar(
+        {
+          ...datos,
+          presupuestos: [
+            ...datos.presupuestos.filter((p) => p.categoria !== categoria),
+            presupuesto,
+          ],
+        },
+        () => repo.guardarPresupuesto(presupuesto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const crearRecurrente = useCallback(
+    async (entrada: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => {
+      const recurrente: Recurrente = {
+        ...entrada,
+        id: nuevoId('rec'),
+        createdAt: new Date().toISOString(),
+        archivedAt: null,
+      };
+      await aplicar({ ...datos, recurrentes: [...datos.recurrentes, recurrente] }, () =>
+        repo.guardarRecurrente(recurrente),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarRecurrente = useCallback(
+    async (recurrente: Recurrente) => {
+      await aplicar(
+        {
+          ...datos,
+          recurrentes: datos.recurrentes.map((r) => (r.id === recurrente.id ? recurrente : r)),
+        },
+        () => repo.guardarRecurrente(recurrente),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const borrarRecurrente = useCallback(
+    async (id: string) => {
+      await aplicar({ ...datos, recurrentes: datos.recurrentes.filter((r) => r.id !== id) }, () =>
+        repo.borrarRecurrente(id),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const confirmarRecurrente = useCallback(
+    async (pendiente: Pendiente) => {
+      const tx = comoTransaccion(pendiente, nuevoId('tx'), new Date().toISOString());
+      await aplicar({ ...datos, transacciones: [...datos.transacciones, tx] }, () =>
+        repo.guardarTransacciones([tx]),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const restaurar = useCallback(
+    async (nuevos: Instantanea) => {
+      await aplicar(nuevos, async () => {
+        await repo.vaciar();
+        await repo.guardarTransacciones(nuevos.transacciones);
+        for (const c of nuevos.cajitas) await repo.guardarCajita(c);
+        await repo.guardarCajitaMovimientos(nuevos.cajitaMovimientos);
+        for (const m of nuevos.metas) await repo.guardarMeta(m);
+        for (const c of nuevos.categorias) await repo.guardarCategoria(c);
+        for (const c of nuevos.contactos) await repo.guardarContacto(c);
+        for (const p of nuevos.presupuestos) await repo.guardarPresupuesto(p);
+        for (const r of nuevos.recurrentes) await repo.guardarRecurrente(r);
+      });
+    },
+    [aplicar, repo],
+  );
+
+  const quitarPresupuesto = useCallback(
+    async (categoria: string) => {
+      await aplicar(
+        { ...datos, presupuestos: datos.presupuestos.filter((p) => p.categoria !== categoria) },
+        () => repo.borrarPresupuesto(categoria),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  const actualizarContacto = useCallback(
+    async (contacto: Contacto) => {
+      await aplicar(
+        { ...datos, contactos: datos.contactos.map((c) => (c.id === contacto.id ? contacto : c)) },
+        () => repo.guardarContacto(contacto),
+      );
+    },
+    [aplicar, datos, repo],
+  );
+
+  return {
+    datos,
+    cargando,
+    persistente,
+    error,
+    descartarError: useCallback(() => setError(null), []),
+    recargar,
+    cambiosPendientes,
+    agregarTransaccion,
+    importarTransacciones,
+    actualizarTransaccion,
+    borrarTransaccion,
+    crearCajita,
+    actualizarCajita,
+    borrarCajita,
+    registrarMovimiento,
+    abonarDeuda,
+    transferirEntreCuentas,
+    fijarSaldo,
+    borrarMovimiento,
+    crearMeta,
+    actualizarMeta,
+    borrarMeta,
+    crearCategoria,
+    actualizarCategoria: guardarCategoria,
+    archivarCategoria,
+    borrarCategoria,
+    unirContactos,
+    separarContactos,
+    actualizarContacto,
+    borrarContacto,
+    apodarParte,
+    fijarPresupuesto,
+    quitarPresupuesto,
+    crearRecurrente,
+    actualizarRecurrente,
+    borrarRecurrente,
+    confirmarRecurrente,
+    restaurar,
+  };
+};

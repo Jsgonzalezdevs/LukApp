@@ -1,0 +1,399 @@
+/* The finance app is a separate Vite HTML entry with its own <head> and body
+   class, so nothing here can reach the portfolio. The classes are stamped on
+   <html>/<body> in finanzas/index.html rather than set from an effect: a class
+   is declarative, needs no cleanup, and cannot leak across a StrictMode
+   double-invoke.
+
+   These selectors are class-based (0,1,0) so they outrank index.css's
+   element-level `body {}` rules (0,0,1), and this file is imported after
+   index.css so it also wins the `:root` tie. */
+
+/* ---------------------------------------------------------------- tokens ---
+   Every colour in the app resolves through one of these. They live on <html>
+   rather than on the app's root <div> for one specific reason: the login panel
+   renders OUTSIDE that div, and tokens scoped to it would leave the whole
+   signed-out experience unstyled.
+
+   Two axes, in priority order:
+     1. `data-tema` on <html> — an explicit choice by the user, always wins.
+     2. `prefers-color-scheme` — the system default when no choice was made. */
+
+.fin-html {
+  color-scheme: light;
+
+  /* Surfaces */
+  --fin-bg: #fbf9f6;
+  --fin-bg-blur: rgb(251 249 246 / 0.85);
+  /* Translucent rather than solid white: every card sits on --fin-glass-filter
+     below, so this alpha is what lets that blur actually read as glass instead
+     of a flat colour with a fancy name. */
+  --fin-card: rgb(255 255 255 / 0.72);
+  --fin-soft: #f5f3f0;
+  --fin-line: #ede9e3;
+  --fin-scrim: rgb(28 25 23 / 0.4);
+
+  /* Estos tres se usaban en 9 sitios del código sin estar declarados en ninguna
+     parte, así que el navegador no pintaba nada: el fondo salía transparente y
+     el hover no hacía nada. Ahora existen. */
+  --fin-bg-soft: #f7f5f2;
+  --fin-surface: #ffffff;
+  --fin-card-hover: #efece7;
+
+  /* Solo para el globo de la guía: flota sobre su propio velo oscuro, no sobre
+     el fondo de la app, así que necesita más opacidad que --fin-card o se lee
+     lavado contra ese negro. */
+  --fin-guia-card: rgb(255 255 255 / 0.92);
+
+  /* Liquid-glass surfaces (iOS 26 "Liquid Glass" material): a blurred, saturated
+     backdrop plus a bright top rim standing in for a specular highlight, and a
+     soft floating shadow standing in for the lift. Kept as tokens rather than
+     baked into each card's Tailwind classes because the same three values are
+     reused verbatim by every glass surface in the app — see the attribute
+     selectors near the bottom of this file. */
+  --fin-glass-filter: blur(28px) saturate(180%);
+  --fin-glass-highlight: rgb(255 255 255 / 0.55);
+  --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
+
+  /* Text, darkest to lightest */
+  --fin-ink: #1c1917;
+  --fin-ink-soft: #78716c;
+  --fin-ink-faint: #a8a29e;
+  --fin-ink-ghost: #d6d3d1;
+
+  /* The primary button. Separate from --fin-ink because in dark mode text goes
+     light while this must go light-with-dark-text — opposite directions. */
+  --fin-accent: #1c1917;
+  --fin-accent-hover: #292524;
+  --fin-on-accent: #ffffff;
+
+  /* Money direction and severity. Colour never carries meaning alone here — an
+     emoji or a +/- sign always accompanies it — but these still have to stay
+     legible against their own backgrounds in both themes. */
+  --fin-in: #15803d;
+  --fin-in-bg: #f0fdf4;
+  --fin-out: #be123c;
+  --fin-out-bg: #fff1f2;
+  --fin-out-ink: #9f1239;
+  --fin-warn: #d97706;
+  --fin-warn-bg: #fef3c7;
+  --fin-warn-ink: #92400e;
+  --fin-media-bg: #fff7ed;
+  --fin-media-ink: #c2410c;
+  --fin-baja-bg: #fefce8;
+  --fin-baja-ink: #a16207;
+
+  /* index.css sets `scroll-behavior: smooth` on html, which animates every
+     programmatic scroll — visibly laggy when a row is appended. */
+  scroll-behavior: auto;
+  background-color: var(--fin-bg);
+}
+
+/* ------------------------------------------------------ escala tipográfica ---
+   Antes había 13 tamaños de letra sueltos (10, 11, 12, 13, 14, 15, 16, 18, 20,
+   24, 30, 36 y 44 px) y nadie sabía cuál usar: `text-[11px]` y `text-xs` se
+   usaban 127 y 120 veces sin ninguna diferencia real entre ellos.
+
+   Ahora son 7, y cada uno tiene un OFICIO, no una medida. Se elige por lo que
+   la cosa ES, no por lo grande que se quiere ver:
+
+     --fin-t-cifra       el número grande. UNO por pantalla. Solo uno.
+     --fin-t-titulo-xl   el título de una pantalla ("Configuración")
+     --fin-t-titulo      el título de una sección o de una tarjeta
+     --fin-t-cuerpo-b    texto normal pero destacado (la descripción, el monto)
+     --fin-t-cuerpo      el texto por defecto de toda la app
+     --fin-t-secundario  lo que va debajo y explica (la categoría, una nota)
+     --fin-t-pie         metadatos: fecha, porcentaje. Nada baja de aquí.
+
+   Y solo 2 pesos. Antes el 86% del texto estaba en negrita, así que la negrita
+   había dejado de significar nada. La regla nueva: si dos cosas pegadas
+   necesitan pesos distintos para distinguirse, es que están mal de tamaño. */
+.fin-html {
+  --fin-t-cifra: 700 44px/1 var(--font-sans);
+  --fin-t-titulo-xl: 600 28px/1.15 var(--font-sans);
+  --fin-t-titulo: 600 20px/1.2 var(--font-sans);
+  --fin-t-cuerpo-b: 600 17px/1.3 var(--font-sans);
+  --fin-t-cuerpo: 400 17px/1.4 var(--font-sans);
+  --fin-t-secundario: 400 15px/1.35 var(--font-sans);
+  --fin-t-pie: 400 13px/1.3 var(--font-sans);
+
+  /* El ajuste óptico de las letras. Cuanto más grande el texto, más hay que
+     apretarlo para que no se vea desparramado. */
+  --fin-track-cifra: -0.03em;
+  --fin-track-titulo-xl: -0.02em;
+  --fin-track-titulo: -0.01em;
+
+  /* ------------------------------------------------------------- radios ---
+     De 8 valores a 4. `rounded-2xl` (16px) y `rounded-3xl` (24px) convivían sin
+     motivo; los dos se juntan en 20px. */
+  --fin-r-control: 12px; /* inputs, botones, cuadritos de icono */
+  --fin-r-card: 20px; /* toda tarjeta y toda fila, sin excepción */
+  --fin-r-sheet: 32px; /* las hojas que suben desde abajo, y los modales */
+  --fin-r-pill: 9999px; /* pastillas, avatares, botones redondos */
+
+  /* --------------------------------------------------------- espaciado ---
+     Rejilla de 4. Se van los medios pasos (py-2.5, gap-1.5, px-3.5...) que
+     hacían que dos cosas iguales quedaran separadas por 6px en un lado y 10 en
+     el otro sin que nadie lo hubiera decidido. */
+  --fin-e-1: 4px;
+  --fin-e-2: 8px;
+  --fin-e-3: 12px;
+  --fin-e-4: 16px;
+  --fin-e-6: 24px;
+  --fin-e-8: 32px;
+
+  /* Lo mínimo que puede medir algo que se toca con el dedo. Debajo de esto la
+     gente falla el toque. Es el número que usa Apple. */
+  --fin-tap: 44px;
+
+  /* La altura de la barra de navegación de abajo, ya sin el hueco vacío que
+     antes reservaba para el botón de anotar. `BotonAnotar` la lee para
+     posicionarse justo encima sin superponerse ni dejar un salto raro. */
+  --fin-nav-h: 60px;
+}
+
+/* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,
+   and a neutral-cold dark would read as a different product. Surfaces step up in
+   lightness as they come forward (bg < card < soft), the inverse of light mode,
+   which is what makes depth legible without shadows. */
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']) {
+    color-scheme: dark;
+
+    --fin-bg: #1a1817;
+    --fin-bg-blur: rgb(26 24 23 / 0.85);
+    --fin-card: rgb(45 42 40 / 0.6);
+    --fin-soft: #2c2a28;
+    --fin-line: #35322f;
+    --fin-scrim: rgb(0 0 0 / 0.6);
+    --fin-bg-soft: #221f1e;
+    --fin-surface: #2d2a28;
+    --fin-card-hover: #3a3734;
+    --fin-guia-card: rgb(24 22 21 / 0.94);
+
+    /* Dimmer than the light theme's: a bright rim reads as a highlight against
+       a dark glass surface, but the light-mode value would look like a stray
+       white line here. The shadow goes the other way, deeper, so a card still
+       visibly lifts off a background that is nearly as dark as it is. */
+    --fin-glass-highlight: rgb(255 255 255 / 0.12);
+    --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
+
+    --fin-ink: #f5f3f0;
+    --fin-ink-soft: #a8a29e;
+    --fin-ink-faint: #857f7a;
+    --fin-ink-ghost: #57534e;
+
+    --fin-accent: #f5f3f0;
+    --fin-accent-hover: #ffffff;
+    --fin-on-accent: #1a1817;
+
+    /* Lightened well past their light-mode values: #15803d on #232120 sits
+       around 2.5:1 and is unreadable. These clear 4.5:1 on the dark surfaces. */
+    --fin-in: #4ade80;
+    --fin-in-bg: rgb(74 222 128 / 0.12);
+    --fin-out: #fb7185;
+    --fin-out-bg: rgb(251 113 133 / 0.12);
+    --fin-out-ink: #fda4af;
+    --fin-warn: #fbbf24;
+    --fin-warn-bg: rgb(251 191 36 / 0.12);
+    --fin-warn-ink: #fcd34d;
+    --fin-media-bg: rgb(251 146 60 / 0.12);
+    --fin-media-ink: #fdba74;
+    --fin-baja-bg: rgb(250 204 21 / 0.12);
+    --fin-baja-ink: #fde047;
+  }
+}
+
+/* Explicit choice. Repeated rather than shared with the media query because a
+   `:is()` grouping would raise specificity and make the two rules fight. */
+.fin-html[data-tema='oscuro'] {
+  color-scheme: dark;
+
+  --fin-bg: #1a1817;
+  --fin-bg-blur: rgb(26 24 23 / 0.85);
+  --fin-card: rgb(45 42 40 / 0.6);
+  --fin-soft: #2c2a28;
+  --fin-line: #35322f;
+  --fin-scrim: rgb(0 0 0 / 0.6);
+  --fin-bg-soft: #221f1e;
+  --fin-surface: #2d2a28;
+  --fin-card-hover: #3a3734;
+  --fin-guia-card: rgb(24 22 21 / 0.94);
+
+  --fin-glass-highlight: rgb(255 255 255 / 0.12);
+  --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
+
+  --fin-ink: #f5f3f0;
+  --fin-ink-soft: #a8a29e;
+  --fin-ink-faint: #857f7a;
+  --fin-ink-ghost: #57534e;
+
+  --fin-accent: #f5f3f0;
+  --fin-accent-hover: #ffffff;
+  --fin-on-accent: #1a1817;
+
+  --fin-in: #4ade80;
+  --fin-in-bg: rgb(74 222 128 / 0.12);
+  --fin-out: #fb7185;
+  --fin-out-bg: rgb(251 113 133 / 0.12);
+  --fin-out-ink: #fda4af;
+  --fin-warn: #fbbf24;
+  --fin-warn-bg: rgb(251 191 36 / 0.12);
+  --fin-warn-ink: #fcd34d;
+  --fin-media-bg: rgb(251 146 60 / 0.12);
+  --fin-media-ink: #fdba74;
+  --fin-baja-bg: rgb(250 204 21 / 0.12);
+  --fin-baja-ink: #fde047;
+}
+
+/* ------------------------------------------------------------ liquid glass ---
+   El vidrio se pide A MANO, con la clase `.fin-glass`.
+
+   Antes se enganchaba al NOMBRE de la clase del radio (buscaba el texto
+   "rounded-3xl" dentro del atributo class). Eso era una trampa: el día que
+   alguien cambiara un radio de 24px a 20px, el vidrio de esa tarjeta se apagaba
+   solo y ningún test se daba cuenta. Como justo aquí estamos cambiando todos
+   los radios, tenía que dejar de depender de ellos.
+
+   Y ahora hay que pedirlo, en vez de recibirlo por defecto. El vidrio es para
+   lo que FLOTA por encima del contenido — la barra de abajo, las hojas, los
+   modales — no para las 57 tarjetas que estaban planas sobre la página. */
+.fin-page .fin-glass {
+  backdrop-filter: var(--fin-glass-filter);
+  -webkit-backdrop-filter: var(--fin-glass-filter);
+  box-shadow:
+    inset 0 1px 0 0 var(--fin-glass-highlight),
+    var(--fin-glass-shadow);
+}
+
+.fin-page {
+  background-color: var(--fin-bg);
+  color: var(--fin-ink);
+  /* `body { overflow-x: hidden }` makes the UA compute overflow-y: auto on body,
+     which turns body into the scroll container and breaks position: sticky
+     descendants — the header in FinanzasApp is sticky. */
+  overflow-x: visible;
+  /* Suppresses the standalone rubber-band bounce past the top/bottom. */
+  overscroll-behavior-y: none;
+
+  /* iOS inflates text on rotation to portrait-landscape unless told not to,
+     which silently breaks every width the layout was measured against. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+  /* Safari paints a grey box over anything tapped. Harmless on a web page,
+     wrong in something installed to the home screen — the buttons already
+     animate on press. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A long press on a control pops up the callout menu and starts selecting the
+   label, which in an installed app reads as the interface glitching. Text the
+   user might actually want to copy — amounts, descriptions — is untouched. */
+.fin-page button,
+.fin-page nav,
+.fin-page label {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Selection and focus rings from index.css are tuned for white-on-black. */
+.fin-page ::selection {
+  background-color: color-mix(in srgb, var(--fin-ink) 14%, transparent);
+  color: var(--fin-ink);
+}
+
+.fin-page button:focus-visible,
+.fin-page a:focus-visible,
+.fin-page input:focus-visible,
+.fin-page select:focus-visible,
+.fin-page textarea:focus-visible {
+  outline: 2px solid var(--fin-ink);
+  outline-offset: 3px;
+}
+
+.fin-page ::-webkit-scrollbar-track {
+  background: var(--fin-bg);
+}
+
+.fin-page ::-webkit-scrollbar-thumb {
+  background: var(--fin-ink-ghost);
+}
+
+.fin-page ::-webkit-scrollbar-thumb:hover {
+  background: var(--fin-ink-faint);
+}
+
+/* Emoji render through the system colour-emoji font. Naming it explicitly keeps
+   a category chip from falling back to a monochrome glyph on Linux/Android. */
+.fin-emoji {
+  font-family:
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Android Emoji', sans-serif;
+  font-weight: 400;
+  line-height: 1;
+}
+
+/* The login card's aurora. Two soft radial washes drifting behind a blurred
+   panel — cheap (no canvas, no JS) and it reads as depth rather than decoration.
+   Kept out of the component so the keyframes are not re-declared per render. */
+.fin-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fin-aurora::before,
+.fin-aurora::after {
+  content: '';
+  position: absolute;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+
+.fin-aurora::before {
+  background: radial-gradient(circle, #f59e0b, transparent 70%);
+  top: -12rem;
+  left: -10rem;
+  animation: fin-deriva 18s ease-in-out infinite alternate;
+}
+
+.fin-aurora::after {
+  background: radial-gradient(circle, #38bdf8, transparent 70%);
+  bottom: -14rem;
+  right: -10rem;
+  animation: fin-deriva 22s ease-in-out infinite alternate-reverse;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']) .fin-aurora::before,
+  .fin-html:not([data-tema='claro']) .fin-aurora::after {
+    opacity: 0.32;
+  }
+}
+
+.fin-html[data-tema='oscuro'] .fin-aurora::before,
+.fin-html[data-tema='oscuro'] .fin-aurora::after {
+  opacity: 0.32;
+}
+
+@keyframes fin-deriva {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3rem, 2rem, 0) scale(1.15);
+  }
+}
+
+/* Anyone who asked the system to stop animating means it — the aurora is pure
+   decoration and has no business overriding that. */
+@media (prefers-reduced-motion: reduce) {
+  .fin-aurora::before,
+  .fin-aurora::after {
+    animation: none;
+  }
+}

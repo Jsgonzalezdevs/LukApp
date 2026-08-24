@@ -1,0 +1,2120 @@
+/* Landing Finanzas
+   Estructura y aire tomados de las landings de fintech actuales; los colores
+   son los de Lukapp, para que la landing y la app se lean como el mismo
+   producto.
+
+   Los colores son variables propias --lp-* colgadas de `.landing-finanzas`, no
+   de `:root`. Antes este fichero redefinía los --fin-* globales con la paleta
+   clara, así que dependía de quién cargara último: ganaba lukapp.css, la
+   landing heredaba tinta clara para modo oscuro y la pintaba sobre su
+   `background: white` fijo. Texto blanco sobre blanco.
+
+   El tema se resuelve con el mismo contrato del resto de la app: `data-tema`
+   en <html> manda, y si no está, decide el sistema. */
+
+.landing-finanzas {
+  --lp-bg: #ffffff;
+  --lp-surface: #fbf9f6;
+  --lp-surface-hover: #f5f3f0;
+  --lp-line: #ede9e3;
+  --lp-ink: #1c1917;
+  --lp-ink-soft: #6b6560;
+  --lp-ink-faint: #96908a;
+  /* El botón principal y su texto van juntos: en oscuro se invierten los dos,
+     y separarlos es como se acaba con un botón claro y letra blanca. */
+  --lp-accent: #1c1917;
+  --lp-on-accent: #ffffff;
+  --lp-in: #15803d;
+  --lp-out: #be123c;
+  --lp-nav-bg: rgba(255, 255, 255, 0.85);
+  /* El destello que cruza el botón de demo. Se invierte con el tema: sobre
+     fondo claro tiene que ser una sombra que pasa, no una luz —una luz blanca
+     sobre blanco no existe—, y sobre fondo oscuro al revés. */
+  --lp-destello: rgba(28, 25, 23, 0.1);
+  --lp-sombra-btn: 0 8px 20px -8px rgba(28, 25, 23, 0.35);
+  --lp-sombra-tel: 0 40px 80px -32px rgba(28, 25, 23, 0.35);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(21, 128, 61, 0.07), transparent 70%);
+  /* La pila vive en un token porque hay que repetirla dentro del atajo `font`
+     de --fin-t-cifra, y ahí no se puede escribir `inherit`: el atajo exige una
+     familia de verdad y descarta la declaración entera si no la encuentra. */
+  --lp-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) .landing-finanzas {
+    --lp-bg: #1a1817;
+    --lp-surface: #221f1e;
+    --lp-surface-hover: #2d2a28;
+    --lp-line: #35322f;
+    --lp-ink: #f5f3f0;
+    --lp-ink-soft: #a8a29e;
+    --lp-ink-faint: #857f7a;
+    --lp-accent: #f5f3f0;
+    --lp-on-accent: #1a1817;
+    /* El verde y el rojo de marca no llegan a 4.5:1 sobre fondo oscuro; estos
+       son los mismos tonos aclarados hasta que sí. */
+    --lp-in: #4ade80;
+    --lp-out: #fb7185;
+    --lp-nav-bg: rgba(26, 24, 23, 0.85);
+    --lp-destello: rgba(255, 255, 255, 0.14);
+    --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+    --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
+    --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(74, 222, 128, 0.06), transparent 70%);
+  }
+}
+
+:root[data-tema='oscuro'] .landing-finanzas {
+  --lp-bg: #1a1817;
+  --lp-surface: #221f1e;
+  --lp-surface-hover: #2d2a28;
+  --lp-line: #35322f;
+  --lp-ink: #f5f3f0;
+  --lp-ink-soft: #a8a29e;
+  --lp-ink-faint: #857f7a;
+  --lp-accent: #f5f3f0;
+  --lp-on-accent: #1a1817;
+  --lp-in: #4ade80;
+  --lp-out: #fb7185;
+  --lp-nav-bg: rgba(26, 24, 23, 0.85);
+  --lp-destello: rgba(255, 255, 255, 0.14);
+  --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+  --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(74, 222, 128, 0.06), transparent 70%);
+}
+
+.landing-finanzas {
+  width: 100%;
+  font-family: var(--lp-font);
+  color: var(--lp-ink);
+  background: var(--lp-bg);
+  line-height: 1.6;
+  /* La landing manda sobre su propio lienzo: sin esto, en móvil el fondo de la
+     app se ve por debajo del último bloque. */
+  min-height: 100dvh;
+
+  /* Los adornos sobresalen a propósito —el resplandor del teléfono se sale un
+     16% por cada lado, las burbujas rozan los bordes— y en un celular eso
+     bastaba para dejar la página desplazable a lo ancho.
+
+     `clip` y no `hidden`: hidden convierte esto en un contenedor de scroll y
+     eso rompe el `position: sticky` de la barra de arriba. clip recorta sin
+     crear el contenedor. */
+  overflow-x: clip;
+}
+
+.landing-finanzas ::selection {
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+/* NAVBAR */
+.landing-finanzas .nav-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--lp-nav-bg);
+  border-bottom: 1px solid var(--lp-line);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+.landing-finanzas .nav-content {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: padding 0.25s ease;
+}
+
+/* Al bajar, la barra se encoge para devolverle alto a la página. Solo cambia el
+   padding: mover el tamaño de fuente del logo aquí haría saltar el texto. */
+.landing-finanzas .nav-bar.compacta .nav-content {
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+}
+
+.landing-finanzas .nav-bar.compacta {
+  box-shadow: 0 1px 12px -6px rgba(0, 0, 0, 0.25);
+}
+
+.landing-finanzas .logo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.landing-finanzas .nav-links a {
+  color: var(--lp-ink-soft);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.2s;
+}
+
+.landing-finanzas .nav-links a:hover {
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .link-btn {
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+  border: none;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+  font-family: inherit;
+}
+
+.landing-finanzas .link-btn:hover {
+  opacity: 0.85;
+}
+
+.landing-finanzas .menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--lp-ink);
+  padding: 0.25rem;
+}
+
+/* HERO */
+.landing-finanzas .hero {
+  position: relative;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 9vw, 7rem) 1.5rem clamp(3rem, 7vw, 5.5rem);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.landing-finanzas .hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--lp-halo);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* El titular es el elemento de la página. clamp() lo deja enorme en escritorio
+   sin que rompa el móvil, y el interlineado baja de 1.6 a 1.05 porque a este
+   cuerpo el aire sobra dentro y hace falta fuera. */
+.landing-finanzas .hero-text h1 {
+  font-size: clamp(2.4rem, 6.2vw, 4.4rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  margin: 0 0 1.5rem;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+/* Cada línea del titular es su propio span para poder escalonar la entrada. */
+.landing-finanzas .hero-text h1 > span {
+  display: block;
+}
+
+.landing-finanzas .hero-text h1 em {
+  font-style: normal;
+  color: var(--lp-in);
+}
+
+.landing-finanzas .hero-sub {
+  font-size: clamp(1rem, 1.6vw, 1.15rem);
+  color: var(--lp-ink-soft);
+  margin: 0 0 2.25rem;
+  line-height: 1.65;
+  max-width: 34ch;
+}
+
+.landing-finanzas .hero-ctas {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.landing-finanzas .btn-primary,
+.landing-finanzas .btn-secondary {
+  padding: 0.85rem 1.5rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.landing-finanzas .btn-primary {
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+}
+
+.landing-finanzas .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--lp-sombra-btn);
+}
+
+.landing-finanzas .btn-secondary {
+  background: transparent;
+  color: var(--lp-ink);
+  border-color: var(--lp-line);
+}
+
+.landing-finanzas .btn-secondary:hover {
+  background: var(--lp-surface-hover);
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .hero-note {
+  font-size: 0.85rem;
+  color: var(--lp-ink-faint);
+  margin: 0;
+}
+
+/* MOCKUP */
+.landing-finanzas .hero-visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* EL TELÉFONO
+   Un iPhone 17 dibujado en CSS: marco de titanio, bordes finos y parejos,
+   isla dinámica y los cuatro botones. No es decoración gratuita — el marco es
+   lo que hace que la pantalla se lea como "así se ve la app en tu mano" y no
+   como una tarjeta suelta al lado del texto.
+
+   La pantalla mide 375px de ancho de verdad, que es el ancho lógico del
+   teléfono, y el conjunto se encoge con `scale` en pantallas chicas. Así el
+   dashboard de adentro se renderiza con las mismas medidas que en un celular
+   real en vez de con una versión apretada que no existe en ninguna parte. */
+/* La envoltura sostiene el resplandor y el marco. Existe para que el destello
+   pueda quedar por detrás del teléfono: el marco pinta su fondo de titanio
+   antes que a cualquier hijo suyo, así que un resplandor metido adentro no
+   podría verse nunca. */
+.landing-finanzas .telefono-envoltura {
+  position: relative;
+  display: inline-block;
+
+  /* El teléfono se dibuja SIEMPRE a tamaño real —393px de pantalla, que es el
+     ancho lógico del aparato— y se encoge entero con `scale`. Así el dashboard
+     de adentro conserva las proporciones del celular en vez de reflowear a una
+     versión estrecha que no existe en ningún teléfono.
+
+     Quien se escala es el marco; la envoltura declara el tamaño ya escalado.
+     Al revés no funciona: `scale` no encoge la caja de maquetación, así que el
+     teléfono seguía midiendo 393px para el grid del hero y la columna se
+     quedaba clavada en 393px —el `min-width: auto` de las pistas de grid— por
+     mucho que en pantalla se viera más pequeño. El hero desbordaba a lo ancho
+     en cualquier celular. */
+  --ancho-tel: 393px;
+  --alto-tel: 782px; /* 760 de pantalla + 22 de marco */
+  --escala: 1;
+  width: calc(var(--ancho-tel) * var(--escala));
+  height: calc(var(--alto-tel) * var(--escala));
+}
+
+.landing-finanzas .telefono-envoltura .telefono-marco {
+  transform: scale(var(--escala));
+  transform-origin: top left;
+}
+
+/* Con el marco puesto ocupa 415px, y la sección le quita 48 de aire lateral:
+   por debajo de 463px de ventana ya no cabe. */
+@media (max-width: 470px) {
+  .landing-finanzas .telefono-envoltura {
+    --escala: 0.78;
+  }
+}
+
+@media (max-width: 360px) {
+  .landing-finanzas .telefono-envoltura {
+    --escala: 0.7;
+  }
+}
+
+.landing-finanzas .telefono-marco {
+  position: relative;
+  width: 393px;
+  padding: 11px;
+  border-radius: 60px;
+  background: linear-gradient(160deg, #d9d5d0 0%, #8a8480 22%, #5f5a56 50%, #8a8480 78%, #cfcac4 100%);
+  box-shadow:
+    var(--lp-sombra-tel),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.landing-finanzas .telefono-pantalla {
+  position: relative;
+  overflow: hidden;
+  border-radius: 49px;
+  background: var(--fin-bg);
+  /* El alto es fijo y la lista scrollea por dentro: si creciera con cada
+     movimiento del guion, el hero entero daría saltos cada dos segundos. */
+  height: 760px;
+}
+
+/* La isla dinámica. Flota sobre la pantalla, no empuja el contenido. */
+.landing-finanzas .isla-dinamica {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118px;
+  height: 34px;
+  border-radius: 999px;
+  background: #000;
+  z-index: 3;
+}
+
+/* LA BARRA DE ESTADO
+   Se reparte en las dos orejas que la isla deja libres: la hora a la izquierda
+   y cobertura, wifi y batería a la derecha. Va por encima de la app (z-index 4)
+   porque la pantalla de adentro empieza en 68px y nunca llega a pisarla; el
+   z-index solo la protege de los adornos que sí flotan.
+
+   Los 27px de inset y los 34px de alto no son arbitrarios: son los del aparato
+   real, y con la isla midiendo 118px dejan las dos orejas de 126px en las que
+   la hora y los iconos caen exactamente donde el ojo ya los espera. */
+.landing-finanzas .barra-estado {
+  position: absolute;
+  top: 11px;
+  right: 0;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 34px;
+  padding: 0 27px;
+  color: var(--lp-ink);
+  pointer-events: none;
+}
+
+.landing-finanzas .estado-hora {
+  font-size: 15px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  /* La hora se centra ópticamente en la oreja, no contra el canto: en el
+     aparato real cae un pelo a la derecha del borde de la pantalla. */
+  padding-left: 3px;
+}
+
+.landing-finanzas .estado-iconos {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* EL INDICADOR DE INICIO
+   La rayita de abajo. Es el último detalle que separa "pantalla dentro de un
+   marco" de "teléfono": sin ella la app parece terminar en el borde del
+   cristal en vez de seguir por debajo del gesto. */
+.landing-finanzas .indicador-inicio {
+  position: absolute;
+  bottom: 9px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: 140px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--lp-ink);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Los botones. Sobresalen del canto, por eso el `left`/`right` negativo. */
+.landing-finanzas .telefono-boton-vol,
+.landing-finanzas .telefono-boton-accion,
+.landing-finanzas .telefono-boton-lateral {
+  position: absolute;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #6e6864, #a9a39d);
+}
+
+.landing-finanzas .telefono-boton-accion {
+  left: -3px;
+  top: 112px;
+  height: 32px;
+}
+
+.landing-finanzas .telefono-boton-vol.arriba {
+  left: -3px;
+  top: 168px;
+  height: 62px;
+}
+
+.landing-finanzas .telefono-boton-vol.abajo {
+  left: -3px;
+  top: 244px;
+  height: 62px;
+}
+
+.landing-finanzas .telefono-boton-lateral {
+  right: -3px;
+  top: 196px;
+  height: 96px;
+}
+
+/* LA PANTALLA DE ADENTRO
+   Aquí viven los `--fin-*` que necesita TransactionList, que es el componente
+   de verdad de la app. No se importa lukapp.css: esa hoja cuelga sus tokens
+   de `.fin-html` y traería la app entera por un mockup. Se declaran solo los
+   que la fila usa, mapeados desde la paleta de la landing para que el teléfono
+   siga el tema claro/oscuro con el resto de la página. */
+.landing-finanzas .pantalla-app {
+  --fin-bg: var(--lp-bg);
+  --fin-card: var(--lp-surface);
+  --fin-soft: var(--lp-surface);
+  --fin-line: var(--lp-line);
+  --fin-ink: var(--lp-ink);
+  --fin-ink-soft: var(--lp-ink-soft);
+  --fin-ink-faint: var(--lp-ink-faint);
+  --fin-ink-ghost: var(--lp-line);
+  --fin-in: var(--lp-in);
+  --fin-out: var(--lp-out);
+  --fin-warn: #d97706;
+  --fin-r-card: 20px;
+  --fin-r-pill: 9999px;
+  /* Con `inherit` como familia el navegador tira la declaración entera y la
+     cifra caía a 16px peso 400 — el número que manda en la pantalla quedaba
+     del tamaño de un párrafo. El atajo necesita una familia real. */
+  --fin-t-cifra: 700 44px/1 var(--lp-font);
+  --fin-track-cifra: -0.03em;
+
+  height: 100%;
+  overflow: hidden;
+  padding: 68px 16px 0;
+  background: var(--fin-bg);
+  color: var(--fin-ink);
+}
+
+/* El velo de abajo: la lista se desvanece detrás de la barra del micrófono en
+   vez de cortarse en seco contra ella. */
+.landing-finanzas .pantalla-velo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 150px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--lp-bg) 72%);
+}
+
+/* LA BARRA DEL MICRÓFONO
+   Lo que se está dictando ahora mismo. Va flotando sobre la pantalla, como el
+   botón de anotar de la app. */
+.landing-finanzas .barra-dictado {
+  position: absolute;
+  right: 14px;
+  /* Levantada para dejar respirar al indicador de inicio, igual que hace la
+     app de verdad con el área del gesto. */
+  bottom: 30px;
+  left: 14px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 999px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.4);
+}
+
+.landing-finanzas .dictado-boton {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--lp-out);
+  color: #ffffff;
+}
+
+/* El halo que late mientras se dicta. Va en un hijo y no en el botón para que
+   el pulso no arrastre el icono al escalar. */
+.landing-finanzas .dictado-pulso {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--lp-out);
+  animation: lp-pulso 1.5s ease-out infinite;
+}
+
+@keyframes lp-pulso {
+  from {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+.landing-finanzas .dictado-texto {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: var(--lp-ink-soft);
+  font-style: italic;
+}
+
+.landing-finanzas .dictado-cursor {
+  display: inline-block;
+  width: 1.5px;
+  height: 0.95em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: var(--lp-ink-soft);
+  animation: lp-cursor 1s steps(2) infinite;
+}
+
+@keyframes lp-cursor {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* LA ZONA DEL SALDO
+   El número grande y, colgando de él, la pastilla de lo que acaba de cambiar.
+   Esa pastilla es la que hace legible "la suma": sin ella el número se mueve y
+   el visitante ve QUE cambió, pero no CUÁNTO ni en qué sentido. Con ella, el
+   gasto y el ingreso dejan de verse iguales. */
+.landing-finanzas .saldo-zona {
+  position: relative;
+  margin-top: 0.25rem;
+}
+
+/* Absoluta y centrada: si empujara el layout, la pastilla de gastos de abajo
+   daría un salto de 20px cada vez que entra un movimiento. */
+.landing-finanzas .saldo-delta {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  pointer-events: none;
+}
+
+/* LA BARRA CUANDO YA ENTENDIÓ
+   Deja de ser un campo de texto y pasa a ser un resultado: el borde toma el
+   color del movimiento y aparece la categoría que la app dedujo. */
+.landing-finanzas .barra-dictado.reconociendo {
+  border-color: currentColor;
+}
+
+.landing-finanzas .dictado-entendido {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  flex-shrink: 0;
+  padding: 0.24rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* El texto de lo dictado deja de ser gris cuando ya se reconoció: pasa a ser
+   la frase confirmada, no la que se está escribiendo. */
+.landing-finanzas .barra-dictado.reconociendo .dictado-texto {
+  color: var(--lp-ink);
+  font-style: normal;
+}
+
+/* SECCIONES */
+.landing-finanzas .demo-parser,
+.landing-finanzas .funciones,
+.landing-finanzas .gmf,
+.landing-finanzas .formas,
+.landing-finanzas .privacidad {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 8vw, 6rem) 1.5rem;
+}
+
+.landing-finanzas .seccion-cabecera {
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.landing-finanzas .seccion-sub {
+  font-size: clamp(0.95rem, 1.4vw, 1.05rem);
+  color: var(--lp-ink-soft);
+  line-height: 1.6;
+  margin: 0.85rem 0 0;
+  max-width: 52ch;
+  text-wrap: pretty;
+}
+
+.landing-finanzas .seccion-etiqueta {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--lp-ink-soft);
+  margin-bottom: 0.6rem;
+}
+
+.landing-finanzas .seccion-etiqueta svg {
+  vertical-align: -2px;
+  margin-right: 0.35rem;
+}
+
+.landing-finanzas .demo-parser h2,
+.landing-finanzas .funciones h2,
+.landing-finanzas .gmf h2,
+.landing-finanzas .formas h2,
+.landing-finanzas .privacidad h2,
+.landing-finanzas .final-cta h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+/* DEMO DEL PARSER
+   La pieza interactiva: lo que se ve aquí lo calcula parseTransaction, el mismo
+   de la app. */
+.landing-finanzas .demo-caja {
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 24px;
+}
+
+.landing-finanzas .demo-campo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  color: var(--lp-ink-faint);
+  transition: border-color 0.2s;
+}
+
+.landing-finanzas .demo-campo:focus-within {
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .demo-campo input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  /* El mínimo es 1rem y no menos: por debajo de 16px, Safari en iPhone hace
+     zoom al enfocar el campo y deja la página descuadrada. Es la misma regla
+     que vigila ios.test.ts para los campos de la app. */
+  font-size: clamp(1rem, 1.8vw, 1.1rem);
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .demo-ejemplos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.landing-finanzas .demo-chip {
+  padding: 0.4rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--lp-ink-soft);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.landing-finanzas .demo-chip:hover {
+  color: var(--lp-ink);
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .demo-chip.activo {
+  color: var(--lp-on-accent);
+  background: var(--lp-accent);
+  border-color: var(--lp-accent);
+}
+
+.landing-finanzas .demo-flecha {
+  display: block;
+  margin: 1.1rem auto 0.9rem;
+  color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .demo-resultado {
+  padding: 1.1rem;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 16px;
+}
+
+.landing-finanzas .demo-vacio {
+  margin: 0;
+  text-align: center;
+  font-size: 0.88rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .demo-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.landing-finanzas .demo-icono {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+}
+
+.landing-finanzas .demo-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.landing-finanzas .demo-desc {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .demo-categoria {
+  font-size: 0.78rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .demo-monto {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .demo-monto.gasto {
+  color: var(--lp-out);
+}
+
+.landing-finanzas .demo-monto.ingreso {
+  color: var(--lp-in);
+}
+
+.landing-finanzas .demo-insignias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.9rem;
+}
+
+.landing-finanzas .demo-insignia {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+}
+
+.landing-finanzas .demo-confianza {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--lp-line);
+}
+
+.landing-finanzas .demo-barra {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--lp-surface-hover);
+  overflow: hidden;
+}
+
+.landing-finanzas .demo-barra-lleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--lp-in);
+}
+
+.landing-finanzas .demo-confianza-texto {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-soft);
+  flex-shrink: 0;
+}
+
+/* FUNCIONES */
+.landing-finanzas .tabs-riel {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1.5rem;
+  scrollbar-width: none;
+}
+
+.landing-finanzas .tabs-riel::-webkit-scrollbar {
+  display: none;
+}
+
+.landing-finanzas .tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  padding: 0.6rem 1rem;
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+  background: none;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.landing-finanzas .tab:hover {
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .tab.activa {
+  color: var(--lp-on-accent);
+}
+
+/* El fondo es un hermano posicionado detrás, no un background del botón: así
+   framer-motion puede deslizarlo entre pestañas con layoutId. */
+.landing-finanzas .tab-fondo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--lp-accent);
+}
+
+.landing-finanzas .tab > svg,
+.landing-finanzas .tab > span {
+  position: relative;
+}
+
+.landing-finanzas .funciones-contenido {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+}
+
+.landing-finanzas .funciones-texto h3 {
+  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.85rem;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
+.landing-finanzas .funciones-texto p {
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--lp-ink-soft);
+  margin: 0;
+  text-wrap: pretty;
+}
+
+/* MOCKUPS DE LAS PESTAÑAS */
+.landing-finanzas .mk {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.4rem;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 20px;
+  box-shadow: var(--lp-sombra-tel);
+}
+
+.landing-finanzas .mk-titulo {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-nota {
+  margin: 0.2rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-barra-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .mk-barra-fila span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-pasado {
+  color: var(--lp-out) !important;
+}
+
+.landing-finanzas .mk-barra-riel {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  overflow: hidden;
+}
+
+.landing-finanzas .mk-barra-lleno {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.landing-finanzas .mk-fila {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--lp-bg);
+  border-radius: 12px;
+}
+
+.landing-finanzas .mk-fila-texto {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.landing-finanzas .mk-fila-nombre {
+  font-size: 0.85rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .mk-fila-sub {
+  font-size: 0.72rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-fila-monto {
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .mk-fila-monto.out {
+  color: var(--lp-out);
+}
+
+.landing-finanzas .mk-dia {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .mk-chat {
+  gap: 0.55rem;
+}
+
+.landing-finanzas .mk-burbuja {
+  max-width: 85%;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  border-radius: 15px;
+}
+
+.landing-finanzas .mk-burbuja.yo {
+  align-self: flex-end;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+  border-bottom-right-radius: 5px;
+}
+
+.landing-finanzas .mk-burbuja.bot {
+  align-self: flex-start;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  border-bottom-left-radius: 5px;
+}
+
+.landing-finanzas .mk-grafico {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  height: 150px;
+}
+
+.landing-finanzas .mk-columna {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  height: 100%;
+}
+
+.landing-finanzas .mk-columna-barra {
+  display: block;
+  width: 100%;
+  border-radius: 6px 6px 3px 3px;
+  background: var(--lp-line);
+}
+
+.landing-finanzas .mk-columna-barra.destacada {
+  background: var(--lp-in);
+}
+
+.landing-finanzas .mk-columna-mes {
+  font-size: 0.7rem;
+  color: var(--lp-ink-soft);
+}
+
+/* CUPO DEL 4x1000 */
+.landing-finanzas .gmf-caja {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  padding: clamp(1.75rem, 4vw, 3rem);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 28px;
+}
+
+.landing-finanzas .gmf-texto h2 {
+  margin-bottom: 1rem;
+}
+
+.landing-finanzas .gmf-texto h2 em {
+  font-style: normal;
+  color: var(--lp-in);
+}
+
+.landing-finanzas .gmf-texto > p {
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: var(--lp-ink-soft);
+  margin: 0 0 1.6rem;
+  text-wrap: pretty;
+}
+
+.landing-finanzas .gmf-datos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0 0 1.2rem;
+}
+
+.landing-finanzas .gmf-datos div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--lp-line);
+}
+
+.landing-finanzas .gmf-datos dt {
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .gmf-datos dd {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .gmf-costo {
+  color: var(--lp-out) !important;
+}
+
+.landing-finanzas .gmf-fuente {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .gmf-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.landing-finanzas .gmf-medidor {
+  position: relative;
+  width: min(230px, 100%);
+  aspect-ratio: 1;
+}
+
+.landing-finanzas .gmf-medidor svg {
+  width: 100%;
+  height: 100%;
+  /* El arco de un donut empieza a las 3 en punto; girarlo lo lleva arriba. */
+  transform: rotate(-90deg);
+}
+
+.landing-finanzas .gmf-riel,
+.landing-finanzas .gmf-arco {
+  fill: none;
+  stroke-width: 14;
+}
+
+.landing-finanzas .gmf-riel {
+  stroke: var(--lp-line);
+}
+
+.landing-finanzas .gmf-arco {
+  stroke: var(--lp-in);
+  stroke-linecap: round;
+}
+
+.landing-finanzas .gmf-centro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.landing-finanzas .gmf-pct {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .gmf-centro-etq {
+  font-size: 0.74rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .gmf-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.landing-finanzas .gmf-leyenda-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.76rem;
+  color: var(--lp-ink-soft);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 999px;
+}
+
+.landing-finanzas .gmf-leyenda-item strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .gmf-leyenda-item::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.landing-finanzas .gmf-leyenda-item.usado::before {
+  background: var(--lp-in);
+}
+
+.landing-finanzas .gmf-leyenda-item.libre::before {
+  background: var(--lp-line);
+}
+
+/* FORMAS DE REGISTRAR */
+.landing-finanzas .formas-grid,
+.landing-finanzas .privacidad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  gap: 1rem;
+}
+
+.landing-finanzas .forma,
+.landing-finanzas .privacidad-item {
+  padding: 1.6rem;
+  background: var(--lp-surface);
+  border-radius: 18px;
+  border: 1px solid var(--lp-line);
+  transition: border-color 0.25s, transform 0.25s;
+}
+
+.landing-finanzas .forma:hover,
+.landing-finanzas .privacidad-item:hover {
+  border-color: var(--lp-ink-faint);
+  transform: translateY(-2px);
+}
+
+.landing-finanzas .forma-icono,
+.landing-finanzas .privacidad-icono {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 1rem;
+  border-radius: 11px;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .forma h3,
+.landing-finanzas .privacidad-item h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.4rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .forma p,
+.landing-finanzas .privacidad-item p {
+  font-size: 0.9rem;
+  color: var(--lp-ink-soft);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.landing-finanzas .forma-ejemplo {
+  display: inline-block;
+  margin-top: 0.9rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.74rem;
+  color: var(--lp-ink-soft);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  border-radius: 8px;
+}
+
+/* CTA FINAL */
+.landing-finanzas .final-cta {
+  max-width: 1140px;
+  margin: 0 auto clamp(3.5rem, 8vw, 6rem);
+  padding: clamp(3rem, 7vw, 5rem) 1.5rem;
+  text-align: center;
+  background: var(--lp-surface);
+  border-radius: 28px;
+  border: 1px solid var(--lp-line);
+}
+
+.landing-finanzas .final-cta p {
+  font-size: 1rem;
+  color: var(--lp-ink-soft);
+  margin: 0.75rem 0 2rem;
+}
+
+.landing-finanzas .btn-primary-lg {
+  padding: 1rem 2rem;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+  border: none;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.landing-finanzas .btn-primary-lg:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--lp-sombra-btn);
+}
+
+/* FOOTER */
+.landing-finanzas .footer {
+  border-top: 1px solid var(--lp-line);
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: var(--lp-ink-faint);
+  font-size: 0.85rem;
+}
+
+.landing-finanzas .footer p {
+  margin: 0;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .landing-finanzas .hero {
+    grid-template-columns: 1fr;
+    text-align: left;
+  }
+
+  .landing-finanzas .hero-sub {
+    max-width: none;
+  }
+
+  .landing-finanzas .telefono {
+    width: min(280px, 100%);
+  }
+
+  /* El mockup baja debajo del texto: en una columna, la explicación va primero
+     y la pantalla la ilustra después. Sin ninguna regla de `order` aquí: el
+     orden del DOM ya pone `.hero-text` antes que `.hero-visual`, así que
+     forzar `order: -1` en el visual —como hacía antes— lo empujaba delante
+     del texto, justo al revés de lo que dice este comentario.
+
+     minmax(0, 1fr) y no 1fr: el mínimo `auto` de una pista de grid es el ancho
+     de su contenido más ancho, así que una pista con un mockup dentro se niega
+     a bajar de él y desborda la pantalla en vez de encogerse. */
+  .landing-finanzas .hero,
+  .landing-finanzas .funciones-contenido,
+  .landing-finanzas .gmf-caja {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-finanzas .nav-links {
+    display: none;
+  }
+
+  .landing-finanzas .nav-links.open {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    background: var(--lp-bg);
+    padding: 1rem 1.5rem 1.25rem;
+    gap: 1rem;
+    border-bottom: 1px solid var(--lp-line);
+  }
+
+  .landing-finanzas .menu-btn {
+    display: block;
+  }
+}
+
+@media (max-width: 480px) {
+  .landing-finanzas .hero-ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing-finanzas .btn-primary,
+  .landing-finanzas .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* El monto ya no cabe al lado de la descripción: la fila se parte en dos y el
+     monto queda bajo el texto, alineado con él. */
+  .landing-finanzas .demo-fila {
+    flex-wrap: wrap;
+  }
+
+  .landing-finanzas .demo-monto {
+    width: 100%;
+    padding-left: calc(44px + 0.85rem);
+  }
+
+  .landing-finanzas .gmf-datos div {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .landing-finanzas .gmf-datos dd {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-finanzas *,
+  .landing-finanzas *::before {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MOVIMIENTO
+   Todo lo de aquí abajo existe para que la página no se sienta quieta. Cada
+   pieza se apaga sola con prefers-reduced-motion, que está al final del
+   fichero y desactiva animaciones y transiciones de golpe.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* La barra de progreso de lectura, pegada al borde de abajo de la nav. */
+.landing-finanzas .barra-progreso {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--lp-in), var(--lp-ink));
+}
+
+/* TITULARES POR PALABRA
+   Cada palabra vive en un `span` con overflow oculto, y el hijo sube desde
+   debajo de su propia línea. El padding de abajo evita que las colas de las
+   letras (la j, la g) queden recortadas por ese mismo overflow. */
+.landing-finanzas .palabra {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.12em;
+  margin-right: 0.26em;
+}
+
+.landing-finanzas .palabra > span {
+  display: inline-block;
+}
+
+.landing-finanzas .palabra .resaltada {
+  color: var(--lp-in);
+}
+
+/* LA CINTA DE FRASES */
+.landing-finanzas .ticker {
+  overflow: hidden;
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--lp-line);
+  border-bottom: 1px solid var(--lp-line);
+  background: var(--lp-surface);
+  /* Se desvanece por los bordes en vez de cortarse contra el canto. */
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.landing-finanzas .ticker-pista {
+  display: flex;
+  width: max-content;
+  animation: lp-ticker 46s linear infinite;
+}
+
+.landing-finanzas .ticker-pista.invertida {
+  animation-direction: reverse;
+}
+
+/* Al pasar el ratón se frena, para poder leer una frase concreta. */
+.landing-finanzas .ticker:hover .ticker-pista {
+  animation-play-state: paused;
+}
+
+.landing-finanzas .ticker-grupo {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.landing-finanzas .ticker-item {
+  padding: 0 1.5rem;
+  font-size: 0.92rem;
+  font-style: italic;
+  white-space: nowrap;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .ticker-item::after {
+  content: '·';
+  margin-left: 1.5rem;
+  font-style: normal;
+  color: var(--lp-ink-faint);
+}
+
+/* Recorre exactamente una copia: al terminar, la segunda está donde arrancó la
+   primera y el salto no se ve. */
+@keyframes lp-ticker {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* LAS BURBUJAS DEL HERO
+   Por encima del teléfono y no detrás: con z-index 0 quedaban debajo del
+   marco (que al no declarar el suyo participa en el mismo nivel pero pinta
+   después por ir más tarde en el DOM), así que se escondían recortadas
+   contra los cantos en vez de flotar sobre la pantalla. */
+.landing-finanzas .burbujas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.landing-finanzas .burbuja {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* LA BANDA DE CIFRAS */
+.landing-finanzas .banda-cifras {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+}
+
+.landing-finanzas .linea-dibujada {
+  display: block;
+  height: 1px;
+  transform-origin: 0 50%;
+  background: var(--lp-line);
+}
+
+.landing-finanzas .banda-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 1.5rem;
+  padding: clamp(1.75rem, 4vw, 2.75rem) 0;
+}
+
+.landing-finanzas .banda-item {
+  text-align: center;
+}
+
+.landing-finanzas .banda-numero {
+  display: block;
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .banda-etiqueta {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--lp-ink-soft);
+  text-wrap: balance;
+}
+
+/* MICROINTERACCIONES
+   El icono salta un poco cuando el cursor entra en la tarjeta. Es el detalle
+   que hace que una cuadrícula de tarjetas se sienta viva en vez de impresa. */
+.landing-finanzas .forma-icono,
+.landing-finanzas .privacidad-icono {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.25s, color 0.25s;
+}
+
+.landing-finanzas .forma:hover .forma-icono,
+.landing-finanzas .privacidad-item:hover .privacidad-icono {
+  transform: translateY(-3px) scale(1.08) rotate(-4deg);
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+}
+
+/* El ejemplo de cada tarjeta se destaca al pasar por encima. */
+.landing-finanzas .forma-ejemplo {
+  transition: border-color 0.25s, color 0.25s;
+}
+
+.landing-finanzas .forma:hover .forma-ejemplo {
+  border-color: var(--lp-ink-faint);
+  color: var(--lp-ink);
+}
+
+/* Los botones principales se hunden al pulsarlos, no solo al pasar por encima:
+   sin el estado activo, en un móvil —donde no hay hover— no hay respuesta
+   táctil de ningún tipo. */
+.landing-finanzas .btn-primary:active,
+.landing-finanzas .btn-primary-lg:active,
+.landing-finanzas .link-btn:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+.landing-finanzas .demo-chip {
+  transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.2s;
+}
+
+.landing-finanzas .demo-chip:hover {
+  transform: translateY(-1px);
+}
+
+.landing-finanzas .tab {
+  transition: color 0.2s, transform 0.2s;
+}
+
+.landing-finanzas .tab:active {
+  transform: scale(0.96);
+}
+
+/* REGISTRO
+   Cierra la página. Sustituye al "¿Listo?" genérico que había antes: pedirle a
+   alguien que se registre y ponerle debajo otra llamada a lo mismo es pedir dos
+   veces y creer que se pidió una. */
+.landing-finanzas .registro {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: clamp(3.5rem, 8vw, 6rem) 1.5rem clamp(4rem, 9vw, 7rem);
+}
+
+.landing-finanzas .registro-cabecera {
+  text-align: center;
+}
+
+.landing-finanzas .registro-cabecera .seccion-sub {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.landing-finanzas .registro-caja {
+  padding: clamp(1.5rem, 4vw, 2.25rem);
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-radius: 24px;
+}
+
+.landing-finanzas .registro-campo {
+  display: block;
+  margin-bottom: 1.15rem;
+}
+
+.landing-finanzas .registro-etiqueta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .registro-campo input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  font-family: inherit;
+  /* 1rem y no menos: por debajo de 16px Safari en iPhone hace zoom al enfocar
+     el campo y deja la página descuadrada. Misma regla que vigila ios.test.ts. */
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.landing-finanzas .registro-campo input:focus {
+  outline: none;
+  border-color: var(--lp-ink-faint);
+}
+
+.landing-finanzas .registro-campo input::placeholder {
+  color: var(--lp-ink-faint);
+}
+
+/* El ojo de la contraseña va dentro del campo, así que el input le deja sitio
+   a la derecha con el padding. */
+.landing-finanzas .registro-password {
+  position: relative;
+  display: block;
+}
+
+.landing-finanzas .registro-password input {
+  padding-right: 3rem;
+}
+
+.landing-finanzas .registro-password button {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--lp-ink-soft);
+  cursor: pointer;
+}
+
+.landing-finanzas .registro-password button:hover {
+  background: var(--lp-surface-hover);
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .registro-pista {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.76rem;
+  color: var(--lp-ink-soft);
+}
+
+/* El veredicto del apodo, al lado de su etiqueta. */
+.landing-finanzas .apodo-aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .apodo-aviso.libre {
+  color: var(--lp-in);
+}
+
+.landing-finanzas .apodo-aviso.cogido {
+  color: var(--lp-out);
+}
+
+.landing-finanzas .registro-error {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  color: var(--lp-out);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-out);
+}
+
+.landing-finanzas .registro-enviar {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
+.landing-finanzas .registro-enviar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.landing-finanzas .registro-girando {
+  animation: lp-girar 0.9s linear infinite;
+}
+
+@keyframes lp-girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.landing-finanzas .registro-pie {
+  margin: 1.15rem 0 0;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .registro-enlace {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--lp-ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* La confirmación de "revisa tu correo". */
+.landing-finanzas .registro-exito {
+  text-align: center;
+}
+
+.landing-finanzas .registro-sello {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: 0 auto 1.1rem;
+  border-radius: 999px;
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
+  color: var(--lp-in);
+}
+
+.landing-finanzas .registro-exito h2 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 0.7rem;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .registro-exito p {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--lp-ink-soft);
+}
+
+/* El mes se desvanece antes de volver a empezar, en vez de borrarse en un
+   fotograma. Con las cifras saltando sin contar durante este rato, el bucle se
+   cierra en lugar de cortarse. */
+.landing-finanzas .pantalla-app {
+  transition: opacity 0.42s ease;
+}
+
+.landing-finanzas .pantalla-app.reiniciando {
+  opacity: 0.12;
+}
+
+/* Modal PWA Install */
+.pwa-install {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pwa-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  backdrop-filter: blur(2px);
+}
+
+.pwa-modal {
+  position: relative;
+  z-index: 10001;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  background: var(--lp-bg);
+  border-radius: 24px 24px 0 0;
+  padding: 32px 24px;
+  pointer-events: auto;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 768px) {
+  .pwa-modal {
+    border-radius: 24px;
+    max-height: 80vh;
+  }
+}
+
+.pwa-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pwa-cabecera h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink);
+}
+
+.pwa-cerrar {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--lp-ink-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.pwa-cerrar:hover {
+  background: var(--lp-surface-hover);
+}
+
+.pwa-descripcion {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--lp-ink-soft);
+}
+
+.pwa-pasos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.pwa-paso {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.pwa-numero {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--lp-ink);
+}
+
+.pwa-contenido h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+
+.pwa-contenido p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+  line-height: 1.5;
+}
+
+.pwa-beneficios {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--lp-surface);
+  border-radius: 12px;
+  margin: 8px 0;
+}
+
+.pwa-beneficio {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 0.85rem;
+  color: var(--lp-ink-soft);
+  line-height: 1.5;
+}
+
+.pwa-beneficio svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--lp-in);
+  margin-top: 2px;
+}
+
+.pwa-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.pwa-continuar {
+  width: 100%;
+}
