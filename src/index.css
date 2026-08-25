@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Plus Jakarta Sans', 'Outfit', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'Outfit', sans-serif;
-  
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Poppins', sans-serif;
+
   --color-bg-dark: #000000;
   --color-text-light: #ffffff;
   --color-text-muted: #9ca3af;
@@ -11,12 +11,18 @@
   --color-border-dark: #1f2937;
   --color-border-muted: #374151;
 
+  /* Luk brand palette. */
+  --color-luk-purple: #772aea;
+  --color-luk-lavender: #735ac2;
+  --color-luk-lime: #b6f246;
+  --color-luk-pink: #d4025a;
+
   /* Finance tool. A monochrome palette cannot encode sign, so these carry
      direction — always paired with an icon or +/− so colour is never the only
      cue. Tailwind v4 emits nothing for unused tokens, so the portfolio bundle
      is unaffected. */
-  --color-fin-in: #34d399;
-  --color-fin-out: #fb7185;
+  --color-fin-in: #b6f246;
+  --color-fin-out: #d4025a;
   --color-fin-warn: #fbbf24;
 }
 
@@ -35,7 +41,7 @@ body {
 
 /* Custom styles for animations and details */
 .text-gradient {
-  background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 50%, #8643ff 100%);
+  background: linear-gradient(135deg, #b6f246 0%, #735ac2 50%, #772aea 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }

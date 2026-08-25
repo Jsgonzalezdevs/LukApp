@@ -22,22 +22,22 @@
   --lp-ink-faint: #96908a;
   /* El botón principal y su texto van juntos: en oscuro se invierten los dos,
      y separarlos es como se acaba con un botón claro y letra blanca. */
-  --lp-accent: #1c1917;
+  --lp-accent: #772aea;
   --lp-on-accent: #ffffff;
-  --lp-in: #15803d;
-  --lp-out: #be123c;
+  --lp-in: #5a8a1e;
+  --lp-out: #d4025a;
   --lp-nav-bg: rgba(255, 255, 255, 0.85);
   /* El destello que cruza el botón de demo. Se invierte con el tema: sobre
      fondo claro tiene que ser una sombra que pasa, no una luz —una luz blanca
      sobre blanco no existe—, y sobre fondo oscuro al revés. */
   --lp-destello: rgba(28, 25, 23, 0.1);
-  --lp-sombra-btn: 0 8px 20px -8px rgba(28, 25, 23, 0.35);
+  --lp-sombra-btn: 0 8px 20px -8px rgba(119, 42, 234, 0.35);
   --lp-sombra-tel: 0 40px 80px -32px rgba(28, 25, 23, 0.35);
-  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(21, 128, 61, 0.07), transparent 70%);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(119, 42, 234, 0.08), transparent 70%);
   /* La pila vive en un token porque hay que repetirla dentro del atajo `font`
      de --fin-t-cifra, y ahí no se puede escribir `inherit`: el atajo exige una
      familia de verdad y descarta la declaración entera si no la encuentra. */
-  --lp-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --lp-font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,17 +49,17 @@
     --lp-ink: #f5f3f0;
     --lp-ink-soft: #a8a29e;
     --lp-ink-faint: #857f7a;
-    --lp-accent: #f5f3f0;
+    --lp-accent: #a879f0;
     --lp-on-accent: #1a1817;
     /* El verde y el rojo de marca no llegan a 4.5:1 sobre fondo oscuro; estos
        son los mismos tonos aclarados hasta que sí. */
-    --lp-in: #4ade80;
-    --lp-out: #fb7185;
+    --lp-in: #b6f246;
+    --lp-out: #ff5c92;
     --lp-nav-bg: rgba(26, 24, 23, 0.85);
     --lp-destello: rgba(255, 255, 255, 0.14);
     --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
     --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
-    --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(74, 222, 128, 0.06), transparent 70%);
+    --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 121, 240, 0.1), transparent 70%);
   }
 }
 
@@ -71,15 +71,15 @@
   --lp-ink: #f5f3f0;
   --lp-ink-soft: #a8a29e;
   --lp-ink-faint: #857f7a;
-  --lp-accent: #f5f3f0;
+  --lp-accent: #a879f0;
   --lp-on-accent: #1a1817;
-  --lp-in: #4ade80;
-  --lp-out: #fb7185;
+  --lp-in: #b6f246;
+  --lp-out: #ff5c92;
   --lp-nav-bg: rgba(26, 24, 23, 0.85);
   --lp-destello: rgba(255, 255, 255, 0.14);
   --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
   --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
-  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(74, 222, 128, 0.06), transparent 70%);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 121, 240, 0.1), transparent 70%);
 }
 
 .landing-finanzas {

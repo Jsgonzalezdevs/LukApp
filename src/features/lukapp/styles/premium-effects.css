@@ -140,7 +140,7 @@ select {
    tema de la app. En rosa/morado, la misma familia que `--fin-out`, no en
    naranja -- la primera versión se inclinaba demasiado a naranja/durazno. */
 .fin-dictado-bg {
-  background: radial-gradient(120% 90% at 25% 8%, #ff8fa8 0%, #f0617a 32%, #a8567f 60%, #5c3f6e 100%);
+  background: radial-gradient(120% 90% at 25% 8%, #ff5c92 0%, #d4025a 32%, #9a4fc7 60%, #772aea 100%);
   background-size: 180% 180%;
   animation: fin-dictado-respirar 9s ease-in-out infinite;
 }

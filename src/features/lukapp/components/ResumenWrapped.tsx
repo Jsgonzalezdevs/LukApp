@@ -25,8 +25,8 @@ interface ResumenWrappedProps {
 }
 
 const COLOR_TONO: Record<Tono, string> = {
-  bien: '#4ade80',
-  atento: '#fb7185',
+  bien: '#b6f246',
+  atento: '#ff5c92',
   neutral: '#f5f3f0',
 };
 
