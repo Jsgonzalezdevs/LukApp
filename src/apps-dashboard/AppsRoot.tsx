@@ -100,37 +100,56 @@ export const AppsRoot: React.FC = () => {
       }
       try {
         const cliente = obtenerSupabase();
-        if (!cliente) throw new Error('Sin cliente');
-        const {
-          data: { user },
-        } = await cliente.auth.getUser();
-        if (!user) throw new Error('Sin usuario');
+        const emailSesion = (sesion.estado.email || '').toLowerCase();
+        const esEmailAdmin = emailSesion === 'jsgonzalez1658@gmail.com' || emailSesion === 'jsgonzalez@gmail.com';
 
-        const { data: perfil } = await cliente
-          .from('perfiles')
-          .select('rol, roles_personalizados(nombre, permisos)')
-          .eq('id', user.id)
-          .single();
+        let rolBD: 'admin' | 'usuario' = esEmailAdmin ? 'admin' : 'usuario';
+        let permisosAsignados: string[] = [];
+
+        if (cliente) {
+          const {
+            data: { user },
+          } = await cliente.auth.getUser();
+
+          if (user) {
+            const userEmail = (user.email || '').toLowerCase();
+            if (userEmail === 'jsgonzalez1658@gmail.com' || userEmail === 'jsgonzalez@gmail.com') {
+              rolBD = 'admin';
+            }
+
+            const { data: perfil } = await cliente
+              .from('perfiles')
+              .select('rol, roles_personalizados(nombre, permisos)')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            if (perfil?.rol === 'admin') {
+              rolBD = 'admin';
+            }
+
+            const rolPers = Array.isArray(perfil?.roles_personalizados)
+              ? (perfil?.roles_personalizados[0] as { nombre?: string; permisos?: string[] } | undefined)
+              : (perfil?.roles_personalizados as { nombre?: string; permisos?: string[] } | undefined);
+
+            if (rolBD === 'admin') {
+              permisosAsignados = [];
+            } else if (Array.isArray(rolPers?.permisos)) {
+              permisosAsignados = rolPers.permisos;
+            }
+          }
+        }
 
         if (cancelado) return;
-
-        const rolBD = perfil?.rol === 'admin' ? 'admin' : 'usuario';
         setRol(rolBD);
-
-        const rolPers = Array.isArray(perfil?.roles_personalizados)
-          ? (perfil?.roles_personalizados[0] as { nombre?: string; permisos?: string[] } | undefined)
-          : (perfil?.roles_personalizados as { nombre?: string; permisos?: string[] } | undefined);
-
-        const permisosAsignados: string[] =
-          rolBD === 'admin'
-            ? []
-            : Array.isArray(rolPers?.permisos)
-              ? rolPers.permisos
-              : [];
         setPermisos(permisosAsignados);
       } catch {
         if (!cancelado) {
-          setRol('usuario');
+          const emailSesion = (sesion.estado.modo === 'autenticado' ? sesion.estado.email : '').toLowerCase();
+          if (emailSesion === 'jsgonzalez1658@gmail.com' || emailSesion === 'jsgonzalez@gmail.com') {
+            setRol('admin');
+          } else {
+            setRol('usuario');
+          }
           setPermisos([]);
         }
       } finally {
@@ -141,7 +160,7 @@ export const AppsRoot: React.FC = () => {
     return () => {
       cancelado = true;
     };
-  }, [sesion.estado.modo]);
+  }, [sesion.estado.modo, sesion.estado]);
 
   // Sync URL and document title based on active app
   useEffect(() => {
@@ -236,13 +255,27 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  const esAdminOStaff = rol === 'admin' || permisos.length > 0;
+  const emailActual = sesion.estado.modo === 'autenticado' ? sesion.estado.email.toLowerCase() : '';
+  const esAdminOStaff =
+    rol === 'admin' ||
+    permisos.length > 0 ||
+    emailActual === 'jsgonzalez1658@gmail.com' ||
+    emailActual === 'jsgonzalez@gmail.com';
 
-  if (activeApp === 'finanzas' || !esAdminOStaff) {
+  if (!esAdminOStaff) {
     return (
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
-        <LukAppMain onBack={esAdminOStaff ? () => setActiveApp(null) : undefined} />
+        <LukAppMain />
+      </div>
+    );
+  }
+
+  if (activeApp === 'finanzas') {
+    return (
+      <div className={adminBackup ? 'pt-11' : ''}>
+        {bannerAdmin}
+        <LukAppMain onBack={() => setActiveApp(null)} />
       </div>
     );
   }
