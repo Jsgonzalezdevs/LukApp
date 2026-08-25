@@ -37,6 +37,7 @@ import { useBloqueoScroll } from '../features/lukapp/data/useBloqueoScroll';
 import { apiUrl } from '../lib/api';
 import type { Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
+import type { SuperadminPanelProps, Perfil, AuditLog, PeticionIA, MetricasIAResponse } from './superadmin.types';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';

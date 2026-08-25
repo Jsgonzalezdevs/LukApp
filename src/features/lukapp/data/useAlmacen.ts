@@ -16,6 +16,7 @@ import type { Instantanea, Repositorio } from './repositorio';
 import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
+import { conReintentos } from '../../../lib/errorHandling';
 
 export interface Almacen {
   datos: Instantanea;
@@ -382,7 +383,17 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // aplicarla borraría de la pantalla algo que sí se guardó.
       escrituras.current += 1;
       try {
-        await escribir();
+        // Retry logic: reintentar hasta 3 veces con backoff exponencial
+        // Esto asegura que cambios offline se guarden cuando se recupere conexión
+        await conReintentos(
+          () => escribir(),
+          3,
+          (intento) => {
+            if (import.meta.env.DEV) {
+              console.warn(`Reintentando guardado (intento ${intento}/3)...`);
+            }
+          },
+        );
       } catch (e) {
         if (!montado.current) return;
         setError(mensajeDeError(e));
