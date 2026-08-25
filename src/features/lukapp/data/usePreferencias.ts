@@ -3,6 +3,7 @@ import { UVT_POR_DEFECTO } from '../lib/gmf';
 import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import { PERIODO_POR_DEFECTO } from '../lib/periodo';
 import type { ConfigPeriodo, FrecuenciaPeriodo } from '../lib/periodo';
+import { VERSION_ACTUAL } from '../novedades';
 
 /**
  * Display preferences, kept beside the theme rather than in the ledger.
@@ -28,6 +29,7 @@ const CLAVE_REGIMEN = 'finanzas:gmf:regimen';
 const CLAVE_CUENTA_EXENTA = 'finanzas:gmf:cuenta-exenta';
 
 const CLAVE_PERIODO = 'finanzas:periodo';
+const CLAVE_NOVEDAD_VISTA = 'finanzas:novedades:version-vista';
 const CLAVE_PRESUPUESTO_ALERTAS = 'finanzas:presupuestos:alertas-activas';
 const CLAVE_PRESUPUESTO_UMBRAL = 'finanzas:presupuestos:umbral-alerta';
 
@@ -96,6 +98,8 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
     setIf(CLAVE_PRESUPUESTO_ALERTAS, metadata[CLAVE_PRESUPUESTO_ALERTAS] ? 'si' : 'no');
   if (metadata[CLAVE_PRESUPUESTO_UMBRAL] !== undefined)
     setIf(CLAVE_PRESUPUESTO_UMBRAL, String(metadata[CLAVE_PRESUPUESTO_UMBRAL]));
+  if (metadata[CLAVE_NOVEDAD_VISTA] !== undefined)
+    setIf(CLAVE_NOVEDAD_VISTA, String(metadata[CLAVE_NOVEDAD_VISTA]));
 
   // Si hubo algún cambio desde la nube, forzamos que todos los hooks locales se recarguen.
   if (cambio) {
@@ -399,6 +403,50 @@ export const useGuiaApp = () => {
   }, []);
 
   return { basicaVista, seccionesVistas, terminarBasica, marcarSeccion, reiniciar };
+};
+
+/**
+ * "Qué cambió" -- la tarjeta descartable que avisa de una versión nueva.
+ *
+ * La primera vez que se lee esta clave (`versionVista === null`, nadie la ha
+ * escrito nunca) se marca la versión actual como vista SIN mostrar nada: ni
+ * un usuario que se acaba de instalar la app ni uno que ya la usaba antes de
+ * que existiera esta función deberían ver un anuncio de "novedades" de algo
+ * que para ellos siempre fue así. La tarjeta solo aparece de ahí en
+ * adelante, cuando `VERSION_ACTUAL` (lib/novedades.ts) cambia de verdad con
+ * un lanzamiento nuevo.
+ */
+export const useNovedades = () => {
+  const [versionVista, setVersionVista] = useState<string | null>(() => leerTexto(CLAVE_NOVEDAD_VISTA));
+
+  const marcarVista = useCallback((version: string = VERSION_ACTUAL) => {
+    setVersionVista(version);
+    try {
+      localStorage.setItem(CLAVE_NOVEDAD_VISTA, version);
+      guardarEnSupabase(CLAVE_NOVEDAD_VISTA, version);
+    } catch {
+      // La tarjeta se cierra igual; solo puede volver a aparecer.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (versionVista === null) marcarVista(VERSION_ACTUAL);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [versionVista]);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key === null || e.key === CLAVE_NOVEDAD_VISTA) setVersionVista(leerTexto(CLAVE_NOVEDAD_VISTA));
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return {
+    /** True solo cuando de verdad hay algo nuevo que esta persona no ha visto. */
+    hayNovedad: versionVista !== null && versionVista !== VERSION_ACTUAL,
+    marcarVista,
+  };
 };
 
 /**

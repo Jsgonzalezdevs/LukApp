@@ -49,9 +49,11 @@ import {
   useModoPrivacidad,
   useMostrarAhorro,
   useMostrarEfectivoSeparado,
+  useNovedades,
   useOnboarding,
   useRecordatorioRacha,
 } from './data/usePreferencias';
+import { NOVEDADES } from './novedades';
 import { contactoPorApodo } from './lib/contactos';
 import { DivisionCuentasModal } from './components/DivisionCuentasModal';
 import { calcularRacha } from './lib/racha';
@@ -244,6 +246,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const gmf = useAjustesGmf();
   const periodoAjustes = useAjustesPeriodo();
   const presupuestoAjustes = useAjustesPresupuesto();
+  const novedades = useNovedades();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
@@ -699,6 +702,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             modoPrivacidad={modoPrivacidad}
             onTogglePrivacidad={alternarPrivacidad}
             today={today}
+            novedad={novedades.hayNovedad ? NOVEDADES[0] : null}
+            onCerrarNovedad={() => novedades.marcarVista()}
           />
         ) : null}
 

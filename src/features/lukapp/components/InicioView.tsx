@@ -21,6 +21,8 @@ import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
 import { calcularRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
+import { NovedadesCard } from './NovedadesCard';
+import type { Novedad } from '../novedades';
 
 interface InicioViewProps {
   /** El período que se está mirando, ya formateado para mostrar ("agosto 2026",
@@ -50,6 +52,9 @@ interface InicioViewProps {
   modoPrivacidad?: boolean;
   onTogglePrivacidad?: () => void;
   today?: string;
+  /** Ausente cuando no hay nada nuevo que contar, o ya se cerró. */
+  novedad?: Novedad | null;
+  onCerrarNovedad?: () => void;
 }
 
 export const InicioView: React.FC<InicioViewProps> = ({
@@ -74,6 +79,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   modoPrivacidad = false,
   onTogglePrivacidad,
   today,
+  novedad,
+  onCerrarNovedad,
 }) => {
   const { isDismissed, dismiss } = useDismissedInsights();
   const [indiceRotacion, setIndiceRotacion] = useState(0);
@@ -272,6 +279,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </button>
         </div>
       </div>
+
+      {novedad && onCerrarNovedad ? <NovedadesCard novedad={novedad} onCerrar={onCerrarNovedad} /> : null}
 
       {/* "Para ti" — Tips e Insights dinámicos (ocasional / colapsable / interactivo con Asesor) */}
       {insightActual ? (
