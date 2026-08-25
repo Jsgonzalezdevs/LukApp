@@ -100,10 +100,8 @@ export const AppsRoot: React.FC = () => {
       }
       try {
         const cliente = obtenerSupabase();
-        const emailSesion = (sesion.estado.email || '').toLowerCase();
-        const esEmailAdmin = emailSesion === 'jsgonzalez1658@gmail.com' || emailSesion === 'jsgonzalez@gmail.com';
 
-        let rolBD: 'admin' | 'usuario' = esEmailAdmin ? 'admin' : 'usuario';
+        let rolBD: 'admin' | 'usuario' = 'usuario';
         let permisosAsignados: string[] = [];
 
         if (cliente) {
@@ -112,11 +110,6 @@ export const AppsRoot: React.FC = () => {
           } = await cliente.auth.getUser();
 
           if (user) {
-            const userEmail = (user.email || '').toLowerCase();
-            if (userEmail === 'jsgonzalez1658@gmail.com' || userEmail === 'jsgonzalez@gmail.com') {
-              rolBD = 'admin';
-            }
-
             const { data: perfil } = await cliente
               .from('perfiles')
               .select('rol, roles_personalizados(nombre, permisos)')
@@ -144,12 +137,7 @@ export const AppsRoot: React.FC = () => {
         setPermisos(permisosAsignados);
       } catch {
         if (!cancelado) {
-          const emailSesion = (sesion.estado.modo === 'autenticado' ? sesion.estado.email : '').toLowerCase();
-          if (emailSesion === 'jsgonzalez1658@gmail.com' || emailSesion === 'jsgonzalez@gmail.com') {
-            setRol('admin');
-          } else {
-            setRol('usuario');
-          }
+          setRol('usuario');
           setPermisos([]);
         }
       } finally {
@@ -160,7 +148,7 @@ export const AppsRoot: React.FC = () => {
     return () => {
       cancelado = true;
     };
-  }, [sesion.estado.modo, sesion.estado]);
+  }, [sesion.estado.modo, sesion.estado.email]);
 
   // Sync URL and document title based on active app
   useEffect(() => {
@@ -255,12 +243,7 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  const emailActual = sesion.estado.modo === 'autenticado' ? sesion.estado.email.toLowerCase() : '';
-  const esAdminOStaff =
-    rol === 'admin' ||
-    permisos.length > 0 ||
-    emailActual === 'jsgonzalez1658@gmail.com' ||
-    emailActual === 'jsgonzalez@gmail.com';
+  const esAdminOStaff = rol === 'admin' || permisos.length > 0;
 
   if (!esAdminOStaff) {
     return (
