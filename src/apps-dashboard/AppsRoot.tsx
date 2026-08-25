@@ -12,6 +12,7 @@ import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRu
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
+import { apiUrl } from '../lib/api';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
 
@@ -138,29 +139,24 @@ export const AppsRoot: React.FC = () => {
 
         if (cliente) {
           const {
-            data: { user },
-          } = await cliente.auth.getUser();
+            data: { session },
+          } = await cliente.auth.getSession();
 
-          if (user) {
-            const { data: perfil } = await cliente
-              .from('perfiles')
-              .select('rol, roles_personalizados(nombre, permisos)')
-              .eq('id', user.id)
-              .maybeSingle();
-
-            if (perfil?.rol === 'admin') {
-              rolBD = 'admin';
-            }
-
-            const rolPers = Array.isArray(perfil?.roles_personalizados)
-              ? (perfil?.roles_personalizados[0] as { nombre?: string; permisos?: string[] } | undefined)
-              : (perfil?.roles_personalizados as { nombre?: string; permisos?: string[] } | undefined);
-
-            if (rolBD === 'admin') {
-              permisosAsignados = [];
-            } else if (Array.isArray(rolPers?.permisos)) {
-              permisosAsignados = rolPers.permisos;
-            }
+          // El rol y los permisos se piden a /api/mis-permisos, no directo a
+          // Supabase: la tabla `roles` (permisos_por_rol incluida) es de
+          // lectura admin-only por RLS a propósito (ver migración 0015), así
+          // que un usuario con rol personalizado no podría leer sus propios
+          // permisos con el cliente público aunque el nombre de columna fuera
+          // correcto. Este endpoint corre con la llave de servicio y evita
+          // abrir esa tabla a cualquiera con sesión.
+          if (session?.access_token) {
+            const res = await fetch(apiUrl('/api/mis-permisos'), {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            if (!res.ok) throw new Error(`/api/mis-permisos respondió ${res.status}`);
+            const data = await res.json();
+            rolBD = data.rol === 'admin' ? 'admin' : 'usuario';
+            permisosAsignados = Array.isArray(data.permisos) ? data.permisos : [];
           }
         }
 
