@@ -527,23 +527,20 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
  la conversación con un clic en lugar de tener que pensar qué
  escribir primero. */}
         {messages.length === 1 ? (
-          <div className="mx-auto flex max-w-lg flex-col items-center gap-5 py-10 text-center">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
-              <BrainCircuit className="h-8 w-8" strokeWidth={1.75} />
+          <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 py-4 text-center">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
+              <BrainCircuit className="h-6 w-6" strokeWidth={1.75} />
             </div>
-            <p className="text-[17px] leading-relaxed text-[var(--fin-ink-soft)]">
+            <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
-            {/* Las preguntas de arranque. Son la parte importante de esta
-                pantalla: nadie sabe qué preguntarle a un asesor la primera vez,
-                y tener cuatro para tocar quita ese bloqueo. */}
-            <div className="flex flex-wrap justify-center gap-2">
+            <div className="grid grid-cols-2 gap-2 w-full px-2">
               {SUGERENCIAS_INICIALES.map((sug) => (
                 <button
                   key={sug}
                   onClick={() => handleSend(sug)}
                   disabled={pensando}
-                  className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+                  className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
                 >
                   {sug}
                 </button>
