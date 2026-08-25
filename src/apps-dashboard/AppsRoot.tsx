@@ -101,7 +101,7 @@ export const AppsRoot: React.FC = () => {
     localStorage.removeItem('__impersonated_user__');
     setAdminBackup(null);
     setImpersonatedUser(null);
-    window.location.href = '/superadmin';
+    setActiveApp('superadmin');
   }, [adminBackup]);
 
   // Cargar rol de Supabase con retry logic
@@ -287,6 +287,7 @@ export const AppsRoot: React.FC = () => {
           rol={rol}
           permisos={permisos}
           onBack={() => setActiveApp(null)}
+          onNavigateTo={(app) => setActiveApp(app as any)}
           tema={tema}
           onCambiarTema={setTema}
         />

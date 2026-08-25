@@ -44,6 +44,7 @@ interface SuperadminPanelProps {
   /** Los permisos del rol personalizado, si tiene uno. Vacío para 'admin'. */
   permisos: string[];
   onBack: () => void;
+  onNavigateTo?: (app: string) => void;
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
 }
@@ -603,7 +604,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       );
 
       setImpersonando(null);
-      window.location.href = '/finanzas';
+      props.onNavigateTo?.('finanzas');
     } catch (err: any) {
       setFormError(err.message);
       localStorage.removeItem('__admin_session_backup__');
