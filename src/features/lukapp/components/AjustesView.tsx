@@ -1,26 +1,5 @@
 import React from 'react';
-import {
-  Bell,
-  ChevronRight,
-  Clock,
-  FileUp,
-  HardDriveDownload,
-  Flag,
-  Key,
-  Landmark,
-  Lightbulb,
-  PiggyBank,
-  Repeat,
-  Rocket,
-  Shield,
-  Smartphone,
-  Tag,
-  Target,
-  User,
-  Users,
-  UtensilsCrossed,
-  Wallet,
-} from 'lucide-react';
+import { ChevronRight, Clock } from 'lucide-react';
 import { PANELES_AJUSTES } from '../sections';
 import type { PanelAjustes } from '../sections';
 import { useRecordatorioRacha } from '../data/usePreferencias';
@@ -38,26 +17,27 @@ interface AjustesViewProps {
   esAdmin?: boolean;
 }
 
-/** Cada panel con su icono. Van aquí y no en sections.ts para que ese fichero
- * siga siendo solo datos y no arrastre media librería de iconos. */
-const ICONOS: Record<
-  PanelAjustes,
-  React.ComponentType<{ className?: string; strokeWidth?: number }>
-> = {
-  cuentas: Wallet,
-  categorias: Tag,
-  topes: Target,
-  metas: Flag,
-  recurrentes: Repeat,
-  'dividir-cuenta': UtensilsCrossed,
-  extractos: FileUp,
-  atajos: Smartphone,
-  gmf: Landmark,
-  nombres: Users,
-  contraseña: Key,
-  respaldo: HardDriveDownload,
-  'funciones-solicitadas': Lightbulb,
-  cuenta: User,
+/** Cada panel con su emoji. Van aquí y no en sections.ts para que ese fichero
+ * siga siendo solo datos. Un emoji en vez de un ícono de trazo: ya trae su
+ * propio color y forma reconocible de un vistazo, así que una fila se
+ * distingue de otra sin tener que leer el título -- sin inventar un sistema
+ * de colores decorativos nuevo (ver el comentario de SECTIONS en
+ * sections.ts sobre por qué el color ahí significa solo entrada/salida). */
+const ICONOS: Record<PanelAjustes, string> = {
+  cuentas: '🏦',
+  categorias: '🏷️',
+  topes: '🎯',
+  metas: '🚩',
+  recurrentes: '🔁',
+  'dividir-cuenta': '🍽️',
+  extractos: '📥',
+  atajos: '💳',
+  gmf: '🏛️',
+  nombres: '👥',
+  contraseña: '🔑',
+  respaldo: '💾',
+  'funciones-solicitadas': '🔧',
+  cuenta: '☁️',
 };
 
 /** Los tres bloques en que se parte la lista. Agrupar por tema hace que no haya
@@ -71,12 +51,12 @@ const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] 
 
 /** Una fila de la lista: icono, nombre, explicación debajo, y flecha. */
 const Fila: React.FC<{
-  icono: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  icono: string;
   titulo: string;
   ayuda?: string;
   ultima: boolean;
   onClick: () => void;
-}> = ({ icono: Icono, titulo, ayuda, ultima, onClick }) => (
+}> = ({ icono, titulo, ayuda, ultima, onClick }) => (
   <li>
     <button
       type="button"
@@ -85,10 +65,10 @@ const Fila: React.FC<{
       style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)' }}
     >
       <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
         aria-hidden="true"
       >
-        <Icono className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+        {icono}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">{titulo}</span>
@@ -175,10 +155,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           style={{ boxShadow: 'inset 0 -1px 0 0 var(--fin-line)' }}
         >
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
             aria-hidden="true"
           >
-            <PiggyBank className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+            🐷
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
@@ -206,10 +186,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           }}
         >
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
             aria-hidden="true"
           >
-            <PiggyBank className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+            💵
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
@@ -240,10 +220,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
                 aria-hidden="true"
               >
-                <Bell className="h-[18px] w-[18px] text-amber-500" strokeWidth={2} />
+                🔔
               </span>
               <div className="min-w-0 flex-1">
                 <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
@@ -293,10 +273,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             style={{ boxShadow: 'inset 0 -1px 0 0 var(--fin-line)' }}
           >
             <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
               aria-hidden="true"
             >
-              <Rocket className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+              🚀
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
@@ -324,10 +304,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
           >
             <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-purple-500/15 text-purple-600 dark:text-purple-400"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-purple-500/15 text-[19px] leading-none"
               aria-hidden="true"
             >
-              <Shield className="h-[18px] w-[18px]" strokeWidth={2} />
+              🛡️
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
@@ -350,7 +330,15 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             className="flex items-center justify-between gap-3 px-4 py-3.5"
             style={{ boxShadow: cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
           >
-            <span className="text-[17px] font-semibold text-[var(--fin-ink)]">Apariencia</span>
+            <span className="flex items-center gap-3">
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+                aria-hidden="true"
+              >
+                🌗
+              </span>
+              <span className="text-[17px] font-semibold text-[var(--fin-ink)]">Apariencia</span>
+            </span>
             {temaToggle}
           </div>
         ) : null}
@@ -362,10 +350,10 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
           >
             <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
               aria-hidden="true"
             >
-              <User className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
+              ☁️
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Cuenta</span>
