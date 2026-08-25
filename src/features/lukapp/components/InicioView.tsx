@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import type { Transaction } from '../types';
 import { formatCop } from '../lib/formatCop';
-import { monthKeyLabel } from '../lib/localDate';
 import { TransactionList } from './TransactionList';
 import { AnimatedNumber } from './AnimatedNumber';
 import type { Insight } from '../lib/insights';
@@ -24,8 +23,9 @@ import { calcularRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
 
 interface InicioViewProps {
-  /** El mes que se está mirando, en formato YYYY-MM. */
-  month: string;
+  /** El período que se está mirando, ya formateado para mostrar ("agosto 2026",
+   * "18-24 ago", "Todo el tiempo" -- depende de la frecuencia elegida en Ajustes). */
+  etiquetaPeriodo: string;
   onCambiarMes: () => void;
   onBuscar: () => void;
   onAjustes: () => void;
@@ -53,7 +53,7 @@ interface InicioViewProps {
 }
 
 export const InicioView: React.FC<InicioViewProps> = ({
-  month,
+  etiquetaPeriodo,
   onCambiarMes,
   onBuscar,
   onAjustes,
@@ -142,7 +142,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           onClick={onCambiarMes}
           className="flex items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3.5 py-2 text-[15px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)]"
         >
-          {monthKeyLabel(month)}
+          {etiquetaPeriodo}
           <ChevronDown
             className="h-4 w-4 text-[var(--fin-ink-faint)]"
             strokeWidth={2.5}

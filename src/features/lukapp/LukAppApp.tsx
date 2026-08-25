@@ -4,10 +4,11 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
-import { byCategory, forMonth, monthTotals } from './lib/aggregate';
+import { byCategory, forPeriod, monthTotals } from './lib/aggregate';
 import { totalVisible, saldoEfectivo, saldoCuentasSinEfectivo } from './lib/cajitas';
 import { formatCop } from './lib/formatCop';
-import { bogotaDate, monthKey, shiftMonth } from './lib/localDate';
+import { bogotaDate, monthKey } from './lib/localDate';
+import { claveDePeriodo, etiquetaDePeriodo, periodoAdyacente } from './lib/periodo';
 import { nuevoId } from './lib/id';
 import { movimientoEnBlanco } from './lib/parseTransaction';
 import { parseMultipleTransactions } from './lib/parseMultipleTransactions';
@@ -36,11 +37,14 @@ import { CuentaView } from './components/CuentaView';
 import { PanelGmf } from './components/PanelGmf';
 import { PanelRespaldo } from './components/PanelRespaldo';
 import { PresupuestosView } from './components/PresupuestosView';
+import { PanelPeriodo } from './components/PanelPeriodo';
 import { RecurrentesView } from './components/RecurrentesView';
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import {
   useAjustesGmf,
+  useAjustesPeriodo,
+  useAjustesPresupuesto,
   useGuiaApp,
   useModoPrivacidad,
   useMostrarAhorro,
@@ -238,6 +242,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const { modoPrivacidad, alternarPrivacidad } = useModoPrivacidad();
   const onboarding = useOnboarding();
   const gmf = useAjustesGmf();
+  const periodoAjustes = useAjustesPeriodo();
+  const presupuestoAjustes = useAjustesPresupuesto();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
@@ -323,10 +329,35 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
     return () => clearInterval(intervalo);
   }, [recordatorioActivo, recordatorioHora, infoRacha.anotadoHoy, infoRacha.rachaActual, today]);
-  const [month, setMonth] = useState(thisMonth);
+  // El período activo. Para la configuración por defecto (mensual, sin
+  // desfase) esto es exactamente lo que 'month' siempre fue: 'YYYY-MM'. Con
+  // cualquier otra frecuencia es la clave que le corresponda (ver lib/periodo.ts).
+  const [month, setMonth] = useState(() => claveDePeriodo(today, periodoAjustes.periodo));
+  // Si la frecuencia cambia (p. ej. de mensual a semanal) desde el panel de
+  // Ajustes, `month` se queda con una clave en el formato de la config
+  // VIEJA -- una clave mensual como '2026-08' no significa nada bajo una
+  // config semanal, y calcular su etiqueta/límites con la config nueva
+  // producía basura ("undefined ago – NaN"). Reanclar al período de hoy bajo
+  // la config nueva es además la UX correcta: cambiar la frecuencia debería
+  // aterrizar en "esta semana", no dejarte viendo una clave inválida.
+  useEffect(() => {
+    setMonth(claveDePeriodo(today, periodoAjustes.periodo));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodoAjustes.periodo]);
+  // El período que contiene hoy: no se puede navegar más adelante que eso.
+  const maxMonth = claveDePeriodo(today, periodoAjustes.periodo);
+  const etiquetaPeriodoActivo = etiquetaDePeriodo(month, periodoAjustes.periodo);
+  // El mes calendario real que contiene el período activo -- lo usan las
+  // partes que a propósito se quedaron ancladas al mes calendario (GMF,
+  // recurrentes, el resumen tipo Wrapped, las tendencias) sin importar la
+  // frecuencia que el usuario haya elegido para el resto de la app.
+  const mesCalendarioActivo =
+    periodoAjustes.periodo.frecuencia === 'mensual'
+      ? monthKey(month.length > 7 ? month : `${month}-01`)
+      : thisMonth;
 
   const { totals, gastos, ingresos, delMes } = useMemo(() => {
-    const mes = forMonth(transacciones, month);
+    const mes = forPeriod(transacciones, month, periodoAjustes.periodo);
     const sorted = [...mes].sort((a, b) => b.occurredOn.localeCompare(a.occurredOn));
     return {
       delMes: sorted,
@@ -334,7 +365,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       gastos: byCategory(mes, 'gasto'),
       ingresos: byCategory(mes, 'ingreso'),
     };
-  }, [transacciones, month]);
+  }, [transacciones, month, periodoAjustes.periodo]);
 
   // Anywhere money of your own can sit: accounts and savings pockets alike.
   // Debts and cards are left out because paying one is not a transfer — it has
@@ -417,10 +448,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       rawTranscript: draft.rawTranscript,
       createdAt: new Date().toISOString(),
     });
-    // Jump back to the month the entry landed in, so a save is never invisible
-    // because the user was browsing an older month.
+    // Jump back to the period the entry landed in, so a save is never invisible
+    // because the user was browsing an older period.
     const finalDate = draft.occurredOn || bogotaDate();
-    setMonth(finalDate.slice(0, 7));
+    setMonth(claveDePeriodo(finalDate, periodoAjustes.periodo));
     cerrarCaptura();
 
     // El aviso de "quedó guardado", con Deshacer.
@@ -452,10 +483,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       cuentaId: draft.cuentaId,
       occurredOn,
     });
-    // Si el día se movió a otro mes, la fila desaparecería del mes en pantalla.
-    // Saltar al mes donde quedó evita que la edición parezca haber borrado el
-    // movimiento — el mismo motivo por el que guardar salta al mes de hoy.
-    setMonth(monthKey(occurredOn));
+    // Si el día se movió a otro período, la fila desaparecería del período en
+    // pantalla. Saltar al período donde quedó evita que la edición parezca
+    // haber borrado el movimiento — el mismo motivo por el que guardar salta
+    // al período de hoy.
+    setMonth(claveDePeriodo(occurredOn, periodoAjustes.periodo));
     setEditando(null);
   };
 
@@ -526,9 +558,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     presupuestos: almacen.datos.presupuestos,
     cajitas,
     cajitaMovimientos,
-    month,
+    mesCalendario: mesCalendarioActivo,
     nombreDe: (categoria) => catalogoActual.de(categoria).nombre,
     mostrarAhorro,
+    configPeriodo: periodoAjustes.periodo,
+    umbralAlertaPct: presupuestoAjustes.umbralAlertaPct,
   });
 
   const paraTi = useMemo(
@@ -644,7 +678,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* ------------------------------------------------------- 1. Inicio --- */}
         {section === 'inicio' ? (
           <InicioView
-            month={month}
+            etiquetaPeriodo={etiquetaPeriodoActivo}
             onCambiarMes={() => setSection('mes')}
             onBuscar={() => setCapa('buscar')}
             onAjustes={() => setSection('ajustes')}
@@ -692,11 +726,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* ---------------------------------------------------------- 3. Mes --- */}
         {section === 'mes' ? (
           <MesView
-            month={month}
-            maxMonth={thisMonth}
+            clave={month}
+            config={periodoAjustes.periodo}
+            maxClave={maxMonth}
+            mesCalendario={mesCalendarioActivo}
             hoy={today}
-            onCambiarMes={setMonth}
-            shift={shiftMonth}
+            onCambiarPeriodo={setMonth}
+            shift={(clave, pasos) => periodoAdyacente(clave, pasos, periodoAjustes.periodo)}
             totals={totals}
             gastos={gastos}
             ingresos={ingresos}
@@ -706,8 +742,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               <PresupuestosView
                 presupuestos={almacen.datos.presupuestos}
                 transacciones={transacciones}
-                mes={month}
+                clave={month}
+                config={periodoAjustes.periodo}
                 hoy={today}
+                umbralAlertaPct={presupuestoAjustes.umbralAlertaPct}
+                onCambiarUmbralAlerta={presupuestoAjustes.setUmbralAlertaPct}
+                alertasActivas={presupuestoAjustes.alertasActivas}
+                onCambiarAlertasActivas={presupuestoAjustes.setAlertasActivas}
                 onFijar={(categoria, montoCop) =>
                   void almacen.fijarPresupuesto(categoria, montoCop)
                 }
@@ -862,8 +903,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               <PresupuestosView
                 presupuestos={almacen.datos.presupuestos}
                 transacciones={transacciones}
-                mes={month}
+                clave={month}
+                config={periodoAjustes.periodo}
                 hoy={today}
+                umbralAlertaPct={presupuestoAjustes.umbralAlertaPct}
+                onCambiarUmbralAlerta={presupuestoAjustes.setUmbralAlertaPct}
+                alertasActivas={presupuestoAjustes.alertasActivas}
+                onCambiarAlertasActivas={presupuestoAjustes.setAlertasActivas}
                 onFijar={(categoria, montoCop) =>
                   void almacen.fijarPresupuesto(categoria, montoCop)
                 }
@@ -872,6 +918,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                   setPending({ ...movimientoEnBlanco(), category: categoria })
                 }
               />
+            ) : panelAjustes === 'periodo' ? (
+              <PanelPeriodo periodo={periodoAjustes.periodo} onCambiarPeriodo={periodoAjustes.setPeriodo} />
             ) : panelAjustes === 'metas' ? (
               <MetasView
                 metas={almacen.datos.metas}
@@ -886,7 +934,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 recurrentes={almacen.datos.recurrentes}
                 transacciones={transacciones}
                 cuentas={cuentasParaElegir}
-                mes={month}
+                mes={mesCalendarioActivo}
                 hoy={today}
                 onCrear={(d) => void almacen.crearRecurrente(d)}
                 onBorrar={(id) => void almacen.borrarRecurrente(id)}
@@ -920,7 +968,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             ) : panelAjustes === 'gmf' ? (
               <PanelGmf
                 transacciones={transacciones}
-                mes={month}
+                mes={mesCalendarioActivo}
                 anioActual={Number(bogotaDate().slice(0, 4))}
                 cuentas={cuentasParaElegir}
                 uvt={gmf.uvt}
@@ -1039,7 +1087,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                   createdAt: new Date().toISOString(),
                 });
               });
-              setMonth(bogotaDate().slice(0, 7));
+              setMonth(claveDePeriodo(bogotaDate(), periodoAjustes.periodo));
               setMultiPending(null);
               setGuardado({
                 id: 'multi',
@@ -1154,7 +1202,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         <ReporteFinancieroModal
           abierto={mostrarReporte}
           onCerrar={() => setMostrarReporte(false)}
-          mes={month}
+          mes={mesCalendarioActivo}
           datos={almacen.datos}
           cajitasBalances={cajitasBalances}
           emailUsuario={cuenta?.email}

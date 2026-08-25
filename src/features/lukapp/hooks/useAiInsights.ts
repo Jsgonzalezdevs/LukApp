@@ -4,6 +4,7 @@ import type { Presupuesto } from '../lib/presupuestos';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { insightsDelMes, type Insight } from '../lib/insights';
 import { bogotaDate, monthKey } from '../lib/localDate';
+import { PERIODO_POR_DEFECTO, type ConfigPeriodo } from '../lib/periodo';
 import { saldoEfectivo, saldoCuentasSinEfectivo, totalVisible } from '../lib/cajitas';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
@@ -13,9 +14,18 @@ interface UseAiInsightsOptions {
   presupuestos: readonly Presupuesto[];
   cajitas: readonly Cajita[];
   cajitaMovimientos: readonly CajitaMovimiento[];
-  month: string;
+  /** Mes calendario real ('YYYY-MM') -- los insights que comparan "este mes"
+   * contra meses previos se quedan siempre en calendario, sin importar el
+   * período que el usuario haya elegido en Ajustes (ver el comentario de
+   * `insightsDelMes` en lib/insights.ts). */
+  mesCalendario: string;
   nombreDe: (categoria: CategoriaClave) => string;
   mostrarAhorro?: boolean;
+  /** El período real elegido en Ajustes, y su umbral de alerta -- solo los usa
+   * el aviso de presupuesto, para que el número que muestra coincida con el
+   * que ves en la pantalla de Presupuestos. */
+  configPeriodo?: ConfigPeriodo;
+  umbralAlertaPct?: number;
 }
 
 export const useAiInsights = ({
@@ -23,9 +33,11 @@ export const useAiInsights = ({
   presupuestos,
   cajitas,
   cajitaMovimientos,
-  month,
+  mesCalendario,
   nombreDe,
   mostrarAhorro = true,
+  configPeriodo = PERIODO_POR_DEFECTO,
+  umbralAlertaPct = 80,
 }: UseAiInsightsOptions): {
   insights: Insight[];
   cargandoIa: boolean;
@@ -39,13 +51,22 @@ export const useAiInsights = ({
 
   // 1. Insights deterministas locales inmediatos (garantía offline / sin demora)
   const localInsights = useMemo(
-    () => insightsDelMes(transacciones, presupuestos, month, bogotaDate(), nombreDe),
-    [transacciones, presupuestos, month, nombreDe],
+    () =>
+      insightsDelMes(
+        transacciones,
+        presupuestos,
+        mesCalendario,
+        bogotaDate(),
+        nombreDe,
+        configPeriodo,
+        umbralAlertaPct,
+      ),
+    [transacciones, presupuestos, mesCalendario, nombreDe, configPeriodo, umbralAlertaPct],
   );
 
   // Contexto numérico resumido para enviar a Grok/Groq
   const finanzasContext = useMemo(() => {
-    const txMes = transacciones.filter((t) => monthKey(t.occurredOn) === month);
+    const txMes = transacciones.filter((t) => monthKey(t.occurredOn) === mesCalendario);
     const gastosMes = txMes
       .filter((t) => t.kind === 'gasto')
       .reduce((sum, t) => sum + t.amountCop, 0);
@@ -72,7 +93,7 @@ export const useAiInsights = ({
       .map(([cat, total]) => ({ categoria: cat, totalCop: total }));
 
     return {
-      mes: month,
+      mes: mesCalendario,
       patrimonioTotalCop: patrimonio,
       saldoBancosCop: bancos,
       saldoEfectivoCop: efectivo,
@@ -84,7 +105,7 @@ export const useAiInsights = ({
       topCategoriasGasto: topCategorias,
       totalTransaccionesMes: txMes.length,
     };
-  }, [transacciones, cajitas, cajitaMovimientos, month, nombreDe, mostrarAhorro]);
+  }, [transacciones, cajitas, cajitaMovimientos, mesCalendario, nombreDe, mostrarAhorro]);
 
   const fetchAiInsights = async () => {
     // Si no hay transacciones en el mes, no gastar llamadas al modelo
@@ -94,12 +115,12 @@ export const useAiInsights = ({
       return;
     }
 
-    const currentKey = `${month}-${transacciones.length}-${finanzasContext.gastosMesCop}-${finanzasContext.ingresosMesCop}`;
+    const currentKey = `${mesCalendario}-${transacciones.length}-${finanzasContext.gastosMesCop}-${finanzasContext.ingresosMesCop}`;
     if (currentKey === lastFetchKey.current) return;
     lastFetchKey.current = currentKey;
 
     // Revisar caché en sessionStorage (20 minutos)
-    const cacheKey = `lukapp_ai_insights_${month}_${transacciones.length}`;
+    const cacheKey = `lukapp_ai_insights_${mesCalendario}_${transacciones.length}`;
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -162,7 +183,7 @@ export const useAiInsights = ({
   useEffect(() => {
     fetchAiInsights();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month, transacciones.length]);
+  }, [mesCalendario, transacciones.length]);
 
   // Si hay insights de IA, mostrarlos. Si no, o como complemento, usar los locales.
   const insightsCombinados = useMemo(() => {

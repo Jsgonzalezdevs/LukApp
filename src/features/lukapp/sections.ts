@@ -50,6 +50,7 @@ export const PANELES_AJUSTES = [
   { id: 'cuentas', label: 'Cuentas y saldos', ayuda: 'Cuánto tienes en cada una' },
   { id: 'categorias', label: 'Categorías', ayuda: 'Crea las tuyas o cambia las que hay' },
   { id: 'topes', label: 'Topes de gasto', ayuda: 'Te avisa antes de que te pases' },
+  { id: 'periodo', label: 'Período', ayuda: 'Cada cuánto se reinicia lo que ves' },
   { id: 'metas', label: 'Metas de ahorro', ayuda: 'Ponte un objetivo y mira cuánto te falta' },
   { id: 'recurrentes', label: 'Pagos fijos', ayuda: 'Lo que te cobran todos los meses' },
   {

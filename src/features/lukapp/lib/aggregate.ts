@@ -1,5 +1,6 @@
 import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { monthKey } from './localDate';
+import { enElPeriodo, type ConfigPeriodo } from './periodo';
 
 export interface CategorySlice {
   category: CategoriaClave;
@@ -19,6 +20,16 @@ export interface MonthTotals {
 /** Transactions belonging to one 'YYYY-MM' month. */
 export const forMonth = (transactions: readonly Transaction[], month: string): Transaction[] =>
   transactions.filter((tx) => monthKey(tx.occurredOn) === month);
+
+/** Transactions belonging to the period `clave` under `config`. Generalizes
+ * `forMonth` to any período configurado (semanal, quincenal, mensual con
+ * desfase, todo el tiempo) -- for the default config it is byte-identical
+ * to `forMonth`, since `enElPeriodo` falls back to `monthKey` comparison. */
+export const forPeriod = (
+  transactions: readonly Transaction[],
+  clave: string,
+  config: ConfigPeriodo,
+): Transaction[] => transactions.filter((tx) => enElPeriodo(tx.occurredOn, clave, config));
 
 export const monthTotals = (transactions: readonly Transaction[]): MonthTotals => {
   let ingresos = 0;

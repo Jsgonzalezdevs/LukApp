@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { UVT_POR_DEFECTO } from '../lib/gmf';
 import type { RegimenGmf, ValorUvt } from '../lib/gmf';
+import { PERIODO_POR_DEFECTO } from '../lib/periodo';
+import type { ConfigPeriodo, FrecuenciaPeriodo } from '../lib/periodo';
 
 /**
  * Display preferences, kept beside the theme rather than in the ledger.
@@ -24,6 +26,10 @@ const CLAVE_UVT = 'finanzas:gmf:uvt';
 const CLAVE_CUENTAS_GMF = 'finanzas:gmf:cuentas';
 const CLAVE_REGIMEN = 'finanzas:gmf:regimen';
 const CLAVE_CUENTA_EXENTA = 'finanzas:gmf:cuenta-exenta';
+
+const CLAVE_PERIODO = 'finanzas:periodo';
+const CLAVE_PRESUPUESTO_ALERTAS = 'finanzas:presupuestos:alertas-activas';
+const CLAVE_PRESUPUESTO_UMBRAL = 'finanzas:presupuestos:umbral-alerta';
 
 const leerBooleano = (clave: string, porDefecto: boolean): boolean => {
   if (typeof window === 'undefined') return porDefecto;
@@ -84,6 +90,12 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
   if (metadata[CLAVE_REGIMEN] !== undefined) setIf(CLAVE_REGIMEN, metadata[CLAVE_REGIMEN]);
   if (metadata[CLAVE_CUENTA_EXENTA] !== undefined)
     setIf(CLAVE_CUENTA_EXENTA, metadata[CLAVE_CUENTA_EXENTA]);
+  if (metadata[CLAVE_PERIODO] !== undefined)
+    setIf(CLAVE_PERIODO, JSON.stringify(metadata[CLAVE_PERIODO]));
+  if (metadata[CLAVE_PRESUPUESTO_ALERTAS] !== undefined)
+    setIf(CLAVE_PRESUPUESTO_ALERTAS, metadata[CLAVE_PRESUPUESTO_ALERTAS] ? 'si' : 'no');
+  if (metadata[CLAVE_PRESUPUESTO_UMBRAL] !== undefined)
+    setIf(CLAVE_PRESUPUESTO_UMBRAL, String(metadata[CLAVE_PRESUPUESTO_UMBRAL]));
 
   // Si hubo algún cambio desde la nube, forzamos que todos los hooks locales se recarguen.
   if (cambio) {
@@ -477,6 +489,123 @@ export const useAjustesGmf = () => {
     cuentaExentaId,
     setCuentaExentaId,
   };
+};
+
+/**
+ * El período con el que se calcula todo lo que antes siempre era "el mes":
+ * Inicio, Mes, Presupuestos y las recomendaciones del Asesor. Mensual sin
+ * desfase (el valor por defecto de `PERIODO_POR_DEFECTO`) es exactamente lo
+ * que la app hacía antes de que este ajuste existiera -- quien nunca lo toca
+ * no nota ningún cambio. Vive aparte de `useAjustesPresupuesto` porque este
+ * afecta a toda la app, no solo a la pantalla de Presupuestos.
+ */
+export const useAjustesPeriodo = () => {
+  const [periodo, setEstadoPeriodo] = useState<ConfigPeriodo>(() => leerPeriodo());
+
+  const setPeriodo = useCallback((valor: ConfigPeriodo) => {
+    setEstadoPeriodo(valor);
+    try {
+      localStorage.setItem(CLAVE_PERIODO, JSON.stringify(valor));
+      guardarEnSupabase(CLAVE_PERIODO, valor);
+    } catch {
+      // El cambio funciona igual; solo no se recordará.
+    }
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key === null || e.key === CLAVE_PERIODO) setEstadoPeriodo(leerPeriodo());
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { periodo, setPeriodo };
+};
+
+/**
+ * Si los presupuestos avisan cuando se acercan al tope, y a partir de qué
+ * porcentaje. 80% es el umbral que este código siempre tuvo fijo antes de
+ * que existiera este ajuste -- ese sigue siendo el valor por defecto.
+ */
+export const useAjustesPresupuesto = () => {
+  const [alertasActivas, setEstadoAlertas] = useState(() =>
+    leerBooleano(CLAVE_PRESUPUESTO_ALERTAS, true),
+  );
+  const [umbralAlertaPct, setEstadoUmbral] = useState(() => leerUmbralPresupuesto());
+
+  const setAlertasActivas = useCallback((valor: boolean) => {
+    setEstadoAlertas(valor);
+    guardarBooleano(CLAVE_PRESUPUESTO_ALERTAS, valor);
+  }, []);
+
+  const setUmbralAlertaPct = useCallback((valor: number) => {
+    const acotado = Math.min(100, Math.max(1, Math.round(valor)));
+    setEstadoUmbral(acotado);
+    try {
+      localStorage.setItem(CLAVE_PRESUPUESTO_UMBRAL, String(acotado));
+      guardarEnSupabase(CLAVE_PRESUPUESTO_UMBRAL, acotado);
+    } catch {
+      // Igual que arriba.
+    }
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key === null || e.key === CLAVE_PRESUPUESTO_ALERTAS)
+        setEstadoAlertas(leerBooleano(CLAVE_PRESUPUESTO_ALERTAS, true));
+      if (e.key === null || e.key === CLAVE_PRESUPUESTO_UMBRAL) setEstadoUmbral(leerUmbralPresupuesto());
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { alertasActivas, setAlertasActivas, umbralAlertaPct, setUmbralAlertaPct };
+};
+
+const FRECUENCIAS_VALIDAS: readonly FrecuenciaPeriodo[] = [
+  'semanal',
+  'quincenal',
+  'quincenas-mes',
+  'mensual',
+  'todo-el-tiempo',
+];
+
+const leerPeriodo = (): ConfigPeriodo => {
+  if (typeof window === 'undefined') return PERIODO_POR_DEFECTO;
+  try {
+    const crudo = localStorage.getItem(CLAVE_PERIODO);
+    if (crudo) {
+      const leido = JSON.parse(crudo) as Partial<ConfigPeriodo>;
+      if (
+        typeof leido.frecuencia === 'string' &&
+        (FRECUENCIAS_VALIDAS as readonly string[]).includes(leido.frecuencia) &&
+        typeof leido.desfaseDiasMensual === 'number' &&
+        Number.isFinite(leido.desfaseDiasMensual) &&
+        leido.desfaseDiasMensual >= 0 &&
+        leido.desfaseDiasMensual <= 27
+      ) {
+        return { frecuencia: leido.frecuencia as FrecuenciaPeriodo, desfaseDiasMensual: leido.desfaseDiasMensual };
+      }
+    }
+  } catch {
+    // Clave pisada o almacenamiento cerrado.
+  }
+  return PERIODO_POR_DEFECTO;
+};
+
+const leerUmbralPresupuesto = (): number => {
+  if (typeof window === 'undefined') return 80;
+  try {
+    const crudo = localStorage.getItem(CLAVE_PRESUPUESTO_UMBRAL);
+    if (crudo) {
+      const n = Number(crudo);
+      if (Number.isFinite(n) && n >= 1 && n <= 100) return n;
+    }
+  } catch {
+    // Igual.
+  }
+  return 80;
 };
 
 const leerRegimen = (): RegimenGmf => {

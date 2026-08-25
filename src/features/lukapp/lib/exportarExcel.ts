@@ -147,13 +147,27 @@ export const descargarExcel = (
   datos: Instantanea,
   cajitasBalances: Record<string, number>,
   mesFiltro?: string,
+  /**
+   * El nombre que lleva el archivo, si es distinto de `mesFiltro`.
+   *
+   * Existe porque `mesFiltro` filtra por prefijo de fecha ('YYYY-MM'), y eso
+   * deja de tener sentido cuando quien llama ya mandó los datos
+   * pre-filtrados por un período que no es un mes calendario (una semana,
+   * una quincena) -- ahí re-filtrar por `mesFiltro` recortaría movimientos
+   * válidos que caen en el período pero no en ese prefijo de mes. En ese
+   * caso el llamador pasa `mesFiltro: undefined` (los datos ya vienen
+   * exactos) y usa este parámetro solo para que el archivo no se llame
+   * genéricamente "completo".
+   */
+  nombreArchivo?: string,
 ) => {
   const xml = generarExcelFinanciero(datos, cajitasBalances, mesFiltro);
   const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = mesFiltro ? `finanzas-${mesFiltro}.xls` : `finanzas-completo.xls`;
+  const etiqueta = nombreArchivo ?? mesFiltro;
+  a.download = etiqueta ? `finanzas-${etiqueta}.xls` : `finanzas-completo.xls`;
   a.click();
   URL.revokeObjectURL(url);
 };

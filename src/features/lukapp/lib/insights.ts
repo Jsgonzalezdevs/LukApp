@@ -2,6 +2,7 @@ import type { CategoriaClave, Transaction } from '../types';
 import type { Presupuesto } from './presupuestos';
 import { estadoDeTodos, tonoDe } from './presupuestos';
 import { monthKey } from './localDate';
+import { claveDePeriodo, PERIODO_POR_DEFECTO, type ConfigPeriodo } from './periodo';
 
 /**
  * "Para ti": lo que la app nota por su cuenta, sin que nadie pregunte.
@@ -190,16 +191,28 @@ const gastoHormiga = (
   };
 };
 
-/** El primer presupuesto realmente en aprietos, si hay alguno. */
+/**
+ * El primer presupuesto realmente en aprietos, si hay alguno.
+ *
+ * A diferencia del resto de insights de este archivo (que siempre miran el
+ * mes calendario, aunque el usuario haya elegido otro período en Ajustes),
+ * este SÍ usa el período real configurado -- si no, el número que aparece
+ * aquí ("llevas $X en Comida") no coincidiría con lo que la pantalla de
+ * Presupuestos muestra para esa misma categoría, y una IA "adivinando mal"
+ * es exactamente lo que este archivo existe para evitar (ver el comentario
+ * de arriba del todo).
+ */
 const avisoDePresupuesto = (
   presupuestos: readonly Presupuesto[],
   transacciones: readonly Transaction[],
-  mes: string,
+  claveDelPeriodo: string,
   hoy: string,
   nombreDe: (categoria: CategoriaClave) => string,
+  config: ConfigPeriodo,
+  umbralAlertaPct: number,
 ): Insight | null => {
-  const estados = estadoDeTodos(presupuestos, transacciones, mes, hoy);
-  const critico = estados.find((e) => tonoDe(e) !== 'bien');
+  const estados = estadoDeTodos(presupuestos, transacciones, claveDelPeriodo, hoy, config);
+  const critico = estados.find((e) => tonoDe(e, umbralAlertaPct) !== 'bien');
   if (!critico) return null;
 
   const excedido = critico.excedidoCop > 0;
@@ -210,7 +223,9 @@ const avisoDePresupuesto = (
       : `${nombreDe(critico.categoria)} va camino a pasarse del presupuesto`,
     detalle: excedido
       ? `El tope era ${formatCopCorto(critico.topeCop)} y llevas ${formatCopCorto(critico.gastadoCop)}.`
-      : `Al ritmo actual cierras en ${formatCopCorto(critico.proyectadoCop)}, y el tope es ${formatCopCorto(critico.topeCop)}.`,
+      : critico.proyectadoCop === null
+        ? `Llevas ${formatCopCorto(critico.gastadoCop)} de un tope de ${formatCopCorto(critico.topeCop)}.`
+        : `Al ritmo actual cierras en ${formatCopCorto(critico.proyectadoCop)}, y el tope es ${formatCopCorto(critico.topeCop)}.`,
     tono: 'atento',
     seccion: 'mes',
   };
@@ -303,9 +318,20 @@ export const insightsDelMes = (
   mes: string,
   hoy: string,
   nombreDe: (categoria: CategoriaClave) => string,
+  configPeriodo: ConfigPeriodo = PERIODO_POR_DEFECTO,
+  umbralAlertaPct: number = 80,
 ): Insight[] => {
+  const claveDelPeriodo = claveDePeriodo(hoy, configPeriodo);
   const candidatos = [
-    avisoDePresupuesto(presupuestos, transacciones, mes, hoy, nombreDe),
+    avisoDePresupuesto(
+      presupuestos,
+      transacciones,
+      claveDelPeriodo,
+      hoy,
+      nombreDe,
+      configPeriodo,
+      umbralAlertaPct,
+    ),
     desviacionPorCategoria(transacciones, mes, nombreDe),
     gastoHormiga(transacciones, mes, nombreDe),
     proyeccionDeCierre(transacciones, mes, hoy),
