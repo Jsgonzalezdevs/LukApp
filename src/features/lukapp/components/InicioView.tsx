@@ -87,9 +87,10 @@ export const InicioView: React.FC<InicioViewProps> = ({
   const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
   const [minimizado, setMinimizado] = useState(() => {
     try {
-      return localStorage.getItem('lukapp-tips-minimizado') === 'true';
+      // Empieza minimizado salvo que el usuario ya haya elegido dejarlo abierto.
+      return localStorage.getItem('lukapp-tips-minimizado') !== 'false';
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -291,16 +292,21 @@ export const InicioView: React.FC<InicioViewProps> = ({
               <button
                 type="button"
                 onClick={() => toggleMinimizado(false)}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)] shadow-sm transition-all hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                className="group inline-flex items-center gap-2 rounded-full border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)] shadow-sm transition-all hover:border-[var(--fin-accent)]/45 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
               >
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                <Sparkles className="h-3.5 w-3.5 text-[var(--fin-accent)]" />
                 <span>Tip del Asesor: <strong className="font-semibold text-[var(--fin-ink)]">{insightActual.titulo}</strong></span>
-                <ChevronDown className="h-3.5 w-3.5 text-[var(--fin-ink-faint)]" />
+                <ChevronDown className="h-3.5 w-3.5 text-[var(--fin-ink-faint)] transition-transform group-hover:translate-y-0.5" />
               </button>
             </div>
           ) : (
             /* Modo expandido completo */
-            <div className="relative rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 shadow-sm border border-[var(--fin-line)]/50 transition-all hover:border-[var(--fin-line)]">
+            <div className="relative overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 shadow-sm border border-[var(--fin-accent)]/15 transition-all hover:border-[var(--fin-accent)]/30">
+              <div
+                className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
+                style={{ background: 'linear-gradient(90deg, var(--fin-accent), transparent 85%)' }}
+                aria-hidden="true"
+              />
               <div className="flex items-start gap-2.5">
                 <span
                   className="mt-1 h-2 w-2 shrink-0 rounded-full"
@@ -324,8 +330,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
                       {insightActual.titulo}
                     </button>
                     {insightActual.origenIa && (
-                      <span className="inline-flex items-center gap-0.5 rounded-md bg-[var(--fin-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--fin-ink-soft)]">
-                        <Sparkles className="h-2.5 w-2.5 text-amber-500" />
+                      <span className="inline-flex items-center gap-0.5 rounded-md bg-[var(--fin-accent)]/10 px-1.5 py-0.5 text-[10px] font-medium text-[var(--fin-accent)]">
+                        <Sparkles className="h-2.5 w-2.5" />
                         Grok IA
                       </span>
                     )}
@@ -343,11 +349,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleAccionInsight(insightActual)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[11px] font-medium text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-line)]"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-accent)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--fin-accent)] transition-colors hover:bg-[var(--fin-accent)]/18"
                     >
-                      <MessageSquare className="h-3 w-3 text-amber-500" />
+                      <MessageSquare className="h-3 w-3" />
                       <span>Preguntarle al Asesor sobre esto</span>
-                      <span className="text-[10px] text-[var(--fin-ink-faint)]">→</span>
+                      <span className="text-[10px]">→</span>
                     </button>
                   </div>
 
@@ -396,7 +402,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
                           className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] disabled:opacity-50"
                         >
                           <RefreshCw
-                            className={`h-3 w-3 ${cargandoIa ? 'animate-spin text-amber-500' : ''}`}
+                            className={`h-3 w-3 ${cargandoIa ? 'animate-spin text-[var(--fin-accent)]' : ''}`}
                           />
                           <span>{cargandoIa ? 'Analizando...' : 'Actualizar'}</span>
                         </button>
