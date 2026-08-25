@@ -741,6 +741,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onMostrarAhorro={setMostrarAhorro}
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
+            esAdmin={Boolean(onBack)}
             onVolverAVerGuia={
               guiaBasicaAbierta
                 ? undefined
