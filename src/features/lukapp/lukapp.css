@@ -74,9 +74,9 @@
   --fin-out: #d4025a;
   --fin-out-bg: #fdeaf1;
   --fin-out-ink: #a4013f;
-  --fin-warn: #d97706;
-  --fin-warn-bg: #fef3c7;
-  --fin-warn-ink: #92400e;
+  --fin-warn: #735ac2;
+  --fin-warn-bg: #f1eefb;
+  --fin-warn-ink: #4d3a91;
   --fin-media-bg: #fff7ed;
   --fin-media-ink: #c2410c;
   --fin-baja-bg: #fefce8;
@@ -193,9 +193,9 @@
     --fin-out: #ff5c92;
     --fin-out-bg: rgb(255 92 146 / 0.12);
     --fin-out-ink: #ff8ab0;
-    --fin-warn: #fbbf24;
-    --fin-warn-bg: rgb(251 191 36 / 0.12);
-    --fin-warn-ink: #fcd34d;
+    --fin-warn: #a879f0;
+    --fin-warn-bg: rgb(168 121 240 / 0.12);
+    --fin-warn-ink: #c3a4f5;
     --fin-media-bg: rgb(251 146 60 / 0.12);
     --fin-media-ink: #fdba74;
     --fin-baja-bg: rgb(250 204 21 / 0.12);
