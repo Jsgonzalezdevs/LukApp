@@ -231,14 +231,14 @@ export const FuncionesSolicitadasView: React.FC = () => {
                   onChange={(e) => setTitulo(e.target.value)}
                   placeholder="¿Qué te gustaría que hiciera LukApp?"
                   autoFocus
-                  className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[15px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
+                  className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
                 />
                 <textarea
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Cuéntanos un poco más (opcional)"
                   rows={2}
-                  className="resize-none rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[14px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
+                  className="resize-none rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
                 />
                 <button
                   type="button"

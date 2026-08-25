@@ -72,6 +72,7 @@ export const PANELES_AJUSTES = [
     label: 'Funciones solicitadas',
     ayuda: 'Propón una idea y vota las de los demás',
   },
+  { id: 'cuenta', label: 'Cuenta', ayuda: 'Tu perfil, sincronización y borrar la cuenta' },
 ] as const;
 
 export type PanelAjustes = (typeof PANELES_AJUSTES)[number]['id'];

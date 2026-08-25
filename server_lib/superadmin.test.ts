@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { motivoParaNoBorrar, motivoParaRechazar } from './superadmin';
+import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './superadmin';
 
 const ctx = (over: Partial<Parameters<typeof motivoParaRechazar>[1]> = {}) => ({
   editorId: 'admin-1',
@@ -97,5 +97,25 @@ describe('motivoParaNoBorrar', () => {
     expect(
       motivoParaNoBorrar(ctx({ objetivoId: 'admin-9', objetivoRol: 'admin', totalAdmins: 2 })),
     ).toBeNull();
+  });
+});
+
+describe('esUltimoAdmin', () => {
+  it('es falso para un usuario normal, sin importar cuántos admins haya', () => {
+    expect(esUltimoAdmin({ objetivoRol: 'usuario', totalAdmins: 0 })).toBe(false);
+  });
+
+  it('es falso para un admin cuando hay más de uno', () => {
+    expect(esUltimoAdmin({ objetivoRol: 'admin', totalAdmins: 2 })).toBe(false);
+  });
+
+  it('es verdadero para un admin cuando es el único que queda', () => {
+    expect(esUltimoAdmin({ objetivoRol: 'admin', totalAdmins: 1 })).toBe(true);
+  });
+
+  it('usa <= para no dejar pasar un conteo inconsistente en 0', () => {
+    // No debería ocurrir en la práctica (el objetivo mismo cuenta como admin),
+    // pero si el conteo llegara mal a 0 igual debe bloquear, no abrir la puerta.
+    expect(esUltimoAdmin({ objetivoRol: 'admin', totalAdmins: 0 })).toBe(true);
   });
 });

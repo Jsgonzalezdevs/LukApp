@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { PDFParse } from 'pdf-parse';
 import { tokenValido } from './server_lib/auth.ts';
-import { motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
+import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import {
@@ -357,16 +357,29 @@ const registrarUsoIA = (
 
 /** Rol actual del objetivo y cuántos admins hay, para las guardas de bloqueo. */
 const contextoDe = async (cliente: ClienteAdmin, objetivoId: string) => {
-  const { data: objetivo } = await cliente
+  const { data: objetivo, error: errorObjetivo } = await cliente
     .from('perfiles')
     .select('rol')
     .eq('id', objetivoId)
     .single();
 
-  const { count } = await cliente
+  // PGRST116 = "single() esperaba una fila y no encontró ninguna" -- eso es
+  // legítimamente "no existe", y `existe: objetivo !== null` ya lo cubre más
+  // abajo. Cualquier OTRO error (red, timeout, Supabase caído) no es lo
+  // mismo que "no es admin": tratarlo como tal abriría la guarda del último
+  // administrador en vez de bloquearla, así que se propaga como fallo real.
+  if (errorObjetivo && errorObjetivo.code !== 'PGRST116') {
+    throw new Error(`No se pudo leer el perfil objetivo: ${errorObjetivo.message}`);
+  }
+
+  const { count, error: errorConteo } = await cliente
     .from('perfiles')
     .select('id', { count: 'exact', head: true })
     .eq('rol', 'admin');
+
+  if (errorConteo) {
+    throw new Error(`No se pudo contar administradores: ${errorConteo.message}`);
+  }
 
   return {
     objetivoRol: (objetivo?.rol === 'admin' ? 'admin' : 'usuario') as 'admin' | 'usuario',
@@ -518,6 +531,49 @@ app.post('/api/eliminar-usuario', async (req, res) => {
     return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('Error eliminando usuario:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Eliminar Mi Propia Cuenta
+//
+// Distinto de /api/eliminar-usuario: ese es para que un admin borre a OTRO
+// usuario y por diseño rechaza borrarse a sí mismo (motivoParaNoBorrar). Este
+// es lo opuesto -- cualquiera con sesión puede borrar SU PROPIA cuenta, así
+// que usa exigirUsuario y no exigirPermiso/exigirAdmin. La única guarda que
+// sí se reusa es la de no dejar el sistema sin ningún administrador.
+// ----------------------------------------------------------------------
+app.post('/api/mi-cuenta/eliminar', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) {
+    return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+  }
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const ctx = await contextoDe(cliente, acceso.userId);
+    if (esUltimoAdmin(ctx)) {
+      return res.status(400).json({
+        error: 'Eres el único administrador. Asigna otro admin antes de eliminar tu cuenta.',
+      });
+    }
+
+    // Borra la cuenta de auth; perfiles y el resto de tus datos se van solos
+    // por `on delete cascade` contra auth.users.
+    const { error } = await cliente.auth.admin.deleteUser(acceso.userId);
+    if (error) throw error;
+
+    registrarAuditoria(acceso.email, 'Eliminó su propia cuenta', acceso.userId);
+
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('Error eliminando cuenta propia:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
 });

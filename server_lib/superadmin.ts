@@ -78,6 +78,20 @@ export const motivoParaRechazar = (
 };
 
 /**
+ * Si borrar/degradar a `ctx.objetivoRol` con `ctx.totalAdmins` admins ahora
+ * mismo dejaría el sistema sin ninguno.
+ *
+ * Aparte porque es la única regla que comparten `motivoParaNoBorrar` (un admin
+ * borra a otro) y el endpoint de auto-eliminación (alguien se borra a sí
+ * mismo) -- ese segundo caso no puede llamar a `motivoParaNoBorrar` tal cual
+ * porque su primera regla es exactamente lo opuesto ("no puedes borrarte a ti
+ * mismo"). Una sola función evita que la regla del último admin diverja entre
+ * los dos sitios si algún día cambia.
+ */
+export const esUltimoAdmin = (ctx: Pick<ContextoEdicion, 'objetivoRol' | 'totalAdmins'>): boolean =>
+  ctx.objetivoRol === 'admin' && ctx.totalAdmins <= 1;
+
+/**
  * El motivo por el que un usuario no se puede borrar, o `null` si sí.
  *
  * Borrar es aparte de editar porque es irreversible: se lleva la cuenta de auth
@@ -89,7 +103,7 @@ export const motivoParaNoBorrar = (ctx: ContextoEdicion): string | null => {
     return 'No puedes eliminar tu propia cuenta.';
   }
 
-  if (ctx.objetivoRol === 'admin' && ctx.totalAdmins <= 1) {
+  if (esUltimoAdmin(ctx)) {
     return 'No puedes eliminar al último administrador.';
   }
 
