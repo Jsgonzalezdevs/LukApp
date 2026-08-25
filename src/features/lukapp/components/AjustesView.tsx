@@ -11,6 +11,7 @@ import {
   PiggyBank,
   Repeat,
   Rocket,
+  Shield,
   Smartphone,
   Tag,
   Target,
@@ -282,7 +283,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             type="button"
             onClick={onVolverAVerGuia}
             className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
-            style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
+            style={{ boxShadow: 'inset 0 -1px 0 0 var(--fin-line)' }}
           >
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
@@ -305,6 +306,35 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             />
           </button>
         ) : null}
+
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = '/ecosistema';
+          }}
+          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+          style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
+        >
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-purple-500/15 text-purple-600 dark:text-purple-400"
+            aria-hidden="true"
+          >
+            <Shield className="h-[18px] w-[18px]" strokeWidth={2} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
+              Ecosistema / Superadmin
+            </span>
+            <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+              Lanzador de aplicaciones, administración y analítica
+            </span>
+          </span>
+          <ChevronRight
+            className="h-4 w-4 shrink-0 text-[var(--fin-ink-ghost)]"
+            strokeWidth={2.5}
+            aria-hidden="true"
+          />
+        </button>
 
         {temaToggle ? (
           <div
