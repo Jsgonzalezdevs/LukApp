@@ -8,6 +8,7 @@ import {
   Flag,
   Key,
   Landmark,
+  Lightbulb,
   PiggyBank,
   Repeat,
   Rocket,
@@ -54,6 +55,7 @@ const ICONOS: Record<
   nombres: Users,
   contraseña: Key,
   respaldo: HardDriveDownload,
+  'funciones-solicitadas': Lightbulb,
 };
 
 /** Los tres bloques en que se parte la lista. Agrupar por tema hace que no haya
@@ -62,6 +64,7 @@ const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] 
   { titulo: 'Tu dinero', paneles: ['cuentas', 'categorias', 'topes', 'metas', 'recurrentes'] },
   { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
+  { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },
 ];
 
 /** Una fila de la lista: icono, nombre, explicación debajo, y flecha. */

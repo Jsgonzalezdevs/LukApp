@@ -67,6 +67,11 @@ export const PANELES_AJUSTES = [
   },
   { id: 'contraseña', label: 'Cambiar contraseña', ayuda: 'Cambia tu contraseña o recupérala' },
   { id: 'respaldo', label: 'Copia de seguridad', ayuda: 'Descarga todo, o vuelve a un respaldo' },
+  {
+    id: 'funciones-solicitadas',
+    label: 'Funciones solicitadas',
+    ayuda: 'Propón una idea y vota las de los demás',
+  },
 ] as const;
 
 export type PanelAjustes = (typeof PANELES_AJUSTES)[number]['id'];
