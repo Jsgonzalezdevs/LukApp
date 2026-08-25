@@ -59,9 +59,12 @@
        morado desteñido lee apagado/deslavado en vez de premium. */
     --lp-accent: #a855f7;
     --lp-on-accent: #1a1817;
-    /* El verde y el rojo de marca no llegan a 4.5:1 sobre fondo oscuro; estos
-       son los mismos tonos aclarados hasta que sí. */
-    --lp-in: #b6f246;
+    /* El rojo de marca no llega a 4.5:1 sobre fondo oscuro; el de abajo es el
+       mismo tono aclarado hasta que sí. El verde en cambio no solo se aclaró:
+       el lima anterior (#b6f246, matiz 81° -- amarillo-verdoso) leía neón, no
+       vivo. Este es el mismo matiz que el verde claro (142°, verde de
+       verdad), solo más luminoso para que resalte sobre casi negro. */
+    --lp-in: #4ade80;
     --lp-out: #ff5c92;
     --lp-nav-bg: rgba(26, 24, 23, 0.85);
     --lp-destello: rgba(255, 255, 255, 0.14);
@@ -81,7 +84,7 @@
   --lp-ink-faint: #857f7a;
   --lp-accent: #a855f7;
   --lp-on-accent: #1a1817;
-  --lp-in: #b6f246;
+  --lp-in: #4ade80;
   --lp-out: #ff5c92;
   --lp-nav-bg: rgba(26, 24, 23, 0.85);
   --lp-destello: rgba(255, 255, 255, 0.14);
