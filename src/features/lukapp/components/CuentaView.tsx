@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Check, Copy, Loader2, RefreshCw, Trash2, User } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  Copy,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+  Trash2,
+  User,
+} from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
+
+const MINIMO_PASSWORD = 6;
 
 interface CuentaViewProps {
   userId: string | null;
@@ -58,6 +71,14 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   const [eliminando, setEliminando] = useState(false);
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
 
+  const [cambiandoPassword, setCambiandoPassword] = useState(false);
+  const [nuevaPassword, setNuevaPassword] = useState('');
+  const [confirmarPassword, setConfirmarPassword] = useState('');
+  const [verPassword, setVerPassword] = useState(false);
+  const [guardandoPassword, setGuardandoPassword] = useState(false);
+  const [errorPassword, setErrorPassword] = useState<string | null>(null);
+  const [passwordActualizada, setPasswordActualizada] = useState(false);
+
   useEffect(() => {
     if (!userId) return;
     idDeCuenta(userId).then(setId);
@@ -89,6 +110,34 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       await onSincronizar();
     } finally {
       setSincronizando(false);
+    }
+  };
+
+  const restablecerPassword = async () => {
+    setErrorPassword(null);
+    if (nuevaPassword.length < MINIMO_PASSWORD) {
+      setErrorPassword(`La contraseña debe tener al menos ${MINIMO_PASSWORD} caracteres.`);
+      return;
+    }
+    if (nuevaPassword !== confirmarPassword) {
+      setErrorPassword('Las contraseñas no coinciden.');
+      return;
+    }
+    setGuardandoPassword(true);
+    try {
+      const cliente = obtenerSupabase();
+      if (!cliente) throw new Error('No se pudo conectar con el servidor.');
+      const { error } = await cliente.auth.updateUser({ password: nuevaPassword });
+      if (error) throw new Error(error.message || 'No se pudo cambiar la contraseña.');
+      setNuevaPassword('');
+      setConfirmarPassword('');
+      setCambiandoPassword(false);
+      setPasswordActualizada(true);
+      setTimeout(() => setPasswordActualizada(false), 4000);
+    } catch (e) {
+      setErrorPassword(e instanceof Error ? e.message : 'No se pudo cambiar la contraseña.');
+    } finally {
+      setGuardandoPassword(false);
     }
   };
 
@@ -193,6 +242,96 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
         >
           Cerrar sesión
         </button>
+      ) : null}
+
+      {cuenta ? (
+        <div className="flex flex-col gap-2.5">
+          {!cambiandoPassword ? (
+            <button
+              type="button"
+              onClick={() => {
+                setCambiandoPassword(true);
+                setErrorPassword(null);
+              }}
+              className="flex items-center gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-left text-[17px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
+            >
+              <KeyRound className="h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.5} aria-hidden="true" />
+              Restablecer contraseña
+              {passwordActualizada ? (
+                <span className="ml-auto flex items-center gap-1 text-[13px] font-semibold text-[var(--fin-in)]">
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  Actualizada
+                </span>
+              ) : null}
+            </button>
+          ) : (
+            <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] p-4">
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.5} aria-hidden="true" />
+                <p className="text-[15px] font-semibold text-[var(--fin-ink)]">Nueva contraseña</p>
+              </div>
+
+              <div className="relative">
+                <input
+                  type={verPassword ? 'text' : 'password'}
+                  value={nuevaPassword}
+                  onChange={(e) => setNuevaPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  autoComplete="new-password"
+                  disabled={guardandoPassword}
+                  className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 pr-10 text-[15px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setVerPassword((v) => !v)}
+                  aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+                >
+                  {verPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+
+              <input
+                type={verPassword ? 'text' : 'password'}
+                value={confirmarPassword}
+                onChange={(e) => setConfirmarPassword(e.target.value)}
+                placeholder="Confirmar contraseña"
+                autoComplete="new-password"
+                disabled={guardandoPassword}
+                className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[15px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
+              />
+
+              {errorPassword ? (
+                <p className="text-[13px] font-semibold text-[var(--fin-out-ink)]">{errorPassword}</p>
+              ) : null}
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCambiandoPassword(false);
+                    setNuevaPassword('');
+                    setConfirmarPassword('');
+                    setErrorPassword(null);
+                  }}
+                  disabled={guardandoPassword}
+                  className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void restablecerPassword()}
+                  disabled={guardandoPassword}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
+                >
+                  {guardandoPassword ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : null}
+                  {guardandoPassword ? 'Guardando…' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       ) : null}
 
       {cuenta ? (
