@@ -138,9 +138,10 @@ type Capa = 'buscar' | null;
  */
 export interface LukAppMainProps {
   onBack?: () => void;
+  esAdmin?: boolean;
 }
 
-export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack }) => {
+export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
 
@@ -741,7 +742,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onMostrarAhorro={setMostrarAhorro}
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
-            esAdmin={Boolean(onBack)}
+            esAdmin={esAdmin}
             onVolverAVerGuia={
               guiaBasicaAbierta
                 ? undefined

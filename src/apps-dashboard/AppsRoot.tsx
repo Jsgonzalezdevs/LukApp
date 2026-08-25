@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSesion } from '../features/lukapp/data/useSesion';
 import { useTema } from '../features/lukapp/data/useTema';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
@@ -12,8 +12,30 @@ import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRu
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
+import { normalizeEmail } from '../lib/authHelpers';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
+
+const APP_ROUTES: Record<AppId, string> = {
+  finanzas: '/',
+  superadmin: '/superadmin',
+  estadisticas: '/estadisticas',
+  null: '/ecosistema',
+};
+
+const APP_TITLES: Record<AppId, string> = {
+  finanzas: 'LukApp — Finanzas Personales Inteligentes',
+  superadmin: 'LukApp — Superadmin',
+  estadisticas: 'LukApp — Estadísticas',
+  null: 'LukApp — Ecosistema',
+};
+
+function detectActiveAppFromPath(pathname: string): AppId {
+  if (pathname.startsWith('/superadmin')) return 'superadmin';
+  if (pathname.startsWith('/estadisticas')) return 'estadisticas';
+  if (pathname.startsWith('/ecosistema')) return null;
+  return 'finanzas';
+}
 
 interface AdminBackup {
   access_token: string;
@@ -32,13 +54,7 @@ export const AppsRoot: React.FC = () => {
 
   const sesion = useSesion();
   const { tema, setTema } = useTema();
-  const [activeApp, setActiveApp] = useState<AppId>(() => {
-    const path = window.location.pathname;
-    if (path.startsWith('/superadmin')) return 'superadmin';
-    if (path.startsWith('/estadisticas')) return 'estadisticas';
-    if (path.startsWith('/ecosistema')) return null;
-    return 'finanzas';
-  });
+  const [activeApp, setActiveApp] = useState<AppId>(() => detectActiveAppFromPath(window.location.pathname));
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
@@ -88,16 +104,19 @@ export const AppsRoot: React.FC = () => {
     window.location.href = '/superadmin';
   }, [adminBackup]);
 
-  // Cargar rol de Supabase
+  // Cargar rol de Supabase con retry logic
   useEffect(() => {
     let cancelado = false;
-    const cargarRol = async () => {
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    const cargarRol = async (intentos = 0) => {
       if (sesion.estado.modo !== 'autenticado') {
         setRol('usuario');
         setPermisos([]);
         setLoadingRol(false);
         return;
       }
+
       try {
         const cliente = obtenerSupabase();
 
@@ -135,49 +154,46 @@ export const AppsRoot: React.FC = () => {
         if (cancelado) return;
         setRol(rolBD);
         setPermisos(permisosAsignados);
-      } catch {
-        if (!cancelado) {
-          setRol('usuario');
-          setPermisos([]);
+      } catch (error) {
+        if (cancelado) return;
+
+        const maxIntentosReintento = 3;
+        const esperaExponencial = Math.min(1000 * Math.pow(2, intentos), 10000);
+
+        if (intentos < maxIntentosReintento) {
+          console.warn(`Error loading user role, retrying (attempt ${intentos + 1}/${maxIntentosReintento}):`, error);
+          timeoutId = setTimeout(() => cargarRol(intentos + 1), esperaExponencial);
+          return;
         }
+
+        console.error('Failed to load user role after retries:', error);
+        setRol('usuario');
+        setPermisos([]);
       } finally {
-        if (!cancelado) setLoadingRol(false);
+        if (!cancelado && intentos === 0) setLoadingRol(false);
       }
     };
+
     cargarRol();
     return () => {
       cancelado = true;
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [sesion.estado.modo, sesion.estado.email]);
 
   // Sync URL and document title based on active app
   useEffect(() => {
-    const RUTAS: Record<string, string> = {
-      finanzas: '/',
-      superadmin: '/superadmin',
-      estadisticas: '/estadisticas',
-    };
-    const TITULOS: Record<string, string> = {
-      finanzas: 'LukApp — Finanzas Personales Inteligentes',
-      superadmin: 'LukApp — Superadmin',
-      estadisticas: 'LukApp — Estadísticas',
-    };
-
-    const path = (activeApp && RUTAS[activeApp]) ?? '/';
-    if (path !== '/' && !window.location.pathname.startsWith(path)) {
+    const path = APP_ROUTES[activeApp];
+    if (path && !window.location.pathname.startsWith(path)) {
       window.history.pushState(null, '', path);
     }
-
-    document.title = (activeApp && TITULOS[activeApp]) ?? 'LukApp — Finanzas Personales Inteligentes';
+    document.title = APP_TITLES[activeApp];
   }, [activeApp]);
 
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname;
-      if (path.startsWith('/superadmin')) setActiveApp('superadmin');
-      else if (path.startsWith('/estadisticas')) setActiveApp('estadisticas');
-      else setActiveApp('finanzas');
+      setActiveApp(detectActiveAppFromPath(window.location.pathname));
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -243,13 +259,13 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  const esAdminOStaff = rol === 'admin' || permisos.length > 0;
+  const esAdminOStaff = useMemo(() => rol === 'admin' || permisos.length > 0, [rol, permisos]);
 
   if (!esAdminOStaff) {
     return (
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
-        <LukAppMain />
+        <LukAppMain esAdmin={false} />
       </div>
     );
   }
@@ -258,7 +274,7 @@ export const AppsRoot: React.FC = () => {
     return (
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
-        <LukAppMain onBack={() => setActiveApp(null)} />
+        <LukAppMain onBack={() => setActiveApp(null)} esAdmin={true} />
       </div>
     );
   }
@@ -287,13 +303,16 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  const handleSalir = async () => {
-    await sesion.salir();
-    setActiveApp('finanzas');
-    setTimeout(() => {
-      window.location.href = '/';
-    }, 100);
-  };
+  const handleSalir = useCallback(async () => {
+    try {
+      await sesion.salir();
+    } catch (e) {
+      console.error('Error during logout:', e);
+    } finally {
+      setActiveApp('finanzas');
+      ir('/');
+    }
+  }, [ir, sesion]);
 
   return (
     <div className={adminBackup ? 'pt-11' : ''}>
