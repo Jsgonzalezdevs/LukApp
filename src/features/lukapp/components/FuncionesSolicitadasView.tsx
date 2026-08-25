@@ -68,7 +68,8 @@ export const FuncionesSolicitadasView: React.FC = () => {
     // Optimista: se ve el cambio antes de que el servidor responda.
     setMisVotos((prev) => {
       const next = new Set(prev);
-      yaVotado ? next.delete(id) : next.add(id);
+      if (yaVotado) next.delete(id);
+      else next.add(id);
       return next;
     });
     setFunciones((prev) =>
@@ -100,7 +101,8 @@ export const FuncionesSolicitadasView: React.FC = () => {
       // El voto no se guardó: revierte lo optimista para no mentirle a la pantalla.
       setMisVotos((prev) => {
         const next = new Set(prev);
-        yaVotado ? next.add(id) : next.delete(id);
+        if (yaVotado) next.add(id);
+        else next.delete(id);
         return next;
       });
       setFunciones((prev) =>

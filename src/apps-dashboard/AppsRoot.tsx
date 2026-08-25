@@ -118,6 +118,8 @@ export const AppsRoot: React.FC = () => {
     setActiveApp('superadmin');
   }, [adminBackup]);
 
+  const emailAutenticado = sesion.estado.modo === 'autenticado' ? sesion.estado.email : undefined;
+
   // Cargar rol de Supabase con retry logic
   useEffect(() => {
     let cancelado = false;
@@ -188,7 +190,7 @@ export const AppsRoot: React.FC = () => {
       cancelado = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [sesion.estado.modo, sesion.estado.modo === 'autenticado' ? sesion.estado.email : undefined]);
+  }, [sesion.estado.modo, emailAutenticado]);
 
   // Sync URL and document title based on active app
   useEffect(() => {
@@ -207,6 +209,26 @@ export const AppsRoot: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  // Estos dos hooks tienen que vivir aquí, antes de cualquier `return`
+  // condicional de más abajo. Un hook declarado después de un `if (...)
+  // return` se salta en algunos renders y se ejecuta en otros -- distinto
+  // número de hooks entre un render y el siguiente, que es justo lo que
+  // React no permite (era el causante del "Error #310: Rendered more hooks
+  // than during the previous render", disparado cada vez que `activeApp`
+  // cambiaba entre 'finanzas'/'superadmin'/'estadisticas' y el lanzador).
+  const esAdminOStaff = useMemo(() => rol === 'admin' || permisos.length > 0, [rol, permisos]);
+
+  const handleSalir = useCallback(async () => {
+    try {
+      await sesion.salir();
+    } catch (e) {
+      console.error('Error during logout:', e);
+    } finally {
+      setActiveApp('finanzas');
+      ir('/');
+    }
+  }, [ir, sesion]);
 
   const bannerAdmin = adminBackup ? (
     <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-between gap-3 border-b border-amber-400/30 bg-amber-500 px-4 py-2.5 shadow-md">
@@ -268,8 +290,6 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  const esAdminOStaff = useMemo(() => rol === 'admin' || permisos.length > 0, [rol, permisos]);
-
   if (!esAdminOStaff) {
     return (
       <div className={adminBackup ? 'pt-11' : ''}>
@@ -312,17 +332,6 @@ export const AppsRoot: React.FC = () => {
       </div>
     );
   }
-
-  const handleSalir = useCallback(async () => {
-    try {
-      await sesion.salir();
-    } catch (e) {
-      console.error('Error during logout:', e);
-    } finally {
-      setActiveApp('finanzas');
-      ir('/');
-    }
-  }, [ir, sesion]);
 
   return (
     <div className={adminBackup ? 'pt-11' : ''}>
