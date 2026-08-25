@@ -155,3 +155,9 @@ export const monthKeyLabel = (month: string): string => {
   const [y, m] = month.split('-').map(Number);
   return `${MONTHS_LONG[m - 1]} ${y}`;
 };
+
+/** "jul" from a 'YYYY-MM' key, para ejes donde el nombre largo no cabe. */
+export const monthKeyShort = (month: string): string => {
+  const m = Number(month.split('-')[1]);
+  return MONTHS_SHORT[m - 1];
+};

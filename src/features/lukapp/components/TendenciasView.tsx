@@ -1,11 +1,20 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { COPY } from '../copy';
-import { TrendingUp, BarChart2, Scale, Search } from 'lucide-react';
+import { TrendingUp, Scale, Search } from 'lucide-react';
 import type { Transaction } from '../types';
-import { compararCategorias, promedioMensual, serieMensual, ultimosMeses } from '../lib/tendencias';
+import {
+  compararCategorias,
+  compararRangos,
+  promedioMensual,
+  RANGOS,
+  serieMensual,
+  ultimosMeses,
+  type MesesRango,
+} from '../lib/tendencias';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel, shiftMonth } from '../lib/localDate';
 import { useCatalogo } from '../catalogoContexto';
+import { GraficaLineas } from './GraficaLineas';
 
 interface TendenciasViewProps {
   transacciones: readonly Transaction[];
@@ -13,19 +22,40 @@ interface TendenciasViewProps {
   mes: string;
 }
 
-const MESES_VENTANA = 6;
+const RANGO_INICIAL: MesesRango = 6;
 
 export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, mes }) => {
   const catalogo = useCatalogo();
-  const meses = ultimosMeses(mes, MESES_VENTANA);
-  const serie = serieMensual(transacciones, meses);
+
+  // Cuántos meses se están mirando. Empieza en 6 porque es lo que había antes,
+  // así que a quien ya conocía la pantalla no se le mueve el piso.
+  const [rango, setRango] = useState<MesesRango>(RANGO_INICIAL);
+  // El mes que se está leyendo en la gráfica. Null = el último, que es el que
+  // uno mira primero al abrir.
+  const [mesElegido, setMesElegido] = useState<string | null>(null);
+
+  const serie = useMemo(
+    () => serieMensual(transacciones, ultimosMeses(mes, rango)),
+    [transacciones, mes, rango],
+  );
+  const comparacion = useMemo(
+    () => compararRangos(transacciones, mes, rango),
+    [transacciones, mes, rango],
+  );
+
   const promedio = promedioMensual(serie);
   const mesAnterior = shiftMonth(mes, -1);
   const cambios = compararCategorias(transacciones, mes, mesAnterior);
 
-  // Bars are scaled against the largest single figure in the window so the tallest
-  // bar always fills the track and the rest stay honestly proportional to it.
-  const techo = Math.max(1, ...serie.map((p) => Math.max(p.ingresos, p.gastos)));
+  const nombreRango = RANGOS.find((r) => r.meses === rango)?.largo ?? 'periodo';
+
+  // Al cambiar de rango el mes elegido puede quedar fuera de la ventana; en vez
+  // de guardar un mes que ya no se dibuja, se cae al último de la serie.
+  const mesActivo =
+    mesElegido && serie.some((p) => p.month === mesElegido)
+      ? mesElegido
+      : (serie[serie.length - 1]?.month ?? mes);
+  const puntoActivo = serie.find((p) => p.month === mesActivo);
 
   const mesesConDatos = serie.filter((p) => p.ingresos > 0 || p.gastos > 0).length;
 
@@ -63,64 +93,109 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
     // alcanzaba. Con `w-full` primero llena, LUEGO max-w recorta y mx-auto
     // centra, igual que en flujo de bloque normal.
     <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-5 lg:grid-cols-2">
-      {/* Six-month bars */}
+      {/* La gráfica. Antes eran barras horizontales, una fila por mes: contestaban
+ "cuánto fue en marzo" pero para ver hacia dónde iba la cosa había que
+ leerlas todas. La línea contesta eso de un vistazo, y tocando un mes se
+ sigue viendo su cifra exacta -- sin dibujar el mismo dato dos veces. */}
       <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-        <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-          <BarChart2 className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
-          {COPY.tendencias.ultimosMeses}
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            <TrendingUp className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
+            {COPY.tendencias.comoVienes}
+          </h2>
 
-        <ul className="mt-4 flex flex-col gap-3">
-          {serie.map((punto) => (
-            <li key={punto.month}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-[13px] font-semibold capitalize text-[var(--fin-ink-soft)]">
-                  {monthKeyLabel(punto.month)}
-                </span>
-                <span
-                  className="text-[13px] font-semibold tabular-nums"
-                  style={{ color: punto.balance >= 0 ? 'var(--fin-in)' : 'var(--fin-out)' }}
+          {/* Trimestre, semestre y año dichos como los dice la gente frente a una
+ gráfica. Un menú que dijera "reporte trimestral" sería la misma
+ función con una palabra que obliga a pensar. */}
+          <div
+            className="flex gap-0.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-bg)] p-0.5"
+            role="group"
+            aria-label="Cuántos meses mirar"
+          >
+            {RANGOS.map((r) => {
+              const activo = r.meses === rango;
+              return (
+                <button
+                  key={r.meses}
+                  type="button"
+                  onClick={() => setRango(r.meses)}
+                  aria-pressed={activo}
+                  title={`Último ${r.largo}`}
+                  className={`rounded-[var(--fin-r-pill)] px-3 py-1 text-[13px] font-semibold tabular-nums transition-colors ${
+                    activo
+                      ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
+                      : 'text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
+                  }`}
                 >
-                  {formatCop(punto.balance)}
-                </span>
-              </div>
-
-              {/* Income above, spending below — two tracks, never one net bar,
- because a net bar hides a month that earned and spent a lot. */}
-              <div className="mt-1.5 flex flex-col gap-1">
-                <div className="h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
-                  <div
-                    className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-in)]"
-                    style={{ width: `${(punto.ingresos / techo) * 100}%` }}
-                  />
-                </div>
-                <div className="h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
-                  <div
-                    className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-out)]"
-                    style={{ width: `${(punto.gastos / techo) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-4 flex gap-4 border-t border-[var(--fin-soft)] pt-3">
-          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
-            <span
-              className="h-2 w-4 rounded-[var(--fin-r-pill)] bg-[var(--fin-in)]"
-              aria-hidden="true"
-            />
-            {COPY.balance.ingresos}
-          </span>
-          <span className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
-            <span
-              className="h-2 w-4 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)]"
-              aria-hidden="true"
-            />
-            {COPY.balance.gastos}
-          </span>
+                  {r.corto}
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        <div className="mt-4">
+          <GraficaLineas serie={serie} seleccionado={mesActivo} onSeleccionar={setMesElegido} />
+        </div>
+
+        {/* La lectura del mes que se está tocando. Es lo que reemplaza a la lista
+ de barras: la cifra exacta sigue estando, pero solo la del mes que se
+ preguntó, en vez de las doce a la vez. */}
+        {puntoActivo ? (
+          <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3">
+            <p className="text-[13px] font-semibold capitalize text-[var(--fin-ink-soft)]">
+              {monthKeyLabel(puntoActivo.month)}
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+              <span className="flex items-center gap-1.5 text-[15px] font-semibold tabular-nums">
+                <span
+                  className="h-2 w-4 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-in)]"
+                  aria-hidden="true"
+                />
+                <span className="text-[var(--fin-ink-faint)]">{COPY.balance.ingresos}</span>
+                <span style={{ color: 'var(--fin-in)' }}>{formatCop(puntoActivo.ingresos)}</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-[15px] font-semibold tabular-nums">
+                <span
+                  className="h-2 w-4 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)]"
+                  aria-hidden="true"
+                />
+                <span className="text-[var(--fin-ink-faint)]">{COPY.balance.gastos}</span>
+                <span style={{ color: 'var(--fin-out)' }}>{formatCop(puntoActivo.gastos)}</span>
+              </span>
+            </div>
+          </div>
+        ) : null}
+
+        {/* La frase que interpreta la gráfica. Sin ella el usuario tiene que
+ descifrar dos líneas para contestarse algo que cabe en un renglón. */}
+        <p className="mt-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+          {comparacion.hayComparacion ? (
+            <>
+              En este {nombreRango} llevas{' '}
+              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
+                {formatCop(comparacion.actual.gastos)}
+              </strong>{' '}
+              de gasto,{' '}
+              <strong
+                className="font-semibold tabular-nums"
+                style={{
+                  color: comparacion.deltaGastos > 0 ? 'var(--fin-out)' : 'var(--fin-in)',
+                }}
+              >
+                {formatCop(Math.abs(comparacion.deltaGastos))}{' '}
+                {comparacion.deltaGastos > 0 ? 'más' : 'menos'}
+              </strong>{' '}
+              que el {nombreRango} anterior
+              {comparacion.deltaGastosPct !== null
+                ? ` (${comparacion.deltaGastosPct > 0 ? '+' : ''}${comparacion.deltaGastosPct}%)`
+                : ''}
+              .
+            </>
+          ) : (
+            <>Todavía no hay un {nombreRango} anterior completo contra el cual comparar.</>
+          )}
+        </p>
       </section>
 
       {/* Segunda columna en escritorio: las dos tarjetas cortas juntas, para

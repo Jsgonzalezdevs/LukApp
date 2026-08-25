@@ -94,6 +94,87 @@ export const compararCategorias = (
     .sort((a, b) => b.deltaCop - a.deltaCop);
 };
 
+/**
+ * Los tres rangos que se pueden mirar. Son "trimestre / semestre / año" dichos
+ * como los dice la gente cuando mira una gráfica -- 3M, 6M, 12M -- en vez de
+ * como los dice un contador. El nombre largo se usa en el texto que explica la
+ * gráfica, donde sí hay espacio para una palabra completa.
+ */
+export const RANGOS = [
+  { meses: 3, corto: '3M', largo: 'trimestre' },
+  { meses: 6, corto: '6M', largo: 'semestre' },
+  { meses: 12, corto: '12M', largo: 'año' },
+] as const;
+
+export type MesesRango = (typeof RANGOS)[number]['meses'];
+
+export interface TotalRango {
+  ingresos: number;
+  gastos: number;
+  balance: number;
+  /** Meses del rango que tuvieron algún movimiento. */
+  mesesConDatos: number;
+}
+
+const sumarSerie = (serie: readonly PuntoMensual[]): TotalRango =>
+  serie.reduce(
+    (acc, p) => ({
+      ingresos: acc.ingresos + p.ingresos,
+      gastos: acc.gastos + p.gastos,
+      balance: acc.balance + p.balance,
+      mesesConDatos: acc.mesesConDatos + (p.ingresos > 0 || p.gastos > 0 ? 1 : 0),
+    }),
+    { ingresos: 0, gastos: 0, balance: 0, mesesConDatos: 0 },
+  );
+
+export interface ComparacionRango {
+  actual: TotalRango;
+  anterior: TotalRango;
+  /** Cambio del gasto contra el rango anterior. Positivo = se gastó más. */
+  deltaGastos: number;
+  /**
+   * El mismo cambio en porcentaje, o null cuando el rango anterior no tuvo
+   * gasto alguno: pasar de 0 a algo no es "creció infinito", es que antes no
+   * había nada registrado, y eso hay que decirlo con palabras.
+   */
+  deltaGastosPct: number | null;
+  deltaIngresos: number;
+  deltaIngresosPct: number | null;
+  /** False cuando el rango anterior está vacío y no hay contra qué comparar. */
+  hayComparacion: boolean;
+}
+
+/**
+ * Este rango contra el rango inmediatamente anterior del mismo largo.
+ *
+ * Es la pregunta que hace alguien mirando la gráfica -- "¿venimos gastando más
+ * o menos que antes?" -- y contestarla con dos totales exige tener a mano los
+ * dos periodos, no solo el que se está dibujando.
+ */
+export const compararRangos = (
+  transacciones: readonly Transaction[],
+  hasta: string,
+  meses: number,
+): ComparacionRango => {
+  const actual = sumarSerie(serieMensual(transacciones, ultimosMeses(hasta, meses)));
+  const anterior = sumarSerie(
+    serieMensual(transacciones, ultimosMeses(shiftMonth(hasta, -meses), meses)),
+  );
+
+  const pct = (ahora: number, antes: number): number | null =>
+    antes > 0 ? Math.round(((ahora - antes) / antes) * 1000) / 10 : null;
+
+  return {
+    actual,
+    anterior,
+    deltaGastos: actual.gastos - anterior.gastos,
+    deltaGastosPct: pct(actual.gastos, anterior.gastos),
+    deltaIngresos: actual.ingresos - anterior.ingresos,
+    deltaIngresosPct: pct(actual.ingresos, anterior.ingresos),
+    hayComparacion: anterior.mesesConDatos > 0,
+  };
+};
+
 export interface PromedioMensual {
   ingresos: number;
   gastos: number;

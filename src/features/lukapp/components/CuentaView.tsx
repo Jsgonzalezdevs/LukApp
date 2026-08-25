@@ -279,7 +279,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                   placeholder="Mínimo 6 caracteres"
                   autoComplete="new-password"
                   disabled={guardandoPassword}
-                  className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 pr-10 text-[15px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
+                  className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 pr-10 text-[16px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
                 />
                 <button
                   type="button"
@@ -298,7 +298,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                 placeholder="Confirmar contraseña"
                 autoComplete="new-password"
                 disabled={guardandoPassword}
-                className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[15px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
+                className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
               />
 
               {errorPassword ? (

@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
-import { compararCategorias, promedioMensual, serieMensual, ultimosMeses } from './tendencias';
+import {
+  compararCategorias,
+  compararRangos,
+  promedioMensual,
+  serieMensual,
+  ultimosMeses,
+} from './tendencias';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
   id: 't1',
@@ -139,5 +145,45 @@ describe('promedioMensual', () => {
       balance: 0,
       meses: 0,
     });
+  });
+});
+
+describe('compararRangos', () => {
+  it('compares a window against the equally long one before it', () => {
+    const transacciones = [
+      // Trimestre anterior (feb-abr): 100.000 de gasto.
+      tx({ id: 'a', occurredOn: '2026-03-10', amountCop: 100000 }),
+      // Trimestre actual (may-jul): 60.000 de gasto, o sea 40.000 menos.
+      tx({ id: 'b', occurredOn: '2026-06-10', amountCop: 60000 }),
+    ];
+
+    const r = compararRangos(transacciones, '2026-07', 3);
+
+    expect(r.actual.gastos).toBe(60000);
+    expect(r.anterior.gastos).toBe(100000);
+    expect(r.deltaGastos).toBe(-40000);
+    expect(r.deltaGastosPct).toBe(-40);
+    expect(r.hayComparacion).toBe(true);
+  });
+
+  it('reports no comparison when the previous window is empty', () => {
+    const r = compararRangos([tx({ occurredOn: '2026-08-10' })], '2026-08', 3);
+
+    expect(r.hayComparacion).toBe(false);
+    // Un porcentaje contra cero sería "creció infinito", que no significa nada.
+    expect(r.deltaGastosPct).toBeNull();
+  });
+
+  it('counts income separately from spending', () => {
+    const transacciones = [
+      tx({ id: 'a', kind: 'ingreso', occurredOn: '2026-03-10', amountCop: 200000 }),
+      tx({ id: 'b', kind: 'ingreso', occurredOn: '2026-06-10', amountCop: 300000 }),
+    ];
+
+    const r = compararRangos(transacciones, '2026-07', 3);
+
+    expect(r.deltaIngresos).toBe(100000);
+    expect(r.deltaIngresosPct).toBe(50);
+    expect(r.actual.gastos).toBe(0);
   });
 });

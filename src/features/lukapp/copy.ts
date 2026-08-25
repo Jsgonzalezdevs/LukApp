@@ -152,6 +152,7 @@ export const COPY = {
 
   tendencias: {
     titulo: 'Tendencias',
+    comoVienes: 'Cómo vienes',
     ultimosMeses: 'Últimos 6 meses',
     promedio: 'Promedio mensual',
     promedioNota: 'Solo se cuentan los meses con movimientos registrados.',
