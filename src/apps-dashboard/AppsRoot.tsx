@@ -12,22 +12,35 @@ import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRu
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
-import { normalizeEmail } from '../lib/authHelpers';
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
 
-const APP_ROUTES: Record<AppId, string> = {
-  finanzas: '/',
-  superadmin: '/superadmin',
-  estadisticas: '/estadisticas',
-  null: '/ecosistema',
+// `AppId` incluye `null`, y un objeto no puede tener `null` como llave -- por
+// eso esto es una función y no un `Record<AppId, string>`.
+const routeFor = (app: AppId): string => {
+  switch (app) {
+    case 'finanzas':
+      return '/';
+    case 'superadmin':
+      return '/superadmin';
+    case 'estadisticas':
+      return '/estadisticas';
+    default:
+      return '/ecosistema';
+  }
 };
 
-const APP_TITLES: Record<AppId, string> = {
-  finanzas: 'LukApp — Finanzas Personales Inteligentes',
-  superadmin: 'LukApp — Superadmin',
-  estadisticas: 'LukApp — Estadísticas',
-  null: 'LukApp — Ecosistema',
+const titleFor = (app: AppId): string => {
+  switch (app) {
+    case 'finanzas':
+      return 'LukApp — Finanzas Personales Inteligentes';
+    case 'superadmin':
+      return 'LukApp — Superadmin';
+    case 'estadisticas':
+      return 'LukApp — Estadísticas';
+    default:
+      return 'LukApp — Ecosistema';
+  }
 };
 
 function detectActiveAppFromPath(pathname: string): AppId {
@@ -179,15 +192,15 @@ export const AppsRoot: React.FC = () => {
       cancelado = true;
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [sesion.estado.modo, sesion.estado.email]);
+  }, [sesion.estado.modo, sesion.estado.modo === 'autenticado' ? sesion.estado.email : undefined]);
 
   // Sync URL and document title based on active app
   useEffect(() => {
-    const path = APP_ROUTES[activeApp];
+    const path = routeFor(activeApp);
     if (path && !window.location.pathname.startsWith(path)) {
       window.history.pushState(null, '', path);
     }
-    document.title = APP_TITLES[activeApp];
+    document.title = titleFor(activeApp);
   }, [activeApp]);
 
   // Handle browser back/forward buttons

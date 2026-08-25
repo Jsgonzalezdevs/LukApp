@@ -175,6 +175,7 @@ export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
       tema={tema}
       onCambiarTema={setTema}
       onBack={onBack}
+      esAdmin={esAdmin}
     />
   );
 };
@@ -186,6 +187,7 @@ interface LukAppPanelProps {
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
   onBack?: () => void;
+  esAdmin?: boolean;
 }
 
 const LukAppPanel: React.FC<LukAppPanelProps> = ({
@@ -194,6 +196,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   tema,
   onCambiarTema,
   onBack,
+  esAdmin,
 }) => {
   const repositorio = useMemo(() => {
     if (!userId) return undefined;

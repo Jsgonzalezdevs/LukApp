@@ -37,7 +37,6 @@ import { useBloqueoScroll } from '../features/lukapp/data/useBloqueoScroll';
 import { apiUrl } from '../lib/api';
 import type { Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
-import type { SuperadminPanelProps, Perfil, AuditLog, PeticionIA, MetricasIAResponse } from './superadmin.types';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -325,7 +324,7 @@ const RespuestaIA: React.FC<{ texto: string }> = ({ texto }) => {
   );
 };
 
-export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos, onBack, tema, onCambiarTema }) => {
+export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos, onBack, onNavigateTo, tema, onCambiarTema }) => {
   // 'admin' puede todo sin mirar `permisos` -- la misma garantía que
   // exigirPermiso en el backend: el rol fijo nunca depende de una lista bien
   // poblada. `puede` es la única función que el resto del componente debe
@@ -665,7 +664,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       );
 
       setImpersonando(null);
-      props.onNavigateTo?.('finanzas');
+      onNavigateTo?.('finanzas');
     } catch (err: any) {
       setFormError(err.message);
       localStorage.removeItem('__admin_session_backup__');

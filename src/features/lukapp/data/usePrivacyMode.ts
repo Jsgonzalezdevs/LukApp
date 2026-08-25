@@ -3,7 +3,7 @@
  * Controls whether sensitive financial information is masked on screen.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocalStorageBoolean } from '../hooks/useLocalStorageValue';
 import { obtenerSupabase } from './supabase';
 
