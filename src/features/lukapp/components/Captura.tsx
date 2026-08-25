@@ -133,17 +133,23 @@ export const Captura: React.FC<CapturaProps> = ({
       audio.play('error');
       return;
     }
-    haptic.trigger('success');
-    audio.play('success');
-    onSave({
-      kind,
-      amountCop,
-      category,
-      description: description.trim() || catalogo.de(category).nombre,
-      cuentaId: cuentaId ?? parsed.cuentaId ?? cuentaPorDefecto,
-      rawTranscript: parsed.raw,
-      occurredOn: parsed.dateOverride,
-    });
+    try {
+      haptic.trigger('success');
+      audio.play('success');
+      onSave({
+        kind,
+        amountCop,
+        category,
+        description: description.trim() || catalogo.de(category).nombre,
+        cuentaId: cuentaId ?? parsed.cuentaId ?? cuentaPorDefecto,
+        rawTranscript: parsed.raw,
+        occurredOn: parsed.dateOverride,
+      });
+    } catch (error) {
+      console.error('Error al guardar:', error);
+      haptic.trigger('error');
+      audio.play('error');
+    }
   };
 
   const colorMonto = esGasto ? 'var(--fin-out)' : 'var(--fin-in)';
