@@ -161,6 +161,7 @@ describe('compararRangos', () => {
 
     expect(r.actual.gastos).toBe(60000);
     expect(r.anterior.gastos).toBe(100000);
+    // Un mes con datos en cada lado, así que por mes es igual al total.
     expect(r.deltaGastos).toBe(-40000);
     expect(r.deltaGastosPct).toBe(-40);
     expect(r.hayComparacion).toBe(true);
@@ -185,5 +186,26 @@ describe('compararRangos', () => {
     expect(r.deltaIngresos).toBe(100000);
     expect(r.deltaIngresosPct).toBe(50);
     expect(r.actual.gastos).toBe(0);
+  });
+
+  it('compares per active month, so a longer history is not read as more spending', () => {
+    // El caso que rompía: el rango actual tiene 3 meses con datos y el anterior
+    // solo 1, pero el gasto MENSUAL es idéntico. Restar totales diría "+200%".
+    const transacciones = [
+      tx({ id: 'v', occurredOn: '2026-04-10', amountCop: 50000 }),
+      tx({ id: 'a', occurredOn: '2026-05-10', amountCop: 50000 }),
+      tx({ id: 'b', occurredOn: '2026-06-10', amountCop: 50000 }),
+      tx({ id: 'c', occurredOn: '2026-07-10', amountCop: 50000 }),
+    ];
+
+    const r = compararRangos(transacciones, '2026-07', 3);
+
+    expect(r.actual.gastos).toBe(150000);
+    expect(r.anterior.gastos).toBe(50000);
+    // Lo que se le muestra al usuario: gastó lo mismo cada mes, no el triple.
+    expect(r.gastoMensualActual).toBe(50000);
+    expect(r.gastoMensualAnterior).toBe(50000);
+    expect(r.deltaGastos).toBe(0);
+    expect(r.deltaGastosPct).toBe(0);
   });
 });

@@ -176,24 +176,34 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
               <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
                 {formatCop(comparacion.actual.gastos)}
               </strong>{' '}
-              de gasto,{' '}
-              <strong
-                className="font-semibold tabular-nums"
-                style={{
-                  color: comparacion.deltaGastos > 0 ? 'var(--fin-out)' : 'var(--fin-in)',
-                }}
-              >
-                {formatCop(Math.abs(comparacion.deltaGastos))}{' '}
-                {comparacion.deltaGastos > 0 ? 'más' : 'menos'}
+              de gasto. Vienes gastando{' '}
+              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
+                {formatCop(comparacion.gastoMensualActual)}
               </strong>{' '}
-              que el {nombreRango} anterior
-              {comparacion.deltaGastosPct !== null
-                ? ` (${comparacion.deltaGastosPct > 0 ? '+' : ''}${comparacion.deltaGastosPct}%)`
-                : ''}
-              .
+              al mes,{' '}
+              {comparacion.deltaGastos === 0 ? (
+                <>igual que el {nombreRango} anterior.</>
+              ) : (
+                <>
+                  <strong
+                    className="font-semibold tabular-nums"
+                    style={{
+                      color: comparacion.deltaGastos > 0 ? 'var(--fin-out)' : 'var(--fin-in)',
+                    }}
+                  >
+                    {formatCop(Math.abs(comparacion.deltaGastos))}{' '}
+                    {comparacion.deltaGastos > 0 ? 'más' : 'menos'}
+                  </strong>{' '}
+                  que en el {nombreRango} anterior
+                  {comparacion.deltaGastosPct !== null
+                    ? ` (${comparacion.deltaGastosPct > 0 ? '+' : ''}${comparacion.deltaGastosPct}%)`
+                    : ''}
+                  .
+                </>
+              )}
             </>
           ) : (
-            <>Todavía no hay un {nombreRango} anterior completo contra el cual comparar.</>
+            <>Todavía no hay un {nombreRango} anterior con movimientos contra el cual comparar.</>
           )}
         </p>
       </section>

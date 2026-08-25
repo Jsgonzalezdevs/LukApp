@@ -130,7 +130,10 @@ const sumarSerie = (serie: readonly PuntoMensual[]): TotalRango =>
 export interface ComparacionRango {
   actual: TotalRango;
   anterior: TotalRango;
-  /** Cambio del gasto contra el rango anterior. Positivo = se gastó más. */
+  /** Gasto POR MES de cada rango -- ver la nota de `compararRangos`. */
+  gastoMensualActual: number;
+  gastoMensualAnterior: number;
+  /** Cambio del gasto mensual contra el rango anterior. Positivo = se gastó más. */
   deltaGastos: number;
   /**
    * El mismo cambio en porcentaje, o null cuando el rango anterior no tuvo
@@ -138,18 +141,31 @@ export interface ComparacionRango {
    * había nada registrado, y eso hay que decirlo con palabras.
    */
   deltaGastosPct: number | null;
+  ingresoMensualActual: number;
+  ingresoMensualAnterior: number;
   deltaIngresos: number;
   deltaIngresosPct: number | null;
   /** False cuando el rango anterior está vacío y no hay contra qué comparar. */
   hayComparacion: boolean;
 }
 
+/** Total dividido entre los meses que de verdad tuvieron movimientos. */
+const porMes = (total: number, mesesConDatos: number): number =>
+  mesesConDatos > 0 ? Math.round(total / mesesConDatos) : 0;
+
 /**
  * Este rango contra el rango inmediatamente anterior del mismo largo.
  *
- * Es la pregunta que hace alguien mirando la gráfica -- "¿venimos gastando más
- * o menos que antes?" -- y contestarla con dos totales exige tener a mano los
- * dos periodos, no solo el que se está dibujando.
+ * La comparación va POR MES, no por total, y esa es la decisión importante de
+ * esta función. Los dos rangos miden el mismo número de meses en el calendario,
+ * pero casi nunca el mismo número de meses CON DATOS: quien lleva medio año en
+ * la app tiene seis meses de este semestre y dos del anterior. Restar los
+ * totales ahí dice "gastaste 199% más" cuando el gasto mensual ni se movió --
+ * no creció el gasto, creció el historial. Dividir entre los meses que sí
+ * tuvieron movimientos hace que la cifra signifique lo mismo en ambos lados.
+ *
+ * Los totales igual se devuelven, porque "en este semestre llevas $X" es una
+ * frase verdadera y útil; lo que no puede salir de un total es el porcentaje.
  */
 export const compararRangos = (
   transacciones: readonly Transaction[],
@@ -161,16 +177,25 @@ export const compararRangos = (
     serieMensual(transacciones, ultimosMeses(shiftMonth(hasta, -meses), meses)),
   );
 
+  const gastoMensualActual = porMes(actual.gastos, actual.mesesConDatos);
+  const gastoMensualAnterior = porMes(anterior.gastos, anterior.mesesConDatos);
+  const ingresoMensualActual = porMes(actual.ingresos, actual.mesesConDatos);
+  const ingresoMensualAnterior = porMes(anterior.ingresos, anterior.mesesConDatos);
+
   const pct = (ahora: number, antes: number): number | null =>
     antes > 0 ? Math.round(((ahora - antes) / antes) * 1000) / 10 : null;
 
   return {
     actual,
     anterior,
-    deltaGastos: actual.gastos - anterior.gastos,
-    deltaGastosPct: pct(actual.gastos, anterior.gastos),
-    deltaIngresos: actual.ingresos - anterior.ingresos,
-    deltaIngresosPct: pct(actual.ingresos, anterior.ingresos),
+    gastoMensualActual,
+    gastoMensualAnterior,
+    deltaGastos: gastoMensualActual - gastoMensualAnterior,
+    deltaGastosPct: pct(gastoMensualActual, gastoMensualAnterior),
+    ingresoMensualActual,
+    ingresoMensualAnterior,
+    deltaIngresos: ingresoMensualActual - ingresoMensualAnterior,
+    deltaIngresosPct: pct(ingresoMensualActual, ingresoMensualAnterior),
     hayComparacion: anterior.mesesConDatos > 0,
   };
 };

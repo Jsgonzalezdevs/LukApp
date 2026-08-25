@@ -69,14 +69,25 @@
   /* Money direction and severity. Colour never carries meaning alone here — an
      emoji or a +/- sign always accompanies it — but these still have to stay
      legible against their own backgrounds in both themes. */
-  --fin-in: #5a8a1e;
+  /* El lima de marca (#B6F246) con la luminosidad bajada hasta que una cifra
+     escrita con él pase 4.5:1 sobre el fondo claro -- mismo tono, mismo brillo
+     de color, solo más oscuro. El lima tal cual es para superficies grandes
+     (el logo, una pastilla), no para texto: sobre crema da 1.6:1 y no se lee. */
+  --fin-in: #547c09;
   --fin-in-bg: #f2fce0;
   --fin-out: #d4025a;
   --fin-out-bg: #fdeaf1;
   --fin-out-ink: #a4013f;
-  --fin-warn: #735ac2;
-  --fin-warn-bg: #f1eefb;
-  --fin-warn-ink: #4d3a91;
+  /* Ámbar, y no un morado de la marca, a propósito. Este token no pinta
+     identidad: pinta "ojo con esto" -- que el monto no se entendió, que el
+     gasto se sale de lo normal, que hay un posible duplicado. Con el morado de
+     marca quedaba a 9° de tono del acento en claro y con el MISMO hex en
+     oscuro, así que el aviso se leía igual que el botón de guardar y dejaba de
+     avisar. Verde, rosa y morado ya están tomados (entra, sale, acción); el
+     ámbar es el único tono que queda libre para decir "cuidado". */
+  --fin-warn: #d97706;
+  --fin-warn-bg: #fef3c7;
+  --fin-warn-ink: #92400e;
   --fin-media-bg: #fff7ed;
   --fin-media-ink: #c2410c;
   --fin-baja-bg: #fefce8;
@@ -193,9 +204,9 @@
     --fin-out: #ff5c92;
     --fin-out-bg: rgb(255 92 146 / 0.12);
     --fin-out-ink: #ff8ab0;
-    --fin-warn: #a879f0;
-    --fin-warn-bg: rgb(168 121 240 / 0.12);
-    --fin-warn-ink: #c3a4f5;
+    --fin-warn: #fbbf24;
+    --fin-warn-bg: rgb(251 191 36 / 0.12);
+    --fin-warn-ink: #fcd34d;
     --fin-media-bg: rgb(251 146 60 / 0.12);
     --fin-media-ink: #fdba74;
     --fin-baja-bg: rgb(250 204 21 / 0.12);

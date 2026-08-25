@@ -72,6 +72,12 @@ export const GraficaLineas: React.FC<GraficaLineasProps> = ({
 
     return {
       puntos,
+      // El ancho de la zona que se toca es la separación ENTRE puntos, no el
+      // lienzo repartido entre la cantidad de meses: con lo segundo las zonas
+      // salen más angostas que la separación y queda un pasillo muerto entre
+      // cada par -- 17% del ancho donde tocar no hacía nada. Con un solo mes no
+      // hay separación que medir, así que se le da el lienzo entero.
+      anchoZona: serie.length > 1 ? paso : ANCHO - PAD_X * 2,
       lineaIn: linea('yIn'),
       lineaOut: linea('yOut'),
       areaIn: area('yIn'),
@@ -181,9 +187,9 @@ export const GraficaLineas: React.FC<GraficaLineasProps> = ({
                 círculo de 3px, y un objetivo pequeño se siente como que la
                 gráfica no responde. */}
             <rect
-              x={p.x - (ANCHO - PAD_X * 2) / Math.max(serie.length, 1) / 2}
+              x={p.x - geometria.anchoZona / 2}
               y={0}
-              width={(ANCHO - PAD_X * 2) / Math.max(serie.length, 1)}
+              width={geometria.anchoZona}
               height={ALTO}
               fill="transparent"
               className="cursor-pointer"
