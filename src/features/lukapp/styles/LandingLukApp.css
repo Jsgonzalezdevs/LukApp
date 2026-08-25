@@ -24,7 +24,12 @@
      y separarlos es como se acaba con un botón claro y letra blanca. */
   --lp-accent: #772aea;
   --lp-on-accent: #ffffff;
-  --lp-in: #5a8a1e;
+  /* Verde dinero, no verde oliva: la plata pide un verde saturado que se lea
+     vivo -- uno apagado/verdoso-parduzco lee viejo o hasta "enfermo", que es
+     justo lo opuesto de lo que un cupo disponible debería transmitir. 5:1
+     sobre blanco y 4.77:1 sobre --lp-surface -- pasa AA también en texto
+     chico, no solo en el arco del medidor. */
+  --lp-in: #15803d;
   --lp-out: #d4025a;
   --lp-nav-bg: rgba(255, 255, 255, 0.85);
   /* El destello que cruza el botón de demo. Se invierte con el tema: sobre
@@ -49,7 +54,10 @@
     --lp-ink: #f5f3f0;
     --lp-ink-soft: #a8a29e;
     --lp-ink-faint: #857f7a;
-    --lp-accent: #a879f0;
+    /* Menos pastel que el lila anterior (#a879f0): misma familia violeta que
+       el acento claro, pero más saturada -- sobre un fondo casi negro, un
+       morado desteñido lee apagado/deslavado en vez de premium. */
+    --lp-accent: #a855f7;
     --lp-on-accent: #1a1817;
     /* El verde y el rojo de marca no llegan a 4.5:1 sobre fondo oscuro; estos
        son los mismos tonos aclarados hasta que sí. */
@@ -59,7 +67,7 @@
     --lp-destello: rgba(255, 255, 255, 0.14);
     --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
     --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
-    --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 121, 240, 0.1), transparent 70%);
+    --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 85, 247, 0.1), transparent 70%);
   }
 }
 
@@ -71,7 +79,7 @@
   --lp-ink: #f5f3f0;
   --lp-ink-soft: #a8a29e;
   --lp-ink-faint: #857f7a;
-  --lp-accent: #a879f0;
+  --lp-accent: #a855f7;
   --lp-on-accent: #1a1817;
   --lp-in: #b6f246;
   --lp-out: #ff5c92;
@@ -79,7 +87,7 @@
   --lp-destello: rgba(255, 255, 255, 0.14);
   --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
   --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
-  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 121, 240, 0.1), transparent 70%);
+  --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 85, 247, 0.1), transparent 70%);
 }
 
 .landing-finanzas {
