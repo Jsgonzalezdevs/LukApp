@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.1.1',
+    fecha: '2026-08-26',
+    texto: 'Corregimos el arreglo anterior de los brazos: la "bola" que se veía pegada al cuerpo ya no está, y las expresiones de "escéptica" y "somnolienta" se veían raras -- ahora son más simples y amigables.',
+  },
+  {
     version: '1.1.0',
     fecha: '2026-08-26',
     texto: 'La Estrella ya no se rompe ni en el saludo más exagerado, mira de frente en vez de sesgada, y estrena un montón de gestos nuevos: asiente, niega, se encoge de hombros, se estira, hace reverencia, gira mareada, flota, mira alrededor, baila, apunta hacia arriba, se emociona y bosteza.',
