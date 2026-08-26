@@ -10,6 +10,7 @@ import {
   User,
   MapPin,
   Tag,
+  ChevronDown,
 } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, Transaction } from '../types';
@@ -63,6 +64,18 @@ interface ConfirmSheetProps {
    */
   transacciones?: readonly Transaction[];
 }
+
+// Las seis etiquetas del formulario comparten UNA clase. Antes tres campos
+// usaban 13px→15px y los otros tres 15px fijo, así que la mitad de las
+// etiquetas se leía más grande que la otra mitad dentro de la misma hoja.
+const ETIQUETA = 'block text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]';
+
+// `min-w-0` + `appearance-none` no son adorno: en iOS el <input type="date"> y
+// el <select> traen un ancho intrínseco propio y NO se encogen con w-full. Al
+// desbordar, el formulario —que hereda overflow-x:auto de su overflow-y-auto—
+// gana scroll horizontal y la hoja aparece corrida y cortada por la izquierda.
+const CAMPO =
+  'mt-2 block w-full min-w-0 max-w-full appearance-none rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 /**
  * Always shown, even at high confidence. Confidence controls PRESENTATION only —
@@ -165,7 +178,10 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-5 sm:pt-5 sm:pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
+        // `overflow-x-hidden` es la red, no el arreglo: sin él la hoja se puede
+        // arrastrar de lado. Lo que impide de verdad que se corra es que ningún
+        // campo desborde — ver la regla de input[type=date] en lukapp.css.
+        className="max-h-[92dvh] w-full max-w-md overflow-x-hidden overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-4 pt-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-5 sm:pt-5 sm:pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
@@ -201,7 +217,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         <div className="mt-5">
           <label
             htmlFor="fin-amount"
-            className="block text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]"
+            className={ETIQUETA}
           >
             {COPY.confirm.amount}
           </label>
@@ -233,8 +249,8 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         </div>
 
         {/* Direction */}
-        <fieldset className="mt-5">
-          <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]">
+        <fieldset className="mt-5 min-w-0">
+          <legend className={ETIQUETA}>
             {COPY.confirm.kind}
           </legend>
           <div
@@ -286,9 +302,12 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           </div>
         </fieldset>
 
-        {/* Category: Visual grid of colorful buttons */}
-        <fieldset className="mt-5">
-          <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]">
+        {/* Las pastillas de categoría. La activa NO crece: antes se escalaba a
+ 1.04 y la fila entera se desalineaba alrededor de ella — con nombres
+ largos y muchas categorías eso se lee como desorden. El color del
+ borde y el fondo ya dicen cuál está elegida sin mover nada de sitio. */}
+        <fieldset className="mt-5 min-w-0">
+          <legend className={ETIQUETA}>
             {COPY.confirm.category}
           </legend>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -306,9 +325,8 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   }}
                   aria-pressed={active}
                   whileTap={{ scale: 0.94 }}
-                  animate={{ scale: active ? 1.04 : 1 }}
                   transition={{ duration: 0.15, ease: 'easeOut' }}
-                  className="flex items-center gap-1.5 rounded-[var(--fin-r-pill)] border-2 px-3 py-2 text-[15px] font-semibold transition-colors"
+                  className="flex min-h-11 max-w-full min-w-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] border-2 px-3.5 py-2 text-[15px] font-semibold transition-colors"
                   style={{
                     backgroundColor: active ? tint(color, 0.16) : 'var(--fin-card)',
                     borderColor: active ? color : 'var(--fin-line)',
@@ -319,7 +337,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                     const Icon = entrada.Icono;
                     return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
                   })()}
-                  {entrada.nombre}
+                  <span className="truncate">{entrada.nombre}</span>
                 </motion.button>
               );
             })}
@@ -333,19 +351,19 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           parsed.signals.tags?.length > 0) ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {parsed.signals.destinatario && (
-              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+              <span className="inline-flex max-w-full items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 <User className="h-3 w-3" strokeWidth={2.5} /> {parsed.signals.destinatario}
               </span>
             )}
             {parsed.signals.ubicacion && (
-              <span className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+              <span className="inline-flex max-w-full items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 <MapPin className="h-3 w-3" strokeWidth={2.5} /> {parsed.signals.ubicacion}
               </span>
             )}
             {parsed.signals.tags?.map((t) => (
               <span
                 key={t}
-                className="inline-flex items-center gap-1 rounded bg-[var(--fin-soft)] px-2 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+                className="inline-flex max-w-full items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 <Tag className="h-3 w-3" strokeWidth={2.5} /> {t}
               </span>
@@ -360,23 +378,30 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           <div className="mt-5">
             <label
               htmlFor="fin-cuenta"
-              className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+              className={ETIQUETA}
             >
               {kind === 'ingreso' ? COPY.confirm.cuentaIngreso : COPY.confirm.cuenta}
             </label>
-            <select
-              id="fin-cuenta"
-              value={cuentaId ?? ''}
-              onChange={(e) => setCuentaId(e.target.value || null)}
-              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
-            >
-              <option value="">{COPY.confirm.sinCuenta}</option>
-              {cuentas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                id="fin-cuenta"
+                value={cuentaId ?? ''}
+                onChange={(e) => setCuentaId(e.target.value || null)}
+                className={`${CAMPO} pr-11`}
+              >
+                <option value="">{COPY.confirm.sinCuenta}</option>
+                {cuentas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute right-4 bottom-[1.375rem] h-4 w-4 text-[var(--fin-ink-faint)]"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              />
+            </div>
             <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {COPY.confirm.cuentaHint}
             </p>
@@ -387,7 +412,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         <div className="mt-5">
           <label
             htmlFor="fin-desc"
-            className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+            className={ETIQUETA}
           >
             {COPY.confirm.description}
           </label>
@@ -395,7 +420,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             id="fin-desc"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            className={CAMPO}
           />
         </div>
 
@@ -406,7 +431,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           <div className="mt-5">
             <label
               htmlFor="fin-fecha"
-              className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+              className={ETIQUETA}
             >
               {COPY.confirm.fecha}
             </label>
@@ -416,7 +441,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
               value={fecha}
               max={fechaMax}
               onChange={(e) => setFecha(e.target.value)}
-              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+              className={CAMPO}
             />
           </div>
         ) : null}

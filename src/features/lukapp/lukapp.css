@@ -193,17 +193,24 @@
     --fin-ink-faint: #857f7a;
     --fin-ink-ghost: #57534e;
 
-    --fin-accent: #a879f0;
-    --fin-accent-hover: #c3a4f5;
+    /* Neutro, no el lavanda de marca. Sobre negro el morado #a879f0 pintaba un
+       bloque encendido justo al lado de la cifra del monto, y las dos cosas
+       peleaban por ser lo primero que se mira. La regla ahora es UN color
+       fuerte por pantalla, y ese color es la plata: el monto y su categoría.
+       El botón dice "esta es la acción" con contraste, no con tono. */
+    --fin-accent: #f5f3f0;
+    --fin-accent-hover: #ffffff;
     --fin-on-accent: #1a1817;
 
-    /* Lightened well past their light-mode values: #15803d on #232120 sits
-       around 2.5:1 and is unreadable. These clear 4.5:1 on the dark surfaces. */
-    --fin-in: #b6f246;
-    --fin-in-bg: rgb(182 242 70 / 0.12);
-    --fin-out: #ff5c92;
-    --fin-out-bg: rgb(255 92 146 / 0.12);
-    --fin-out-ink: #ff8ab0;
+    /* Los tonos de marca, con el croma bajado ~35% y la luminosidad intacta:
+       mismo lima y mismo rosa, pero sin el brillo de neón que sobre un negro
+       cálido se lee como pantalla de videojuego. El contraste no se mueve
+       (6.3:1 y 13.1:1 sobre el fondo), solo baja la intensidad. */
+    --fin-in: #c3eb89;
+    --fin-in-bg: rgb(195 235 137 / 0.14);
+    --fin-out: #e27a97;
+    --fin-out-bg: rgb(226 122 151 / 0.14);
+    --fin-out-ink: #e89bb2;
     --fin-warn: #fbbf24;
     --fin-warn-bg: rgb(251 191 36 / 0.12);
     --fin-warn-ink: #fcd34d;
@@ -215,7 +222,12 @@
 }
 
 /* Explicit choice. Repeated rather than shared with the media query because a
-   `:is()` grouping would raise specificity and make the two rules fight. */
+   `:is()` grouping would raise specificity and make the two rules fight.
+
+   LOS DOS BLOQUES OSCUROS DECLARAN LO MISMO. No es decorativo: el rebrand
+   actualizó solo el de arriba y durante un tiempo la app se veía distinta
+   según CÓMO habías llegado al oscuro — menta contra lima, dos rosas, dos
+   botones. `lukapp.tema.test.ts` falla si vuelven a separarse. */
 .fin-html[data-tema='oscuro'] {
   color-scheme: dark;
 
@@ -242,11 +254,11 @@
   --fin-accent-hover: #ffffff;
   --fin-on-accent: #1a1817;
 
-  --fin-in: #4ade80;
-  --fin-in-bg: rgb(74 222 128 / 0.12);
-  --fin-out: #fb7185;
-  --fin-out-bg: rgb(251 113 133 / 0.12);
-  --fin-out-ink: #fda4af;
+  --fin-in: #c3eb89;
+  --fin-in-bg: rgb(195 235 137 / 0.14);
+  --fin-out: #e27a97;
+  --fin-out-bg: rgb(226 122 151 / 0.14);
+  --fin-out-ink: #e89bb2;
   --fin-warn: #fbbf24;
   --fin-warn-bg: rgb(251 191 36 / 0.12);
   --fin-warn-ink: #fcd34d;
@@ -407,4 +419,24 @@
   .fin-aurora::after {
     animation: none;
   }
+}
+
+/* En iOS el <input type="date"> trae un ancho intrínseco propio y se planta en
+   él: `width: 100%` no lo encoge, así que dentro de una hoja angosta se sale de
+   su contenedor y arrastra el formulario entero hacia el lado. Estas tres
+   líneas lo devuelven a comportarse como una caja normal. El calendario nativo
+   se sigue abriendo igual — esto es ancho, no comportamiento. */
+input[type='date'],
+input[type='month'],
+input[type='time'] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Sin esto el icono de calendario de iOS se queda pegado al borde derecho y el
+   texto de la fecha queda descentrado dentro del campo. */
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
 }

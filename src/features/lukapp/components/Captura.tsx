@@ -215,7 +215,7 @@ export const Captura: React.FC<CapturaProps> = ({
               }}
               className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[12px] font-bold transition-all ${
                 esGasto
-                  ? 'bg-[var(--fin-out)] text-white shadow-sm'
+                  ? 'bg-[var(--fin-out)] text-[var(--fin-on-accent)] shadow-sm'
                   : 'text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
               }`}
             >
@@ -231,7 +231,7 @@ export const Captura: React.FC<CapturaProps> = ({
               }}
               className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[12px] font-bold transition-all ${
                 !esGasto
-                  ? 'bg-[var(--fin-in)] text-white shadow-sm'
+                  ? 'bg-[var(--fin-in)] text-[var(--fin-on-accent)] shadow-sm'
                   : 'text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
               }`}
             >
