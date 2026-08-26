@@ -79,8 +79,15 @@ const MIN_MS = 800;
  * segmento y el siguiente -- inaudible para esto, y de todas formas la
  * transcripción DEFINITIVA (la que de verdad se guarda) sigue viniendo de una
  * sola grabación continua sin cortes, igual que antes de este cambio.
+ *
+ * 2200ms se sentía "vivo" pero le daba a Whisper muy poco contexto por
+ * segmento: cortaba palabras a la mitad y, peor, a veces alucinaba una frase
+ * entera sin relación con lo dicho (el modelo rellena con lo más probable
+ * cuando el audio es ambiguo o muy corto). Subirlo a 4000ms sacrifica un poco
+ * de "vivacidad" en el parcial a cambio de segmentos con frases más
+ * completas, que Whisper transcribe con mucha más fidelidad.
  */
-const DURACION_SEGMENTO_MS = 2200;
+const DURACION_SEGMENTO_MS = 4000;
 
 /**
  * Lo que Whisper devuelve cuando le llega silencio.

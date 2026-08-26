@@ -92,7 +92,17 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 </p>
               </motion.div>
             ) : palabras.length > 0 ? (
-              <p className="text-[26px] font-bold leading-tight text-white sm:text-[30px]">
+              <p
+                className={`text-[26px] font-bold leading-tight sm:text-[30px] ${
+                  fase === 'escuchando' || fase === 'procesando' ? 'text-white/60 italic' : 'text-white'
+                }`}
+              >
+                {/* Mientras se escucha o procesa, el texto es solo el mejor intento
+ de cada segmento por separado -- puede tener palabras cortadas o
+ directamente inventadas. Se muestra apagado e itálico a propósito,
+ para que no se lea como la frase ya confirmada; solo al "revelar"
+ (la transcripción de la grabación completa, sin cortes) se pone en
+ blanco sólido, como corresponde a lo definitivo. */}
                 {palabras.map((palabra, i) => (
                   <React.Fragment key={`${i}-${palabra}`}>
                     <motion.span
