@@ -150,11 +150,12 @@
   box-shadow: 0 1px 12px -6px rgba(0, 0, 0, 0.25);
 }
 
+/* El logotipo es una imagen, no texto: se fija la altura y el ancho sale del
+   arte, que si no la barra salta de alto mientras carga. */
 .landing-finanzas .logo {
-  font-size: 1.1rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--lp-ink);
+  display: block;
+  height: 1.6rem;
+  width: auto;
 }
 
 .landing-finanzas .nav-links {
@@ -710,6 +711,20 @@
 .landing-finanzas .gmf h2,
 .landing-finanzas .formas h2,
 .landing-finanzas .privacidad h2,
+/* El personaje del cierre. Alto fijo en `em` del h2 para que crezca con el
+   titular en pantallas grandes sin necesidad de otra media query. */
+.landing-finanzas .cta-estrella {
+  width: clamp(88px, 12vw, 132px);
+  margin-bottom: 0.6rem;
+}
+
+/* La cabecera de registro centra sus hijos con `text-align`, que no mueve un
+   inline-flex: se centra a mano. */
+.landing-finanzas .registro-cabecera .cta-estrella {
+  align-self: center;
+  margin-inline: auto;
+}
+
 .landing-finanzas .final-cta h2 {
   font-size: clamp(1.7rem, 3.4vw, 2.6rem);
   font-weight: 700;
@@ -1107,6 +1122,25 @@
   gap: 0.55rem;
 }
 
+/* Cada turno del chat es una fila: la estrella a un lado y la burbuja al otro.
+   `align-items: flex-end` deja al personaje apoyado en la base de la burbuja,
+   como en el asesor de la app. */
+.landing-finanzas .mk-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.landing-finanzas .mk-fila.yo {
+  justify-content: flex-end;
+}
+
+.landing-finanzas .mk-estrella {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
 .landing-finanzas .mk-burbuja {
   max-width: 85%;
   padding: 0.65rem 0.85rem;
@@ -1116,14 +1150,12 @@
 }
 
 .landing-finanzas .mk-burbuja.yo {
-  align-self: flex-end;
   background: var(--lp-accent);
   color: var(--lp-on-accent);
   border-bottom-right-radius: 5px;
 }
 
 .landing-finanzas .mk-burbuja.bot {
-  align-self: flex-start;
   background: var(--lp-bg);
   color: var(--lp-ink);
   border-bottom-left-radius: 5px;
@@ -2013,13 +2045,21 @@
 
 .pwa-cabecera {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 8px;
 }
 
+/* El icono va redondeado como lo deja el sistema al instalarlo. */
+.pwa-cabecera .pwa-icono {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 11px;
+}
+
 .pwa-cabecera h2 {
-  margin: 0;
+  margin: 0 auto 0 0;
   font-size: 1.4rem;
   font-weight: 700;
   letter-spacing: -0.03em;

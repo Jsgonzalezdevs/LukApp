@@ -5,17 +5,19 @@ interface BrandMarkProps {
 }
 
 /**
- * The app's own mark: three ascending bars in the category palette.
+ * La marca oficial de LukApp: el isotipo de la "U".
  *
- * Deliberately not an emoji. It is the same geometry as the installed
- * home-screen icon (see scripts/generate-finance-icons.mjs), so the header and
- * the icon on the phone read as one brand instead of two unrelated glyphs — and
- * unlike an emoji it renders identically on every platform.
+ * Es el mismo arte que el icono instalado en la pantalla de inicio (ambos
+ * salen de public/brand/ vía scripts/generar-iconos-marca.py), así que la
+ * cabecera y el icono del teléfono se leen como una sola marca y no como dos
+ * dibujos distintos.
  */
 export const BrandMark: React.FC<BrandMarkProps> = ({ className }) => (
-  <svg viewBox="0 0 24 24" className={className} role="img" aria-label="Finanzas" focusable="false">
-    <rect x="3" y="14" width="4.6" height="7" rx="1.6" fill="#f59e0b" />
-    <rect x="9.7" y="9" width="4.6" height="12" rx="1.6" fill="#38bdf8" />
-    <rect x="16.4" y="3" width="4.6" height="18" rx="1.6" fill="#16c55e" />
-  </svg>
+  <img
+    src="/lukapp-isotipo.png"
+    alt="LukApp"
+    className={className}
+    style={{ objectFit: 'contain' }}
+    draggable={false}
+  />
 );

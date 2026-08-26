@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
+import { VERSION_ETIQUETA } from '../../../version';
 
 const MINIMO_PASSWORD = 6;
 
@@ -384,6 +385,12 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
         )}
       </div>
       ) : null}
+
+      {/* La versión, al pie. Es el sitio donde alguien la va a buscar cuando
+          reporte un problema: "estoy en la v1.0.0" ahorra media conversación. */}
+      <p className="pt-2 text-center text-[12px] text-[var(--fin-ink-faint)]">
+        LukApp {VERSION_ETIQUETA}
+      </p>
     </section>
   );
 };

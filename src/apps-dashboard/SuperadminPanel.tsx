@@ -37,6 +37,7 @@ import { useBloqueoScroll } from '../features/lukapp/data/useBloqueoScroll';
 import { apiUrl } from '../lib/api';
 import type { Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
+import { VERSION_ETIQUETA } from '../version';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -914,7 +915,15 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 <ShieldAlert className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-base font-bold tracking-tight">Superadmin</h1>
+                <h1 className="flex items-center gap-2 text-base font-bold tracking-tight">
+                  Superadmin
+                  {/* La versión que está corriendo ahora mismo. Aquí arriba
+                      porque quien administra necesita saber contra qué versión
+                      está mirando los números de abajo. */}
+                  <span className="rounded-md bg-[var(--fin-soft)] px-1.5 py-0.5 text-[10px] font-semibold text-[var(--fin-ink-soft)]">
+                    {VERSION_ETIQUETA}
+                  </span>
+                </h1>
                 <p className="text-[11px] text-[var(--fin-ink-soft)]">Usuarios, roles y analítica del ecosistema</p>
               </div>
             </div>

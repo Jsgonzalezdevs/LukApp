@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Send,
-  Bot,
   User,
-  BrainCircuit,
   ThumbsUp,
   ThumbsDown,
   Copy,
@@ -18,6 +16,7 @@ import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
+import { Estrella } from './Estrella';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
@@ -102,6 +101,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   ]);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
+  /* Cuál es la respuesta más reciente del asesor: solo esa lleva el rebote de
+     la Estrella al aparecer. */
+  const ultimoDelAsesor = [...messages].reverse().find((m) => m.role !== 'user')?.id;
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
@@ -535,9 +537,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
  escribir primero. */}
         {messages.length === 1 ? (
           <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 py-4 text-center">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
-              <BrainCircuit className="h-6 w-6" strokeWidth={1.75} />
-            </div>
+            {/* El personaje entero, no un icono: es la única pantalla con
+                sitio para que se le vean las piernas, y es la primera vez que
+                el usuario se encuentra con la IA. */}
+            <Estrella variante="cuerpo" alt="La Estrella IA de LukApp" className="h-28 w-28 shrink-0" />
             <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
@@ -561,13 +564,22 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 key={msg.id}
                 className={`flex items-end gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
-                  {msg.role === 'user' ? (
+                {/* La pastilla gris es el avatar del usuario. La Estrella va
+                    suelta: es un personaje, y encerrarlo en un círculo lo
+                    convierte otra vez en un icono. */}
+                {msg.role === 'user' ? (
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
                     <User className="h-4 w-4" strokeWidth={2.5} />
-                  ) : (
-                    <Bot className="h-4 w-4" strokeWidth={2.5} />
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <Estrella
+                    className="h-8 w-8 shrink-0"
+                    /* Solo la última respuesta rebota al llegar. Las de más
+                       arriba ya se celebraron en su momento; repetirles el
+                       brinco en cada render sería un tic. */
+                    estado={msg.id === ultimoDelAsesor ? 'contenta' : 'quieta'}
+                  />
+                )}
                 <div
                   className={`max-w-[85%] rounded-2xl px-4 py-3 text-[16px] leading-relaxed break-words ${
                     msg.role === 'user'
@@ -723,9 +735,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             ))}
             {pensando && (
               <div className="flex items-end gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
-                  <Bot className="h-4 w-4 animate-pulse" strokeWidth={2.5} />
-                </div>
+                <Estrella className="h-8 w-8 shrink-0" estado="pensando" />
                 <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] rounded-bl-sm bg-[var(--fin-card)] px-4 py-3 text-[13px] text-[var(--fin-ink-soft)]">
                   <span className="flex gap-1">
                     <span

@@ -222,13 +222,13 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             className="group relative mb-3.5 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
             title="Volver al inicio"
           >
-            <span className="absolute -inset-2.5 rounded-3xl bg-gradient-to-r from-amber-500/30 via-sky-500/20 to-emerald-500/30 blur-xl animate-pulse" />
+            <span className="absolute -inset-2.5 rounded-3xl bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
               <span
                 className="absolute inset-0 rounded-[1.4rem] opacity-80"
                 style={{
                   background:
-                    'radial-gradient(120% 120% at 15% 15%, #f59e0b35, transparent 55%), radial-gradient(120% 120% at 85% 30%, #38bdf835, transparent 55%), radial-gradient(120% 120% at 50% 100%, #16c55e35, transparent 55%)',
+                    'radial-gradient(120% 120% at 15% 15%, #7c3aed35, transparent 55%), radial-gradient(120% 120% at 85% 30%, #a3e63535, transparent 55%), radial-gradient(120% 120% at 50% 100%, #6d28d935, transparent 55%)',
                 }}
                 aria-hidden
               />

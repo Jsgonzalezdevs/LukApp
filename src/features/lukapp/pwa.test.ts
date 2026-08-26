@@ -42,6 +42,18 @@ describe('manifest', () => {
   it('keeps the apple-touch-icon, which iOS uses instead of the manifest', () => {
     expect(html).toContain('apple-touch-icon');
   });
+
+  /* Durante un tiempo el HTML apuntó a /finanzas-icon-*.png, que nunca
+     existieron: el navegador pedía el icono, se comía un 404 y caía al
+     genérico. Nada fallaba en voz alta, así que aquí se comprueba que cada
+     ruta local del <head> exista de verdad en public/. */
+  it('only references icons that exist in public/', () => {
+    const rutas = [...html.matchAll(/href="(\/[^"]+\.(?:png|svg|ico))"/g)].map((m) => m[1]);
+    expect(rutas.length).toBeGreaterThan(0);
+    for (const ruta of rutas) {
+      expect(existsSync(resolve(raiz, 'public', ruta.slice(1)))).toBe(true);
+    }
+  });
 });
 
 describe('service worker', () => {

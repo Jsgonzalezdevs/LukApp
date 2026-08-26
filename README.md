@@ -1,5 +1,10 @@
 # Portafolio + Ecosistema
 
+> **Versión actual: `v1.0.0`.** Este proyecto se maneja por versiones en formato
+> `V0.0.0` y **todo cambio sube la versión**, por pequeño que sea. La fuente de
+> verdad es [`src/version.ts`](src/version.ts); las reglas están en
+> [CLAUDE.md](CLAUDE.md). Aplica igual a las personas y a los agentes de IA.
+
 Dos aplicaciones en un repositorio, con bundles independientes:
 
 | Ruta | Qué es | Quién entra |

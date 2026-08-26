@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-react';
 import type { Sesion } from '../../data/useSesion';
+import { Estrella } from '../Estrella';
 import { Reveal } from './primitivas';
 import { TituloPalabras } from './adornos';
 
@@ -91,6 +92,10 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
   return (
     <section className="registro" id="registro">
       <Reveal as="header" className="seccion-cabecera registro-cabecera">
+        {/* El cierre de la portada, que es donde de verdad termina la página:
+            el `final-cta` de abajo solo se pinta cuando no hay sesión que
+            cargar, así que el personaje tiene que estar en los dos sitios. */}
+        <Estrella variante="cuerpo" className="cta-estrella" />
         <span className="seccion-etiqueta">Crea tu cuenta</span>
         <TituloPalabras texto="Empieza en menos de un minuto" resaltarUltimas={2} />
         <p className="seccion-sub">

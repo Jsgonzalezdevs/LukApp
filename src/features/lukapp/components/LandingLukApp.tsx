@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
+import { BrandWordmark } from './BrandWordmark';
+import { Estrella } from './Estrella';
 import { Hero } from './landing/Hero';
 import { DemoParser } from './landing/DemoParser';
 import { Funciones } from './landing/Funciones';
@@ -101,7 +103,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       <nav className={`nav-bar ${compacta ? 'compacta' : ''}`}>
         <BarraProgreso />
         <div className="nav-content">
-          <span className="logo">LukApp</span>
+          <BrandWordmark className="logo" />
 
           <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
             {ENLACES.map(({ href, texto }) => (
@@ -153,6 +155,9 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       ) : (
         <section className="final-cta">
           <Reveal>
+            {/* El único sitio de la portada con aire para el personaje entero:
+                despedida, no adorno repetido a lo largo de la página. */}
+            <Estrella variante="cuerpo" className="cta-estrella" />
             <h2>¿Listo?</h2>
             <p>Toma el control de tu dinero desde hoy.</p>
             <button className="btn-primary-lg" onClick={handleGetStarted}>

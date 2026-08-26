@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import { Estrella } from '../Estrella';
 import {
   Bot,
   PiggyBank,
@@ -148,13 +149,17 @@ const MockAnalista: React.FC = () => {
       <span className="mk-titulo">Pregúntale a tus números</span>
       {CHARLA.map((m, i) => (
         <motion.div
-          className={`mk-burbuja ${m.de}`}
+          className={`mk-fila ${m.de}`}
           key={m.texto}
           initial={quieto ? false : { opacity: 0, y: 12, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.15 + i * 0.35 }}
         >
-          {m.texto}
+          {/* Quien responde es la Estrella IA, la misma que atiende dentro de
+              la app: la portada enseña la cara que el usuario se va a
+              encontrar, no un icono genérico de robot. */}
+          {m.de === 'bot' && <Estrella className="mk-estrella" />}
+          <span className={`mk-burbuja ${m.de}`}>{m.texto}</span>
         </motion.div>
       ))}
     </div>
