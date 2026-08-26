@@ -10,6 +10,10 @@ export const TypingText: React.FC<TypingTextProps> = ({ text, speed = 50, classN
   const [displayedText, setDisplayedText] = useState('');
 
   useEffect(() => {
+    setDisplayedText('');
+  }, [text]);
+
+  useEffect(() => {
     if (displayedText.length >= text.length) return;
 
     const timer = setTimeout(() => {

@@ -17,6 +17,7 @@ import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import { Estrella } from './Estrella';
+import { EstrellaSecuencia } from './EstrellaSecuencia';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
@@ -540,7 +541,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             {/* El personaje entero, no un icono: es la única pantalla con
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
-            <Estrella variante="cuerpo" alt="La Estrella IA de LukApp" className="h-28 w-28 shrink-0" />
+            <EstrellaSecuencia size={112} className="shrink-0" />
             <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>

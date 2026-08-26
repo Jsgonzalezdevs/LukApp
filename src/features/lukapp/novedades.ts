@@ -23,6 +23,21 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.0.4',
+    fecha: '2026-08-26',
+    texto: 'La Estrella en el asesor ahora tiene vida propia: saluda, piensa, salta, celebra y respira continuamente mientras esperas respuestas. Nunca se queda quieta.',
+  },
+  {
+    version: '1.0.3',
+    fecha: '2026-08-26',
+    texto: 'La Estrella ahora es un vector animable: sus brazos, piernas y cabeza se mueven con código. Listos para nuevos gestos y expresiones que vienen pronto.',
+  },
+  {
+    version: '1.0.2',
+    fecha: '2026-08-26',
+    texto: 'Efecto de escritura en los tutoriales: los títulos del onboarding ahora se escriben como si los escribiera la Estrella en tiempo real.',
+  },
+  {
     version: '1.0.1',
     fecha: '2026-08-26',
     texto: 'Favicon mejorado: el isotipo sin fondo en vez del icono con fondo, se lee mejor a 32px.',
