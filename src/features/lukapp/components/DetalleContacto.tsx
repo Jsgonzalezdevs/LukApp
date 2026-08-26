@@ -59,8 +59,18 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.25, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.5 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 90 || info.velocity.y > 500) onCerrar();
+        }}
         className="max-h-[88dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
+        <div
+          className="mx-auto -mt-1.5 mb-2 h-1.5 w-10 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-ink-ghost)]"
+          aria-hidden="true"
+        />
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-[20px] font-semibold tracking-tight text-[var(--fin-ink)]">

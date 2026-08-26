@@ -221,9 +221,12 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         </p>
 
         {cuentas.length === 0 ? (
-          <p className="mt-2.5 text-[13px] text-[var(--fin-ink-faint)]">
-            Todavía no tienes cuentas registradas.
-          </p>
+          <div className="mt-2.5 flex items-start gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-bg-soft)] p-3">
+            <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-ink-ghost)]" strokeWidth={1.75} aria-hidden="true" />
+            <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+              Todavía no tienes cuentas registradas. Créalas en Cuentas para marcar cuáles cobran GMF.
+            </p>
+          </div>
         ) : (
           <ul className="mt-2.5 flex flex-col gap-1">
             {cuentas.map((c) => (

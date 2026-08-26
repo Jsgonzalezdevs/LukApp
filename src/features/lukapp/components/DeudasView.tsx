@@ -10,6 +10,7 @@ import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { RippleButton } from './RippleButton';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface DeudasViewProps {
   cajitas: readonly Cajita[];
@@ -119,7 +120,7 @@ const DeudaCard: React.FC<{
             {TIPO_LABELS[cajita.tipo]}
           </p>
           <p className="mt-0.5 text-[28px] font-semibold tabular-nums text-[var(--fin-out)]">
-            {formatCop(saldoCop)}
+            <AnimatedNumber value={saldoCop} format={formatCop} />
           </p>
           <p className="text-[13px] text-[var(--fin-ink-faint)]">debes</p>
         </div>
@@ -360,7 +361,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             Lo que debes
           </h2>
           <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-out)]">
-            {formatCop(total)}
+            <AnimatedNumber value={total} format={formatCop} />
           </p>
           {filas.length > 0 ? (
             <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">

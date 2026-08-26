@@ -92,7 +92,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
           <button
             type="button"
             onClick={onCerrar}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+            className="flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-4 w-4" />
           </button>

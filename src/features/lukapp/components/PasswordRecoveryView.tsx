@@ -51,7 +51,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
   return (
     <div className="mx-auto max-w-md space-y-6 py-6">
       <div className="space-y-2 text-center">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--fin-soft)] mx-auto">
+        <div className="flex h-12 w-12 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] mx-auto">
           <Mail className="h-6 w-6 text-[var(--fin-ink-soft)]" strokeWidth={2} />
         </div>
         <h2 className="text-[20px] font-semibold text-[var(--fin-ink)]">Recuperar contraseña</h2>

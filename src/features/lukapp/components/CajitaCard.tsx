@@ -13,6 +13,7 @@ import type { CajitaMovimiento } from '../data/modelos';
 import { formatCop, formatAmountInput, parseAmountInput, parseSaldoInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { AnimatedNumber } from './AnimatedNumber';
 
 interface CajitaCardProps {
@@ -65,6 +66,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   onEliminar,
 }) => {
   const haptic = useHapticFeedback();
+  const audio = useAudioFeedback();
   const { cajita, saldoCop, pct } = resumen;
   const [accion, setAccion] = useState<Accion | null>(null);
   const otras = destinos.filter((d) => d.id !== cajita.id);
@@ -87,6 +89,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const abrirAccion = (siguiente: Accion) => {
     const misma = accion === siguiente;
     haptic.trigger(misma ? 'light' : 'medium');
+    audio.play(misma ? 'close' : 'selection');
     setAccion(misma ? null : siguiente);
     // "Update balance" starts from what the app currently believes, so the user
     // edits a number instead of retyping one they did not change.
@@ -153,6 +156,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           type="button"
           onClick={() => {
             haptic.trigger('warning');
+            audio.play('warning');
             setConfirmandoBorrado((v) => !v);
           }}
           aria-label={`${T.eliminar}: ${cajita.nombre}`}
@@ -221,6 +225,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               type="button"
               onClick={() => {
                 haptic.trigger('heavy');
+                audio.play('heavy');
                 onEliminar(cajita.id);
               }}
               className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-white"
@@ -231,6 +236,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               type="button"
               onClick={() => {
                 haptic.trigger('light');
+                audio.play('close');
                 setConfirmandoBorrado(false);
               }}
               className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
@@ -348,6 +354,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             type="button"
             onClick={() => {
               haptic.trigger('light');
+              audio.play(abierto ? 'close' : 'open');
               setAbierto((v) => !v);
             }}
             aria-expanded={abierto}

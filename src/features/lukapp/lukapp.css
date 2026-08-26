@@ -28,6 +28,8 @@
      below, so this alpha is what lets that blur actually read as glass instead
      of a flat colour with a fancy name. */
   --fin-card: rgb(255 255 255 / 0.72);
+  --fin-skeleton-base: rgb(0 0 0 / 0.06);
+  --fin-skeleton-shine: rgb(0 0 0 / 0.1);
   --fin-soft: #f5f3f0;
   --fin-line: #ede9e3;
   --fin-scrim: rgb(28 25 23 / 0.4);
@@ -173,6 +175,8 @@
     --fin-bg: #1a1817;
     --fin-bg-blur: rgb(26 24 23 / 0.85);
     --fin-card: rgb(45 42 40 / 0.6);
+    --fin-skeleton-base: rgb(255 255 255 / 0.06);
+    --fin-skeleton-shine: rgb(255 255 255 / 0.14);
     --fin-soft: #2c2a28;
     --fin-line: #35322f;
     --fin-scrim: rgb(0 0 0 / 0.6);
@@ -234,6 +238,8 @@
   --fin-bg: #1a1817;
   --fin-bg-blur: rgb(26 24 23 / 0.85);
   --fin-card: rgb(45 42 40 / 0.6);
+  --fin-skeleton-base: rgb(255 255 255 / 0.06);
+  --fin-skeleton-shine: rgb(255 255 255 / 0.14);
   --fin-soft: #2c2a28;
   --fin-line: #35322f;
   --fin-scrim: rgb(0 0 0 / 0.6);
@@ -439,4 +445,32 @@ input[type='time'] {
    texto de la fecha queda descentrado dentro del campo. */
 input[type='date']::-webkit-date-and-time-value {
   text-align: left;
+}
+
+/* ------------------------------------------------------------ skeleton --- */
+.fin-skeleton {
+  background: linear-gradient(
+    100deg,
+    var(--fin-skeleton-base) 40%,
+    var(--fin-skeleton-shine) 50%,
+    var(--fin-skeleton-base) 60%
+  );
+  background-size: 200% 100%;
+  animation: fin-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fin-skeleton {
+    animation: none;
+    background: var(--fin-skeleton-base);
+  }
+}
+
+@keyframes fin-skeleton-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
 }

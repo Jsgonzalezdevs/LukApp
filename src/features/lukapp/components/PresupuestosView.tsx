@@ -167,8 +167,8 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
               onChange={(e) => onCambiarAlertasActivas(e.target.checked)}
               className="peer sr-only"
             />
-            <span className="absolute inset-0 rounded-full bg-[var(--fin-soft)] transition-colors peer-checked:bg-[var(--fin-accent)]" />
-            <span className="absolute left-1 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+            <span className="absolute inset-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] transition-colors peer-checked:bg-[var(--fin-accent)]" />
+            <span className="absolute left-1 h-5 w-5 rounded-[var(--fin-r-pill)] bg-white shadow transition-transform peer-checked:translate-x-5" />
           </span>
         </label>
 

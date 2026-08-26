@@ -181,9 +181,13 @@ export const PanelAtajos: React.FC = () => {
         {llaves === null ? (
           <p className="text-[13px] text-[var(--fin-ink-faint)]">Cargando…</p>
         ) : vivas.length === 0 ? (
-          <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-            Todavía no tienes ninguna llave.
-          </p>
+          <div className="flex flex-col items-center gap-2 py-4 text-center">
+            <KeyRound className="h-8 w-8 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
+            <p className="text-[15px] font-semibold text-[var(--fin-ink)]">Todavía no tienes ninguna llave.</p>
+            <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+              Crea una arriba para conectar el Atajo de iOS.
+            </p>
+          </div>
         ) : (
           <ul className="flex flex-col gap-3">
             {vivas.map((l) => (

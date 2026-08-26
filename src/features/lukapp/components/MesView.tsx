@@ -12,6 +12,7 @@ import { DetalleMes } from './DetalleMes';
 import { ResumenWrapped } from './ResumenWrapped';
 import { TendenciasView } from './TendenciasView';
 import { RippleButton } from './RippleButton';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface MesViewProps {
   /** El período activo -- 'YYYY-MM' si la frecuencia es mensual sin desfase
@@ -172,10 +173,11 @@ export const MesView: React.FC<MesViewProps> = ({
             color: positivo ? 'var(--fin-in)' : 'var(--fin-out)',
           }}
         >
-          {formatCop(totals.balance)}
+          <AnimatedNumber value={totals.balance} format={formatCop} />
         </p>
         <p className="mt-2 text-center text-[15px] text-[var(--fin-ink-soft)] tabular-nums">
-          Entró {formatCop(totals.ingresos)} · Salió {formatCop(totals.gastos)}
+          Entró <AnimatedNumber value={totals.ingresos} format={formatCop} /> · Salió{' '}
+          <AnimatedNumber value={totals.gastos} format={formatCop} />
         </p>
       </div>
 

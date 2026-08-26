@@ -214,7 +214,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       <div className="flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
-            className="h-2 w-2 shrink-0 rounded-full"
+            className="h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)]"
             style={{ backgroundColor: estadoSync.color }}
             aria-hidden="true"
           />

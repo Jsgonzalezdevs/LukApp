@@ -121,7 +121,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
  ya no hay más que decir, y un punto latiendo ahí se vería raro. */}
                 {fase === 'escuchando' ? (
                   <motion.span
-                    className="ml-1 inline-block h-3 w-3 rounded-full bg-white/70 align-middle"
+                    className="ml-1 inline-block h-3 w-3 rounded-[var(--fin-r-pill)] bg-white/70 align-middle"
                     animate={{ opacity: [0.3, 1, 0.3] }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
                     aria-hidden="true"
@@ -148,7 +148,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                     [0, 1, 2].map((i) => (
                       <motion.span
                         key={i}
-                        className="h-3 w-3 rounded-full bg-white/80"
+                        className="h-3 w-3 rounded-[var(--fin-r-pill)] bg-white/80"
                         animate={{ y: [0, -10, 0] }}
                         transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
                       />
@@ -159,7 +159,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                       return (
                         <motion.span
                           key={i}
-                          className="w-2 rounded-full bg-white"
+                          className="w-2 rounded-[var(--fin-r-pill)] bg-white"
                           animate={{ height: 14 + base * nivelAudio * 46 + base * 10 }}
                           transition={{ duration: 0.09, ease: 'easeOut' }}
                         />
@@ -180,7 +180,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
               onClick={onCancelar}
               aria-label="Cancelar dictado"
               whileTap={{ scale: 0.9 }}
-              className="flex h-14 w-14 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm"
+              className="flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-pill)] bg-white/20 text-white backdrop-blur-sm"
             >
               <X className="h-6 w-6" strokeWidth={2.5} aria-hidden="true" />
             </motion.button>
@@ -197,7 +197,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                   exit={{ opacity: 0, scale: 0.7, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                   transition={{ duration: 0.2 }}
-                  className="flex h-16 w-16 items-center justify-center rounded-full text-white shadow-[0_10px_28px_-8px_rgb(0_0_0/0.35)]"
+                  className="flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(0_0_0/0.35)]"
                   style={{ backgroundColor: 'var(--fin-out)' }}
                 >
                   <Check className="h-7 w-7" strokeWidth={3} aria-hidden="true" />

@@ -51,7 +51,7 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
             initial={{ scale: 0, opacity: 0.6 }}
             animate={{ scale: 4, opacity: 0 }}
             transition={{ duration: 0.6 }}
-            className="pointer-events-none absolute block h-2 w-2 rounded-full"
+            className="pointer-events-none absolute block h-2 w-2 rounded-[var(--fin-r-pill)]"
             style={{
               backgroundColor: rippleColor,
               left: x,

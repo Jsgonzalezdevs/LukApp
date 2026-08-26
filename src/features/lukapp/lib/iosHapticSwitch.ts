@@ -27,34 +27,47 @@
  * En cualquier otro navegador (Android, escritorio, iOS viejo) el atributo
  * `switch` no existe: el checkbox se comporta como uno normal, invisible, sin
  * ningún efecto -- `navigator.vibrate` de siempre sigue siendo el camino ahí.
+ *
+ * Dos detalles que faltaban y que en la práctica hacen que iOS ignore el
+ * truco por completo:
+ *
+ * 1. WebKit solo dibuja el control como switch NATIVO (con su haptic
+ *    incluido) cuando el checkbox está asociado a un `<label>` -- suelto, sin
+ *    label, algunos iOS lo siguen tratando como checkbox de toda la vida, sin
+ *    vibración. Por eso ahora se crea envuelto en su propio `<label>`.
+ * 2. Un elemento de 1x1px a veces cae por debajo del tamaño mínimo que iOS
+ *    exige para montar el control nativo de verdad (no solo pintarlo). Se
+ *    sube a un tamaño de toque normal (24x24) y se sigue ocultando con
+ *    `opacity: 0` + posición fuera de pantalla, nunca con `display: none`.
  */
 
-let switchEl: HTMLInputElement | null = null;
+let switchInput: HTMLInputElement | null = null;
 
 const obtenerSwitch = (): HTMLInputElement | null => {
   if (typeof document === 'undefined') return null;
-  if (switchEl && document.body.contains(switchEl)) return switchEl;
+  if (switchInput && document.body.contains(switchInput)) return switchInput;
 
-  const el = document.createElement('input');
-  el.type = 'checkbox';
-  el.setAttribute('switch', '');
-  el.setAttribute('aria-hidden', 'true');
-  el.tabIndex = -1;
-  // Visualmente oculto pero renderizado de verdad -- `display: none` puede
-  // hacer que el navegador ni se moleste en tratarlo como interactivo.
-  Object.assign(el.style, {
+  const label = document.createElement('label');
+  Object.assign(label.style, {
     position: 'fixed',
     left: '-9999px',
     top: '0',
-    width: '1px',
-    height: '1px',
+    width: '24px',
+    height: '24px',
     overflow: 'hidden',
     opacity: '0',
     pointerEvents: 'none',
   });
+  label.setAttribute('aria-hidden', 'true');
 
-  document.body.appendChild(el);
-  switchEl = el;
+  const el = document.createElement('input');
+  el.type = 'checkbox';
+  el.setAttribute('switch', '');
+  el.tabIndex = -1;
+
+  label.appendChild(el);
+  document.body.appendChild(label);
+  switchInput = el;
   return el;
 };
 

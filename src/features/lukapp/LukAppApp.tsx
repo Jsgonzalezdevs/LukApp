@@ -26,6 +26,7 @@ import { RepositorioIndexedDB, soportaIndexedDB } from './data/indexeddb';
 import { RepositorioConCola } from './data/repositorioConCola';
 import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
+import { SkeletonInicio } from './components/Skeleton';
 import { AnalistaView } from './components/AnalistaView';
 import { AsesorView } from './components/AsesorView';
 import { ES_PASIVO } from './data/modelos';
@@ -155,10 +156,8 @@ export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
 
   if (sesion.estado.modo === 'cargando') {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
-        <p className="text-[17px] font-semibold text-[var(--fin-ink-faint)]">
-          {COPY.almacen.cargando}
-        </p>
+      <div className="bg-[var(--fin-bg)]">
+        <SkeletonInicio />
       </div>
     );
   }
@@ -594,8 +593,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   if (almacen.cargando) {
     return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
-        <p className="text-[15px] text-[var(--fin-ink-faint)]">{COPY.almacen.cargando}</p>
+      <div className="bg-[var(--fin-bg)]">
+        <SkeletonInicio />
       </div>
     );
   }
@@ -606,6 +605,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         section={section}
         onSectionChange={setSection}
         onBack={onBack}
+        onRefrescar={almacen.recargar}
         accion={
           <BotonAnotar
             onDictado={handleSubmit}

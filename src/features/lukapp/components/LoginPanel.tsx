@@ -170,7 +170,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           opacity: [0.35, 0.6, 0.35],
         }}
         transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-        className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-amber-500/25 via-sky-500/15 to-transparent blur-[120px]"
+        className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-[var(--fin-r-pill)] bg-gradient-to-br from-amber-500/25 via-sky-500/15 to-transparent blur-[120px]"
         aria-hidden="true"
       />
       <motion.div
@@ -180,7 +180,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           opacity: [0.3, 0.55, 0.3],
         }}
         transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-        className="pointer-events-none absolute -bottom-40 -right-40 h-[550px] w-[550px] rounded-full bg-gradient-to-tl from-emerald-500/25 via-amber-500/15 to-transparent blur-[130px]"
+        className="pointer-events-none absolute -bottom-40 -right-40 h-[550px] w-[550px] rounded-[var(--fin-r-pill)] bg-gradient-to-tl from-emerald-500/25 via-amber-500/15 to-transparent blur-[130px]"
         aria-hidden="true"
       />
 
@@ -192,7 +192,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             if (onVolverInicio) onVolverInicio();
             else window.location.href = '/';
           }}
-          className="group flex items-center gap-2 rounded-full border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-3.5 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
+          className="group flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-3.5 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
           title="Volver a la página principal"
           aria-label="Volver al inicio"
         >

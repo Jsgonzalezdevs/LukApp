@@ -140,7 +140,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               >
                 {formatCop(saldo)}
               </span>
-              <span className="flex items-center gap-1 rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[12px] font-medium text-[var(--fin-ink-soft)]">
+              <span className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[12px] font-medium text-[var(--fin-ink-soft)]">
                 <Pencil className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
                 Editar
               </span>
@@ -234,7 +234,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         >
           <span>Historial de ajustes</span>
           <span className="flex items-center gap-2 text-[var(--fin-ink-faint)]">
-            <span className="rounded-full bg-[var(--fin-line)] px-2 py-0.5 text-[12px] font-semibold">
+            <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-line)] px-2 py-0.5 text-[12px] font-semibold">
               {propios.length}
             </span>
             <ChevronDown
@@ -281,7 +281,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 type="button"
                 onClick={() => { setTransfiriendo(false); setDestinoId(''); setMontoTexto(''); }}
                 aria-label="Cerrar"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
+                className="flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
               >
                 <X className="h-4 w-4" strokeWidth={2.5} />
               </button>

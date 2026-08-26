@@ -14,6 +14,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
@@ -102,6 +103,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
   const haptic = useHapticFeedback();
+  const audio = useAudioFeedback();
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const [compartidoId, setCompartidoId] = useState<string | null>(null);
   const [hablandoId, setHablandoId] = useState<string | null>(null);
@@ -135,6 +137,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
   const handleFeedback = (msgId: string, tipo: 'like' | 'dislike') => {
     haptic.trigger('selection');
+    audio.play('selection');
     setFeedback((prev) => {
       const next = new Map(prev);
       if (next.get(msgId) === tipo) {
@@ -152,6 +155,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       setCopiadoId(msgId);
       mostrarToast('✓ Copiado al portapapeles');
       haptic.trigger('light');
+      audio.play('click');
       setTimeout(() => {
         setCopiadoId((prev) => (prev === msgId ? null : prev));
       }, 2000);
@@ -210,10 +214,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     setHablandoId(msgId);
     window.speechSynthesis.speak(utterance);
     haptic.trigger('light');
+    audio.play('click');
   };
 
   const handleCompartir = async (msgId: string, texto: string) => {
     haptic.trigger('medium');
+    audio.play('click');
     const clean = limpiarTextoChat(texto);
     const textoCompartir = `💡 *Consejo de mi Asesor en LukApp*:\n\n"${clean}"\n\n━━━━━━━━━━━━━━━━━━━━\n🚀 Estoy gestionando mis finanzas con *LukApp* (control de gastos por voz, metas y asistente IA).\n👉 Pruébalo gratis en: https://lukapp.app`;
 
@@ -247,6 +253,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
   const handleRegenerar = (botMsgId: string) => {
     haptic.trigger('medium');
+    audio.play('click');
     const idx = messages.findIndex((m) => m.id === botMsgId);
     if (idx === -1) return;
     for (let i = idx - 1; i >= 0; i--) {
@@ -774,7 +781,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[12px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[12px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
         >
           <span>{toast}</span>
         </div>

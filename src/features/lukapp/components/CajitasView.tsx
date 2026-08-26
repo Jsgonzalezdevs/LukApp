@@ -10,6 +10,7 @@ import { resumenDeCajitas } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
 import { RippleButton } from './RippleButton';
+import { AnimatedNumber } from './AnimatedNumber';
 
 interface CajitasViewProps {
   /** Attributed ledger entries, so a balance reflects what was recorded. */
@@ -115,7 +116,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             {esCuenta ? COPY.cuentas.total : COPY.cajitas.total}
           </h2>
           <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-ink)]">
-            {formatCop(total)}
+            <AnimatedNumber value={total} format={formatCop} />
           </p>
           {resumenes.length > 0 ? (
             <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">

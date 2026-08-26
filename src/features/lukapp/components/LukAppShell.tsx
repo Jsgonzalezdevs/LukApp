@@ -2,6 +2,9 @@ import React from 'react';
 import { SECTIONS } from '../sections';
 import type { SectionId } from '../sections';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from './PullToRefreshIndicator';
 
 interface LukAppShellProps {
   section: SectionId;
@@ -10,6 +13,8 @@ interface LukAppShellProps {
   accion?: React.ReactNode;
   onBack?: () => void;
   children: React.ReactNode;
+  /** Jalar hacia abajo desde el tope llama esto. Sin él, el gesto no hace nada. */
+  onRefrescar?: () => Promise<void> | void;
 }
 
 /**
@@ -37,19 +42,42 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
   accion,
   onBack,
   children,
+  onRefrescar,
 }) => {
   const haptic = useHapticFeedback();
+  const audio = useAudioFeedback();
 
   const handleSectionChange = (newSection: SectionId) => {
     haptic.trigger('selection');
+    audio.play('selection');
     onSectionChange(newSection);
   };
+
+  const pull = usePullToRefresh(async () => {
+    if (!onRefrescar) return;
+    haptic.trigger('light');
+    await onRefrescar();
+    haptic.trigger('selection');
+    audio.play('selection');
+  });
 
   return (
   <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased">
     {/* El contenido. El hueco de abajo deja sitio para la barra y para la franja
  del iPhone, y así la última fila de la lista nunca queda tapada. */}
-    <main className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]">
+    <div className="relative">
+    <PullToRefreshIndicator
+      desplazamiento={pull.desplazamiento}
+      progreso={pull.progreso}
+      refrescando={pull.refrescando}
+    />
+    <main
+      className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
+      style={{
+        transform: pull.desplazamiento > 0 ? `translateY(${pull.desplazamiento}px)` : undefined,
+        transition: pull.refrescando ? 'transform 0.2s ease-out' : undefined,
+      }}
+    >
       {onBack ? (
         <button
           type="button"
@@ -75,6 +103,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
       ) : null}
       {children}
     </main>
+    </div>
 
     {accion}
 

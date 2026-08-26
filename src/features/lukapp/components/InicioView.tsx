@@ -292,7 +292,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               <button
                 type="button"
                 onClick={() => toggleMinimizado(false)}
-                className="group inline-flex items-center gap-2 rounded-full border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)] shadow-sm transition-all hover:border-[var(--fin-accent)]/45 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                className="group inline-flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)] shadow-sm transition-all hover:border-[var(--fin-accent)]/45 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
               >
                 <Sparkles className="h-3.5 w-3.5 text-[var(--fin-accent)]" />
                 <span>Tip del Asesor: <strong className="font-semibold text-[var(--fin-ink)]">{insightActual.titulo}</strong></span>
@@ -309,7 +309,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               />
               <div className="flex items-start gap-2.5">
                 <span
-                  className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                  className="mt-1 h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)]"
                   style={{
                     backgroundColor:
                       insightActual.tono === 'atento'
@@ -349,7 +349,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleAccionInsight(insightActual)}
-                      className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-accent)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--fin-accent)] transition-colors hover:bg-[var(--fin-accent)]/18"
+                      className="inline-flex items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--fin-accent)] transition-colors hover:bg-[var(--fin-accent)]/18"
                     >
                       <MessageSquare className="h-3 w-3" />
                       <span>Preguntarle al Asesor sobre esto</span>

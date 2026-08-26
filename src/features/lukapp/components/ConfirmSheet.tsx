@@ -22,6 +22,7 @@ import { analizarAnomalias } from '../lib/senalesAvanzadas';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { RippleButton } from './RippleButton';
 
 export interface ConfirmDraft {
@@ -96,6 +97,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
 }) => {
   const editando = modo === 'editar';
   const haptic = useHapticFeedback();
+  const audio = useAudioFeedback();
   const [amountText, setAmountText] = useState(() => formatAmountInput(parsed.amount));
   const [fecha, setFecha] = useState(fechaInicial ?? parsed.dateOverride ?? '');
   const [kind, setKind] = useState<TxKind>(parsed.kind);
@@ -148,6 +150,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
       return;
     }
     haptic.trigger('success');
+    audio.play('success');
     onSave({
       kind,
       amountCop,
@@ -204,6 +207,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             type="button"
             onClick={() => {
               haptic.trigger('light');
+              audio.play('close');
               onCancel();
             }}
             aria-label={COPY.confirm.cancel}
@@ -282,6 +286,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   type="button"
                   onClick={() => {
                     haptic.trigger('selection');
+                    audio.play('selection');
                     setKind(option.value);
                   }}
                   aria-pressed={active}
@@ -321,6 +326,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   type="button"
                   onClick={() => {
                     haptic.trigger('selection');
+                    audio.play('selection');
                     setCategory(option);
                   }}
                   aria-pressed={active}

@@ -21,7 +21,7 @@ export const NovedadesCard: React.FC<NovedadesCardProps> = ({ novedad, onCerrar 
         type="button"
         onClick={onCerrar}
         aria-label="Cerrar"
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
       >
         <X className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
       </button>

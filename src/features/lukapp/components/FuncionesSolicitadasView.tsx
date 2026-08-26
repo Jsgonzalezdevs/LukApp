@@ -221,7 +221,7 @@ export const FuncionesSolicitadasView: React.FC = () => {
                       setTitulo('');
                       setDescripcion('');
                     }}
-                    className="flex h-6 w-6 items-center justify-center rounded-full text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)]"
+                    className="flex h-6 w-6 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)]"
                     aria-label="Cerrar"
                   >
                     <X className="h-4 w-4" strokeWidth={2.5} />

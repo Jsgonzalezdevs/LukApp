@@ -39,7 +39,7 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
           <button
             type="button"
             onClick={onCerrar}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+            className="flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -137,7 +137,7 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
                     }
                   }
                 }}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-[var(--fin-r-pill)] border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                   recordatorio.activo ? 'bg-amber-500' : 'bg-[var(--fin-line)]'
                 }`}
                 role="switch"
@@ -145,7 +145,7 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
               >
                 <span
                   aria-hidden="true"
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-[var(--fin-r-pill)] bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                     recordatorio.activo ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
@@ -227,7 +227,7 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
                             {hito.titulo}
                           </p>
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10.5px] font-extrabold ${
+                            className={`rounded-[var(--fin-r-pill)] px-2 py-0.5 text-[10.5px] font-extrabold ${
                               alcanzado
                                 ? 'bg-amber-500 text-white'
                                 : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'

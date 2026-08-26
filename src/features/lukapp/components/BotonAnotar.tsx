@@ -156,14 +156,14 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
 
       {/* Floating Scanning Progress Toast */}
       {isScanning ? (
-        <div className="pointer-events-auto mb-1 flex items-center gap-2.5 rounded-full border border-amber-500/30 bg-[var(--fin-card)] px-4 py-2 shadow-xl backdrop-blur-xl animate-pulse">
+        <div className="pointer-events-auto mb-1 flex items-center gap-2.5 rounded-[var(--fin-r-pill)] border border-amber-500/30 bg-[var(--fin-card)] px-4 py-2 shadow-xl backdrop-blur-xl animate-pulse">
           <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
           <span className="text-[13px] font-semibold text-[var(--fin-ink)]">
             Escaneando comprobante… {Math.round(ocrProgress * 100)}%
           </span>
         </div>
       ) : ocrError ? (
-        <div className="pointer-events-auto mb-1 flex items-center gap-2 rounded-full border border-red-500/30 bg-[var(--fin-card)] px-4 py-2 text-[12.5px] font-medium text-red-400 shadow-xl backdrop-blur-xl">
+        <div className="pointer-events-auto mb-1 flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-red-500/30 bg-[var(--fin-card)] px-4 py-2 text-[12.5px] font-medium text-red-400 shadow-xl backdrop-blur-xl">
           {ocrError}
         </div>
       ) : null}
@@ -219,7 +219,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         <div className="relative">
           {dictation.status === 'blocked' && (
             <span
-              className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--fin-warn)] text-white text-[10px] font-bold"
+              className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-warn)] text-white text-[10px] font-bold"
               aria-label="Micrófono bloqueado"
               title="Permiso del micrófono denegado"
             >

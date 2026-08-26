@@ -45,7 +45,7 @@ const Marco: React.FC<{
 }> = ({ icono, etiqueta, children, detalle, color = '#f5f3f0' }) => (
   <div className="flex h-full flex-col items-center justify-center gap-5 px-8 text-center">
     <span
-      className="flex h-16 w-16 items-center justify-center rounded-full"
+      className="flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)]"
       style={{ backgroundColor: tint(color, 0.16), color }}
       aria-hidden="true"
     >
@@ -323,7 +323,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
           {tarjetas.map((_, i) => (
             <span
               key={i}
-              className="h-1 flex-1 rounded-full transition-colors"
+              className="h-1 flex-1 rounded-[var(--fin-r-pill)] transition-colors"
               style={{ backgroundColor: i <= indice ? '#ffffff' : 'rgb(255 255 255 / 0.25)' }}
             />
           ))}
@@ -332,7 +332,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
           type="button"
           onClick={onCerrar}
           aria-label="Cerrar"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-white/10 text-white"
         >
           <X className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
         </button>
