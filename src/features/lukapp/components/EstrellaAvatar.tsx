@@ -1,14 +1,32 @@
 import React from 'react';
 
+export type EstrellaEmotion =
+  | 'happy'
+  | 'thinking'
+  | 'surprised'
+  | 'sad'
+  | 'excited'
+  | 'sleepy'
+  | 'wink'
+  | 'skeptical'
+  | 'love'
+  | 'dizzy';
+
 interface EstrellaAvatarProps {
   className?: string;
   size?: number;
-  emotion?: 'happy' | 'thinking' | 'surprised' | 'sad';
+  emotion?: EstrellaEmotion;
   /** Grados AÑADIDOS a la pose de reposo de cada brazo. 0 = reposo. */
   armRotation?: { left: number; right: number };
   /** Grados AÑADIDOS a la pierna recta. 0 = reposo. */
   legRotation?: { left: number; right: number };
   headTilt?: number;
+  /** Mueve la mirada aparte de lo que diga la emoción (para "mirar alrededor"). */
+  eyeOverride?: { dx: number; dy: number };
+  /** Sube/baja todo el personaje (flotar). En px del propio viewBox. */
+  bodyBob?: number;
+  /** Rota TODO el personaje, no solo la cabeza (para girar/marearse). */
+  bodyRotate?: number;
 }
 
 /* Geometría trazada píxel a píxel del arte oficial (public/brand/lukapp-estrella.png):
@@ -48,6 +66,56 @@ const PIERNA_DERECHA =
 const LILA_CUERPO = '#735AC2';
 const MORADO_EXTREMIDADES = '#4A0182';
 
+/* Pivotes de cada extremidad, en coordenadas absolutas del viewBox. Un brazo
+   que gira mucho (el saludo, celebrar) puede alejar su base del sitio donde
+   la estrella lo tapa en reposo -- la estrella no rota con él, así que a
+   ángulos grandes se abría un hueco entre los dos. La solución es un
+   círculo centrado EXACTAMENTE en el pivote: al rotar sobre su propio
+   centro no se mueve ni un píxel, así que sella la unión sin importar el
+   ángulo, además de la prolongación que ya tapaba el corte del trazado. */
+const PIVOTE_BRAZO_IZQ = { x: 45, y: 68 };
+const PIVOTE_BRAZO_DER = { x: 150, y: 90 };
+const PIVOTE_PIERNA_IZQ = { x: 89, y: 124 };
+const PIVOTE_PIERNA_DER = { x: 114, y: 113 };
+const PIVOTE_CABEZA = { x: 104, y: 71 };
+
+const OJO_IZQ = { x: 77.4, y: 76 };
+const OJO_DER = { x: 123.1, y: 77 };
+const OJO_R = 12;
+
+interface EyeConfig {
+  dx: number;
+  dy: number;
+  scale: number;
+  /** 0 = abierto, 1 = cerrado. Un párpado del color del cuerpo que baja. */
+  lidL: number;
+  lidR: number;
+}
+
+const EMOCIONES: Record<EstrellaEmotion, { eye: EyeConfig; mouth: string }> = {
+  // Mirada al centro y un poco arriba -- no sesgada a un lado, que se lea
+  // atenta y despierta en vez de "mirando para otro lado".
+  happy: { eye: { dx: 0, dy: -1, scale: 1, lidL: 0, lidR: 0 }, mouth: 'M 93 90 Q 100.5 95 108 90' },
+  thinking: { eye: { dx: -2.5, dy: -3, scale: 1, lidL: 0, lidR: 0 }, mouth: 'M 91 92 Q 100.5 87 110 92' },
+  surprised: {
+    eye: { dx: 0, dy: -1, scale: 1.3, lidL: 0, lidR: 0 },
+    mouth: 'M 96 87 A 5 6 0 1 0 105 87 A 5 6 0 1 0 96 87',
+  },
+  sad: { eye: { dx: 0, dy: 2, scale: 0.9, lidL: 0.18, lidR: 0.18 }, mouth: 'M 93 96 Q 100.5 89 108 96' },
+  excited: {
+    eye: { dx: 0, dy: -2, scale: 1.2, lidL: 0, lidR: 0 },
+    mouth: 'M 90 88 Q 100.5 103 111 88 Q 100.5 97 90 88',
+  },
+  sleepy: { eye: { dx: 0, dy: 0, scale: 1, lidL: 0.55, lidR: 0.55 }, mouth: 'M 95 92 Q 100.5 94 106 92' },
+  wink: { eye: { dx: 2, dy: -1, scale: 1, lidL: 1, lidR: 0 }, mouth: 'M 93 90 Q 100.5 97 108 90' },
+  skeptical: { eye: { dx: -2, dy: 0, scale: 0.85, lidL: 0, lidR: 0.4 }, mouth: 'M 94 92 L 107 90' },
+  love: {
+    eye: { dx: 0, dy: -1, scale: 1.25, lidL: 0, lidR: 0 },
+    mouth: 'M 90 88 Q 100.5 103 111 88 Q 100.5 97 90 88',
+  },
+  dizzy: { eye: { dx: 0, dy: 0, scale: 0.8, lidL: 0, lidR: 0 }, mouth: 'M 92 93 Q 100.5 88 109 93' },
+};
+
 export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
   className = '',
   size = 200,
@@ -55,22 +123,15 @@ export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
   armRotation = { left: 0, right: 0 },
   legRotation = { left: 0, right: 0 },
   headTilt = 0,
+  eyeOverride,
+  bodyBob = 0,
+  bodyRotate = 0,
 }) => {
-  const mouthPaths = {
-    happy: 'M 93 90 Q 100.5 95 108 90',
-    thinking: 'M 91 92 Q 100.5 87 110 92',
-    surprised: 'M 96 87 A 5 6 0 1 0 105 87 A 5 6 0 1 0 96 87',
-    sad: 'M 93 96 Q 100.5 89 108 96',
-  };
-
-  const eyeStates = {
-    happy: { pupilOffset: 2.5, scale: 1 },
-    thinking: { pupilOffset: -2.5, scale: 1 },
-    surprised: { pupilOffset: 0, scale: 1.15 },
-    sad: { pupilOffset: 2.5, scale: 0.9 },
-  };
-
-  const eyeState = eyeStates[emotion];
+  const config = EMOCIONES[emotion];
+  const dx = eyeOverride?.dx ?? config.eye.dx;
+  const dy = eyeOverride?.dy ?? config.eye.dy;
+  const { scale, lidL, lidR } = config.eye;
+  const pupilR = 10 * scale;
 
   return (
     <svg
@@ -81,115 +142,184 @@ export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
       style={{ overflow: 'visible' }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Brazo izquierdo (detrás del cuerpo, entra por la muesca de la estrella).
-          El trazado real solo cubre la parte VISIBLE en el PNG -- su base
-          termina en un corte irregular justo donde la tapaba la estrella. Al
-          rotar, ese corte quedaría expuesto y se vería roto, así que se suma
-          una prolongación (una línea gruesa de puntas redondas) que se mete
-          bien adentro del cuerpo y viaja pegada al brazo en la misma <g>,
-          para que ningún ángulo de la animación deje ver el corte. */}
       <g
         style={{
-          transformOrigin: '45px 68px',
-          transform: `rotate(${armRotation.left}deg)`,
+          transformOrigin: '104px 105px',
+          transform: `translateY(${bodyBob}px) rotate(${bodyRotate}deg)`,
           transformBox: 'view-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
-        <line
-          x1={45}
-          y1={68}
-          x2={93.5}
-          y2={93.9}
-          stroke={MORADO_EXTREMIDADES}
-          strokeWidth={16}
-          strokeLinecap="round"
-        />
-        <path d={BRAZO_IZQUIERDO} fill={MORADO_EXTREMIDADES} />
-      </g>
+        {/* Brazo izquierdo (detrás del cuerpo, entra por la muesca de la estrella).
+            El trazado real solo cubre la parte VISIBLE en el PNG -- su base
+            termina en un corte irregular justo donde la tapaba la estrella. Al
+            rotar, ese corte quedaría expuesto y se vería roto, así que se suma
+            una prolongación (línea gruesa de puntas redondas) MÁS un círculo
+            centrado en el propio pivote -- ese círculo no se mueve al rotar,
+            así que sella la unión incluso en ángulos grandes como el saludo. */}
+        <g
+          style={{
+            transformOrigin: `${PIVOTE_BRAZO_IZQ.x}px ${PIVOTE_BRAZO_IZQ.y}px`,
+            transform: `rotate(${armRotation.left}deg)`,
+            transformBox: 'view-box',
+            transition: 'transform 0.3s ease-out',
+          }}
+        >
+          <circle cx={PIVOTE_BRAZO_IZQ.x} cy={PIVOTE_BRAZO_IZQ.y} r={13} fill={MORADO_EXTREMIDADES} />
+          <line
+            x1={PIVOTE_BRAZO_IZQ.x}
+            y1={PIVOTE_BRAZO_IZQ.y}
+            x2={93.5}
+            y2={93.9}
+            stroke={MORADO_EXTREMIDADES}
+            strokeWidth={16}
+            strokeLinecap="round"
+          />
+          <path d={BRAZO_IZQUIERDO} fill={MORADO_EXTREMIDADES} />
+        </g>
 
-      {/* Brazo derecho: mismo criterio que el izquierdo. */}
-      <g
-        style={{
-          transformOrigin: '150px 90px',
-          transform: `rotate(${armRotation.right}deg)`,
-          transformBox: 'view-box',
-          transition: 'transform 0.3s ease-out',
-        }}
-      >
-        <line
-          x1={150}
-          y1={90}
-          x2={102.5}
-          y2={62.3}
-          stroke={MORADO_EXTREMIDADES}
-          strokeWidth={16}
-          strokeLinecap="round"
-        />
-        <path d={BRAZO_DERECHO} fill={MORADO_EXTREMIDADES} />
-      </g>
+        {/* Brazo derecho: mismo criterio que el izquierdo. */}
+        <g
+          style={{
+            transformOrigin: `${PIVOTE_BRAZO_DER.x}px ${PIVOTE_BRAZO_DER.y}px`,
+            transform: `rotate(${armRotation.right}deg)`,
+            transformBox: 'view-box',
+            transition: 'transform 0.3s ease-out',
+          }}
+        >
+          <circle cx={PIVOTE_BRAZO_DER.x} cy={PIVOTE_BRAZO_DER.y} r={13} fill={MORADO_EXTREMIDADES} />
+          <line
+            x1={PIVOTE_BRAZO_DER.x}
+            y1={PIVOTE_BRAZO_DER.y}
+            x2={102.5}
+            y2={62.3}
+            stroke={MORADO_EXTREMIDADES}
+            strokeWidth={16}
+            strokeLinecap="round"
+          />
+          <path d={BRAZO_DERECHO} fill={MORADO_EXTREMIDADES} />
+        </g>
 
-      {/* Cabeza: estrella + cara */}
-      <g
-        style={{
-          transformOrigin: '104px 71px',
-          transform: `rotate(${headTilt}deg)`,
-          transformBox: 'view-box',
-          transition: 'transform 0.3s ease-out',
-        }}
-      >
-        <path d={CUERPO_ESTRELLA} fill={LILA_CUERPO} />
+        {/* Cabeza: estrella + cara */}
+        <g
+          style={{
+            transformOrigin: `${PIVOTE_CABEZA.x}px ${PIVOTE_CABEZA.y}px`,
+            transform: `rotate(${headTilt}deg)`,
+            transformBox: 'view-box',
+            transition: 'transform 0.3s ease-out',
+          }}
+        >
+          <path d={CUERPO_ESTRELLA} fill={LILA_CUERPO} />
 
-        <circle cx={77.4} cy={76} r={12} fill="white" />
-        <circle
-          cx={77.4 + eyeState.pupilOffset}
-          cy={76}
-          r={10 * eyeState.scale}
-          fill="black"
-          style={{ transition: 'all 0.2s ease-out' }}
-        />
+          <circle cx={OJO_IZQ.x} cy={OJO_IZQ.y} r={OJO_R} fill="white" />
+          <circle cx={OJO_DER.x} cy={OJO_DER.y} r={OJO_R} fill="white" />
 
-        <circle cx={123.1} cy={77} r={12} fill="white" />
-        <circle
-          cx={123.1 + eyeState.pupilOffset}
-          cy={77}
-          r={10 * eyeState.scale}
-          fill="black"
-          style={{ transition: 'all 0.2s ease-out' }}
-        />
+          {emotion === 'dizzy' ? (
+            <>
+              <g stroke="black" strokeWidth={3} strokeLinecap="round">
+                <line
+                  x1={OJO_IZQ.x - 6}
+                  y1={OJO_IZQ.y - 6}
+                  x2={OJO_IZQ.x + 6}
+                  y2={OJO_IZQ.y + 6}
+                />
+                <line
+                  x1={OJO_IZQ.x - 6}
+                  y1={OJO_IZQ.y + 6}
+                  x2={OJO_IZQ.x + 6}
+                  y2={OJO_IZQ.y - 6}
+                />
+                <line
+                  x1={OJO_DER.x - 6}
+                  y1={OJO_DER.y - 6}
+                  x2={OJO_DER.x + 6}
+                  y2={OJO_DER.y + 6}
+                />
+                <line
+                  x1={OJO_DER.x - 6}
+                  y1={OJO_DER.y + 6}
+                  x2={OJO_DER.x + 6}
+                  y2={OJO_DER.y - 6}
+                />
+              </g>
+            </>
+          ) : (
+            <>
+              <circle
+                cx={OJO_IZQ.x + dx}
+                cy={OJO_IZQ.y + dy}
+                r={pupilR}
+                fill="black"
+                style={{ transition: 'all 0.2s ease-out' }}
+              />
+              <circle
+                cx={OJO_DER.x + dx}
+                cy={OJO_DER.y + dy}
+                r={pupilR}
+                fill="black"
+                style={{ transition: 'all 0.2s ease-out' }}
+              />
+            </>
+          )}
 
-        <path
-          d={mouthPaths[emotion]}
-          stroke="black"
-          strokeWidth={4.5}
-          fill={emotion === 'surprised' ? 'black' : 'none'}
-          strokeLinecap="round"
-          style={{ transition: 'all 0.2s ease-out' }}
-        />
-      </g>
+          {/* Párpados: un cuarto de círculo del lila del cuerpo que baja desde
+              arriba, como si la propia piel de la estrella cerrara el ojo. */}
+          {lidL > 0 && (
+            <rect
+              x={OJO_IZQ.x - OJO_R - 2}
+              y={OJO_IZQ.y - OJO_R}
+              width={OJO_R * 2 + 4}
+              height={OJO_R * 2 * lidL}
+              fill={LILA_CUERPO}
+              style={{ transition: 'all 0.2s ease-out' }}
+            />
+          )}
+          {lidR > 0 && (
+            <rect
+              x={OJO_DER.x - OJO_R - 2}
+              y={OJO_DER.y - OJO_R}
+              width={OJO_R * 2 + 4}
+              height={OJO_R * 2 * lidR}
+              fill={LILA_CUERPO}
+              style={{ transition: 'all 0.2s ease-out' }}
+            />
+          )}
 
-      {/* Pierna izquierda */}
-      <g
-        style={{
-          transformOrigin: '89px 124px',
-          transform: `rotate(${legRotation.left}deg)`,
-          transformBox: 'view-box',
-          transition: 'transform 0.3s ease-out',
-        }}
-      >
-        <path d={PIERNA_IZQUIERDA} fill={MORADO_EXTREMIDADES} />
-      </g>
+          <path
+            d={config.mouth}
+            stroke="black"
+            strokeWidth={4.5}
+            fill={emotion === 'surprised' ? 'black' : 'none'}
+            strokeLinecap="round"
+            style={{ transition: 'all 0.2s ease-out' }}
+          />
+        </g>
 
-      {/* Pierna derecha */}
-      <g
-        style={{
-          transformOrigin: '114px 113px',
-          transform: `rotate(${legRotation.right}deg)`,
-          transformBox: 'view-box',
-          transition: 'transform 0.3s ease-out',
-        }}
-      >
-        <path d={PIERNA_DERECHA} fill={MORADO_EXTREMIDADES} />
+        {/* Pierna izquierda */}
+        <g
+          style={{
+            transformOrigin: `${PIVOTE_PIERNA_IZQ.x}px ${PIVOTE_PIERNA_IZQ.y}px`,
+            transform: `rotate(${legRotation.left}deg)`,
+            transformBox: 'view-box',
+            transition: 'transform 0.3s ease-out',
+          }}
+        >
+          <circle cx={PIVOTE_PIERNA_IZQ.x} cy={PIVOTE_PIERNA_IZQ.y} r={10} fill={MORADO_EXTREMIDADES} />
+          <path d={PIERNA_IZQUIERDA} fill={MORADO_EXTREMIDADES} />
+        </g>
+
+        {/* Pierna derecha */}
+        <g
+          style={{
+            transformOrigin: `${PIVOTE_PIERNA_DER.x}px ${PIVOTE_PIERNA_DER.y}px`,
+            transform: `rotate(${legRotation.right}deg)`,
+            transformBox: 'view-box',
+            transition: 'transform 0.3s ease-out',
+          }}
+        >
+          <circle cx={PIVOTE_PIERNA_DER.x} cy={PIVOTE_PIERNA_DER.y} r={10} fill={MORADO_EXTREMIDADES} />
+          <path d={PIERNA_DERECHA} fill={MORADO_EXTREMIDADES} />
+        </g>
       </g>
     </svg>
   );

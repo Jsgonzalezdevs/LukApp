@@ -1,15 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { EstrellaAvatar } from './EstrellaAvatar';
+import { EstrellaAvatar, type EstrellaEmotion } from './EstrellaAvatar';
 
-export type EstrellaAnimation = 'idle' | 'waving' | 'jumping' | 'thinking' | 'celebrating';
-export type EstrellaEmotion = 'happy' | 'thinking' | 'surprised' | 'sad';
+export type { EstrellaEmotion };
+
+export type EstrellaAnimation =
+  | 'idle'
+  | 'waving'
+  | 'jumping'
+  | 'thinking'
+  | 'celebrating'
+  | 'nodding'
+  | 'shaking'
+  | 'shrug'
+  | 'stretching'
+  | 'bowing'
+  | 'spinning'
+  | 'floating'
+  | 'lookingAround'
+  | 'sleepyBlink'
+  | 'dancing'
+  | 'pointingUp'
+  | 'loveReaction'
+  | 'wink';
 
 interface EstrellaAnimadaProps {
   className?: string;
   size?: number;
   animation?: EstrellaAnimation;
+  /** Si no se da, cada animación trae su propia emoción por defecto. */
   emotion?: EstrellaEmotion;
   onAnimationEnd?: () => void;
+}
+
+/** La emoción que mejor le queda a cada gesto cuando no se pide otra. */
+const EMOCION_POR_DEFECTO: Record<EstrellaAnimation, EstrellaEmotion> = {
+  idle: 'happy',
+  waving: 'happy',
+  jumping: 'excited',
+  thinking: 'thinking',
+  celebrating: 'excited',
+  nodding: 'happy',
+  shaking: 'skeptical',
+  shrug: 'skeptical',
+  stretching: 'sleepy',
+  bowing: 'happy',
+  spinning: 'dizzy',
+  floating: 'happy',
+  lookingAround: 'happy',
+  sleepyBlink: 'sleepy',
+  dancing: 'excited',
+  pointingUp: 'excited',
+  loveReaction: 'love',
+  wink: 'wink',
+};
+
+/** Cuántos "frames" de 50ms dura un ciclo de cada gesto antes de repetirse. */
+const FRAMES_POR_ANIMACION: Record<EstrellaAnimation, number> = {
+  idle: 60,
+  waving: 40,
+  jumping: 40,
+  thinking: 80,
+  celebrating: 60,
+  nodding: 30,
+  shaking: 30,
+  shrug: 36,
+  stretching: 50,
+  bowing: 40,
+  spinning: 36,
+  floating: 80,
+  lookingAround: 90,
+  sleepyBlink: 70,
+  dancing: 50,
+  pointingUp: 40,
+  loveReaction: 40,
+  wink: 30,
+};
+
+interface AnimationProps {
+  armRotation: { left: number; right: number };
+  legRotation: { left: number; right: number };
+  headTilt: number;
+  eyeOverride?: { dx: number; dy: number };
+  bodyBob?: number;
+  bodyRotate?: number;
 }
 
 /* Todos los ángulos de aquí son DELTAS sobre la pose de reposo del arte
@@ -19,20 +92,15 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
   className = '',
   size = 200,
   animation = 'idle',
-  emotion = 'happy',
+  emotion,
   onAnimationEnd,
 }) => {
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
+    setFrame(0);
     const frameDuration = 50;
-    const maxFrames = {
-      idle: 60,
-      waving: 40,
-      jumping: 40,
-      thinking: 80,
-      celebrating: 60,
-    }[animation];
+    const maxFrames = FRAMES_POR_ANIMACION[animation];
 
     const interval = setInterval(() => {
       setFrame((prev) => {
@@ -48,7 +116,7 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
     return () => clearInterval(interval);
   }, [animation, onAnimationEnd]);
 
-  const getAnimationProps = () => {
+  const getAnimationProps = (): AnimationProps => {
     const progress = frame / 60;
 
     switch (animation) {
@@ -56,9 +124,9 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
         return {
           armRotation: {
             left: Math.sin(progress * Math.PI * 2) * 4,
-            // -105 levanta el brazo (que en reposo apunta hacia abajo) hasta
+            // -95 levanta el brazo (que en reposo apunta hacia abajo) hasta
             // arriba del hombro; el resto es el aleteo del saludo en sí.
-            right: -105 + Math.sin(progress * Math.PI * 6) * 18,
+            right: -95 + Math.sin(progress * Math.PI * 6) * 16,
           },
           legRotation: { left: 0, right: 0 },
           headTilt: Math.sin(progress * Math.PI * 3) * 3,
@@ -79,6 +147,7 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
           armRotation: { left: 0, right: -55 },
           legRotation: { left: 0, right: 0 },
           headTilt: Math.sin(progress * Math.PI * 2) * 6,
+          eyeOverride: { dx: -2.5 + Math.sin(progress * Math.PI * 1.4) * 1.5, dy: -3 },
         };
 
       case 'celebrating':
@@ -92,6 +161,122 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
             right: Math.sin(progress * Math.PI * 4 + Math.PI) * 12,
           },
           headTilt: Math.sin(progress * Math.PI * 2) * 8,
+        };
+
+      case 'nodding': {
+        const nod = Math.sin(progress * Math.PI * 5);
+        return {
+          armRotation: { left: 0, right: 0 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: nod * 6,
+          bodyBob: nod * 3,
+        };
+      }
+
+      case 'shaking':
+        return {
+          armRotation: { left: 0, right: 0 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: Math.sin(progress * Math.PI * 6) * 16,
+        };
+
+      case 'shrug': {
+        const t = Math.min(1, frame / 10) - Math.max(0, (frame - 26) / 10);
+        return {
+          armRotation: { left: -20 * t, right: 20 * t },
+          legRotation: { left: 0, right: 0 },
+          headTilt: 3 * t,
+        };
+      }
+
+      case 'stretching': {
+        const t = Math.sin(progress * Math.PI * 1.2);
+        return {
+          armRotation: { left: -85 * Math.max(0, t), right: 85 * Math.max(0, t) },
+          legRotation: { left: -4 * Math.max(0, t), right: 4 * Math.max(0, t) },
+          headTilt: -4 * Math.max(0, t),
+        };
+      }
+
+      case 'bowing': {
+        const t = Math.sin(progress * Math.PI * 1.2);
+        return {
+          armRotation: { left: 12 * Math.max(0, t), right: -12 * Math.max(0, t) },
+          legRotation: { left: 0, right: 0 },
+          headTilt: 14 * Math.max(0, t),
+          bodyBob: 6 * Math.max(0, t),
+        };
+      }
+
+      case 'spinning':
+        return {
+          armRotation: { left: -6, right: 6 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: 0,
+          bodyRotate: progress * 360 * 1.2,
+        };
+
+      case 'floating':
+        return {
+          armRotation: {
+            left: Math.sin(progress * Math.PI * 1.5) * 5,
+            right: Math.sin(progress * Math.PI * 1.5 + Math.PI) * 5,
+          },
+          legRotation: { left: 0, right: 0 },
+          headTilt: Math.sin(progress * Math.PI * 1.5) * 3,
+          bodyBob: Math.sin(progress * Math.PI * 1.5) * 8,
+        };
+
+      case 'lookingAround':
+        return {
+          armRotation: { left: 0, right: 0 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: Math.sin(progress * Math.PI * 0.9) * 5,
+          eyeOverride: { dx: Math.sin(progress * Math.PI * 0.9) * 5, dy: -1 },
+        };
+
+      case 'sleepyBlink': {
+        const droop = Math.max(0, Math.sin(progress * Math.PI * 1.1));
+        return {
+          armRotation: { left: 0, right: 0 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: droop * 5,
+          bodyBob: droop * 2,
+        };
+      }
+
+      case 'dancing': {
+        const sway = Math.sin(progress * Math.PI * 5);
+        return {
+          armRotation: { left: sway * 25, right: -sway * 25 },
+          legRotation: { left: -sway * 14, right: sway * 14 },
+          headTilt: sway * 8,
+          bodyBob: Math.abs(sway) * -3,
+        };
+      }
+
+      case 'pointingUp':
+        return {
+          armRotation: { left: -100, right: Math.sin(progress * Math.PI * 2) * 4 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: -4,
+        };
+
+      case 'loveReaction': {
+        const pulse = Math.abs(Math.sin(progress * Math.PI * 3));
+        return {
+          armRotation: { left: -10 - pulse * 8, right: 10 + pulse * 8 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: Math.sin(progress * Math.PI * 2) * 4,
+          bodyBob: -pulse * 4,
+        };
+      }
+
+      case 'wink':
+        return {
+          armRotation: { left: Math.sin(progress * Math.PI * 2) * 3, right: 0 },
+          legRotation: { left: 0, right: 0 },
+          headTilt: 4,
         };
 
       case 'idle':
@@ -108,15 +293,19 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
   };
 
   const props = getAnimationProps();
+  const emocionFinal = emotion ?? EMOCION_POR_DEFECTO[animation];
 
   return (
     <EstrellaAvatar
       className={className}
       size={size}
-      emotion={emotion}
+      emotion={emocionFinal}
       armRotation={props.armRotation}
       legRotation={props.legRotation}
       headTilt={props.headTilt}
+      eyeOverride={props.eyeOverride}
+      bodyBob={props.bodyBob}
+      bodyRotate={props.bodyRotate}
     />
   );
 };
