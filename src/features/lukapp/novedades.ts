@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.0.1',
+    fecha: '2026-08-26',
+    texto: 'Favicon mejorado: el isotipo sin fondo en vez del icono con fondo, se lee mejor a 32px.',
+  },
+  {
     version: '1.0.0',
     fecha: '2026-08-26',
     texto:

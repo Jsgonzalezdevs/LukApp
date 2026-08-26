@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Check, Mic } from 'lucide-react';
 import { formatAmountInput } from '../lib/formatCop';
 import { TecladoNumerico } from './TecladoNumerico';
+import { TypingText } from './TypingText';
 
 interface OnboardingProps {
   onTerminar: (datos: { nombre: string; banco: string | null; saldoCop: number | null }) => void;
@@ -166,7 +167,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
             className="mt-6 text-[var(--fin-ink)]"
             style={{ font: 'var(--fin-t-titulo-xl)', letterSpacing: 'var(--fin-track-titulo-xl)' }}
           >
-            {actual.titulo}
+            <TypingText text={actual.titulo} speed={40} />
           </h2>
           <p className="mt-2 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
             {actual.ayuda}
