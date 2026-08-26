@@ -47,7 +47,6 @@ export const sectionLabel = (section: SectionId): string =>
  * El orden no es alfabético, es por frecuencia: lo que más se toca, arriba.
  */
 export const PANELES_AJUSTES = [
-  { id: 'cuentas', label: 'Cuentas y saldos', ayuda: 'Cuánto tienes en cada una' },
   { id: 'categorias', label: 'Categorías', ayuda: 'Crea las tuyas o cambia las que hay' },
   { id: 'topes', label: 'Topes de gasto', ayuda: 'Te avisa antes de que te pases' },
   { id: 'periodo', label: 'Período', ayuda: 'Cada cuánto se reinicia lo que ves' },

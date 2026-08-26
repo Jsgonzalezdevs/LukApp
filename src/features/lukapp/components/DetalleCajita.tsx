@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
-import { TIPO_LABELS } from '../data/modelos';
+import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import type { Transaction } from '../types';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
+import { RippleButton } from './RippleButton';
 
 interface DetalleCajitaProps {
   cajita: Cajita;
   movimientos: readonly CajitaMovimiento[];
   transacciones: readonly Transaction[];
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
+  onActualizar: (cajita: Cajita) => void;
   onEliminar: (id: string) => void;
   onTransferir?: (origenId: string, destinoId: string, montoCop: number) => void;
   destinos?: readonly { id: string; nombre: string }[];
@@ -37,6 +39,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   movimientos,
   transacciones,
   onFijarSaldo,
+  onActualizar,
   onEliminar,
   onTransferir,
   destinos = [],
@@ -48,6 +51,32 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   const [destinoId, setDestinoId] = useState('');
   const [montoTexto, setMontoTexto] = useState('');
   const [errorTransferencia, setErrorTransferencia] = useState<string | null>(null);
+  const [editandoCuenta, setEditandoCuenta] = useState(false);
+  const [nombre, setNombre] = useState(cajita.nombre);
+  const [icon, setIcon] = useState(cajita.icon);
+  const [metaTexto, setMetaTexto] = useState(formatAmountInput(cajita.metaCop));
+  const [tasaTexto, setTasaTexto] = useState(
+    cajita.tasaEaPct === null ? '' : String(cajita.tasaEaPct),
+  );
+  const [bajoMonto, setBajoMonto] = useState(cajita.esBajoMonto ?? false);
+
+  const pasivo = ES_PASIVO[cajita.tipo];
+
+  const guardarEdicion = (e: React.FormEvent) => {
+    e.preventDefault();
+    const limpio = nombre.trim();
+    if (!limpio) return;
+    const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
+    onActualizar({
+      ...cajita,
+      nombre: limpio,
+      icon,
+      metaCop: parseAmountInput(metaTexto),
+      tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+      esBajoMonto: bajoMonto,
+    });
+    setEditandoCuenta(false);
+  };
 
   const saldo = saldoDeCajita(movimientos, cajita.id, transacciones);
   const Icono = iconoDeCajita(cajita.icon);
@@ -111,13 +140,116 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]">
           <Icono className="h-7 w-7 text-[var(--fin-ink-soft)]" strokeWidth={1.75} />
         </span>
-        <div>
-          <h1 className="text-[22px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-[22px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
           <p className="mt-0.5 text-[13px] text-[var(--fin-ink-faint)]">
             {TIPO_LABELS[cajita.tipo]}
+            {cajita.tasaEaPct ? ` · ${cajita.tasaEaPct}% E.A.` : ''}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setEditandoCuenta((v) => !v)}
+          aria-label={`Editar ${cajita.nombre}`}
+          aria-expanded={editandoCuenta}
+          className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+        >
+          <Pencil className="h-4 w-4" strokeWidth={2.5} />
+        </button>
       </div>
+
+      {editandoCuenta ? (
+        <form
+          onSubmit={guardarEdicion}
+          className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3.5"
+        >
+          <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+            Nombre
+            <input
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+            />
+          </label>
+
+          {!pasivo ? (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+                Meta
+                <input
+                  value={metaTexto}
+                  onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))}
+                  inputMode="numeric"
+                  placeholder="0"
+                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                />
+              </label>
+              <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+                % E.A.
+                <input
+                  value={tasaTexto}
+                  onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
+                  inputMode="decimal"
+                  placeholder="13,5"
+                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                />
+              </label>
+            </div>
+          ) : null}
+
+          <fieldset className="mt-3">
+            <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ícono</legend>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {CAJITA_ICONS.map((op: string) => {
+                const IconComponent = iconoDeCajita(op);
+                return (
+                  <button
+                    key={op}
+                    type="button"
+                    onClick={() => setIcon(op)}
+                    aria-pressed={icon === op}
+                    aria-label={`Ícono ${op}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-control)] border-2 transition-colors ${
+                      icon === op
+                        ? 'border-[var(--fin-ink)] bg-[var(--fin-card)] text-[var(--fin-ink)]'
+                        : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
+                    }`}
+                  >
+                    <IconComponent className="h-4 w-4" />
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {!pasivo ? (
+            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={bajoMonto}
+                onChange={(e) => setBajoMonto(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-[13px] font-semibold text-[var(--fin-ink)]">
+                  Es un depósito de bajo monto (ej. Nequi)
+                </span>
+                <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-faint)]">
+                  Tiene una exención de 4x1000 de hasta 65 UVT mensuales.
+                </span>
+              </span>
+            </label>
+          ) : null}
+
+          <RippleButton
+            type="submit"
+            rippleColor="rgba(255,255,255,0.5)"
+            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
+          >
+            Guardar cambios
+          </RippleButton>
+        </form>
+      ) : null}
 
       {/* Saldo actual. La cifra entera es el botón de editar. */}
       <section

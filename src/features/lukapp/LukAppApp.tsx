@@ -59,7 +59,6 @@ import { contactoPorApodo } from './lib/contactos';
 import { DivisionCuentasModal } from './components/DivisionCuentasModal';
 import { calcularRacha } from './lib/racha';
 import { verificarRecordatorioRacha } from './lib/recordatorioRacha';
-import { ConfiguracionView } from './components/ConfiguracionView';
 import { CategoriasEditor } from './components/CategoriasEditor';
 import { AnalisisMovimiento } from './components/AnalisisMovimiento';
 import { crearIndiceSenales, senalesConIndice } from './lib/senales';
@@ -834,6 +833,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                     movimientos={cajitaMovimientos}
                     transacciones={transacciones}
                     onFijarSaldo={(cajitaId: string, saldo: number) => void almacen.fijarSaldo(cajitaId, saldo)}
+                    onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
                     onEliminar={(id: string) => void almacen.borrarCajita(id)}
                     onTransferir={(origenId, destinoId, montoCop) =>
                       almacen.transferirEntreCuentas({ origenId, destinoId, montoCop })
@@ -887,15 +887,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             titulo={PANELES_AJUSTES.find((p) => p.id === panelAjustes)?.label ?? ''}
             onCerrar={() => setPanelAjustes(null)}
           >
-            {panelAjustes === 'cuentas' ? (
-              <ConfiguracionView
-                cajitas={cajitas}
-                transacciones={transacciones}
-                movimientos={cajitaMovimientos}
-                onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
-                onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-              />
-            ) : panelAjustes === 'categorias' ? (
+            {panelAjustes === 'categorias' ? (
               <CategoriasEditor
                 categorias={categorias}
                 transacciones={transacciones}

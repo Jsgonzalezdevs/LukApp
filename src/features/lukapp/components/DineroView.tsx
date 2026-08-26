@@ -18,13 +18,7 @@ interface DineroViewProps {
   modoPrivacidad?: boolean;
 }
 
-/**
- * Los tres grupos. No los inventé: son exactamente los que ConfiguracionView ya
- * declaraba en su propia constante GRUPOS. O sea que el código ya había
- * demostrado que las tres cosas caben juntas en una pantalla — pero la
- * navegación seguía tratándolas como tres destinos separados (Cuentas, Ahorro y
- * Deudas), cada uno con su puesto permanente en el menú.
- */
+/** Los tres grupos en que se parte la lista. */
 const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string }> = [
   { tipos: ['cuenta'], titulo: 'Cuentas' },
   { tipos: ['cajita'], titulo: 'Ahorros' },
