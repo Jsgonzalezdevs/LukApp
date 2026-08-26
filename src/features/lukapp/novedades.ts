@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.0.6',
+    fecha: '2026-08-26',
+    texto: 'La Estrella quedó calcada del dibujo original: trazamos su silueta píxel a píxel (puntas, brazos y pies incluidos) en vez de aproximarla a mano.',
+  },
+  {
+    version: '1.0.5',
+    fecha: '2026-08-26',
+    texto: 'Corregimos la forma de la Estrella: ahora el vector es fiel al personaje original, con sus 7 puntas redondeadas y su carita amigable de siempre.',
+  },
+  {
     version: '1.0.4',
     fecha: '2026-08-26',
     texto: 'La Estrella en el asesor ahora tiene vida propia: saluda, piensa, salta, celebra y respira continuamente mientras esperas respuestas. Nunca se queda quieta.',

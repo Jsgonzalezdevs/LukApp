@@ -12,6 +12,9 @@ interface EstrellaAnimadaProps {
   onAnimationEnd?: () => void;
 }
 
+/* Todos los ángulos de aquí son DELTAS sobre la pose de reposo del arte
+   trazado en EstrellaAvatar.tsx -- 0 es el brazo tal como quedó dibujado en
+   el PNG original, no un brazo horizontal. */
 export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
   className = '',
   size = 200,
@@ -52,39 +55,39 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
       case 'waving':
         return {
           armRotation: {
-            left: -30,
-            right: 30 + Math.sin(progress * Math.PI * 4) * 40,
+            left: Math.sin(progress * Math.PI * 2) * 4,
+            right: -70 + Math.sin(progress * Math.PI * 5) * 45,
           },
           legRotation: { left: 0, right: 0 },
-          headTilt: 0,
+          headTilt: Math.sin(progress * Math.PI * 5) * 4,
         };
 
       case 'jumping': {
-        const jumpProgress = (frame % 40) / 40;
-        const jumpHeight = Math.sin(jumpProgress * Math.PI) * 20;
+        const jumpProgress = (frame % 20) / 20;
+        const kick = Math.sin(jumpProgress * Math.PI * 2) * 22;
         return {
-          armRotation: { left: -45, right: 45 },
-          legRotation: { left: jumpHeight * 2, right: jumpHeight * 2 },
-          headTilt: 0,
+          armRotation: { left: -18 - kick * 0.6, right: 18 + kick * 0.6 },
+          legRotation: { left: kick, right: -kick },
+          headTilt: Math.sin(progress * Math.PI * 4) * 3,
         };
       }
 
       case 'thinking':
         return {
-          armRotation: { left: -20, right: 20 },
+          armRotation: { left: 0, right: -55 },
           legRotation: { left: 0, right: 0 },
-          headTilt: Math.sin(progress * Math.PI * 2) * 5,
+          headTilt: Math.sin(progress * Math.PI * 2) * 6,
         };
 
       case 'celebrating':
         return {
           armRotation: {
-            left: -50 + Math.sin(progress * Math.PI * 4) * 30,
-            right: 50 + Math.sin(progress * Math.PI * 4 + Math.PI) * 30,
+            left: Math.sin(progress * Math.PI * 4) * 35,
+            right: Math.sin(progress * Math.PI * 4 + Math.PI) * 35,
           },
           legRotation: {
-            left: Math.sin(progress * Math.PI * 4) * 15,
-            right: Math.sin(progress * Math.PI * 4 + Math.PI) * 15,
+            left: Math.sin(progress * Math.PI * 4) * 12,
+            right: Math.sin(progress * Math.PI * 4 + Math.PI) * 12,
           },
           headTilt: Math.sin(progress * Math.PI * 2) * 8,
         };
@@ -93,8 +96,8 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
       default:
         return {
           armRotation: {
-            left: -30 + Math.sin(progress * Math.PI * 2) * 3,
-            right: 30 + Math.sin(progress * Math.PI * 2) * 3,
+            left: Math.sin(progress * Math.PI * 2) * 3,
+            right: Math.sin(progress * Math.PI * 2 + Math.PI) * 3,
           },
           legRotation: { left: 0, right: 0 },
           headTilt: Math.sin(progress * Math.PI * 2) * 2,

@@ -4,204 +4,168 @@ interface EstrellaAvatarProps {
   className?: string;
   size?: number;
   emotion?: 'happy' | 'thinking' | 'surprised' | 'sad';
+  /** Grados AÑADIDOS a la pose de reposo de cada brazo. 0 = reposo. */
   armRotation?: { left: number; right: number };
+  /** Grados AÑADIDOS a la pierna recta. 0 = reposo. */
   legRotation?: { left: number; right: number };
   headTilt?: number;
 }
+
+/* Geometría trazada píxel a píxel del arte oficial (public/brand/lukapp-estrella.png):
+   se aisló cada región por color (cuerpo lila vs. extremidades moradas), se
+   siguió su contorno real con un algoritmo de border-tracing (Moore-neighbor)
+   y se simplificó con Ramer-Douglas-Peucker sin forzar simetría -- cada
+   esquina conserva su propio radio, tal como salió en el dibujo original. Si
+   el arte cambia, hay que repetir ese proceso; estas cifras no se ajustan a
+   mano. */
+const CUERPO_ESTRELLA =
+  'M 25.98,32.4 L 27.65,29.33 L 30.73,28.77 L 78.49,38.27 L 79.89,36.59 L 80.45,2.79 L 82.96,0.28 ' +
+  'L 87.43,1.96 L 112.01,34.36 L 144.13,13.69 L 148.88,13.69 L 150.28,17.32 L 142.18,54.75 L 143.85,55.87 ' +
+  'L 179.05,60.61 L 182.4,63.13 L 181.28,67.32 L 148.6,86.03 L 155.87,124.3 L 155.31,128.21 L 151.4,129.61 ' +
+  'L 120.95,112.85 L 113.97,110.61 L 107.26,114.53 L 72.07,142.18 L 66.76,142.18 L 65.64,138.55 L 68.44,104.75 ' +
+  'L 67.04,101.4 L 30.17,110.06 L 27.09,109.22 L 25.98,107.54 L 26.26,104.47 L 50.56,70.39 L 50.0,67.88 Z';
+
+const BRAZO_DERECHO =
+  'M 148.88,86.31 L 154.75,82.4 L 155.87,83.24 L 197.49,116.2 L 199.72,120.11 L 198.6,124.86 ' +
+  'L 194.97,127.37 L 191.9,127.37 L 189.11,125.98 L 151.4,96.09 L 150.28,94.97 Z';
+
+const BRAZO_IZQUIERDO =
+  'M 0.28,42.74 L 3.35,38.83 L 4.75,38.27 L 9.5,38.83 L 43.3,59.22 L 50.0,68.72 L 49.44,72.07 ' +
+  'L 46.37,75.98 L 2.79,49.72 L 0.28,46.37 Z';
+
+const PIERNA_IZQUIERDA =
+  'M 67.6,196.93 L 70.11,193.58 L 78.21,190.78 L 79.89,189.11 L 81.28,185.75 L 82.12,173.74 ' +
+  'L 82.68,134.08 L 96.93,123.18 L 96.65,184.36 L 94.97,196.37 L 94.13,198.04 L 89.94,201.68 ' +
+  'L 84.64,204.19 L 77.93,205.87 L 73.74,205.87 L 69.83,204.19 L 67.6,200.84 Z';
+
+const PIERNA_DERECHA =
+  'M 105.31,183.52 L 106.98,143.02 L 107.26,120.67 L 106.7,115.64 L 112.29,111.45 L 116.48,111.17 ' +
+  'L 121.23,113.41 L 120.39,185.47 L 121.23,188.55 L 123.18,191.34 L 130.17,193.85 L 133.24,196.37 ' +
+  'L 133.8,201.68 L 131.56,205.03 L 127.65,206.7 L 120.95,206.15 L 111.73,202.23 L 107.54,198.6 ' +
+  'L 106.7,196.93 L 105.59,192.18 Z';
+
+/** Colores tomados con cuentagotas del PNG oficial (no aproximados). */
+const LILA_CUERPO = '#735AC2';
+const MORADO_EXTREMIDADES = '#4A0182';
 
 export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
   className = '',
   size = 200,
   emotion = 'happy',
-  armRotation = { left: -30, right: 30 },
+  armRotation = { left: 0, right: 0 },
   legRotation = { left: 0, right: 0 },
   headTilt = 0,
 }) => {
-  const viewBox = `0 0 ${size} ${size}`;
-  const scale = size / 200;
-
   const mouthPaths = {
-    happy: 'M 90 110 Q 100 115 110 110',
-    thinking: 'M 85 110 Q 100 105 115 110',
-    surprised: 'M 95 110 Q 100 115 105 110 M 95 110 Q 100 115 105 110',
-    sad: 'M 90 115 Q 100 110 110 115',
+    happy: 'M 93 90 Q 100.5 95 108 90',
+    thinking: 'M 91 92 Q 100.5 87 110 92',
+    surprised: 'M 96 87 A 5 6 0 1 0 105 87 A 5 6 0 1 0 96 87',
+    sad: 'M 93 96 Q 100.5 89 108 96',
   };
 
   const eyeStates = {
-    happy: { pupilOffset: 2, scale: 1 },
-    thinking: { pupilOffset: -2, scale: 1 },
-    surprised: { pupilOffset: 0, scale: 1.2 },
-    sad: { pupilOffset: 2, scale: 1 },
+    happy: { pupilOffset: 2.5, scale: 1 },
+    thinking: { pupilOffset: -2.5, scale: 1 },
+    surprised: { pupilOffset: 0, scale: 1.15 },
+    sad: { pupilOffset: 2.5, scale: 0.9 },
   };
 
   const eyeState = eyeStates[emotion];
 
   return (
     <svg
-      viewBox={viewBox}
+      viewBox="-5 -5 210 218"
       className={className}
-      style={{
-        width: size,
-        height: size,
-        overflow: 'visible',
-      }}
+      width={size}
+      height={size}
+      style={{ overflow: 'visible' }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <defs>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2" />
-        </filter>
-      </defs>
-
-      {/* Brazo izquierdo */}
+      {/* Brazo izquierdo (detrás del cuerpo, entra por la muesca de la estrella) */}
       <g
         style={{
-          transformOrigin: `${60 * scale}px ${50 * scale}px`,
+          transformOrigin: '45px 68px',
           transform: `rotate(${armRotation.left}deg)`,
           transformBox: 'fill-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
-        <rect
-          x={20 * scale}
-          y={45 * scale}
-          width={50 * scale}
-          height={16 * scale}
-          rx={8 * scale}
-          fill="#3d1d5c"
-          filter="url(#shadow)"
-        />
+        <path d={BRAZO_IZQUIERDO} fill={MORADO_EXTREMIDADES} />
       </g>
 
-      {/* Brazo derecho */}
+      {/* Brazo derecho (detrás del cuerpo, entra por la muesca de la estrella) */}
       <g
         style={{
-          transformOrigin: `${140 * scale}px ${50 * scale}px`,
+          transformOrigin: '150px 90px',
           transform: `rotate(${armRotation.right}deg)`,
           transformBox: 'fill-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
-        <rect
-          x={130 * scale}
-          y={45 * scale}
-          width={50 * scale}
-          height={16 * scale}
-          rx={8 * scale}
-          fill="#3d1d5c"
-          filter="url(#shadow)"
-        />
+        <path d={BRAZO_DERECHO} fill={MORADO_EXTREMIDADES} />
       </g>
 
-      {/* Cabeza (estrella) */}
+      {/* Cabeza: estrella + cara */}
       <g
         style={{
+          transformOrigin: '104px 71px',
           transform: `rotate(${headTilt}deg)`,
           transformBox: 'fill-box',
-          transformOrigin: `${100 * scale}px ${80 * scale}px`,
           transition: 'transform 0.3s ease-out',
         }}
       >
-        {/* Cuerpo de la estrella */}
-        <path
-          d={`
-            M ${100 * scale} ${10 * scale}
-            L ${130 * scale} ${40 * scale}
-            L ${160 * scale} ${40 * scale}
-            L ${138 * scale} ${60 * scale}
-            L ${150 * scale} ${95 * scale}
-            L ${115 * scale} ${75 * scale}
-            L ${100 * scale} ${105 * scale}
-            L ${85 * scale} ${75 * scale}
-            L ${50 * scale} ${95 * scale}
-            L ${62 * scale} ${60 * scale}
-            L ${40 * scale} ${40 * scale}
-            L ${70 * scale} ${40 * scale}
-            Z
-          `}
-          fill="#7c3aed"
-          filter="url(#shadow)"
-        />
+        <path d={CUERPO_ESTRELLA} fill={LILA_CUERPO} />
 
-        {/* Ojo izquierdo - fondo blanco */}
-        <circle cx={78 * scale} cy={60 * scale} r={15 * scale} fill="white" />
-
-        {/* Ojo izquierdo - pupila */}
+        <circle cx={77.4} cy={76} r={12} fill="white" />
         <circle
-          cx={(78 + eyeState.pupilOffset) * scale}
-          cy={60 * scale}
-          r={(8 * (eyeState.scale || 1)) * scale}
+          cx={77.4 + eyeState.pupilOffset}
+          cy={76}
+          r={10 * eyeState.scale}
           fill="black"
-          style={{
-            transition: 'all 0.2s ease-out',
-          }}
+          style={{ transition: 'all 0.2s ease-out' }}
         />
 
-        {/* Ojo derecho - fondo blanco */}
-        <circle cx={122 * scale} cy={60 * scale} r={15 * scale} fill="white" />
-
-        {/* Ojo derecho - pupila */}
+        <circle cx={123.1} cy={77} r={12} fill="white" />
         <circle
-          cx={(122 + eyeState.pupilOffset) * scale}
-          cy={60 * scale}
-          r={(8 * (eyeState.scale || 1)) * scale}
+          cx={123.1 + eyeState.pupilOffset}
+          cy={77}
+          r={10 * eyeState.scale}
           fill="black"
-          style={{
-            transition: 'all 0.2s ease-out',
-          }}
+          style={{ transition: 'all 0.2s ease-out' }}
         />
 
-        {/* Boca */}
         <path
           d={mouthPaths[emotion]}
           stroke="black"
-          strokeWidth={4 * scale}
-          fill="none"
+          strokeWidth={4.5}
+          fill={emotion === 'surprised' ? 'black' : 'none'}
           strokeLinecap="round"
-          style={{
-            transition: 'all 0.2s ease-out',
-          }}
+          style={{ transition: 'all 0.2s ease-out' }}
         />
       </g>
 
       {/* Pierna izquierda */}
       <g
         style={{
-          transformOrigin: `${85 * scale}px ${115 * scale}px`,
+          transformOrigin: '89px 124px',
           transform: `rotate(${legRotation.left}deg)`,
           transformBox: 'fill-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
-        <rect
-          x={80 * scale}
-          y={115 * scale}
-          width={12 * scale}
-          height={50 * scale}
-          rx={6 * scale}
-          fill="#3d1d5c"
-          filter="url(#shadow)"
-        />
+        <path d={PIERNA_IZQUIERDA} fill={MORADO_EXTREMIDADES} />
       </g>
 
       {/* Pierna derecha */}
       <g
         style={{
-          transformOrigin: `${115 * scale}px ${115 * scale}px`,
+          transformOrigin: '114px 113px',
           transform: `rotate(${legRotation.right}deg)`,
           transformBox: 'fill-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
-        <rect
-          x={108 * scale}
-          y={115 * scale}
-          width={12 * scale}
-          height={50 * scale}
-          rx={6 * scale}
-          fill="#3d1d5c"
-          filter="url(#shadow)"
-        />
+        <path d={PIERNA_DERECHA} fill={MORADO_EXTREMIDADES} />
       </g>
     </svg>
   );
