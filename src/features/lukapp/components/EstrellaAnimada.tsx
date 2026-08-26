@@ -56,10 +56,12 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
         return {
           armRotation: {
             left: Math.sin(progress * Math.PI * 2) * 4,
-            right: -70 + Math.sin(progress * Math.PI * 5) * 45,
+            // -105 levanta el brazo (que en reposo apunta hacia abajo) hasta
+            // arriba del hombro; el resto es el aleteo del saludo en sí.
+            right: -105 + Math.sin(progress * Math.PI * 6) * 18,
           },
           legRotation: { left: 0, right: 0 },
-          headTilt: Math.sin(progress * Math.PI * 5) * 4,
+          headTilt: Math.sin(progress * Math.PI * 3) * 3,
         };
 
       case 'jumping': {

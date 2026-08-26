@@ -81,27 +81,51 @@ export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
       style={{ overflow: 'visible' }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Brazo izquierdo (detrás del cuerpo, entra por la muesca de la estrella) */}
+      {/* Brazo izquierdo (detrás del cuerpo, entra por la muesca de la estrella).
+          El trazado real solo cubre la parte VISIBLE en el PNG -- su base
+          termina en un corte irregular justo donde la tapaba la estrella. Al
+          rotar, ese corte quedaría expuesto y se vería roto, así que se suma
+          una prolongación (una línea gruesa de puntas redondas) que se mete
+          bien adentro del cuerpo y viaja pegada al brazo en la misma <g>,
+          para que ningún ángulo de la animación deje ver el corte. */}
       <g
         style={{
           transformOrigin: '45px 68px',
           transform: `rotate(${armRotation.left}deg)`,
-          transformBox: 'fill-box',
+          transformBox: 'view-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
+        <line
+          x1={45}
+          y1={68}
+          x2={93.5}
+          y2={93.9}
+          stroke={MORADO_EXTREMIDADES}
+          strokeWidth={16}
+          strokeLinecap="round"
+        />
         <path d={BRAZO_IZQUIERDO} fill={MORADO_EXTREMIDADES} />
       </g>
 
-      {/* Brazo derecho (detrás del cuerpo, entra por la muesca de la estrella) */}
+      {/* Brazo derecho: mismo criterio que el izquierdo. */}
       <g
         style={{
           transformOrigin: '150px 90px',
           transform: `rotate(${armRotation.right}deg)`,
-          transformBox: 'fill-box',
+          transformBox: 'view-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
+        <line
+          x1={150}
+          y1={90}
+          x2={102.5}
+          y2={62.3}
+          stroke={MORADO_EXTREMIDADES}
+          strokeWidth={16}
+          strokeLinecap="round"
+        />
         <path d={BRAZO_DERECHO} fill={MORADO_EXTREMIDADES} />
       </g>
 
@@ -110,7 +134,7 @@ export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
         style={{
           transformOrigin: '104px 71px',
           transform: `rotate(${headTilt}deg)`,
-          transformBox: 'fill-box',
+          transformBox: 'view-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
@@ -149,7 +173,7 @@ export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
         style={{
           transformOrigin: '89px 124px',
           transform: `rotate(${legRotation.left}deg)`,
-          transformBox: 'fill-box',
+          transformBox: 'view-box',
           transition: 'transform 0.3s ease-out',
         }}
       >
@@ -161,7 +185,7 @@ export const EstrellaAvatar: React.FC<EstrellaAvatarProps> = ({
         style={{
           transformOrigin: '114px 113px',
           transform: `rotate(${legRotation.right}deg)`,
-          transformBox: 'fill-box',
+          transformBox: 'view-box',
           transition: 'transform 0.3s ease-out',
         }}
       >

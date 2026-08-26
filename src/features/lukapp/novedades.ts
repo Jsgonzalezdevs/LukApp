@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.0.7',
+    fecha: '2026-08-26',
+    texto: 'Arreglamos que los brazos de la Estrella se vieran rotos al moverse, y el saludo ahora sí levanta el brazo en vez de solo agitarlo abajo.',
+  },
+  {
     version: '1.0.6',
     fecha: '2026-08-26',
     texto: 'La Estrella quedó calcada del dibujo original: trazamos su silueta píxel a píxel (puntas, brazos y pies incluidos) en vez de aproximarla a mano.',
