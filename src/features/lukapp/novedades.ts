@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.1.2',
+    fecha: '2026-08-26',
+    texto: 'Ahora sí: las manos de la Estrella se ocultan de verdad tras el cuerpo (nada de "bolas" asomando) y la sonrisa grande de las emociones más efusivas quedó redonda, no puntiaguda.',
+  },
+  {
     version: '1.1.1',
     fecha: '2026-08-26',
     texto: 'Corregimos el arreglo anterior de los brazos: la "bola" que se veía pegada al cuerpo ya no está, y las expresiones de "escéptica" y "somnolienta" se veían raras -- ahora son más simples y amigables.',
