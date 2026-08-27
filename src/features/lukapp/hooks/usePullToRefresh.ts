@@ -31,8 +31,10 @@ export const usePullToRefresh = (
 ): UsePullToRefresh => {
   const [desplazamiento, setDesplazamiento] = useState(0);
   const [refrescando, setRefrescando] = useState(false);
+  const inicioXRef = useRef<number | null>(null);
   const inicioYRef = useRef<number | null>(null);
   const arrastrandoRef = useRef(false);
+  const esGestoHorizontalRef = useRef(false);
   const onRefrescarRef = useRef(onRefrescar);
   onRefrescarRef.current = onRefrescar;
 
@@ -40,25 +42,60 @@ export const usePullToRefresh = (
 
   const alEmpezar = useCallback((e: TouchEvent) => {
     if (!enabled || !enElTope() || refrescando) {
+      inicioXRef.current = null;
       inicioYRef.current = null;
+      esGestoHorizontalRef.current = false;
       return;
     }
-    inicioYRef.current = e.touches[0].clientY;
+    const touch = e.touches[0];
+    inicioXRef.current = touch.clientX;
+    inicioYRef.current = touch.clientY;
     arrastrandoRef.current = false;
+    esGestoHorizontalRef.current = false;
+
+    // Detectar si el toque empezó en un carrusel u objeto con scroll horizontal
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('.overflow-x-auto, [data-scroll-horizontal], [data-no-pull-refresh]')) {
+      esGestoHorizontalRef.current = true;
+    }
   }, [enabled, refrescando]);
 
   const alMover = useCallback((e: TouchEvent) => {
-    if (!enabled || inicioYRef.current === null) return;
-    const delta = e.touches[0].clientY - inicioYRef.current;
-    if (delta <= 0) {
+    if (!enabled || inicioYRef.current === null || inicioXRef.current === null || esGestoHorizontalRef.current) {
+      return;
+    }
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - inicioXRef.current;
+    const deltaY = touch.clientY - inicioYRef.current;
+
+    // Si el usuario se está moviendo hacia los lados, es un scroll horizontal (carrusel o pestañas)
+    if (Math.abs(deltaX) > Math.abs(deltaY) || Math.abs(deltaX) > 12) {
+      if (!arrastrandoRef.current) {
+        esGestoHorizontalRef.current = true;
+        setDesplazamiento(0);
+        return;
+      }
+    }
+
+    if (deltaY <= 0) {
       // Volvió a subir o nunca bajó: no es este gesto, se lo dejamos al scroll normal.
       setDesplazamiento(0);
       arrastrandoRef.current = false;
       return;
     }
+
+    // Exigir que sea un gesto claramente vertical hacia abajo
+    if (deltaY < Math.abs(deltaX) * 1.5) {
+      if (!arrastrandoRef.current) {
+        setDesplazamiento(0);
+        return;
+      }
+    }
+
     if (!enElTope()) {
       // Ya se desplazó la página durante el gesto: se cancela, no se sigue "jalando".
       inicioYRef.current = null;
+      inicioXRef.current = null;
       setDesplazamiento(0);
       return;
     }
@@ -66,10 +103,12 @@ export const usePullToRefresh = (
     // preventDefault evita que el navegador dispare SU propio pull-to-refresh
     // nativo (recargar la página entera) mientras se estira este.
     e.preventDefault();
-    setDesplazamiento(Math.min(TOPE_PX, delta * RESISTENCIA));
+    setDesplazamiento(Math.min(TOPE_PX, deltaY * RESISTENCIA));
   }, [enabled]);
 
   const alSoltar = useCallback(() => {
+    inicioXRef.current = null;
+    esGestoHorizontalRef.current = false;
     if (!arrastrandoRef.current) {
       inicioYRef.current = null;
       return;

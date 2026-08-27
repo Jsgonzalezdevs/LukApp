@@ -380,7 +380,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
         <div
           ref={carouselRef}
           onScroll={handleScroll}
-          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[175px] pt-3 pb-2 px-1 snap-x scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          data-scroll-horizontal="true"
+          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[175px] pt-3 pb-2 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {todasCategorias.map((cat, idx) => {
             const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
