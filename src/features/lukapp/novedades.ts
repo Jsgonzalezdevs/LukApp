@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.1',
+    fecha: '2026-08-27',
+    texto: 'Claridad financiera: el Dashboard ahora destaca como cifra principal el dinero disponible real de la persona (patrimonio total en bancos y efectivo).',
+  },
+  {
     version: '1.7.0',
     fecha: '2026-08-27',
     texto: 'Emojis en categorías y movimientos: personaliza tus categorías con cualquier emoji, disfruta de tarjetas de categorías con colores vivos y un carrusel deslizable con scrollbar discreto y elegante.',

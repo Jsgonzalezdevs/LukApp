@@ -79,7 +79,6 @@ export const InicioView: React.FC<InicioViewProps> = ({
   cargandoIa,
   onRefrescarInsights,
   onConsultarAsesor,
-  mostrarEfectivoSeparado,
   saldoEfectivoCop,
   saldoCuentasSinEfectivoCop,
   modoPrivacidad = false,
@@ -93,7 +92,6 @@ export const InicioView: React.FC<InicioViewProps> = ({
   const { isDismissed, dismiss } = useDismissedInsights();
   const [indiceRotacion, setIndiceRotacion] = useState(0);
   const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
-  const [modoCifra, setModoCifra] = useState<'gasto' | 'patrimonio'>('gasto');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
 
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -182,9 +180,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           onClick={onCambiarMes}
           className="flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
         >
-          <span className="text-[var(--fin-ink-soft)] text-[12px] uppercase tracking-wider">
-            {modoCifra === 'gasto' ? 'Gasto' : 'Saldo'}
-          </span>
+          <span className="text-[13px] opacity-80">🗓️</span>
           <span className="text-[var(--fin-ink)] font-bold">{etiquetaPeriodo}</span>
           <ChevronDown
             className="h-3.5 w-3.5 text-[var(--fin-ink-faint)]"
@@ -321,18 +317,13 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ── 3. Número Hero Principal + Pastilla de Ingresos/Egresos centrada ── */}
-      <div className="flex flex-col items-center justify-center pt-6 pb-2 text-center">
-        <button
-          type="button"
-          onClick={() => setModoCifra((prev) => (prev === 'gasto' ? 'patrimonio' : 'gasto'))}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/60 px-3 py-1 text-[12px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] transition-colors"
-        >
-          <span>{modoCifra === 'gasto' ? 'Gastado en este periodo' : 'Patrimonio total'}</span>
-          <span className="text-[10px] text-[var(--fin-ink-faint)]">⇄</span>
-        </button>
+      {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
+      <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[12px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
+          Dinero disponible
+        </span>
 
-        <div className="mt-2">
+        <div className="mt-1.5">
           <button
             type="button"
             onClick={onVerMes}
@@ -340,22 +331,22 @@ export const InicioView: React.FC<InicioViewProps> = ({
             style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
           >
             <AnimatedNumber
-              value={modoCifra === 'gasto' ? gastosCop : patrimonioCop}
+              value={patrimonioCop}
               format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
             />
           </button>
         </div>
 
-        {/* Desglose bancos y efectivo si está activo */}
-        {mostrarEfectivoSeparado && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
-          <div className="mt-1 flex items-center gap-3 text-[13px] text-[var(--fin-ink-soft)]">
+        {/* Desglose bancos y efectivo si existen */}
+        {saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
+          <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
             <span>
               Bancos:{' '}
               <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
                 {modoPrivacidad ? '$ ••••••' : formatCop(saldoCuentasSinEfectivoCop)}
               </strong>
             </span>
-            <span>•</span>
+            <span className="text-[var(--fin-line)]">•</span>
             <span>
               Efectivo:{' '}
               <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
@@ -365,12 +356,13 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </div>
         ) : null}
 
-        {/* Pastilla de Ingresos y Egresos en toda la mitad */}
+        {/* Pastilla de Ingresos y Gastos del periodo en toda la mitad */}
         <div className="mt-3.5 flex justify-center">
           <button
             type="button"
             onClick={onVerMes}
-            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors"
+            title="Ver desglose del periodo"
+            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
           >
             <span style={{ color: 'var(--fin-out)' }}>
               ↓ {modoPrivacidad ? '••••' : formatMontoCompacto(gastosCop)}
