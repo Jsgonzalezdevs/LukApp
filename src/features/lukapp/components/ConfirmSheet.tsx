@@ -190,10 +190,9 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="flex items-center gap-2 text-[18px] font-semibold tracking-tight text-[var(--fin-ink)] sm:text-[20px]">
-              {(() => {
-                const Icon = catalogo.de(category).Icono;
-                return <Icon className="h-6 w-6 mr-1" aria-hidden="true" />;
-              })()}
+              <span className="text-[22px] mr-1" aria-hidden="true">
+                {catalogo.de(category).emoji}
+              </span>
               {editando ? COPY.confirm.titleEditar : COPY.confirm.title}
             </h2>
             {!editando && parsed.needsReview ? (
@@ -339,10 +338,9 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                     color: active ? 'var(--fin-ink)' : 'var(--fin-ink-soft)',
                   }}
                 >
-                  {(() => {
-                    const Icon = entrada.Icono;
-                    return <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />;
-                  })()}
+                  <span className="text-[17px] shrink-0" aria-hidden="true">
+                    {entrada.emoji}
+                  </span>
                   <span className="truncate">{entrada.nombre}</span>
                 </motion.button>
               );

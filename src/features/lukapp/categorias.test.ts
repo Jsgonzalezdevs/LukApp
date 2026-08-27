@@ -115,4 +115,10 @@ describe('opciones del selector', () => {
     for (const c of COLORES_CATEGORIA) expect(c).toMatch(/^#[0-9A-F]{6}$/);
     expect(new Set(COLORES_CATEGORIA).size).toBe(COLORES_CATEGORIA.length);
   });
+
+  it('asigna y resuelve emojis tanto en básicas como en personalizadas', () => {
+    const cat = hacerCatalogo([propia({ emoji: '🍿' })]);
+    expect(cat.de('comida').emoji).toBe('🍔');
+    expect(cat.de('p-abc').emoji).toBe('🍿');
+  });
 });

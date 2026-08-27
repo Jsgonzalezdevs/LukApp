@@ -41,7 +41,6 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
 }) => {
   const catalogo = useCatalogo();
   const entrada = catalogo.de(tx.category);
-  const Icono = entrada.Icono;
   const esIngreso = tx.kind === 'ingreso';
   useBloqueoScroll(true);
 
@@ -82,11 +81,11 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
 
         <div className="flex flex-col items-center pb-2 text-center">
           <span
-            className="flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-pill)]"
-            style={{ backgroundColor: tint(entrada.color, 0.16), color: entrada.color }}
+            className="flex h-16 w-16 items-center justify-center rounded-3xl text-[30px] select-none shadow-sm"
+            style={{ backgroundColor: tint(entrada.color, 0.2) }}
             aria-hidden="true"
           >
-            <Icono className="h-7 w-7" />
+            {entrada.emoji}
           </span>
 
           <p

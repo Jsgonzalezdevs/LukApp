@@ -47,6 +47,8 @@ export interface CategoriaPersonal {
   nombre: string;
   /** A key in ICONOS_CATEGORIA. */
   icon: string;
+  /** Emoji representativo para la categoría (ej. 🥑, 🍔, 🚗). */
+  emoji?: string;
   /** `#RRGGBB`. */
   color: string;
   createdAt: string;
@@ -135,6 +137,67 @@ const sinTildes = (texto: string): string =>
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase();
 
+export const CATEGORIA_EMOJI_BASE: Record<Category, string> = {
+  mercado: '🥑',
+  comida: '🍔',
+  transporte: '🚗',
+  servicios: '💡',
+  salud: '💊',
+  hogar: '🏠',
+  entretenimiento: '💎',
+  ropa: '👕',
+  educacion: '📚',
+  transferencia: '🔄',
+  ahorro: '🐷',
+  ingreso: '💰',
+  otros: '📦',
+};
+
+const PISTAS_EMOJI: Array<{ emoji: string; palabras: string[] }> = [
+  { emoji: '🥑', palabras: ['mercado', 'super', 'supermercado', 'compras', 'fruta', 'verdura', 'carulla', 'exito', 'jumbo'] },
+  { emoji: '🍔', palabras: ['comida', 'restaurante', 'almuerzo', 'cena', 'domicilio', 'comer', 'hamburguesa', 'comidas'] },
+  { emoji: '☕', palabras: ['cafe', 'café', 'snack', 'onces', 'desayuno', 'panaderia', 'panadería', 'mecato', 'snacks'] },
+  { emoji: '🚗', palabras: ['transporte', 'bus', 'taxi', 'uber', 'gasolina', 'carro', 'metro', 'parqueadero', 'peaje', 'didi', 'indrive', 'gas'] },
+  { emoji: '💡', palabras: ['servicios', 'luz', 'agua', 'gas', 'internet', 'recibo', 'energia', 'energía', 'epm', 'enel', 'acueducto'] },
+  { emoji: '📱', palabras: ['celular', 'telefono', 'teléfono', 'plan', 'datos', 'streaming', 'suscripcion', 'suscripción', 'netflix', 'spotify', 'apple', 'google', 'digital', 'trabajo digital'] },
+  { emoji: '💊', palabras: ['salud', 'medico', 'médico', 'medicina', 'droguer', 'eps', 'doctor', 'clinica', 'clínica', 'farmacia', 'pastillas'] },
+  { emoji: '🏋️', palabras: ['gimnasio', 'gym', 'ejercicio', 'deporte', 'fitness', 'crossfit', 'smartfit'] },
+  { emoji: '🏠', palabras: ['hogar', 'casa', 'arriendo', 'alquiler', 'administracion', 'administración', 'muebles', 'decoracion'] },
+  { emoji: '💎', palabras: ['entretenimiento', 'cine', 'pelicula', 'película', 'salida', 'rumba', 'fiesta', 'ocio', 'diversion', 'disco'] },
+  { emoji: '🎮', palabras: ['juego', 'videojuego', 'gaming', 'playstation', 'xbox', 'nintendo', 'steam'] },
+  { emoji: '👕', palabras: ['ropa', 'zapatos', 'vestido', 'moda', 'calzado', 'chaqueta', 'pantalon', 'zara', 'h&m'] },
+  { emoji: '✂️', palabras: ['peluqueria', 'peluquería', 'belleza', 'estetica', 'estética', 'manicure', 'barberia', 'barbería', 'corte'] },
+  { emoji: '📚', palabras: ['educacion', 'educación', 'colegio', 'universidad', 'curso', 'libro', 'matricula', 'matrícula', 'estudio', 'cursos'] },
+  { emoji: '🔄', palabras: ['transferencia', 'traslado', 'giro'] },
+  { emoji: '🐷', palabras: ['ahorro', 'ahorros', 'alcancia', 'inversion', 'inversión'] },
+  { emoji: '💰', palabras: ['ingreso', 'sueldo', 'salario', 'pago', 'nomina', 'nómina', 'trabajo', 'honorarios', 'trabajos'] },
+  { emoji: '🐾', palabras: ['mascota', 'perro', 'veterinaria', 'veterinario', 'concentrado', 'croquetas', 'cat'] },
+  { emoji: '🐱', palabras: ['gato', 'michi'] },
+  { emoji: '👶', palabras: ['bebe', 'bebé', 'hijo', 'hija', 'pañal', 'panal', 'guarderia'] },
+  { emoji: '🎁', palabras: ['regalo', 'cumpleanos', 'cumpleaños', 'navidad', 'detalle'] },
+  { emoji: '✈️', palabras: ['viaje', 'vuelo', 'vacaciones', 'tiquete', 'hotel', 'turismo', 'playa', 'viajes'] },
+  { emoji: '🔧', palabras: ['reparacion', 'reparación', 'mantenimiento', 'arreglo', 'ferreteria', 'ferretería'] },
+  { emoji: '🍺', palabras: ['cerveza', 'trago', 'licor', 'bar', 'polas', 'cervezas', 'ron', 'whisky'] },
+  { emoji: '🍕', palabras: ['pizza', 'pizzas'] },
+];
+
+export const EMOJIS_POPULARES_CATEGORIA = [
+  '🥑', '🍔', '🍕', '☕', '🍷', '🍺', '🚗', '✈️', '💡', '📱',
+  '💊', '🏠', '💎', '👕', '📚', '🐾', '💰', '🎁', '🏋️', '🎬',
+  '🎮', '🛒', '✂️', '🔧', '👶', '🏖️', '📦', '🏷️', '💵', '💳',
+  '🥐', '🥪', '🍜', '🍣', '🎂', '🚲', '⚡', '🩺', '🎓', '🐶',
+];
+
+/** Adivina el emoji sugerido a partir del nombre o ícono. */
+export const sugerirEmojiCategoria = (nombre: string): string => {
+  const texto = sinTildes(nombre.trim());
+  if (texto === '') return '🏷️';
+  for (const { emoji, palabras } of PISTAS_EMOJI) {
+    if (palabras.some((palabra) => texto.includes(sinTildes(palabra)))) return emoji;
+  }
+  return '🏷️';
+};
+
 /** Adivina el ícono a partir del nombre que se está tecleando. `Package` si nada calza. */
 export const sugerirIconoCategoria = (nombre: string): string => {
   const texto = sinTildes(nombre.trim());
@@ -171,6 +234,7 @@ export interface EntradaCategoria {
   clave: CategoriaClave;
   nombre: string;
   Icono: LucideIcon;
+  emoji: string;
   color: string;
   /** True when the user created it, which is what makes it editable. */
   propia: boolean;
@@ -181,6 +245,7 @@ const deBase = (c: Category): EntradaCategoria => ({
   clave: c,
   nombre: CATEGORY_LABELS[c],
   Icono: CATEGORY_ICON[c],
+  emoji: CATEGORIA_EMOJI_BASE[c] ?? '🏷️',
   color: CATEGORY_COLOR[c],
   propia: false,
   archivada: false,
@@ -190,6 +255,7 @@ const dePersonal = (c: CategoriaPersonal): EntradaCategoria => ({
   clave: c.id,
   nombre: c.nombre,
   Icono: iconoDeCategoria(c.icon),
+  emoji: c.emoji || sugerirEmojiCategoria(c.nombre) || '🏷️',
   color: c.color,
   propia: true,
   archivada: c.archivedAt !== null,
@@ -213,6 +279,7 @@ export interface Catalogo {
 const desconocida = (clave: CategoriaClave): EntradaCategoria => ({
   ...deBase('otros'),
   clave,
+  emoji: '🏷️',
 });
 
 export const hacerCatalogo = (personales: readonly CategoriaPersonal[] = []): Catalogo => {

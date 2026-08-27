@@ -90,6 +90,7 @@ describe('editor de categorías', () => {
     expect(onCrear).toHaveBeenCalledWith({
       nombre: 'Mascotas',
       icon: 'PawPrint',
+      emoji: '🐾',
       color: '#10B981',
     });
   });

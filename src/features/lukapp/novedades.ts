@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.0',
+    fecha: '2026-08-27',
+    texto: 'Emojis en categorías y movimientos: personaliza tus categorías con cualquier emoji, disfruta de tarjetas de categorías con colores vivos y un carrusel deslizable con scrollbar discreto y elegante.',
+  },
+  {
     version: '1.6.1',
     fecha: '2026-08-27',
     texto: 'Optimización de rendimiento del empaquetado Vite, corrección de dependencias en hooks de audio y sincronización más rápida de preferencias en la nube.',

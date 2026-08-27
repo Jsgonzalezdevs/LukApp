@@ -526,7 +526,6 @@ export const Captura: React.FC<CapturaProps> = ({
           >
             {opciones.map((entrada) => {
               const activa = category === entrada.clave;
-              const Icono = entrada.Icono;
               return (
                 <button
                   key={entrada.clave}
@@ -546,7 +545,9 @@ export const Captura: React.FC<CapturaProps> = ({
                     color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-soft)',
                   }}
                 >
-                  <Icono className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="text-[17px] shrink-0" aria-hidden="true">
+                    {entrada.emoji}
+                  </span>
                   <span>{entrada.nombre}</span>
                 </button>
               );

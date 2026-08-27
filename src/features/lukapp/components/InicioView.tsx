@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
@@ -50,24 +50,6 @@ interface InicioViewProps {
   onAnotar?: () => void;
 }
 
-const CATEGORIA_EMOJI: Record<string, string> = {
-  mercado: '🥑',
-  comida: '🍔',
-  transporte: '🚗',
-  servicios: '💡',
-  entretenimiento: '💎',
-  salud: '💊',
-  hogar: '🏠',
-  suscripciones: '📱',
-  ropa: '👕',
-  educacion: '📚',
-  cafes_snacks: '☕',
-  mascotas: '🐾',
-  ingreso: '💰',
-  transferencia: '🔄',
-  otros: '📦',
-};
-
 const formatMontoCompacto = (monto: number): string => {
   if (monto === 0) return '$0';
   if (monto >= 1_000_000) {
@@ -113,6 +95,18 @@ export const InicioView: React.FC<InicioViewProps> = ({
   const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
   const [modoCifra, setModoCifra] = useState<'gasto' | 'patrimonio'>('gasto');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
+
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  const handleScroll = () => {
+    if (!carouselRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+    const maxScroll = scrollWidth - clientWidth;
+    if (maxScroll > 0) {
+      setScrollProgress(scrollLeft / maxScroll);
+    }
+  };
 
   const infoRacha = useMemo(
     () => calcularRacha(movimientos, today || new Date().toISOString().slice(0, 10)),
@@ -162,8 +156,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
     const lista = Array.from(mapa.entries())
       .map(([clave, total]) => {
         const info = catalogo.de(clave);
-        const emoji = CATEGORIA_EMOJI[clave] || '🏷️';
-        return { clave, total, info, emoji };
+        return { clave, total, info, emoji: info.emoji };
       })
       .sort((a, b) => {
         if (b.total !== a.total) return b.total - a.total;
@@ -390,13 +383,18 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       </div>
 
-      {/* ── 4. Carrusel Deslizable de Gráficas de Categorías (Todas las categorías) ─ */}
+      {/* ── 4. Carrusel Deslizable de Gráficas de Categorías con Color y Scrollbar Oculto ─ */}
       <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar py-2 px-1 snap-x scroll-smooth">
+        <div
+          ref={carouselRef}
+          onScroll={handleScroll}
+          className="flex gap-2.5 sm:gap-3 overflow-x-auto py-2 px-1 snap-x scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+        >
           {todasCategorias.map((cat, idx) => {
             const pct = maxTotal > 0 && cat.total > 0 ? (cat.total / maxTotal) * 100 : 0;
             const alturaBarra = pct > 0 ? Math.min(100, Math.max(14, pct)) : 0;
             const seleccionada = categoriaFiltro === cat.clave;
+            const colorCat = cat.info.color;
 
             return (
               <motion.div
@@ -406,14 +404,19 @@ export const InicioView: React.FC<InicioViewProps> = ({
                 onClick={() => {
                   setCategoriaFiltro(categoriaFiltro === cat.clave ? null : cat.clave);
                 }}
-                className={`relative flex-shrink-0 w-[84px] sm:w-[94px] h-[145px] sm:h-[160px] snap-start flex flex-col items-center justify-between rounded-[22px] sm:rounded-[26px] bg-[var(--fin-card)] border p-2 sm:p-2.5 cursor-pointer transition-all overflow-hidden ${
+                className={`relative flex-shrink-0 w-[88px] sm:w-[96px] h-[150px] sm:h-[162px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2.5 cursor-pointer transition-all overflow-hidden ${
                   seleccionada
-                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/15 shadow-md scale-102'
+                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/20 shadow-md scale-102'
                     : 'border-[var(--fin-line)] shadow-xs hover:border-[var(--fin-ink-ghost)]'
                 }`}
               >
-                {/* Relleno animado vertical de la barra */}
-                <div className="absolute inset-x-1.5 bottom-1.5 rounded-[17px] sm:rounded-[21px] bg-[var(--fin-soft)]/90 -z-0 overflow-hidden flex flex-col justify-end">
+                {/* Relleno animado vertical de la barra con color vivo */}
+                <div
+                  className="absolute inset-x-1.5 bottom-1.5 rounded-[19px] sm:rounded-[23px] -z-0 overflow-hidden flex flex-col justify-end"
+                  style={{
+                    backgroundColor: tint(colorCat, 0.08),
+                  }}
+                >
                   {alturaBarra > 0 ? (
                     <motion.div
                       initial={{ height: 0 }}
@@ -425,24 +428,30 @@ export const InicioView: React.FC<InicioViewProps> = ({
                         delay: Math.min(0.2, idx * 0.03),
                       }}
                       style={{
-                        backgroundColor: tint(cat.info.color, 0.22),
+                        backgroundColor: tint(colorCat, 0.28),
+                        borderTop: `2px solid ${colorCat}`,
                       }}
-                      className="w-full rounded-[17px] sm:rounded-[21px]"
+                      className="w-full rounded-[19px] sm:rounded-[23px]"
                     />
                   ) : null}
                 </div>
 
-                {/* Icono / Emoji superior */}
-                <div className="relative z-10 flex h-7 w-7 items-center justify-center text-[18px] sm:text-[20px] drop-shadow-xs">
+                {/* Icono / Emoji superior con contenedor tintado */}
+                <div
+                  className="relative z-10 flex h-9 w-9 items-center justify-center rounded-2xl text-[20px] sm:text-[22px] drop-shadow-xs transition-transform"
+                  style={{
+                    backgroundColor: tint(colorCat, 0.16),
+                  }}
+                >
                   {cat.emoji}
                 </div>
 
                 {/* Monto y nombre inferior */}
                 <div className="relative z-10 flex flex-col items-center w-full">
-                  <span className="text-[11.5px] sm:text-[13px] font-bold tabular-nums text-[var(--fin-ink)] text-center">
+                  <span className="text-[12px] sm:text-[13.5px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center">
                     {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
                   </span>
-                  <span className="text-[9.5px] sm:text-[10.5px] font-medium text-[var(--fin-ink-soft)] truncate max-w-[70px] sm:max-w-[80px] text-center capitalize">
+                  <span className="text-[10px] sm:text-[11px] font-semibold text-[var(--fin-ink-soft)] truncate max-w-[76px] sm:max-w-[84px] text-center capitalize">
                     {cat.info.nombre}
                   </span>
                 </div>
@@ -450,6 +459,21 @@ export const InicioView: React.FC<InicioViewProps> = ({
             );
           })}
         </div>
+
+        {/* Indicador de scroll sutil y discreto */}
+        {todasCategorias.length > 4 && (
+          <div className="mt-1.5 flex justify-center">
+            <div className="h-1 w-12 rounded-full bg-[var(--fin-line)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[var(--fin-ink-soft)]/60 transition-all duration-150"
+                style={{
+                  width: '35%',
+                  transform: `translateX(${scrollProgress * 185}%)`,
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 5. Botón suave de acción rápida [ + Anotar nuevo gasto ] ─────── */}

@@ -121,7 +121,6 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               const entrada = catalogo.de(tx.category);
               const color = entrada.color;
               const esIngreso = tx.kind === 'ingreso';
-              const Icon = entrada.Icono;
               const ultima = idx === group.items.length - 1;
 
               return (
@@ -144,11 +143,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
  lista de veinte movimientos con veinte colores distintos
  de letra no se puede leer. */}
                     <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]"
-                      style={{ backgroundColor: tint(color, 0.14), color }}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[20px] select-none shadow-xs"
+                      style={{ backgroundColor: tint(color, 0.16) }}
                       aria-hidden="true"
                     >
-                      <Icon className="h-5 w-5" />
+                      {entrada.emoji}
                     </span>
 
                     <span className="min-w-0 flex-1">
