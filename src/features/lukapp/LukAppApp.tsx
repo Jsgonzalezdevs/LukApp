@@ -598,6 +598,15 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     );
   }
 
+  const ningunModalAbierto =
+    pending === null &&
+    multiPending === null &&
+    editando === null &&
+    analizando === null &&
+    capa === null &&
+    panelAjustes === null &&
+    !guiaBasicaAbierta;
+
   return (
     <CatalogoProvider categorias={categorias}>
       <LukAppShell
@@ -605,6 +614,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         onSectionChange={setSection}
         onBack={onBack}
         onRefrescar={almacen.recargar}
+        habilitarRefresco={ningunModalAbierto}
         accion={
           <BotonAnotar
             onDictado={handleSubmit}

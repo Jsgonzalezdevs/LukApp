@@ -25,7 +25,10 @@ export interface UsePullToRefresh {
  * refresco). Cada arrastre nuevo revisa el scroll de nuevo, así que si la
  * persona se desplaza hacia abajo a mitad de gesto, se cancela solo.
  */
-export const usePullToRefresh = (onRefrescar: () => Promise<void> | void): UsePullToRefresh => {
+export const usePullToRefresh = (
+  onRefrescar: () => Promise<void> | void,
+  enabled: boolean = true,
+): UsePullToRefresh => {
   const [desplazamiento, setDesplazamiento] = useState(0);
   const [refrescando, setRefrescando] = useState(false);
   const inicioYRef = useRef<number | null>(null);
@@ -36,16 +39,16 @@ export const usePullToRefresh = (onRefrescar: () => Promise<void> | void): UsePu
   const enElTope = () => (document.scrollingElement?.scrollTop ?? window.scrollY) <= 0;
 
   const alEmpezar = useCallback((e: TouchEvent) => {
-    if (!enElTope() || refrescando) {
+    if (!enabled || !enElTope() || refrescando) {
       inicioYRef.current = null;
       return;
     }
     inicioYRef.current = e.touches[0].clientY;
     arrastrandoRef.current = false;
-  }, [refrescando]);
+  }, [enabled, refrescando]);
 
   const alMover = useCallback((e: TouchEvent) => {
-    if (inicioYRef.current === null) return;
+    if (!enabled || inicioYRef.current === null) return;
     const delta = e.touches[0].clientY - inicioYRef.current;
     if (delta <= 0) {
       // Volvió a subir o nunca bajó: no es este gesto, se lo dejamos al scroll normal.
@@ -64,7 +67,7 @@ export const usePullToRefresh = (onRefrescar: () => Promise<void> | void): UsePu
     // nativo (recargar la página entera) mientras se estira este.
     e.preventDefault();
     setDesplazamiento(Math.min(TOPE_PX, delta * RESISTENCIA));
-  }, []);
+  }, [enabled]);
 
   const alSoltar = useCallback(() => {
     if (!arrastrandoRef.current) {
@@ -85,6 +88,14 @@ export const usePullToRefresh = (onRefrescar: () => Promise<void> | void): UsePu
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setDesplazamiento(0);
+      setRefrescando(false);
+      inicioYRef.current = null;
+      arrastrandoRef.current = false;
+      return;
+    }
+
     window.addEventListener('touchstart', alEmpezar, { passive: true });
     window.addEventListener('touchmove', alMover, { passive: false });
     window.addEventListener('touchend', alSoltar, { passive: true });
@@ -95,7 +106,7 @@ export const usePullToRefresh = (onRefrescar: () => Promise<void> | void): UsePu
       window.removeEventListener('touchend', alSoltar);
       window.removeEventListener('touchcancel', alSoltar);
     };
-  }, [alEmpezar, alMover, alSoltar]);
+  }, [enabled, alEmpezar, alMover, alSoltar]);
 
   return {
     progreso: Math.min(1, desplazamiento / UMBRAL_PX),

@@ -15,6 +15,7 @@ interface LukAppShellProps {
   children: React.ReactNode;
   /** Jalar hacia abajo desde el tope llama esto. Sin él, el gesto no hace nada. */
   onRefrescar?: () => Promise<void> | void;
+  habilitarRefresco?: boolean;
 }
 
 /**
@@ -43,6 +44,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
   onBack,
   children,
   onRefrescar,
+  habilitarRefresco = true,
 }) => {
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
@@ -53,13 +55,17 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
     onSectionChange(newSection);
   };
 
+  // Solo se habilita el gesto de refrescar en el Dashboard ('inicio') y cuando no hay modales abiertos
+  const esDashboard = section === 'inicio';
+  const refrescoActivo = Boolean(onRefrescar) && esDashboard && habilitarRefresco;
+
   const pull = usePullToRefresh(async () => {
     if (!onRefrescar) return;
     haptic.trigger('light');
     await onRefrescar();
     haptic.trigger('selection');
     audio.play('selection');
-  });
+  }, refrescoActivo);
 
   return (
   <div className="fin-root min-h-[100dvh] bg-[var(--fin-bg)] text-[var(--fin-ink)] antialiased">

@@ -51,4 +51,22 @@ describe('LukAppShell', () => {
     render(<LukAppShell {...props} />);
     expect(screen.getByText('contenido')).toBeTruthy();
   });
+
+  it('solo habilita el refresco en el dashboard (inicio) cuando habilitarRefresco es true', () => {
+    const onRefrescar = vi.fn();
+    const { rerender } = render(
+      <LukAppShell {...props} section="inicio" onRefrescar={onRefrescar} habilitarRefresco={true} />,
+    );
+    expect(screen.getByRole('navigation', { name: 'Secciones' })).toBeTruthy();
+
+    rerender(
+      <LukAppShell {...props} section="dinero" onRefrescar={onRefrescar} habilitarRefresco={true} />,
+    );
+    expect(screen.getByRole('navigation', { name: 'Secciones' })).toBeTruthy();
+
+    rerender(
+      <LukAppShell {...props} section="inicio" onRefrescar={onRefrescar} habilitarRefresco={false} />,
+    );
+    expect(screen.getByRole('navigation', { name: 'Secciones' })).toBeTruthy();
+  });
 });

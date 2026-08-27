@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.1.4',
+    fecha: '2026-08-26',
+    texto: 'El gesto de jalar para refrescar ahora es exclusivo de la pantalla principal (Dashboard / Inicio) y se deshabilita automáticamente al abrir modales o navegar por otras pestañas.',
+  },
+  {
     version: '1.1.3',
     fecha: '2026-08-26',
     texto: 'Mejoramos el escaneo de comprobantes OCR: ahora limpian automáticamente el texto de plantilla de Nequi y Bancolombia, evitando que se guarden frases o caracteres extraños de la imagen en la descripción.',
