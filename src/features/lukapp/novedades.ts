@@ -23,6 +23,26 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.4.0',
+    fecha: '2026-08-27',
+    texto: 'Nueva experiencia animada en la landing: sección interactiva y visual que ilustra en bucle continuo el registro sin esfuerzo, la creación del hábito y la analítica del panorama completo.',
+  },
+  {
+    version: '1.3.0',
+    fecha: '2026-08-27',
+    texto: 'Ahora puedes marcar tu "Cuenta Principal" favorita en Dinero: se preseleccionará automáticamente al registrar movimientos y mostrará una estrella dorada en tus listas.',
+  },
+  {
+    version: '1.2.0',
+    fecha: '2026-08-27',
+    texto: 'Captura más inteligente: el sistema ahora infiere la categoría automáticamente mientras escribes la descripción, las categorías se ordenan por las que más usas en una cuadrícula más visual, y si no especificas cuenta te pide confirmar de cuál salió antes de guardar.',
+  },
+  {
+    version: '1.1.5',
+    fecha: '2026-08-27',
+    texto: 'La importación de extractos bancarios en PDF ahora es directa e inmediata: ya no te pide ingresar una clave ni token de acceso para entrar a la pantalla.',
+  },
+  {
     version: '1.1.4',
     fecha: '2026-08-26',
     texto: 'El gesto de jalar para refrescar ahora es exclusivo de la pantalla principal (Dashboard / Inicio) y se deshabilita automáticamente al abrir modales o navegar por otras pestañas.',

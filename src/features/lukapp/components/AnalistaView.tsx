@@ -8,7 +8,6 @@ import {
   FileDown,
   FileText,
   FileUp,
-  KeyRound,
   Loader2,
   RotateCcw,
   ShieldCheck,
@@ -293,10 +292,6 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 
 export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImportar }) => {
   const analista = useAnalista();
-  const [tokenBorrador, setTokenBorrador] = useState('');
-  // Without this the token screen was reachable only while no token was stored,
-  // so saving a wrong one locked the view into a permanent 401 with no way back.
-  const [cambiandoToken, setCambiandoToken] = useState(false);
   const [arrastrando, setArrastrando] = useState(false);
   const [contraidos, setContraidos] = useState<Set<string>>(new Set());
   const inputArchivo = useRef<HTMLInputElement>(null);
@@ -311,95 +306,9 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
     });
   };
 
-  // ---------- Token gate ----------
-  if (!analista.token || cambiandoToken) {
-    return (
-      <div className="mx-auto max-w-md">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            analista.guardarToken(tokenBorrador);
-            setTokenBorrador('');
-            setCambiandoToken(false);
-          }}
-          className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-6 text-center"
-        >
-          <KeyRound
-            className="mx-auto h-9 w-9 text-[var(--fin-ink-faint)]"
-            strokeWidth={1.75}
-            aria-hidden="true"
-          />
-          <h2 className="mt-3 text-[20px] font-semibold tracking-tight">Token de acceso</h2>
-          <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            El endpoint pide un token para que nadie más que encuentre la URL pueda usarlo. Guárdalo
-            cuando tu navegador lo ofrezca y en tus otros dispositivos con la misma cuenta (iCloud
-            Keychain o Google) aparecerá solo.
-          </p>
-
-          {/* A visible username field is what makes Safari/Chrome recognize this
- as a real login form and offer to save it to iCloud Keychain /
- Google Password Manager — which is what actually syncs the token
- across the owner's own devices without ever putting the secret in
- the public bundle. A hidden or absent username field makes most
- password managers skip the save prompt entirely. */}
-          <input
-            type="text"
-            name="username"
-            autoComplete="username"
-            defaultValue="finanzas"
-            readOnly
-            aria-hidden="true"
-            tabIndex={-1}
-            className="sr-only"
-          />
-
-          <input
-            type="password"
-            name="password"
-            value={tokenBorrador}
-            onChange={(e) => setTokenBorrador(e.target.value)}
-            autoComplete="current-password"
-            placeholder="ANALISTA_TOKEN"
-            className="mt-5 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-center text-[17px] font-normal focus:border-[var(--fin-ink-faint)] focus:outline-none"
-            aria-label="Token de acceso"
-          />
-
-          <button
-            type="submit"
-            disabled={!tokenBorrador.trim()}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
-          >
-            <KeyRound className="h-4 w-4" strokeWidth={3} />
-            Guardar
-          </button>
-
-          {/* Only offered while replacing an existing token — with none stored
- there is nothing to go back to. */}
-          {analista.token ? (
-            <button
-              type="button"
-              onClick={() => {
-                setTokenBorrador('');
-                setCambiandoToken(false);
-              }}
-              className="mt-2 w-full rounded-[var(--fin-r-pill)] px-6 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
-            >
-              Cancelar
-            </button>
-          ) : null}
-        </form>
-      </div>
-    );
-  }
-
   const enCurso = analista.trabajos.filter((t) => t.fase === 'subiendo');
   const conError = analista.trabajos.filter((t) => t.fase === 'error');
   const listos = analista.trabajos.filter((t) => t.fase === 'listo');
-
-  // A rejected token is the one failure the user can actually fix from here, so
-  // it gets a direct action instead of leaving them to work out that the saved
-  // secret is the problem.
-  const tokenRechazado = conError.some((t) => t.error?.codigo === 'sin-autorizacion');
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
@@ -544,32 +453,6 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
         </p>
       ) : null}
 
-      {tokenRechazado ? (
-        <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-center">
-          <p className="text-[15px] leading-relaxed text-[var(--fin-out-ink)]">
-            El servidor rechazó el token guardado. Comprueba que coincida con
-            <code className="mx-1 font-mono">ANALISTA_TOKEN</code>
-            en el servidor.
-          </p>
-          <button
-            type="button"
-            onClick={() => setCambiandoToken(true)}
-            className="mt-2.5 inline-flex items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-on-accent)]"
-          >
-            <KeyRound className="h-3.5 w-3.5" strokeWidth={3} />
-            Cambiar token
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setCambiandoToken(true)}
-          className="mx-auto inline-flex items-center gap-1.5 rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
-        >
-          <KeyRound className="h-3 w-3" strokeWidth={3} />
-          Cambiar token
-        </button>
-      )}
     </div>
   );
 };

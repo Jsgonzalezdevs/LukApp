@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, Check, Pencil, Send, Trash2, X } from 'lucide-react';
+import { ChevronDown, Check, Pencil, Send, Star, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
 import type { Transaction } from '../types';
@@ -17,6 +17,8 @@ interface DetalleCajitaProps {
   onEliminar: (id: string) => void;
   onTransferir?: (origenId: string, destinoId: string, montoCop: number) => void;
   destinos?: readonly { id: string; nombre: string }[];
+  esFavorita?: boolean;
+  onAlternarFavorita?: (id: string) => void;
 }
 
 /**
@@ -43,6 +45,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   onEliminar,
   onTransferir,
   destinos = [],
+  esFavorita = false,
+  onAlternarFavorita,
 }) => {
   const [editandoSaldo, setEditandoSaldo] = useState(false);
   const [nuevoSaldoTexto, setNuevoSaldoTexto] = useState('');
@@ -339,6 +343,47 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           </>
         ) : null}
       </section>
+
+      {/* Marcar como cuenta favorita / principal */}
+      {cajita.tipo === 'cuenta' && onAlternarFavorita && (
+        <section
+          className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 border border-[var(--fin-line)]"
+          style={{ backdropFilter: 'var(--fin-glass-filter)', boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.6)' }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                  esFavorita ? 'bg-amber-500/15 text-amber-500' : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
+                }`}
+              >
+                <Star className={`h-5 w-5 ${esFavorita ? 'fill-amber-500 text-amber-500' : ''}`} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[15px] font-bold text-[var(--fin-ink)] truncate">
+                  {esFavorita ? 'Cuenta principal activa' : 'Usar como cuenta principal'}
+                </p>
+                <p className="text-[12.5px] leading-tight text-[var(--fin-ink-soft)]">
+                  {esFavorita
+                    ? 'Se preselecciona por defecto al anotar tus nuevos movimientos.'
+                    : 'Márcala para no tener que elegirla cada vez que anotes.'}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onAlternarFavorita(cajita.id)}
+              className={`shrink-0 rounded-[var(--fin-r-pill)] px-3.5 py-1.5 text-[13px] font-bold transition-all ${
+                esFavorita
+                  ? 'border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                  : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]/80'
+              }`}
+            >
+              {esFavorita ? 'Desmarcar' : 'Activar ⭐'}
+            </button>
+          </div>
+        </section>
+      )}
 
       {puedeTransferir ? (
         <button

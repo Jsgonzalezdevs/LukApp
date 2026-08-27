@@ -32,6 +32,7 @@ const CLAVE_PERIODO = 'finanzas:periodo';
 const CLAVE_NOVEDAD_VISTA = 'finanzas:novedades:version-vista';
 const CLAVE_PRESUPUESTO_ALERTAS = 'finanzas:presupuestos:alertas-activas';
 const CLAVE_PRESUPUESTO_UMBRAL = 'finanzas:presupuestos:umbral-alerta';
+const CLAVE_CUENTA_FAVORITA = 'finanzas:cuenta-favorita';
 
 const leerBooleano = (clave: string, porDefecto: boolean): boolean => {
   if (typeof window === 'undefined') return porDefecto;
@@ -100,6 +101,8 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
     setIf(CLAVE_PRESUPUESTO_UMBRAL, String(metadata[CLAVE_PRESUPUESTO_UMBRAL]));
   if (metadata[CLAVE_NOVEDAD_VISTA] !== undefined)
     setIf(CLAVE_NOVEDAD_VISTA, String(metadata[CLAVE_NOVEDAD_VISTA]));
+  if (metadata[CLAVE_CUENTA_FAVORITA] !== undefined)
+    setIf(CLAVE_CUENTA_FAVORITA, metadata[CLAVE_CUENTA_FAVORITA] ? String(metadata[CLAVE_CUENTA_FAVORITA]) : null);
 
   // Si hubo algún cambio desde la nube, forzamos que todos los hooks locales se recarguen.
   if (cambio) {
@@ -712,4 +715,45 @@ const leerLista = (clave: string): string[] => {
     // Igual.
   }
   return [];
+};
+
+/**
+ * Hook para obtener y configurar la cuenta o banco favorito del usuario.
+ * Se preselecciona automáticamente al registrar nuevos movimientos.
+ */
+export const useCuentaFavorita = () => {
+  const [cuentaFavoritaId, setEstado] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(CLAVE_CUENTA_FAVORITA);
+    } catch {
+      return null;
+    }
+  });
+
+  const setCuentaFavorita = useCallback((id: string | null) => {
+    setEstado(id);
+    try {
+      if (id) {
+        localStorage.setItem(CLAVE_CUENTA_FAVORITA, id);
+        guardarEnSupabase(CLAVE_CUENTA_FAVORITA, id);
+      } else {
+        localStorage.removeItem(CLAVE_CUENTA_FAVORITA);
+        guardarEnSupabase(CLAVE_CUENTA_FAVORITA, null);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== CLAVE_CUENTA_FAVORITA) return;
+      try {
+        setEstado(localStorage.getItem(CLAVE_CUENTA_FAVORITA));
+      } catch {}
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+
+  return { cuentaFavoritaId, setCuentaFavorita };
 };

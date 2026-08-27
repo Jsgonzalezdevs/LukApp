@@ -1,4 +1,5 @@
 import React from 'react';
+import { Star } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { ES_PASIVO } from '../data/modelos';
@@ -16,6 +17,7 @@ interface DineroViewProps {
   onAbrir: (cajita: Cajita) => void;
   onCrear: () => void;
   modoPrivacidad?: boolean;
+  cuentaFavoritaId?: string | null;
 }
 
 /** Los tres grupos en que se parte la lista. */
@@ -48,6 +50,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
   onAbrir,
   onCrear,
   modoPrivacidad = false,
+  cuentaFavoritaId = null,
 }) => {
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
@@ -137,9 +140,16 @@ export const DineroView: React.FC<DineroViewProps> = ({
                       </span>
 
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[17px] font-semibold text-[var(--fin-ink)]">
-                          {cajita.nombre}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
+                            {cajita.nombre}
+                          </span>
+                          {cajita.id === cuentaFavoritaId && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Principal
+                            </span>
+                          )}
+                        </div>
                         {pct !== null ? (
                           <>
                             <span className="mt-1.5 block h-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">

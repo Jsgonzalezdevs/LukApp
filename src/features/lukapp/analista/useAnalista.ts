@@ -28,8 +28,8 @@ export interface UseAnalista {
   trabajos: Trabajo[];
   /** Shared clock tick (ms epoch), for computing each job's elapsed seconds. */
   ahora: number;
-  token: string;
-  guardarToken: (token: string) => void;
+  token?: string;
+  guardarToken?: (token: string) => void;
   /** Validates and launches one job per file. Files are processed concurrently. */
   analizarArchivos: (archivos: readonly File[]) => void;
   reintentar: (id: string) => void;
@@ -119,7 +119,7 @@ export const useAnalista = (): UseAnalista => {
   }, []);
 
   const procesarArchivo = useCallback(
-    (id: string, archivo: File, tokenActual: string) => {
+    (id: string, archivo: File, tokenActual?: string) => {
       void (async () => {
         let pdfBase64: string;
         try {
@@ -134,12 +134,16 @@ export const useAnalista = (): UseAnalista => {
         if (cancelado.current) return;
 
         try {
+          const headers: Record<string, string> = {
+            'content-type': 'application/json',
+          };
+          if (tokenActual) {
+            headers.authorization = `Bearer ${tokenActual}`;
+          }
+
           const respuesta = await fetch(RUTA_ANALIZAR, {
             method: 'POST',
-            headers: {
-              'content-type': 'application/json',
-              authorization: `Bearer ${tokenActual}`,
-            },
+            headers,
             body: JSON.stringify({ pdfBase64 }),
           });
 
@@ -183,7 +187,7 @@ export const useAnalista = (): UseAnalista => {
 
   const analizarArchivos = useCallback(
     (archivos: readonly File[]) => {
-      if (!token || archivos.length === 0) return;
+      if (archivos.length === 0) return;
 
       const creados: Trabajo[] = [];
       const aProcesar: { id: string; archivo: File }[] = [];
@@ -236,7 +240,7 @@ export const useAnalista = (): UseAnalista => {
   const reintentar = useCallback(
     (id: string) => {
       const trabajo = trabajosRef.current.find((t) => t.id === id);
-      if (!trabajo || !token) return;
+      if (!trabajo) return;
       actualizarTrabajo(id, { fase: 'subiendo', error: null, resultado: null, inicio: Date.now() });
       procesarArchivo(id, trabajo.archivo, token);
     },

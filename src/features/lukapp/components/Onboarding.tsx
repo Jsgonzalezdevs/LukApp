@@ -13,8 +13,19 @@ interface OnboardingProps {
   onAnotarManual?: () => void;
 }
 
-/** Los bancos que más se usan en Colombia, para no hacer escribir a nadie. */
-const BANCOS = ['Nequi', 'Daviplata', 'Bancolombia', 'Nu', 'Efectivo', 'Otro'];
+/** Los bancos y billeteras que más se usan en Colombia, para no hacer escribir a nadie. */
+const BANCOS = [
+  'Bancolombia',
+  'Nu',
+  'Nequi',
+  'Daviplata',
+  'Davivienda',
+  'Lulo Bank',
+  'BBVA',
+  'Falabella',
+  'Efectivo',
+  'Otro',
+];
 
 /**
  * La bienvenida: cuatro pantallas, UNA pregunta en cada una.

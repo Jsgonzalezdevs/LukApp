@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { PDFParse } from 'pdf-parse';
-import { tokenValido } from './server_lib/auth.ts';
 import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
@@ -1009,11 +1008,6 @@ app.get('/api/mis-permisos', async (req, res) => {
 const MAX_BYTES_PDF = 4 * 1024 * 1024; // 4MB
 
 app.post('/api/analizar-extracto', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!tokenValido(authHeader, process.env.ANALISTA_TOKEN)) {
-    return res.status(401).json({ ok: false, codigo: 'sin-autorizacion', mensaje: 'Token inválido o ausente.' });
-  }
-
   const { pdfBase64 } = req.body;
   if (typeof pdfBase64 !== 'string' || pdfBase64.length === 0) {
     return res.status(400).json({ ok: false, codigo: 'pdf-invalido', mensaje: 'No llegó el contenido del PDF.' });

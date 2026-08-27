@@ -11,6 +11,7 @@ import { Privacidad } from './landing/Privacidad';
 import { BandaCifras } from './landing/BandaCifras';
 import { Registro } from './landing/Registro';
 import { PWAInstall } from './landing/PWAInstall';
+import { SecuenciaAnimada } from './landing/SecuenciaAnimada';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
@@ -135,6 +136,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
 
       <Hero onGetStarted={handleGetStarted} />
       <Ticker frases={FRASES_TICKER} />
+      <SecuenciaAnimada />
       <DemoParser />
       <BandaCifras />
       <Funciones />

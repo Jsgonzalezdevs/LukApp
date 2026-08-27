@@ -53,7 +53,7 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
         amountCop,
         category: item.category,
         description: item.description || item.raw,
-        cuentaId: item.cuentaId ?? cuentaPorDefecto ?? (cajitas[0]?.id || null),
+        cuentaId: item.cuentaId ?? cuentaPorDefecto ?? null,
         occurredOn: item.dateOverride || undefined,
         rawTranscript: item.raw,
       };

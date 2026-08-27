@@ -53,6 +53,7 @@ import {
   useNovedades,
   useOnboarding,
   useRecordatorioRacha,
+  useCuentaFavorita,
 } from './data/usePreferencias';
 import { NOVEDADES } from './novedades';
 import { contactoPorApodo } from './lib/contactos';
@@ -245,6 +246,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const periodoAjustes = useAjustesPeriodo();
   const presupuestoAjustes = useAjustesPresupuesto();
   const novedades = useNovedades();
+  const { cuentaFavoritaId, setCuentaFavorita } = useCuentaFavorita();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
@@ -534,9 +536,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const nombreDeCuenta = (id: string | null) =>
     id === null ? null : (cajitas.find((c) => c.id === id)?.nombre ?? null);
 
-  // La cuenta que se usa cuando no dices ninguna. Antes esto era un desplegable
-  // de 117px en el formulario, y la respuesta era la misma el 95% de las veces.
-  const cuentaPorDefecto = cuentasParaElegir[0]?.id ?? null;
+  // Si el usuario marcó una cuenta favorita, se usa esa. Si no, se queda en null para preguntar antes de guardar.
+  const cuentaPorDefecto = cuentaFavoritaId;
 
   // "Para ti": Tips e insights inteligentes (híbrido: local instantáneo + IA Groq/Grok dinámica)
   const [asesorPromptInicial, setAsesorPromptInicial] = useState<string | null>(null);
@@ -724,6 +725,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             movimientos={cajitaMovimientos}
             mostrarAhorro={mostrarAhorro}
             modoPrivacidad={modoPrivacidad}
+            cuentaFavoritaId={cuentaFavoritaId}
             onAbrir={(cajita) => {
               setPanelDineroCajitaId(cajita.id);
               setPanelDinero(
@@ -842,6 +844,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                     cajita={cajitaSeleccionada}
                     movimientos={cajitaMovimientos}
                     transacciones={transacciones}
+                    esFavorita={cajitaSeleccionada.id === cuentaFavoritaId}
+                    onAlternarFavorita={(id) => setCuentaFavorita(cuentaFavoritaId === id ? null : id)}
                     onFijarSaldo={(cajitaId: string, saldo: number) => void almacen.fijarSaldo(cajitaId, saldo)}
                     onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
                     onEliminar={(id: string) => void almacen.borrarCajita(id)}
@@ -960,7 +964,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                     category: 'comida',
                     description: descripcion,
                     dateOverride: undefined,
-                    cuentaId: cuentaPorDefecto,
+                    cuentaId: null,
                     raw: `${montoCop} de ${descripcion}`,
                   });
                 }}
@@ -1059,6 +1063,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           <Captura
             parsed={pending}
             cajitas={cajitas}
+            transacciones={transacciones}
+            categorias={categorias}
+            lexico={lexico}
             cuentaPorDefecto={cuentaPorDefecto}
             esPrimeraPrueba={esPrimeraPrueba}
             onSave={(draft) => {
