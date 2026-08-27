@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.6.1',
+    fecha: '2026-08-27',
+    texto: 'Optimización de rendimiento del empaquetado Vite, corrección de dependencias en hooks de audio y sincronización más rápida de preferencias en la nube.',
+  },
+  {
     version: '1.6.0',
     fecha: '2026-08-27',
     texto: 'Finanzas en Pareja y Espacios Compartidos: lleva las cuentas claras y saldos 50/50 con tu pareja o roommates en mercados, viajes y hogar. Además, carrusel deslizable con todas las categorías en el Dashboard y pastilla de balances centrada.',

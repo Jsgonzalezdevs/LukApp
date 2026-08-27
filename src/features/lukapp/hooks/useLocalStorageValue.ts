@@ -3,7 +3,7 @@
  * Prevents unnecessary re-renders and repeated localStorage access.
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 /**
  * Hook to manage a value in localStorage.
@@ -27,7 +27,9 @@ export function useLocalStorageValue<T>(
     deserialize?: (value: string) => T;
   },
 ): [T, (value: T) => void] {
-  const serialize = options?.serialize ?? ((v) => JSON.stringify(v));
+  const serializeRef = useRef(options?.serialize ?? ((v: T) => JSON.stringify(v)));
+  serializeRef.current = options?.serialize ?? ((v: T) => JSON.stringify(v));
+
   const deserialize = options?.deserialize ?? ((v: string) => JSON.parse(v) as T);
 
   // Load from localStorage on mount only
@@ -49,13 +51,13 @@ export function useLocalStorageValue<T>(
     (newValue: T) => {
       setValue(newValue);
       try {
-        localStorage.setItem(key, serialize(newValue));
+        localStorage.setItem(key, serializeRef.current(newValue));
       } catch {
         // Safari private mode or storage quota exceeded
         // Continue anyway - value is at least in memory
       }
     },
-    [key, serialize],
+    [key],
   );
 
   return [value, setAndStore];

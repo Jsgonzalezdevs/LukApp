@@ -272,14 +272,16 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, pensando]);
 
+  const handleSendRef = useRef<(texto?: string) => Promise<void>>(async () => {});
+
   // Si viene un prompt inicial desde un tip o enlace externo, enviarlo de inmediato
   useEffect(() => {
     if (promptInicial && promptInicial.trim()) {
       const texto = promptInicial.trim();
       onLimpiarPromptInicial?.();
-      void handleSend(texto);
+      void handleSendRef.current(texto);
     }
-  }, [promptInicial]);
+  }, [promptInicial, onLimpiarPromptInicial]);
 
   // Se pregunta por el estado al abrir el chat. La petición despierta de paso el
   // servicio, así que para cuando escribas el primer mensaje suele estar listo.
@@ -453,6 +455,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       setPensando(false);
     }
   };
+  handleSendRef.current = handleSend;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

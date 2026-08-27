@@ -510,7 +510,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     iniciarSegmento(stream, miSesion);
     setStatus('listening');
     topeRef.current = setTimeout(stop, MAX_MS);
-  }, [supported, quitarTope, stop, iniciarMedidor, detenerMedidor, detenerSegmentos, iniciarSegmento]);
+  }, [supported, quitarTope, stop, iniciarMedidor, detenerMedidor, detenerSegmentos, iniciarSegmento, permiso]);
 
   // Si la pantalla se va mientras graba, se cierra el micrófono igual.
   useEffect(() => stop, [stop]);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { obtenerSupabase, supabaseConfigurado } from './supabase';
+import { sincronizarDesdeSupabase } from './usePreferencias';
 
 export type EstadoSesion =
   /** No backend configured. The app runs on local storage and needs no login. */
@@ -57,9 +58,7 @@ export const useSesion = (): Sesion => {
       if (!cancelado) {
         setEstado(aEstado(data.session));
         if (data.session?.user?.user_metadata) {
-          import('./usePreferencias').then((m) =>
-            m.sincronizarDesdeSupabase(data.session!.user.user_metadata),
-          );
+          sincronizarDesdeSupabase(data.session.user.user_metadata);
         }
       }
     });
@@ -72,9 +71,7 @@ export const useSesion = (): Sesion => {
         setEnRecuperacion(true);
       }
       if (sesion?.user?.user_metadata) {
-        import('./usePreferencias').then((m) =>
-          m.sincronizarDesdeSupabase(sesion.user.user_metadata),
-        );
+        sincronizarDesdeSupabase(sesion.user.user_metadata);
       }
     });
 

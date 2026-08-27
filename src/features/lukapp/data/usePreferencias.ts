@@ -4,6 +4,7 @@ import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import { PERIODO_POR_DEFECTO } from '../lib/periodo';
 import type { ConfigPeriodo, FrecuenciaPeriodo } from '../lib/periodo';
 import { VERSION_ACTUAL } from '../novedades';
+import { obtenerSupabase } from './supabase';
 
 /**
  * Display preferences, kept beside the theme rather than in the ledger.
@@ -112,12 +113,10 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
 
 const guardarEnSupabase = async (clave: string, valor: any) => {
   if (typeof window === 'undefined') return;
-  import('./supabase').then(({ obtenerSupabase }) => {
-    const supabase = obtenerSupabase();
-    if (supabase) {
-      supabase.auth.updateUser({ data: { [clave]: valor } }).catch(() => {});
-    }
-  });
+  const supabase = obtenerSupabase();
+  if (supabase) {
+    supabase.auth.updateUser({ data: { [clave]: valor } }).catch(() => {});
+  }
 };
 
 /**
