@@ -325,13 +325,13 @@ export const MockupTelefono: React.FC = () => {
             {reconociendo && (
               <motion.span
                 key={`chip-${paso}`}
-                className="dictado-entendido"
+                className="dictado-entendido flex items-center gap-1.5"
                 style={{ background: `${categoria.color}1f`, color: categoria.color }}
                 initial={{ opacity: 0, scale: 0.8, x: 8 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 transition={{ duration: 0.32, ease: [0.34, 1.56, 0.64, 1] }}
               >
-                <categoria.Icono size={13} strokeWidth={2.4} />
+                <span className="text-[13px]">{categoria.emoji}</span>
                 {categoria.nombre}
               </motion.span>
             )}

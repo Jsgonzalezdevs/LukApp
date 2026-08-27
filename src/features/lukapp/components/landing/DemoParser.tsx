@@ -41,7 +41,6 @@ export const DemoParser: React.FC = () => {
      exactamente lo que va a pasar cuando escriba eso mismo adentro. */
   const leido = useMemo(() => parseTransaction(texto), [texto]);
   const categoria = CATALOGO_BASE.de(leido.category);
-  const { Icono } = categoria;
 
   const insignias = [
     leido.dateOverride && {
@@ -107,10 +106,11 @@ export const DemoParser: React.FC = () => {
             <>
               <div className="demo-fila">
                 <span
-                  className="demo-icono"
-                  style={{ background: `${categoria.color}1f`, color: categoria.color }}
+                  className="demo-icono flex items-center justify-center rounded-2xl text-[24px] select-none shadow-xs"
+                  style={{ background: `${categoria.color}22` }}
+                  aria-hidden="true"
                 >
-                  <Icono size={22} strokeWidth={1.75} aria-hidden />
+                  {categoria.emoji}
                 </span>
 
                 {/* Descripción, categoría y monto se pintan sin transición de
