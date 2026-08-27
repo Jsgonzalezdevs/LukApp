@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.7',
+    fecha: '2026-08-27',
+    texto: 'Ritmo calibrado en animaciones de landing: la secuencia de 21 días ahora corre a un tempo equilibrado y natural (420ms) para una apreciación visual óptima.',
+  },
+  {
     version: '1.7.6',
     fecha: '2026-08-27',
     texto: 'Animación en la Landing: la matriz de consistencia "Crea el hábito" ahora se llena de forma secuencial cuadrito por cuadrito con animación y check dinámico.',

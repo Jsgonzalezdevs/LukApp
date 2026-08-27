@@ -33,26 +33,32 @@ export const SecuenciaAnimada: React.FC = () => {
   const [pasoIdx, setPasoIdx] = useState(0);
   const [cuadrosLlenos, setCuadrosLlenos] = useState(1);
 
-  // Ciclo para los gastos deslizantes
+  // Ciclo para los gastos deslizantes (3.6 segundos)
   useEffect(() => {
     const timer = setInterval(() => {
       setPasoIdx((prev) => (prev + 1) % GASTOS_DEMO.length);
-    }, 3200);
+    }, 3600);
     return () => clearInterval(timer);
   }, []);
 
-  // Animación continua cuadrito por cuadrito para la matriz de 21 días
+  // Animación al ritmo perfecto cuadrito por cuadrito (420ms por cuadrito)
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCuadrosLlenos((prev) => {
-        if (prev >= 21) {
-          return 0; // Se reinicia suavemente tras completar el ciclo de 21 días
-        }
-        return prev + 1;
-      });
-    }, 280); // Cada 280ms se marca un nuevo cuadrito de forma secuencial y satisfactoria
-    return () => clearInterval(interval);
-  }, []);
+    let timer: ReturnType<typeof setTimeout>;
+
+    if (cuadrosLlenos >= 21) {
+      // Pausa de 1.2s al completar antes de reiniciar
+      timer = setTimeout(() => {
+        setCuadrosLlenos(0);
+      }, 1200);
+    } else {
+      // Ritmo fluido y claro (420ms)
+      timer = setTimeout(() => {
+        setCuadrosLlenos((prev) => prev + 1);
+      }, 420);
+    }
+
+    return () => clearTimeout(timer);
+  }, [cuadrosLlenos]);
 
   const gastoActual = GASTOS_DEMO[pasoIdx];
 
