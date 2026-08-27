@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.4',
+    fecha: '2026-08-27',
+    texto: 'Optimización visual del Dashboard: alturas y anchos de tarjetas de categorías ajustados a proporciones compactas y equilibradas para una lectura inmediata a simple vista.',
+  },
+  {
     version: '1.7.3',
     fecha: '2026-08-27',
     texto: 'Gráfico visual de categorías en el Dashboard: las tarjetas ahora tienen alturas proporcionales a su volumen de gasto alineadas al fondo, creando un gráfico de barras vivo y dinámico.',

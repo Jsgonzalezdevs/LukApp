@@ -375,20 +375,20 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       </div>
 
-      {/* ── 4. Carrusel de Gráficas de Categorías (Tarjetas con Altura Proporcional como Gráfico de Barras) ─ */}
-      <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {/* ── 4. Carrusel de Gráficas de Categorías (Tarjetas Compactas con Altura Equilibrada) ─ */}
+      <div className="my-3 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={carouselRef}
           onScroll={handleScroll}
-          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[180px] py-2 px-1 snap-x scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          className="flex items-end gap-2 sm:gap-2.5 overflow-x-auto min-h-[134px] py-2 px-1 snap-x scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {todasCategorias.map((cat, idx) => {
             const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
-            const MIN_H = 88;
-            const MAX_H = 170;
-            // Altura proporcional dinámica de la tarjeta completa (efecto gráfico de barras)
+            const MIN_H = 76;
+            const MAX_H = 122;
+            // Altura proporcional equilibrada y visible a simple vista
             const cardHeight = cat.total > 0 
-              ? Math.round(MIN_H + Math.pow(ratio, 0.75) * (MAX_H - MIN_H))
+              ? Math.round(MIN_H + Math.pow(ratio, 0.7) * (MAX_H - MIN_H))
               : MIN_H;
 
             const seleccionada = categoriaFiltro === cat.clave;
@@ -397,21 +397,21 @@ export const InicioView: React.FC<InicioViewProps> = ({
             return (
               <motion.div
                 key={cat.clave}
-                initial={{ height: MIN_H, opacity: 0, y: 8 }}
+                initial={{ height: MIN_H, opacity: 0, y: 6 }}
                 animate={{ height: cardHeight, opacity: 1, y: 0 }}
                 transition={{
                   type: 'spring',
-                  stiffness: 120,
+                  stiffness: 130,
                   damping: 18,
-                  delay: Math.min(0.2, idx * 0.025),
+                  delay: Math.min(0.18, idx * 0.02),
                 }}
-                whileHover={{ y: -4 }}
+                whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
                   setCategoriaFiltro(categoriaFiltro === cat.clave ? null : cat.clave);
                 }}
                 style={{ height: cardHeight }}
-                className={`relative flex-shrink-0 w-[84px] sm:w-[92px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2.5 cursor-pointer transition-all shadow-xs ${
+                className={`relative flex-shrink-0 w-[74px] sm:w-[82px] snap-start flex flex-col items-center justify-between rounded-[20px] sm:rounded-[24px] bg-[var(--fin-card)] border p-2 cursor-pointer transition-all shadow-xs ${
                   seleccionada
                     ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/20 shadow-md scale-102'
                     : 'border-[var(--fin-line)] hover:border-[var(--fin-ink-ghost)]'
@@ -419,7 +419,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               >
                 {/* Emoji superior con contenedor tintado */}
                 <div
-                  className="flex h-8.5 w-8.5 items-center justify-center rounded-2xl text-[19px] sm:text-[21px] drop-shadow-xs transition-transform shrink-0"
+                  className="flex h-7.5 w-7.5 items-center justify-center rounded-xl text-[17px] sm:text-[18px] drop-shadow-xs transition-transform shrink-0"
                   style={{
                     backgroundColor: tint(colorCat, 0.16),
                   }}
@@ -429,10 +429,10 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
                 {/* Monto y nombre inferior */}
                 <div className="flex flex-col items-center w-full min-w-0">
-                  <span className="text-[12px] sm:text-[13px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
+                  <span className="text-[11.5px] sm:text-[12.5px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
                     {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
                   </span>
-                  <span className="mt-0.5 text-[10px] sm:text-[10.5px] font-semibold text-[var(--fin-ink-soft)] truncate max-w-[74px] sm:max-w-[82px] text-center capitalize">
+                  <span className="mt-0.5 text-[9.5px] sm:text-[10px] font-semibold text-[var(--fin-ink-soft)] truncate max-w-[66px] sm:max-w-[74px] text-center capitalize">
                     {cat.info.nombre}
                   </span>
                 </div>
