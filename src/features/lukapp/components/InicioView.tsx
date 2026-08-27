@@ -375,62 +375,51 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       </div>
 
-      {/* ── 4. Carrusel Deslizable de Gráficas de Categorías con Color y Scrollbar Oculto ─ */}
+      {/* ── 4. Carrusel de Gráficas de Categorías (Tarjetas con Altura Proporcional como Gráfico de Barras) ─ */}
       <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={carouselRef}
           onScroll={handleScroll}
-          className="flex gap-2.5 sm:gap-3 overflow-x-auto py-2 px-1 snap-x scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[180px] py-2 px-1 snap-x scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {todasCategorias.map((cat, idx) => {
-            const pct = maxTotal > 0 && cat.total > 0 ? (cat.total / maxTotal) * 100 : 0;
-            const alturaBarra = pct > 0 ? Math.min(100, Math.max(14, pct)) : 0;
+            const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
+            const MIN_H = 88;
+            const MAX_H = 170;
+            // Altura proporcional dinámica de la tarjeta completa (efecto gráfico de barras)
+            const cardHeight = cat.total > 0 
+              ? Math.round(MIN_H + Math.pow(ratio, 0.75) * (MAX_H - MIN_H))
+              : MIN_H;
+
             const seleccionada = categoriaFiltro === cat.clave;
             const colorCat = cat.info.color;
 
             return (
               <motion.div
                 key={cat.clave}
-                whileHover={{ y: -3 }}
+                initial={{ height: MIN_H, opacity: 0, y: 8 }}
+                animate={{ height: cardHeight, opacity: 1, y: 0 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 120,
+                  damping: 18,
+                  delay: Math.min(0.2, idx * 0.025),
+                }}
+                whileHover={{ y: -4 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
                   setCategoriaFiltro(categoriaFiltro === cat.clave ? null : cat.clave);
                 }}
-                className={`relative flex-shrink-0 w-[88px] sm:w-[96px] h-[150px] sm:h-[162px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2.5 cursor-pointer transition-all overflow-hidden ${
+                style={{ height: cardHeight }}
+                className={`relative flex-shrink-0 w-[84px] sm:w-[92px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2.5 cursor-pointer transition-all shadow-xs ${
                   seleccionada
                     ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/20 shadow-md scale-102'
-                    : 'border-[var(--fin-line)] shadow-xs hover:border-[var(--fin-ink-ghost)]'
+                    : 'border-[var(--fin-line)] hover:border-[var(--fin-ink-ghost)]'
                 }`}
               >
-                {/* Relleno animado vertical de la barra con color vivo */}
+                {/* Emoji superior con contenedor tintado */}
                 <div
-                  className="absolute inset-x-1.5 bottom-1.5 rounded-[19px] sm:rounded-[23px] -z-0 overflow-hidden flex flex-col justify-end"
-                  style={{
-                    backgroundColor: tint(colorCat, 0.08),
-                  }}
-                >
-                  {alturaBarra > 0 ? (
-                    <motion.div
-                      initial={{ height: 0 }}
-                      animate={{ height: `${alturaBarra}%` }}
-                      transition={{
-                        type: 'spring',
-                        stiffness: 110,
-                        damping: 17,
-                        delay: Math.min(0.2, idx * 0.03),
-                      }}
-                      style={{
-                        backgroundColor: tint(colorCat, 0.28),
-                        borderTop: `2px solid ${colorCat}`,
-                      }}
-                      className="w-full rounded-[19px] sm:rounded-[23px]"
-                    />
-                  ) : null}
-                </div>
-
-                {/* Icono / Emoji superior con contenedor tintado */}
-                <div
-                  className="relative z-10 flex h-9 w-9 items-center justify-center rounded-2xl text-[20px] sm:text-[22px] drop-shadow-xs transition-transform"
+                  className="flex h-8.5 w-8.5 items-center justify-center rounded-2xl text-[19px] sm:text-[21px] drop-shadow-xs transition-transform shrink-0"
                   style={{
                     backgroundColor: tint(colorCat, 0.16),
                   }}
@@ -439,11 +428,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
                 </div>
 
                 {/* Monto y nombre inferior */}
-                <div className="relative z-10 flex flex-col items-center w-full">
-                  <span className="text-[12px] sm:text-[13.5px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center">
+                <div className="flex flex-col items-center w-full min-w-0">
+                  <span className="text-[12px] sm:text-[13px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
                     {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
                   </span>
-                  <span className="text-[10px] sm:text-[11px] font-semibold text-[var(--fin-ink-soft)] truncate max-w-[76px] sm:max-w-[84px] text-center capitalize">
+                  <span className="mt-0.5 text-[10px] sm:text-[10.5px] font-semibold text-[var(--fin-ink-soft)] truncate max-w-[74px] sm:max-w-[82px] text-center capitalize">
                     {cat.info.nombre}
                   </span>
                 </div>

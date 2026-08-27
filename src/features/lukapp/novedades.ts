@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.3',
+    fecha: '2026-08-27',
+    texto: 'Gráfico visual de categorías en el Dashboard: las tarjetas ahora tienen alturas proporcionales a su volumen de gasto alineadas al fondo, creando un gráfico de barras vivo y dinámico.',
+  },
+  {
     version: '1.7.2',
     fecha: '2026-08-27',
     texto: 'Animación fluida en la landing: cápsula de gastos deslizante con entrada suave, matriz de consistencia con efecto ola y carrusel continuo deslizante para el panorama completo de categorías.',
