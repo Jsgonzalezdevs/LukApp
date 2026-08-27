@@ -335,4 +335,36 @@ describe('movimientoDesdeAtajo', () => {
     if (!('fila' in r)) throw new Error('esperaba fila');
     expect(r.fila.description).toBe('Juan Valdez Café');
   });
+
+  it('acepta nombres de campo en inglés y mayúsculas como los exporta Apple Wallet (Merchant, Amount, Date)', () => {
+    const r = movimientoDesdeAtajo(
+      {
+        Merchant: 'Starbucks Parque 93',
+        Amount: '$18.500 COP',
+        Date: '2026-08-27',
+      },
+      'user-1',
+      AHORA,
+    );
+    if (!('fila' in r)) throw new Error('esperaba fila');
+    expect(r.fila.description).toBe('Starbucks Parque 93');
+    expect(r.fila.amount_cop).toBe(18500);
+    expect(r.fila.occurred_on).toBe('2026-08-27');
+  });
+
+  it('acepta aliases comunes (merchant, amount, valor, date)', () => {
+    const r = movimientoDesdeAtajo(
+      {
+        merchant: 'Farmatodo Calle 100',
+        amount: '45000',
+        date: '2026-08-25',
+      },
+      'user-1',
+      AHORA,
+    );
+    if (!('fila' in r)) throw new Error('esperaba fila');
+    expect(r.fila.description).toBe('Farmatodo Calle 100');
+    expect(r.fila.amount_cop).toBe(45000);
+    expect(r.fila.occurred_on).toBe('2026-08-25');
+  });
 });

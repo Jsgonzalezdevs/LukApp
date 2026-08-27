@@ -1195,7 +1195,14 @@ app.post('/api/atajos/revocar', async (req, res) => {
 });
 
 app.post('/api/atajo/movimiento', async (req, res) => {
-  const llave = llaveDeCabecera(req.headers.authorization);
+  const llave =
+    llaveDeCabecera(req.headers.authorization) ||
+    llaveDeCabecera(req.headers['x-api-key'] as string | undefined) ||
+    (typeof req.query.llave === 'string' ? req.query.llave.trim() : null) ||
+    (typeof req.query.key === 'string' ? req.query.key.trim() : null) ||
+    (typeof req.body?.llave === 'string' ? req.body.llave.trim() : null) ||
+    (typeof req.body?.key === 'string' ? req.body.key.trim() : null);
+
   if (!llave) return res.status(401).json({ error: 'Falta la llave' });
 
   const cliente = clienteAdmin();

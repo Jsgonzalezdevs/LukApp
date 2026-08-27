@@ -162,11 +162,44 @@ const limpiarTexto = (valor: unknown, maximo: number): string =>
 
 export interface CuerpoAtajo {
   monto?: unknown;
+  amount?: unknown;
+  Amount?: unknown;
+  Monto?: unknown;
+  valor?: unknown;
+  Valor?: unknown;
+  total?: unknown;
+  Total?: unknown;
+  precio?: unknown;
+  'Transaction Amount'?: unknown;
   comercio?: unknown;
+  merchant?: unknown;
+  Merchant?: unknown;
+  Comercio?: unknown;
+  description?: unknown;
+  Description?: unknown;
+  establecimiento?: unknown;
+  name?: unknown;
+  Name?: unknown;
+  payee?: unknown;
+  store?: unknown;
   fecha?: unknown;
+  date?: unknown;
+  Date?: unknown;
+  Fecha?: unknown;
+  occurred_on?: unknown;
+  time?: unknown;
+  timestamp?: unknown;
   tipo?: unknown;
+  type?: unknown;
+  kind?: unknown;
   cuentaId?: unknown;
+  cuenta_id?: unknown;
+  account_id?: unknown;
+  card?: unknown;
   id?: unknown;
+  uuid?: unknown;
+  transaction_id?: unknown;
+  [key: string]: unknown;
 }
 
 /** La fila tal cual entra a `public.transacciones`. */
@@ -187,51 +220,80 @@ export type ResultadoAtajo = { fila: FilaMovimiento } | { error: string };
 /**
  * De lo que mandó el Atajo a la fila que se guarda.
  *
- * `raw_transcript` se queda con el nombre del comercio y NADA más — ni "Apple
- * Pay", ni el monto, ni una etiqueta de origen. No es cosmético: ese campo es
- * el material del que `aprenderDe` saca qué categoría sueles darle a cada
- * palabra, así que meterle "apple pay" a todos los movimientos automáticos le
- * enseñaría que esas dos palabras significan lo que más pagues con el teléfono.
- * Dejando solo el comercio, cada pago en "Juan Valdez" enseña justo lo que
- * tiene que enseñar.
+ * Soporta de forma transparente nombres de propiedades tanto en español como
+ * en inglés o con mayúsculas iniciales, que es como Apple Wallet y los Atajos
+ * de iOS suelen exportar los diccionarios de transacciones (Merchant, Amount, Date).
  */
 export const movimientoDesdeAtajo = (
   cuerpo: CuerpoAtajo,
   userId: string,
   ahora: Date = new Date(),
 ): ResultadoAtajo => {
-  const comercio = limpiarTexto(cuerpo.comercio, 120);
+  const comercioRaw =
+    cuerpo.comercio ??
+    cuerpo.merchant ??
+    cuerpo.Merchant ??
+    cuerpo.Comercio ??
+    cuerpo.description ??
+    cuerpo.Description ??
+    cuerpo.establecimiento ??
+    cuerpo.name ??
+    cuerpo.Name ??
+    cuerpo.payee ??
+    cuerpo.store;
+
+  const comercio = limpiarTexto(comercioRaw, 120);
   if (!comercio) return { error: 'Falta el comercio' };
 
-  const amount = montoEnPesos(cuerpo.monto);
+  const montoRaw =
+    cuerpo.monto ??
+    cuerpo.amount ??
+    cuerpo.Amount ??
+    cuerpo.Monto ??
+    cuerpo.valor ??
+    cuerpo.Valor ??
+    cuerpo.total ??
+    cuerpo.Total ??
+    cuerpo.precio ??
+    cuerpo['Transaction Amount'];
+
+  const amount = montoEnPesos(montoRaw);
   if (amount === null) return { error: 'El monto no se entiende o no es positivo' };
 
-  const occurredOn = diaBogota(cuerpo.fecha, ahora);
+  const fechaRaw =
+    cuerpo.fecha ??
+    cuerpo.date ??
+    cuerpo.Date ??
+    cuerpo.Fecha ??
+    cuerpo.occurred_on ??
+    cuerpo.time ??
+    cuerpo.timestamp;
+
+  const occurredOn = diaBogota(fechaRaw, ahora);
   if (occurredOn === null) return { error: 'La fecha no se entiende' };
 
-  const tipo = cuerpo.tipo === undefined || cuerpo.tipo === null || cuerpo.tipo === '' ? 'gasto' : cuerpo.tipo;
+  const tipoRaw = cuerpo.tipo ?? cuerpo.type ?? cuerpo.kind;
+  const tipo = tipoRaw === undefined || tipoRaw === null || tipoRaw === '' ? 'gasto' : tipoRaw;
   if (tipo !== 'gasto' && tipo !== 'ingreso') return { error: 'El tipo tiene que ser gasto o ingreso' };
 
-  if (cuerpo.cuentaId !== undefined && cuerpo.cuentaId !== null && cuerpo.cuentaId !== '') {
-    if (typeof cuerpo.cuentaId !== 'string' || !ES_UUID.test(cuerpo.cuentaId)) {
+  const cuentaIdRaw = cuerpo.cuentaId ?? cuerpo.cuenta_id ?? cuerpo.account_id;
+  if (cuentaIdRaw !== undefined && cuentaIdRaw !== null && cuentaIdRaw !== '') {
+    if (typeof cuentaIdRaw !== 'string' || !ES_UUID.test(cuentaIdRaw)) {
       return { error: 'La cuenta no es un id válido' };
     }
   }
 
-  // El id lo puede poner el teléfono, y cuando lo pone, repetir la petición no
-  // duplica el gasto: la clave primaria lo impide y quien llama lo trata como
-  // "ya estaba". Es la única defensa posible contra un reintento de Atajos,
-  // que reintenta sin avisar cuando la red va y viene.
-  if (cuerpo.id !== undefined && cuerpo.id !== null && cuerpo.id !== '') {
-    if (typeof cuerpo.id !== 'string' || !ES_UUID.test(cuerpo.id)) {
+  const idRaw = cuerpo.id ?? cuerpo.uuid ?? cuerpo.transaction_id;
+  if (idRaw !== undefined && idRaw !== null && idRaw !== '') {
+    if (typeof idRaw !== 'string' || !ES_UUID.test(idRaw)) {
       return { error: 'El id no es un UUID válido' };
     }
   }
 
-  const id = typeof cuerpo.id === 'string' && ES_UUID.test(cuerpo.id) ? cuerpo.id.toLowerCase() : randomUUID();
+  const id = typeof idRaw === 'string' && ES_UUID.test(idRaw) ? idRaw.toLowerCase() : randomUUID();
   const cuentaId =
-    typeof cuerpo.cuentaId === 'string' && ES_UUID.test(cuerpo.cuentaId)
-      ? cuerpo.cuentaId.toLowerCase()
+    typeof cuentaIdRaw === 'string' && ES_UUID.test(cuentaIdRaw)
+      ? cuentaIdRaw.toLowerCase()
       : null;
 
   return {

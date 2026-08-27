@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.8.0',
+    fecha: '2026-08-27',
+    texto: 'Apple Pay y Automatizaciones: soporte robusto universal para pagos automáticos con iPhone, compatibilidad de payloads en inglés/español y nueva guía interactiva paso a paso en la landing.',
+  },
+  {
     version: '1.7.8',
     fecha: '2026-08-27',
     texto: 'Emojis en el demostrador interactivo de la landing: el resultado del parser en vivo y el teléfono interactivo ahora reflejan los emojis y colores de cada categoría.',

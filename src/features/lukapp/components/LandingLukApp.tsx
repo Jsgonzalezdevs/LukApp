@@ -12,6 +12,7 @@ import { BandaCifras } from './landing/BandaCifras';
 import { Registro } from './landing/Registro';
 import { PWAInstall } from './landing/PWAInstall';
 import { SecuenciaAnimada } from './landing/SecuenciaAnimada';
+import { SeccionApplePay } from './landing/SeccionApplePay';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
@@ -46,6 +47,7 @@ interface LandingProps {
 
 const ENLACES = [
   { href: '#demo', texto: 'Pruébalo' },
+  { href: '#apple-pay', texto: 'Apple Pay' },
   { href: '#funciones', texto: 'Funciones' },
   { href: '#cuatro-por-mil', texto: '4×1000' },
   { href: '#privacidad', texto: 'Privacidad' },
@@ -138,6 +140,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       <Ticker frases={FRASES_TICKER} />
       <SecuenciaAnimada />
       <DemoParser />
+      <SeccionApplePay />
       <BandaCifras />
       <Funciones />
       <Cupo4x1000 />
