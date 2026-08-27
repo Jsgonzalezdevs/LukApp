@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.6.0',
+    fecha: '2026-08-27',
+    texto: 'Finanzas en Pareja y Espacios Compartidos: lleva las cuentas claras y saldos 50/50 con tu pareja o roommates en mercados, viajes y hogar. Además, carrusel deslizable con todas las categorías en el Dashboard y pastilla de balances centrada.',
+  },
+  {
     version: '1.5.0',
     fecha: '2026-08-27',
     texto: 'Rediseño completo del Dashboard: nueva vista minimalista inspirada en las mejores apps fintech, con barras visuales de tus categorías principales, botón para alternar entre gráfica y lista, y botón rápido para registrar gastos.',

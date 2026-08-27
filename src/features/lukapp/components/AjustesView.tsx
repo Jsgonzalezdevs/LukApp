@@ -29,6 +29,7 @@ const ICONOS: Record<PanelAjustes, string> = {
   periodo: '🗓️',
   metas: '🚩',
   recurrentes: '🔁',
+  compartido: '👫',
   'dividir-cuenta': '🍽️',
   extractos: '📥',
   atajos: '💳',
@@ -43,7 +44,7 @@ const ICONOS: Record<PanelAjustes, string> = {
 /** Los tres bloques en que se parte la lista. Agrupar por tema hace que no haya
  * que leer las nueve filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
-  { titulo: 'Tu dinero', paneles: ['categorias', 'topes', 'periodo', 'metas', 'recurrentes'] },
+  { titulo: 'Tu dinero', paneles: ['categorias', 'topes', 'periodo', 'metas', 'recurrentes', 'compartido'] },
   { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
   { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },

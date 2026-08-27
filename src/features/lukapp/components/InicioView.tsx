@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  BarChart2,
   ChevronDown,
   Eye,
   EyeOff,
-  List,
   Plus,
   RefreshCw,
   Search,
@@ -114,7 +112,6 @@ export const InicioView: React.FC<InicioViewProps> = ({
   const [indiceRotacion, setIndiceRotacion] = useState(0);
   const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
   const [modoCifra, setModoCifra] = useState<'gasto' | 'patrimonio'>('gasto');
-  const [vistaModo, setVistaModo] = useState<'grafica' | 'lista'>('grafica');
   const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
 
   const infoRacha = useMemo(
@@ -145,8 +142,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
     }
   };
 
-  // Ranking y cálculo de las 4 categorías principales
-  const { categoriasTop, maxTotal } = useMemo(() => {
+  // Ranking y cálculo de TODAS las categorías (con gasto primero, luego las demás del catálogo)
+  const { todasCategorias, maxTotal } = useMemo(() => {
     const mapa = new Map<string, number>();
     for (const m of movimientos) {
       if (m.kind === 'gasto') {
@@ -154,8 +151,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
       }
     }
 
-    const defaultKeys = ['mercado', 'comida', 'transporte', 'entretenimiento'];
-    for (const k of defaultKeys) {
+    // Incluir todas las categorías del catálogo para que aparezcan en el carrusel
+    const clavesCatalogo = catalogo.todas.map((c) => c.clave);
+    for (const k of clavesCatalogo) {
       if (!mapa.has(k)) {
         mapa.set(k, 0);
       }
@@ -167,14 +165,16 @@ export const InicioView: React.FC<InicioViewProps> = ({
         const emoji = CATEGORIA_EMOJI[clave] || '🏷️';
         return { clave, total, info, emoji };
       })
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => {
+        if (b.total !== a.total) return b.total - a.total;
+        return a.info.nombre.localeCompare(b.info.nombre);
+      });
 
-    const top4 = lista.slice(0, 4);
-    const maxVal = Math.max(...top4.map((c) => c.total), 1);
-    return { categoriasTop: top4, maxTotal: maxVal };
+    const maxVal = Math.max(...lista.map((c) => c.total), 1);
+    return { todasCategorias: lista, maxTotal: maxVal };
   }, [movimientos, catalogo]);
 
-  // Movimientos visibles (filtrados por categoría si se hizo click en una barra)
+  // Movimientos visibles (filtrados por categoría si se seleccionó una)
   const movimientosAMostrar = useMemo(() => {
     if (!categoriaFiltro) return movimientos;
     return movimientos.filter((m) => m.category === categoriaFiltro);
@@ -328,7 +328,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ── 3. Número Hero Principal + Toggle de Vista ───────────────────── */}
+      {/* ── 3. Número Hero Principal + Pastilla de Ingresos/Egresos centrada ── */}
       <div className="flex flex-col items-center justify-center pt-6 pb-2 text-center">
         <button
           type="button"
@@ -372,49 +372,30 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </div>
         ) : null}
 
-        {/* Botón pill de alternar entre Gráfica y Lista */}
-        <div className="mt-4 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setVistaModo((prev) => (prev === 'grafica' ? 'lista' : 'grafica'))}
-            className="flex items-center gap-2 rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-4 py-2 text-[13px] font-semibold shadow-sm transition-all hover:opacity-90 active:scale-95"
-          >
-            {vistaModo === 'grafica' ? (
-              <>
-                <List className="h-4 w-4" />
-                <span>Ver lista de movimientos</span>
-              </>
-            ) : (
-              <>
-                <BarChart2 className="h-4 w-4" />
-                <span>Ver gráfica de categorías</span>
-              </>
-            )}
-          </button>
-
-          {/* Pastillas compactas de entradas y salidas */}
+        {/* Pastilla de Ingresos y Egresos en toda la mitad */}
+        <div className="mt-3.5 flex justify-center">
           <button
             type="button"
             onClick={onVerMes}
-            className="flex items-center gap-2 rounded-full bg-[var(--fin-soft)] px-3.5 py-2 text-[12.5px] font-bold tabular-nums"
+            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors"
           >
             <span style={{ color: 'var(--fin-out)' }}>
-              ↓ {modoPrivacidad ? '•••' : formatMontoCompacto(gastosCop)}
+              ↓ {modoPrivacidad ? '••••' : formatMontoCompacto(gastosCop)}
             </span>
             <span className="text-[var(--fin-line)]">|</span>
             <span style={{ color: 'var(--fin-in)' }}>
-              ↑ {modoPrivacidad ? '•••' : formatMontoCompacto(ingresosCop)}
+              ↑ {modoPrivacidad ? '••••' : formatMontoCompacto(ingresosCop)}
             </span>
           </button>
         </div>
       </div>
 
-      {/* ── 4. Gráfica de Barras de Categorías (Estilo de la competencia) ─ */}
-      <div className="my-5">
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
-          {categoriasTop.map((cat, idx) => {
-            const pct = maxTotal > 0 ? (cat.total / maxTotal) * 100 : 15;
-            const alturaBarra = Math.min(100, Math.max(16, pct));
+      {/* ── 4. Carrusel Deslizable de Gráficas de Categorías (Todas las categorías) ─ */}
+      <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar py-2 px-1 snap-x scroll-smooth">
+          {todasCategorias.map((cat, idx) => {
+            const pct = maxTotal > 0 && cat.total > 0 ? (cat.total / maxTotal) * 100 : 0;
+            const alturaBarra = pct > 0 ? Math.min(100, Math.max(14, pct)) : 0;
             const seleccionada = categoriaFiltro === cat.clave;
 
             return (
@@ -423,48 +404,45 @@ export const InicioView: React.FC<InicioViewProps> = ({
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => {
-                  if (categoriaFiltro === cat.clave) {
-                    setCategoriaFiltro(null);
-                  } else {
-                    setCategoriaFiltro(cat.clave);
-                    setVistaModo('lista');
-                  }
+                  setCategoriaFiltro(categoriaFiltro === cat.clave ? null : cat.clave);
                 }}
-                className={`relative flex flex-col items-center justify-between rounded-[22px] sm:rounded-[26px] bg-[var(--fin-card)] border p-2 sm:p-3 h-[155px] sm:h-[175px] cursor-pointer transition-all overflow-hidden ${
+                className={`relative flex-shrink-0 w-[84px] sm:w-[94px] h-[145px] sm:h-[160px] snap-start flex flex-col items-center justify-between rounded-[22px] sm:rounded-[26px] bg-[var(--fin-card)] border p-2 sm:p-2.5 cursor-pointer transition-all overflow-hidden ${
                   seleccionada
-                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/15 shadow-md'
+                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/15 shadow-md scale-102'
                     : 'border-[var(--fin-line)] shadow-xs hover:border-[var(--fin-ink-ghost)]'
                 }`}
               >
                 {/* Relleno animado vertical de la barra */}
                 <div className="absolute inset-x-1.5 bottom-1.5 rounded-[17px] sm:rounded-[21px] bg-[var(--fin-soft)]/90 -z-0 overflow-hidden flex flex-col justify-end">
-                  <motion.div
-                    initial={{ height: 0 }}
-                    animate={{ height: `${alturaBarra}%` }}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 110,
-                      damping: 17,
-                      delay: idx * 0.05,
-                    }}
-                    style={{
-                      backgroundColor: tint(cat.info.color, 0.22),
-                    }}
-                    className="w-full rounded-[17px] sm:rounded-[21px]"
-                  />
+                  {alturaBarra > 0 ? (
+                    <motion.div
+                      initial={{ height: 0 }}
+                      animate={{ height: `${alturaBarra}%` }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 110,
+                        damping: 17,
+                        delay: Math.min(0.2, idx * 0.03),
+                      }}
+                      style={{
+                        backgroundColor: tint(cat.info.color, 0.22),
+                      }}
+                      className="w-full rounded-[17px] sm:rounded-[21px]"
+                    />
+                  ) : null}
                 </div>
 
                 {/* Icono / Emoji superior */}
-                <div className="relative z-10 flex h-8 w-8 items-center justify-center text-[19px] sm:text-[21px] drop-shadow-xs">
+                <div className="relative z-10 flex h-7 w-7 items-center justify-center text-[18px] sm:text-[20px] drop-shadow-xs">
                   {cat.emoji}
                 </div>
 
                 {/* Monto y nombre inferior */}
                 <div className="relative z-10 flex flex-col items-center w-full">
-                  <span className="text-[12px] sm:text-[13.5px] font-bold tabular-nums text-[var(--fin-ink)] text-center">
+                  <span className="text-[11.5px] sm:text-[13px] font-bold tabular-nums text-[var(--fin-ink)] text-center">
                     {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
                   </span>
-                  <span className="text-[10px] sm:text-[11px] font-medium text-[var(--fin-ink-soft)] truncate max-w-[58px] sm:max-w-[72px] text-center capitalize">
+                  <span className="text-[9.5px] sm:text-[10.5px] font-medium text-[var(--fin-ink-soft)] truncate max-w-[70px] sm:max-w-[80px] text-center capitalize">
                     {cat.info.nombre}
                   </span>
                 </div>
@@ -505,17 +483,15 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       )}
 
-      {/* ── 7. Lista de transacciones ────────────────────────────────────── */}
-      {(vistaModo === 'lista' || categoriaFiltro) && (
-        <div className="mt-4">
-          <TransactionList
-            transactions={movimientosAMostrar}
-            conSenal={conSenal}
-            onAbrir={onAbrirMovimiento}
-            modoPrivacidad={modoPrivacidad}
-          />
-        </div>
-      )}
+      {/* ── 7. Lista de transacciones (Siempre visible) ──────────────────── */}
+      <div className="mt-4">
+        <TransactionList
+          transactions={movimientosAMostrar}
+          conSenal={conSenal}
+          onAbrir={onAbrirMovimiento}
+          modoPrivacidad={modoPrivacidad}
+        />
+      </div>
 
       {/* Modal de racha */}
       {mostrarRachaModal && (

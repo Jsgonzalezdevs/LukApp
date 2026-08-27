@@ -58,6 +58,7 @@ import {
 import { NOVEDADES } from './novedades';
 import { contactoPorApodo } from './lib/contactos';
 import { DivisionCuentasModal } from './components/DivisionCuentasModal';
+import { EspaciosCompartidosView } from './components/EspaciosCompartidosView';
 import { calcularRacha } from './lib/racha';
 import { verificarRecordatorioRacha } from './lib/recordatorioRacha';
 import { CategoriasEditor } from './components/CategoriasEditor';
@@ -951,6 +952,23 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 onCrear={(d) => void almacen.crearRecurrente(d)}
                 onBorrar={(id) => void almacen.borrarRecurrente(id)}
                 onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
+              />
+            ) : panelAjustes === 'compartido' ? (
+              <EspaciosCompartidosView
+                onCerrar={() => setPanelAjustes(null)}
+                onAnotarEnLukApp={(montoCop, descripcion, categoria) => {
+                  const base = movimientoEnBlanco();
+                  setPending({
+                    ...base,
+                    kind: 'gasto',
+                    amount: montoCop,
+                    category: categoria,
+                    description: descripcion,
+                    dateOverride: undefined,
+                    cuentaId: null,
+                    raw: `${montoCop} de ${descripcion}`,
+                  });
+                }}
               />
             ) : panelAjustes === 'dividir-cuenta' ? (
               <DivisionCuentasModal

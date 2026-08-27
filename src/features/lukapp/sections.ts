@@ -53,6 +53,11 @@ export const PANELES_AJUSTES = [
   { id: 'metas', label: 'Metas de ahorro', ayuda: 'Ponte un objetivo y mira cuánto te falta' },
   { id: 'recurrentes', label: 'Pagos fijos', ayuda: 'Lo que te cobran todos los meses' },
   {
+    id: 'compartido',
+    label: 'Finanzas en Pareja / Compartidas',
+    ayuda: 'Cuentas claras con tu pareja, viajes y gastos del hogar',
+  },
+  {
     id: 'dividir-cuenta',
     label: 'Dividir cuenta y propina',
     ayuda: 'Calcula cuánto le toca a cada uno en salidas y anota tu parte',
