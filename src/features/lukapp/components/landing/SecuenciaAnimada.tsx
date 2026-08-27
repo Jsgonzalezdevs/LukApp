@@ -31,8 +31,9 @@ const CATEGORIAS_PANORAMA = [
 
 export const SecuenciaAnimada: React.FC = () => {
   const [pasoIdx, setPasoIdx] = useState(0);
+  const [cuadrosLlenos, setCuadrosLlenos] = useState(1);
 
-  // Ciclo cada 3 segundos
+  // Ciclo para los gastos deslizantes
   useEffect(() => {
     const timer = setInterval(() => {
       setPasoIdx((prev) => (prev + 1) % GASTOS_DEMO.length);
@@ -40,10 +41,20 @@ export const SecuenciaAnimada: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const gastoActual = GASTOS_DEMO[pasoIdx];
+  // Animación continua cuadrito por cuadrito para la matriz de 21 días
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCuadrosLlenos((prev) => {
+        if (prev >= 21) {
+          return 0; // Se reinicia suavemente tras completar el ciclo de 21 días
+        }
+        return prev + 1;
+      });
+    }, 280); // Cada 280ms se marca un nuevo cuadrito de forma secuencial y satisfactoria
+    return () => clearInterval(interval);
+  }, []);
 
-  // Matriz de racha de 21 días (crece progresivamente con el ciclo)
-  const totalChecks = 6 + (pasoIdx * 3) % 15;
+  const gastoActual = GASTOS_DEMO[pasoIdx];
 
   return (
     <section className="relative w-full overflow-hidden py-16 sm:py-24 bg-[var(--lp-surface)]/30 border-y border-[var(--lp-line)]/50">
@@ -110,41 +121,49 @@ export const SecuenciaAnimada: React.FC = () => {
             </div>
           </div>
 
-          {/* ── Columna 2: Crea el hábito ──────────────────────────────────── */}
+          {/* ── Columna 2: Crea el hábito (Llenado progresivo cuadrito por cuadrito) ── */}
           <div className="flex flex-col items-center text-center relative z-10">
-            {/* Visual animado: Matriz de racha interactiva */}
+            {/* Visual animado: Matriz de 21 días que se llena individualmente cuadrito a cuadrito */}
             <div className="h-40 w-full flex items-center justify-center">
               <div className="grid grid-cols-7 gap-1.5 p-3.5 rounded-2xl bg-[var(--lp-bg)] border border-[var(--lp-line)] shadow-[0_12px_30px_-6px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.35)]">
                 {Array.from({ length: 21 }).map((_, i) => {
-                  const marcado = i < totalChecks;
+                  const marcado = i < cuadrosLlenos;
+                  const esElRecienMarcado = i === cuadrosLlenos - 1;
+
                   return (
                     <motion.div
                       key={i}
                       initial={false}
                       animate={{
-                        scale: marcado ? [0.75, 1.18, 1] : 1,
+                        scale: esElRecienMarcado ? [0.7, 1.25, 1] : 1,
                         backgroundColor: marcado ? '#dcfce7' : 'rgba(0,0,0,0.02)',
                       }}
                       transition={{
-                        duration: 0.35,
-                        delay: marcado ? (i % 7) * 0.04 : 0,
+                        duration: 0.25,
                         ease: 'easeOut',
                       }}
                       className={`h-5 w-5 sm:h-5.5 sm:w-5.5 flex items-center justify-center rounded-[6px] text-[11px] border transition-colors ${
                         marcado
-                          ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 font-extrabold shadow-xs'
+                          ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 font-extrabold shadow-xs ring-1 ring-emerald-400/30'
                           : 'border-[var(--lp-line)]/70 text-transparent'
                       }`}
                     >
-                      {marcado ? (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                        >
-                          <Check className="h-3 w-3 stroke-[3]" />
-                        </motion.div>
-                      ) : null}
+                      <AnimatePresence>
+                        {marcado && (
+                          <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{
+                              type: 'spring',
+                              stiffness: 500,
+                              damping: 20,
+                            }}
+                          >
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })}

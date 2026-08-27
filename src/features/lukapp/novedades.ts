@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.6',
+    fecha: '2026-08-27',
+    texto: 'Animación en la Landing: la matriz de consistencia "Crea el hábito" ahora se llena de forma secuencial cuadrito por cuadrito con animación y check dinámico.',
+  },
+  {
     version: '1.7.5',
     fecha: '2026-08-27',
     texto: 'Contraste visual en categorías: escala directa y marcada en el gráfico de tarjetas del Dashboard para ver con total claridad la diferencia real entre categorías de alto y bajo gasto.',
