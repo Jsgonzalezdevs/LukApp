@@ -159,6 +159,86 @@ export const limpiarDescripcionFinanciera = (desc: string): string => {
   return t.charAt(0).toUpperCase() + t.slice(1);
 };
 
+/**
+ * Limpia el texto escaneado por OCR (comprobantes Nequi, Bancolombia, facturas)
+ * para extraer mensajes o nombres reales sin basura de plantilla (ej. "Del movimiento < (O Envío Realizado...").
+ */
+export const limpiarOCRDescripcion = (
+  raw: string,
+  categoryLabel: string,
+  destinatario?: string,
+): string => {
+  let text = raw.replace(/^\[OCR\]/i, '').trim();
+
+  // 1. Mensaje o motivo explícito en el comprobante
+  const msgMatch = text.match(
+    /(?:mensaje|motivo|concepto|detalle|nota|conversación|conversacion)\s*:?\s*([\s\S]+?)(?:\s+(?:valor|fecha|costo|referencia|aprobado|hora|desde|hacia|¿cuánto\?|cuanto|numero|número|disponible|comprobante|escanea|nequi|bancolombia)|$)/i,
+  );
+  if (msgMatch && msgMatch[1]) {
+    const msg = msgMatch[1].trim();
+    const msgLower = msg.toLowerCase();
+    if (
+      msg.length >= 3 &&
+      !msgLower.includes('del movimiento') &&
+      !msgLower.includes('escanea') &&
+      !msgLower.includes('comprobante') &&
+      !msgLower.includes('envio realizado') &&
+      !msgLower.includes('envío realizado')
+    ) {
+      return msg.charAt(0).toUpperCase() + msg.slice(1);
+    }
+  }
+
+  // 2. Si se detectó destinatario explícito válido
+  if (destinatario && destinatario.trim().length >= 2) {
+    const dest = destinatario.trim();
+    const destLower = dest.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const NOISE_DEST = ['nequi', 'bancolombia', 'daviplata', 'comprobante', 'movimiento', 'envio', 'realizado', 'lizado', 'exitoso', 'detalle', 'verificar', 'instante'];
+    if (!NOISE_DEST.some((p) => destLower.includes(p))) {
+      return `Envío a ${dest.charAt(0).toUpperCase() + dest.slice(1)}`;
+    }
+  }
+
+  // 3. Limpieza de texto de plantilla y caracteres ruidosos de Tesseract
+  let limpia = text
+    .replace(/(?:comprobante\s+de\s+pago|envío\s+realizado|envio\s+realizado|transferencia\s+exitosa|transacción\s+exitosa|transaccion\s+exitosa)/gi, '')
+    .replace(/detalle\s+del\s+movimiento|del\s+movimiento/gi, '')
+    .replace(/escanea\s+este\s+qr[\s\S]*/gi, '')
+    .replace(/escenea\s+este\s+or[\s\S]*/gi, '')
+    .replace(/número\s+nequi\s*\d+|numero\s+nequi\s*\d+/gi, '')
+    .replace(/referencia\s*[a-z0-9]+/gi, '')
+    .replace(/fecha\s+[\d\s\w:.]+/gi, '')
+    .replace(/valor\s*\$?\s*[\d.,]+/gi, '')
+    .replace(/disponible\s*\$?\s*[\d.,]+/gi, '')
+    .replace(/costo\s+de\s+la\s+transacción.*/gi, '')
+    .replace(/cta\.?\s*(?:origen|destino).*/gi, '')
+    .replace(/oro\s+\d+.*|o\s+i\s+e\s+h\s+r.*/gi, '')
+    .replace(/[<>=_()¡!|—•]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const PALABRAS_BASURA_OCR = new Set([
+    'del', 'los', 'las', 'con', 'por', 'para', 'este', 'esta', 'nequi', 'bancolombia', 'daviplata',
+    'oro', 'envio', 'envío', 'realizado', 'escanea', 'escenea', 'qr', 'or', 'verificar', 'instante',
+    'conversacion', 'conversación', 'comprobante', 'movimiento', 'detalle', 'pago', 'exitosa', 'exitoso'
+  ]);
+
+  const palabrasLimpias = limpia
+    .split(' ')
+    .filter((w) => {
+      const norm = w.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return w.length > 2 && !PALABRAS_BASURA_OCR.has(norm);
+    });
+
+  const textoFinal = palabrasLimpias.join(' ').trim();
+  if (textoFinal.length >= 3 && !/^\d+$/.test(textoFinal)) {
+    return textoFinal.charAt(0).toUpperCase() + textoFinal.slice(1);
+  }
+
+  // 4. Si todo lo extraído era ruido de plantilla, usar la etiqueta legible de la categoría
+  return categoryLabel;
+};
+
 export interface ParsedTransaction {
   kind: TxKind;
   amount: number | null;
@@ -1104,9 +1184,13 @@ export const parseTransaction = (
     }
   } else {
     // OCR specific destinatario extraction
-    const destMatch = raw.match(/(?:para|destino)\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)/i);
+    const destMatch = raw.match(/(?:para|destino|hacia)\s*:?\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20}(?:\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20})?)/i);
     if (destMatch && destMatch[1]) {
-      destinatario = destMatch[1].charAt(0).toUpperCase() + destMatch[1].slice(1).toLowerCase();
+      const candidateDest = destMatch[1].trim();
+      const lowerDest = candidateDest.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (!['nequi', 'bancolombia', 'daviplata', 'comprobante', 'movimiento', 'envio', 'envío', 'realizado', 'exitoso', 'valor', 'fecha', 'cuenta'].includes(lowerDest)) {
+        destinatario = candidateDest.charAt(0).toUpperCase() + candidateDest.slice(1);
+      }
     }
   }
 
@@ -1114,16 +1198,9 @@ export const parseTransaction = (
   let description = '';
 
   if (isOCR) {
-    // Look for common receipt message markers and extract the text until the next marker
-    const messageMatch = raw.match(
-      /(?:mensaje|motivo|concepto|detalle|conversación|conversacion)\s+([\s\S]+?)(?:\s+(?:valor|fecha|costo|referencia|aprobado|hora|desde|hacia|¿cuánto\?|cuanto|numero|número)|$)/i,
-    );
-    if (messageMatch && messageMatch[1] && messageMatch[1].trim().length > 0) {
-      description = messageMatch[1].trim();
-    }
-  }
-
-  if (!description) {
+    const catLabel = CATEGORY_LABELS[category as Category] ?? (category === 'ingreso' ? 'Ingreso' : 'Transferencia');
+    description = limpiarOCRDescripcion(raw, catLabel, destinatario ?? undefined);
+  } else {
     const GREETINGS_NOISE = new Set([
       'hola', 'como', 'estas', 'estás', 'buenas', 'buenos', 'dias', 'días', 'tardes', 'noches',
       'porfa', 'porfavor', 'por', 'favor', 'anota', 'registra', 'guarda', 'pon', 'pón', 'escribe',
@@ -1135,7 +1212,6 @@ export const parseTransaction = (
       .filter(({ t, i }) => {
         if (consumed[i]) return false;
         if (chunks.ignore.some((ign) => ign.index === i)) return false;
-        if (isOCR && t.norm === 'ocr') return false; // Ignore the [OCR] tag
         const n = t.norm.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (GREETINGS_NOISE.has(n)) return false;
         return true;
@@ -1166,11 +1242,7 @@ export const parseTransaction = (
     } else {
       description = capitalize(limpia);
     }
-  } else {
-    description = capitalize(description);
-  }
 
-  if (!isOCR) {
     description = limpiarDescripcionFinanciera(description);
     if (!description || description.trim().length === 0) {
       description = CATEGORY_LABELS[category as Category] ?? category;

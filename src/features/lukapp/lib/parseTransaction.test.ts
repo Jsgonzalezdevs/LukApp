@@ -276,6 +276,16 @@ describe('parseTransaction — description', () => {
     );
     expect(nequiTx.amount).toBe(100);
   });
+
+  it('cleans OCR receipt noise without dumping boilerplate strings into description', () => {
+    const rawWithNoise =
+      '[OCR] Del movimiento < (O Envío Realizado ORO 0 I E h r =_ ME (1) ¡Escanea este QR con Nequi para verificar tu envío al instante! Valor $13.000';
+    const tx = parseTransaction(rawWithNoise);
+    expect(tx.amount).toBe(13000);
+    expect(tx.description).not.toContain('Del movimiento');
+    expect(tx.description).not.toContain('Escanea');
+    expect(tx.description).toBe('Transferencia');
+  });
 });
 
 describe('parseTransaction — confidence', () => {
