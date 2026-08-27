@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Users, Plus, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, Users, Plus, CheckCircle2, ArrowRight, Trash2 } from 'lucide-react';
 import {
   calcularResumenVaquita,
   type Vaquita,
@@ -13,32 +13,22 @@ interface VaquitasModalProps {
   onClose: () => void;
 }
 
-export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose }) => {
-  const [vaquitas, setVaquitas] = useState<Vaquita[]>([
-    {
-      id: 'vaca-ejemplo',
-      nombre: 'Asado Fin de Semana 🥩',
-      emoji: '🥩',
-      metaCop: 180_000,
-      participantes: [
-        { nombre: 'Yo', cuotaComprometida: 60_000, aportadoCop: 60_000 },
-        { nombre: 'Carlos', cuotaComprometida: 60_000, aportadoCop: 60_000 },
-        { nombre: 'Andrés', cuotaComprometida: 60_000, aportadoCop: 0 },
-      ],
-      gastos: [
-        {
-          id: 'g-1',
-          descripcion: 'Carne y carbón',
-          montoCop: 120_000,
-          pagadoPor: 'Yo',
-          fecha: new Date().toISOString().slice(0, 10),
-        },
-      ],
-      creadaEn: new Date().toISOString().slice(0, 10),
-    },
-  ]);
+const STORAGE_KEY = 'lukapp_vaquitas_v1';
 
-  const [vaquitaSeleccionadaId, setVaquitaSeleccionadaId] = useState<string>('vaca-ejemplo');
+export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose }) => {
+  const [vaquitas, setVaquitas] = useState<Vaquita[]>(() => {
+    try {
+      const guardadas = localStorage.getItem(STORAGE_KEY);
+      if (guardadas) {
+        return JSON.parse(guardadas);
+      }
+    } catch {
+      // Ignorar errores de parsing
+    }
+    return [];
+  });
+
+  const [vaquitaSeleccionadaId, setVaquitaSeleccionadaId] = useState<string>('');
   const [mostrarCrear, setMostrarCrear] = useState(false);
 
   // Formulario crear vaquita
@@ -46,7 +36,17 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose })
   const [nuevaMetaStr, setNuevaMetaStr] = useState('');
   const [nombresAmigosStr, setNombresAmigosStr] = useState('');
 
-  const vaquitaActiva = vaquitas.find((v) => v.id === vaquitaSeleccionadaId) || vaquitas[0];
+  // Persistir en localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(vaquitas));
+    } catch {
+      // Ignorar errores de storage
+    }
+  }, [vaquitas]);
+
+  const vaquitaActiva =
+    vaquitas.find((v) => v.id === vaquitaSeleccionadaId) || (vaquitas.length > 0 ? vaquitas[0] : null);
   const resumen = vaquitaActiva ? calcularResumenVaquita(vaquitaActiva) : null;
 
   const handleCrearVaquita = (e: React.FormEvent) => {
@@ -84,6 +84,16 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose })
     setNuevoNombre('');
     setNuevaMetaStr('');
     setNombresAmigosStr('');
+  };
+
+  const handleEliminarVaquita = (id: string) => {
+    const filtradas = vaquitas.filter((v) => v.id !== id);
+    setVaquitas(filtradas);
+    if (filtradas.length > 0) {
+      setVaquitaSeleccionadaId(filtradas[0].id);
+    } else {
+      setVaquitaSeleccionadaId('');
+    }
   };
 
   const handleMarcarPagado = (nombreParticipante: string) => {
@@ -141,6 +151,30 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose })
           </div>
 
           <div className="p-6 overflow-y-auto space-y-6">
+            {!mostrarCrear && (!vaquitaActiva || vaquitas.length === 0) && (
+              <div className="py-8 px-4 text-center space-y-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 mx-auto text-2xl">
+                  🐮
+                </div>
+                <div className="space-y-1">
+                  <h4 className="text-[16px] font-bold text-[var(--fin-ink)]">
+                    Sin vaquitas activas
+                  </h4>
+                  <p className="text-[13px] text-[var(--fin-ink-soft)] max-w-sm mx-auto">
+                    Arma una vaca con amigos para paseos, asados, regalos o salidas. LukApp calcula las cuotas y quién le debe a quién automáticamente.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMostrarCrear(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--fin-accent)] text-[var(--fin-on-accent)] text-[14px] font-bold shadow-xs hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4" />
+                  Armar mi primera vaquita
+                </button>
+              </div>
+            )}
+
             {!mostrarCrear && vaquitaActiva && resumen && (
               <div className="space-y-5">
                 {/* Selector de vaquitas si hay varias */}
@@ -169,9 +203,19 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose })
                     <h4 className="text-[16px] font-bold text-[var(--fin-ink)]">
                       {vaquitaActiva.nombre}
                     </h4>
-                    <span className="text-[13px] font-bold text-amber-600">
-                      {resumen.porcentajeRecoleccion}% recolectado
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-bold text-amber-600">
+                        {resumen.porcentajeRecoleccion}% recolectado
+                      </span>
+                      <button
+                        type="button"
+                        title="Eliminar vaquita"
+                        onClick={() => handleEliminarVaquita(vaquitaActiva.id)}
+                        className="p-1 rounded-lg text-[var(--fin-ink-soft)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Barra de progreso */}

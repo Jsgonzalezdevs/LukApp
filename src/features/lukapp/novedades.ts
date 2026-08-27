@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.9.2',
+    fecha: '2026-08-27',
+    texto: 'Vaquitas reales sin datos ficticios: almacenamiento local en tu dispositivo, estado vacío limpio para crear tu primera vaca y botón para eliminar vaquitas completadas.',
+  },
+  {
     version: '1.9.1',
     fecha: '2026-08-27',
     texto: 'Categorización precisa de Mascotas: reconocimiento de comida de perro/gato y veterinaria con emoji 🐶 en el demo y la app, y actualización de las 7 maneras de registrar con Apple Pay.',
