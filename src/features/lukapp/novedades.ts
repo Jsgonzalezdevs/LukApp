@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.1.3',
+    fecha: '2026-08-26',
+    texto: 'Mejoramos el escaneo de comprobantes OCR: ahora limpian automáticamente el texto de plantilla de Nequi y Bancolombia, evitando que se guarden frases o caracteres extraños de la imagen en la descripción.',
+  },
+  {
     version: '1.1.2',
     fecha: '2026-08-26',
     texto: 'Ahora sí: las manos de la Estrella se ocultan de verdad tras el cuerpo (nada de "bolas" asomando) y la sonrisa grande de las emociones más efusivas quedó redonda, no puntiaguda.',
