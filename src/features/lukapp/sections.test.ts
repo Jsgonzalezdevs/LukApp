@@ -59,7 +59,6 @@ describe('los paneles de Ajustes', () => {
     expect(ids).toContain('gmf');
     expect(ids).toContain('respaldo');
     expect(ids).toContain('vaquitas');
-    expect(ids).toContain('fiscal');
   });
 
   it('cada panel tiene id único', () => {

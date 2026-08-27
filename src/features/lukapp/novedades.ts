@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.9.4',
+    fecha: '2026-08-27',
+    texto: 'Simplificación de experiencia: eliminación del módulo de Asesor Fiscal/DIAN para mantener la app sencilla, rápida y enfocada en lo cotidiano.',
+  },
+  {
     version: '1.9.3',
     fecha: '2026-08-27',
     texto: 'Integración limpia y bajo demanda: Asesor Fiscal DIAN y Vaquitas accesibles desde Más > Herramientas y el Asesor IA, manteniendo la cabecera limpia y explicados en la guía interactiva.',

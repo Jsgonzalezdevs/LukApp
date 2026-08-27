@@ -67,11 +67,6 @@ export const PANELES_AJUSTES = [
     label: 'Vaquitas y Gastos Compartidos',
     ayuda: 'Arma vacas para paseos, asados o salidas y salda deudas',
   },
-  {
-    id: 'fiscal',
-    label: 'Asesor Fiscal & Renta DIAN',
-    ayuda: 'Semáforo de 1.400 UVT y simulador de retención en la fuente',
-  },
   { id: 'extractos', label: 'Importar extractos', ayuda: 'Sube el PDF que te manda el banco' },
   { id: 'atajos', label: 'Registro automático', ayuda: 'Que Apple Pay anote el gasto solo' },
   { id: 'gmf', label: 'Impuesto 4x1000', ayuda: 'Cuánto te está costando y en qué cuenta' },

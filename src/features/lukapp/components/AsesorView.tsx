@@ -18,7 +18,6 @@ import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import { Estrella } from './Estrella';
 import { EstrellaSecuencia } from './EstrellaSecuencia';
-import { HerramientasFiscalesModal } from './HerramientasFiscalesModal';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
@@ -118,7 +117,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
-  const [modalFiscalAbierto, setModalFiscalAbierto] = useState(false);
   const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -808,13 +806,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <span>{toast}</span>
         </div>
       )}
-
-      {/* Modal de Asesor Fiscal & Topes Renta */}
-      <HerramientasFiscalesModal
-        isOpen={modalFiscalAbierto}
-        onClose={() => setModalFiscalAbierto(false)}
-        transacciones={transacciones}
-      />
 
       {/* Modal de Vaquitas & Gastos Compartidos */}
       <VaquitasModal

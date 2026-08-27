@@ -32,7 +32,6 @@ const ICONOS: Record<PanelAjustes, string> = {
   compartido: '👫',
   'dividir-cuenta': '🍽️',
   vaquitas: '🐮',
-  fiscal: '🛡️',
   extractos: '📥',
   atajos: '💳',
   gmf: '🏛️',
@@ -47,7 +46,7 @@ const ICONOS: Record<PanelAjustes, string> = {
  * que leer las filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
   { titulo: 'Tu dinero', paneles: ['categorias', 'topes', 'periodo', 'metas', 'recurrentes', 'compartido'] },
-  { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'vaquitas', 'fiscal', 'extractos', 'atajos', 'gmf'] },
+  { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'vaquitas', 'extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
   { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },
 ];
