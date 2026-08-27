@@ -56,7 +56,7 @@ export const PASOS_BASICOS: PasoGuia[] = [
     ancla: 'nav-ajustes',
     titulo: 'Aquí está lo demás',
     texto:
-      'Cuentas, categorías propias, topes de gasto, metas de ahorro, pagos fijos, los extractos del banco y el 4x1000. Es la puerta que menos se ve y la que más guarda.',
+      'Cuentas, categorías propias, topes de gasto, metas de ahorro, pagos fijos, extractos del banco, el 4x1000, el Asesor Fiscal DIAN y Vaquitas. Es la puerta que menos se ve y la que más guarda.',
     aire: 4,
     radio: 14,
   },

@@ -91,6 +91,8 @@ import { Onboarding } from './components/Onboarding';
 import { PANELES_AJUSTES, SECTIONS } from './sections';
 import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
+import { HerramientasFiscalesModal } from './components/HerramientasFiscalesModal';
+import { VaquitasModal } from './components/VaquitasModal';
 import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
@@ -987,6 +989,14 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                     raw: `${montoCop} de ${descripcion}`,
                   });
                 }}
+              />
+            ) : panelAjustes === 'vaquitas' ? (
+              <VaquitasModal isOpen={true} onClose={() => setPanelAjustes(null)} />
+            ) : panelAjustes === 'fiscal' ? (
+              <HerramientasFiscalesModal
+                isOpen={true}
+                onClose={() => setPanelAjustes(null)}
+                transacciones={transacciones}
               />
             ) : panelAjustes === 'extractos' ? (
               <AnalistaView

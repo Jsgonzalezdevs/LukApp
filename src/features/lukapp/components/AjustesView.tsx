@@ -31,6 +31,8 @@ const ICONOS: Record<PanelAjustes, string> = {
   recurrentes: '🔁',
   compartido: '👫',
   'dividir-cuenta': '🍽️',
+  vaquitas: '🐮',
+  fiscal: '🛡️',
   extractos: '📥',
   atajos: '💳',
   gmf: '🏛️',
@@ -41,11 +43,11 @@ const ICONOS: Record<PanelAjustes, string> = {
   cuenta: '☁️',
 };
 
-/** Los tres bloques en que se parte la lista. Agrupar por tema hace que no haya
- * que leer las nueve filas para encontrar una. */
+/** Los bloques en que se parte la lista. Agrupar por tema hace que no haya
+ * que leer las filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
   { titulo: 'Tu dinero', paneles: ['categorias', 'topes', 'periodo', 'metas', 'recurrentes', 'compartido'] },
-  { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'extractos', 'atajos', 'gmf'] },
+  { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'vaquitas', 'fiscal', 'extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
   { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },
 ];

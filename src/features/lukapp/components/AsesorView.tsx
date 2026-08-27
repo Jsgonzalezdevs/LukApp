@@ -10,8 +10,6 @@ import {
   Volume2,
   VolumeX,
   Share2,
-  ShieldCheck,
-  Users,
 } from 'lucide-react';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
@@ -501,22 +499,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <span className="truncate">{etiquetaConexion(conexion)}</span>
         </p>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setModalFiscalAbierto(true)}
-            className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] border border-[var(--fin-line)] px-2.5 py-1 text-[12px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)] transition-colors"
-          >
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-            <span>Asesor Fiscal</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setModalVaquitasAbierto(true)}
-            className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] border border-[var(--fin-line)] px-2.5 py-1 text-[12px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)] transition-colors"
-          >
-            <Users className="h-3.5 w-3.5 text-amber-600" />
-            <span>Vaquitas</span>
-          </button>
           {conexion === 'local' && (
             <button
               onClick={async () => {

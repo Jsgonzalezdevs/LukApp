@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.9.3',
+    fecha: '2026-08-27',
+    texto: 'Integración limpia y bajo demanda: Asesor Fiscal DIAN y Vaquitas accesibles desde Más > Herramientas y el Asesor IA, manteniendo la cabecera limpia y explicados en la guía interactiva.',
+  },
+  {
     version: '1.9.2',
     fecha: '2026-08-27',
     texto: 'Vaquitas reales sin datos ficticios: almacenamiento local en tu dispositivo, estado vacío limpio para crear tu primera vaca y botón para eliminar vaquitas completadas.',
