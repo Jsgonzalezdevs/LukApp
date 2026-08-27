@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.5',
+    fecha: '2026-08-27',
+    texto: 'Contraste visual en categorías: escala directa y marcada en el gráfico de tarjetas del Dashboard para ver con total claridad la diferencia real entre categorías de alto y bajo gasto.',
+  },
+  {
     version: '1.7.4',
     fecha: '2026-08-27',
     texto: 'Optimización visual del Dashboard: alturas y anchos de tarjetas de categorías ajustados a proporciones compactas y equilibradas para una lectura inmediata a simple vista.',
