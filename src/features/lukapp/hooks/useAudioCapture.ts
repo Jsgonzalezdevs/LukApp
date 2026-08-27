@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePermisoDeMicrófono } from './usePermisoDeMicrófono';
+import { apiUrl } from '../../../lib/api';
 
 export type AudioCaptureStatus = 'idle' | 'listening' | 'processing' | 'blocked';
 
@@ -125,13 +126,60 @@ const esAlucinacion = (texto: string): boolean => ALUCINACIONES.has(desnudo(text
 /** Traduce el motivo técnico del servidor a algo que se pueda leer. */
 const enPalabras = (motivo: string | undefined): string => {
   if (!motivo) return 'No se pudo transcribir. Escríbelo a mano.';
-  if (motivo.includes('llave') || motivo.includes('API_KEY')) {
-    return 'Falta configurar la clave de transcripción en el servidor.';
+  if (motivo.includes('llave') || motivo.includes('API_KEY') || motivo.includes('key') || motivo.includes('Falta')) {
+    return 'Falta configurar la clave de transcripción (GROQ_API_KEY) en el servidor.';
   }
-  if (motivo.includes('No llegó audio')) {
+  if (motivo.includes('No llegó audio') || motivo.includes('No audio')) {
     return 'No se grabó nada. Mantén la app abierta mientras hablas.';
   }
   return 'No se pudo transcribir. Escríbelo a mano.';
+};
+
+/** Petición con fallback automático entre apiUrl y ruta relativa */
+const peticionTranscribir = async (
+  audioBlob: Blob,
+  tipoMime: string,
+): Promise<{ text?: string; offline?: boolean; error?: string } | null> => {
+  const urlPrimaria = apiUrl('/api/transcribir');
+  try {
+    const res = await fetch(urlPrimaria, {
+      method: 'POST',
+      headers: { 'Content-Type': tipoMime },
+      body: audioBlob,
+    });
+    if (res.ok) {
+      const data = (await res.json().catch(() => null)) as {
+        text?: string;
+        offline?: boolean;
+        error?: string;
+      } | null;
+      if (data) return data;
+    }
+  } catch {
+    // Intentar con el fallback
+  }
+
+  if (urlPrimaria !== '/api/transcribir') {
+    try {
+      const resLocal = await fetch('/api/transcribir', {
+        method: 'POST',
+        headers: { 'Content-Type': tipoMime },
+        body: audioBlob,
+      });
+      if (resLocal.ok) {
+        const dataLocal = (await resLocal.json().catch(() => null)) as {
+          text?: string;
+          offline?: boolean;
+          error?: string;
+        } | null;
+        if (dataLocal) return dataLocal;
+      }
+    } catch {
+      // Sin conexión
+    }
+  }
+
+  return null;
 };
 
 /**
@@ -282,13 +330,8 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
         return;
       }
 
-      fetch('/api/transcribir', {
-        method: 'POST',
-        headers: { 'Content-Type': tipoSeg },
-        body: audioSeg,
-      })
-        .then((r) => r.json().catch(() => null))
-        .then((datos: { text?: string; offline?: boolean } | null) => {
+      peticionTranscribir(audioSeg, tipoSeg)
+        .then((datos) => {
           if (miSesion !== sesionRef.current) return;
           if (!datos || datos.offline) return;
           const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
@@ -463,18 +506,10 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
       setStatus('processing');
       try {
-        const respuesta = await fetch('/api/transcribir', {
-          method: 'POST',
-          headers: { 'Content-Type': tipo },
-          body: audio,
-        });
+        const datos = await peticionTranscribir(audio, tipo);
 
-        const datos = (await respuesta.json().catch(() => null)) as
-          | { text?: string; offline?: boolean; error?: string }
-          | null;
-
-        if (!respuesta.ok || !datos) {
-          setError('No se pudo conectar para transcribir.');
+        if (!datos) {
+          setError('No se pudo conectar para transcribir. Revisa tu conexión o la API.');
           return;
         }
 

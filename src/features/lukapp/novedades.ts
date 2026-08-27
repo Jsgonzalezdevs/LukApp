@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.8.1',
+    fecha: '2026-08-27',
+    texto: 'Transcripción por voz robusta: conexión con fallback automático a la API de backend (apiUrl) y diagnóstico claro para dictado por voz.',
+  },
+  {
     version: '1.8.0',
     fecha: '2026-08-27',
     texto: 'Apple Pay y Automatizaciones: soporte robusto universal para pagos automáticos con iPhone, compatibilidad de payloads en inglés/español y nueva guía interactiva paso a paso en la landing.',
