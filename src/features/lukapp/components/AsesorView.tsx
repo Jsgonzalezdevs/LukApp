@@ -10,6 +10,8 @@ import {
   Volume2,
   VolumeX,
   Share2,
+  ShieldCheck,
+  Users,
 } from 'lucide-react';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
@@ -18,6 +20,8 @@ import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import { Estrella } from './Estrella';
 import { EstrellaSecuencia } from './EstrellaSecuencia';
+import { HerramientasFiscalesModal } from './HerramientasFiscalesModal';
+import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
@@ -55,6 +59,8 @@ const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 const SUGERENCIAS_INICIALES = [
   'Dime mi resumen',
   '¿Cuánto puedo gastar?',
+  '¿Debo declarar renta?',
+  '¿Pagaré 4x1000 este mes?',
   'Mis suscripciones',
   'Sorpréndeme',
 ];
@@ -114,6 +120,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
+  const [modalFiscalAbierto, setModalFiscalAbierto] = useState(false);
+  const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
   const mostrarToast = (mensaje: string) => {
@@ -492,42 +500,60 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           />
           <span className="truncate">{etiquetaConexion(conexion)}</span>
         </p>
-        {conexion === 'local' && (
+        <div className="flex items-center gap-2">
           <button
-            onClick={async () => {
-              if (intentandoDespertar) return;
-              setIntentandoDespertar(true);
-
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-              try {
-                const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal });
-                clearTimeout(timeoutId);
-
-                if (!res.ok) {
-                  console.log('[asesor] Servidor retornó:', res.status);
-                  setConexion('local');
-                  return;
-                }
-
-                const data = await res.json();
-                console.log('[asesor] Servidor disponible, IA:', data?.ia);
-                setConexion(data?.ia ? 'en-linea' : 'local');
-              } catch (error) {
-                console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
-                setConexion('local');
-              } finally {
-                clearTimeout(timeoutId);
-                setIntentandoDespertar(false);
-              }
-            }}
-            disabled={intentandoDespertar}
-            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1 text-[12px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
+            type="button"
+            onClick={() => setModalFiscalAbierto(true)}
+            className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] border border-[var(--fin-line)] px-2.5 py-1 text-[12px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)] transition-colors"
           >
-            {intentandoDespertar ? 'Despertando...' : 'Despertarlo'}
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Asesor Fiscal</span>
           </button>
-        )}
+          <button
+            type="button"
+            onClick={() => setModalVaquitasAbierto(true)}
+            className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] border border-[var(--fin-line)] px-2.5 py-1 text-[12px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)] transition-colors"
+          >
+            <Users className="h-3.5 w-3.5 text-amber-600" />
+            <span>Vaquitas</span>
+          </button>
+          {conexion === 'local' && (
+            <button
+              onClick={async () => {
+                if (intentandoDespertar) return;
+                setIntentandoDespertar(true);
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                try {
+                  const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal });
+                  clearTimeout(timeoutId);
+
+                  if (!res.ok) {
+                    console.log('[asesor] Servidor retornó:', res.status);
+                    setConexion('local');
+                    return;
+                  }
+
+                  const data = await res.json();
+                  console.log('[asesor] Servidor disponible, IA:', data?.ia);
+                  setConexion(data?.ia ? 'en-linea' : 'local');
+                } catch (error) {
+                  console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
+                  setConexion('local');
+                } finally {
+                  clearTimeout(timeoutId);
+                  setIntentandoDespertar(false);
+                }
+              }}
+              disabled={intentandoDespertar}
+              className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1 text-[12px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
+            >
+              {intentandoDespertar ? 'Despertando...' : 'Despertarlo'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
@@ -800,6 +826,19 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <span>{toast}</span>
         </div>
       )}
+
+      {/* Modal de Asesor Fiscal & Topes Renta */}
+      <HerramientasFiscalesModal
+        isOpen={modalFiscalAbierto}
+        onClose={() => setModalFiscalAbierto(false)}
+        transacciones={transacciones}
+      />
+
+      {/* Modal de Vaquitas & Gastos Compartidos */}
+      <VaquitasModal
+        isOpen={modalVaquitasAbierto}
+        onClose={() => setModalVaquitasAbierto(false)}
+      />
     </div>
   );
 };

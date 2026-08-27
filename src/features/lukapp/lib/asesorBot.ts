@@ -4,6 +4,8 @@ import type { Cajita } from '../data/modelos';
 import { normalizarNombre } from './contactos';
 import type { LexicoAprendido } from './aprendizaje';
 import type { CategoriaPersonal } from '../categorias';
+import { analizarTopesRenta } from './tributarioColombia';
+import { UVT_POR_DEFECTO } from './gmf';
 
 export interface AsesorContext {
   ultimoAsunto: string | null;
@@ -506,6 +508,58 @@ export function responderAsesor(
       text,
       newContext,
       suggestions: ['Dame un consejo', 'Resumen del mes'],
+    };
+  }
+
+  // 3.4.1. Topes Declaración de Renta DIAN
+  if (
+    norm.includes('renta') ||
+    norm.includes('declarar') ||
+    norm.includes('dian') ||
+    (norm.includes('tope') && norm.includes('declar'))
+  ) {
+    const anal = analizarTopesRenta(transacciones, new Date().getFullYear(), UVT_POR_DEFECTO);
+    return {
+      text: `🇨🇴 **Análisis de Topes DIAN para Declaración de Renta (${anal.anio}):**\n\n` +
+        `• **Consignaciones / Ingresos:** $${anal.acumuladoConsignacionesPesos.toLocaleString('es-CO')} de $${anal.topeConsignacionesPesos.toLocaleString('es-CO')} (${anal.porcentajeConsignaciones}% del tope de 1.400 UVT)\n` +
+        `• **Compras y Gastos:** $${anal.acumuladoComprasPesos.toLocaleString('es-CO')} de $${anal.topeComprasPesos.toLocaleString('es-CO')} (${anal.porcentajeCompras}%)\n\n` +
+        `📌 **Diagnóstico:** ${anal.mensajeConsejo}`,
+      newContext,
+      suggestions: ['Simular Retefuente', '¿Pagaré 4x1000?', 'Resumen del mes'],
+    };
+  }
+
+  // 3.4.2. Retención en la Fuente e Independientes
+  if (
+    norm.includes('retencion') ||
+    norm.includes('retefuente') ||
+    norm.includes('honorarios') ||
+    norm.includes('cuenta de cobro')
+  ) {
+    return {
+      text: `💼 **Simulador de Retenciones para Independientes:**\n\n` +
+        `Para calcular retenciones en una cuenta de cobro en Colombia:\n\n` +
+        `• **Honorarios No declarante:** 10% Retefuente + 9.66‰ ReteICA\n` +
+        `• **Honorarios Declarante:** 11% Retefuente + 9.66‰ ReteICA\n` +
+        `• **Servicios generales:** 4% a 6%\n\n` +
+        `Puedes abrir las **Herramientas Fiscales** para simular tu liquidación exacta con aportes a seguridad social.`,
+      newContext,
+      suggestions: ['¿Debo declarar renta?', '¿Cuánto puedo gastar?'],
+    };
+  }
+
+  // 3.4.3. Vaquitas y Gastos Compartidos
+  if (
+    norm.includes('vaca') ||
+    norm.includes('vaquita') ||
+    norm.includes('gasto compartido') ||
+    norm.includes('dividir cuenta')
+  ) {
+    return {
+      text: `🐮 **Vaquitas y Gastos Compartidos:**\n\n` +
+        `En LukApp puedes organizar salidas, asados y paseos con amigos. Cada persona aporta su cuota, anotan los gastos comunes y el sistema calcula exactamente **quién le debe a quién** para quedar a mano sin enredos.`,
+      newContext,
+      suggestions: ['¿Cuánto puedo gastar?', 'Dime mi resumen'],
     };
   }
 

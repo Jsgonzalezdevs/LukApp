@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.9.0',
+    fecha: '2026-08-27',
+    texto: 'Inteligencia Financiera Colombiana: Semáforo de topes de Renta DIAN, Simulador de Retefuente para independientes, Calendario de Nómina y festivos de Colombia, Vaquitas y gastos compartidos, y Traductor de hábitos cotidianos.',
+  },
+  {
     version: '1.8.1',
     fecha: '2026-08-27',
     texto: 'Transcripción por voz robusta: conexión con fallback automático a la API de backend (apiUrl) y diagnóstico claro para dictado por voz.',
