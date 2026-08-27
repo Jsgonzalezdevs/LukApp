@@ -154,9 +154,14 @@ export const CATEGORIA_EMOJI_BASE: Record<Category, string> = {
 };
 
 const PISTAS_EMOJI: Array<{ emoji: string; palabras: string[] }> = [
+  { emoji: '🐶', palabras: ['comida para el perro', 'comida de perro', 'comida para perro', 'comida perro', 'perro', 'perros', 'perrito', 'canino', 'purina', 'dog chow', 'pedigree', 'chunky', 'agrocampo'] },
+  { emoji: '🐱', palabras: ['gato', 'gatos', 'gatito', 'michi', 'comida para gato', 'comida de gato', 'whiskas', 'felino'] },
+  { emoji: '🐾', palabras: ['mascota', 'mascotas', 'veterinaria', 'veterinario', 'concentrado', 'croquetas', 'cat', 'pet shop', 'petys', 'arenas'] },
   { emoji: '🥑', palabras: ['mercado', 'super', 'supermercado', 'compras', 'fruta', 'verdura', 'carulla', 'exito', 'jumbo'] },
-  { emoji: '🍔', palabras: ['comida', 'restaurante', 'almuerzo', 'cena', 'domicilio', 'comer', 'hamburguesa', 'comidas'] },
+  { emoji: '🍕', palabras: ['pizza', 'pizzas'] },
   { emoji: '☕', palabras: ['cafe', 'café', 'snack', 'onces', 'desayuno', 'panaderia', 'panadería', 'mecato', 'snacks'] },
+  { emoji: '🍺', palabras: ['cerveza', 'trago', 'licor', 'bar', 'polas', 'cervezas', 'ron', 'whisky'] },
+  { emoji: '🍔', palabras: ['comida', 'restaurante', 'almuerzo', 'cena', 'domicilio', 'comer', 'hamburguesa', 'comidas'] },
   { emoji: '🚗', palabras: ['transporte', 'bus', 'taxi', 'uber', 'gasolina', 'carro', 'metro', 'parqueadero', 'peaje', 'didi', 'indrive', 'gas'] },
   { emoji: '💡', palabras: ['servicios', 'luz', 'agua', 'gas', 'internet', 'recibo', 'energia', 'energía', 'epm', 'enel', 'acueducto'] },
   { emoji: '📱', palabras: ['celular', 'telefono', 'teléfono', 'plan', 'datos', 'streaming', 'suscripcion', 'suscripción', 'netflix', 'spotify', 'apple', 'google', 'digital', 'trabajo digital'] },
@@ -171,14 +176,10 @@ const PISTAS_EMOJI: Array<{ emoji: string; palabras: string[] }> = [
   { emoji: '🔄', palabras: ['transferencia', 'traslado', 'giro'] },
   { emoji: '🐷', palabras: ['ahorro', 'ahorros', 'alcancia', 'inversion', 'inversión'] },
   { emoji: '💰', palabras: ['ingreso', 'sueldo', 'salario', 'pago', 'nomina', 'nómina', 'trabajo', 'honorarios', 'trabajos'] },
-  { emoji: '🐾', palabras: ['mascota', 'perro', 'veterinaria', 'veterinario', 'concentrado', 'croquetas', 'cat'] },
-  { emoji: '🐱', palabras: ['gato', 'michi'] },
   { emoji: '👶', palabras: ['bebe', 'bebé', 'hijo', 'hija', 'pañal', 'panal', 'guarderia'] },
   { emoji: '🎁', palabras: ['regalo', 'cumpleanos', 'cumpleaños', 'navidad', 'detalle'] },
   { emoji: '✈️', palabras: ['viaje', 'vuelo', 'vacaciones', 'tiquete', 'hotel', 'turismo', 'playa', 'viajes'] },
   { emoji: '🔧', palabras: ['reparacion', 'reparación', 'mantenimiento', 'arreglo', 'ferreteria', 'ferretería'] },
-  { emoji: '🍺', palabras: ['cerveza', 'trago', 'licor', 'bar', 'polas', 'cervezas', 'ron', 'whisky'] },
-  { emoji: '🍕', palabras: ['pizza', 'pizzas'] },
 ];
 
 export const EMOJIS_POPULARES_CATEGORIA = [

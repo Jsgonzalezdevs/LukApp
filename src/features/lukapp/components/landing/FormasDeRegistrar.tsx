@@ -5,6 +5,7 @@ import {
   Keyboard,
   Mic,
   Repeat,
+  Smartphone,
   Sparkles,
   type LucideIcon
 } from 'lucide-react';
@@ -17,6 +18,12 @@ const FORMAS: {
   texto: string;
   ejemplo: string;
 }[] = [
+  {
+    Icono: Smartphone,
+    titulo: 'Con Apple Pay',
+    texto: 'Cada pago con tu iPhone se anota solo con Atajos sin abrir la app.',
+    ejemplo: 'Wallet → automático'
+  },
   {
     Icono: Mic,
     titulo: 'Hablando',
@@ -58,11 +65,11 @@ const FORMAS: {
 export const FormasDeRegistrar: React.FC = () => (
   <section className="formas" id="formas">
     <Reveal as="header" className="seccion-cabecera">
-      <span className="seccion-etiqueta">Seis maneras</span>
+      <span className="seccion-etiqueta">Siete maneras</span>
       <TituloPalabras texto="Registra como te quede cómodo" resaltarUltimas={1} />
       <p className="seccion-sub">
         La app que usas es la que no te estorba. Si una forma no te sirve un día,
-        hay otras cinco.
+        hay otras seis.
       </p>
     </Reveal>
 

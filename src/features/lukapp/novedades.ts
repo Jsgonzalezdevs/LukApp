@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.9.1',
+    fecha: '2026-08-27',
+    texto: 'Categorización precisa de Mascotas: reconocimiento de comida de perro/gato y veterinaria con emoji 🐶 en el demo y la app, y actualización de las 7 maneras de registrar con Apple Pay.',
+  },
+  {
     version: '1.9.0',
     fecha: '2026-08-27',
     texto: 'Inteligencia Financiera Colombiana: Semáforo de topes de Renta DIAN, Simulador de Retefuente para independientes, Calendario de Nómina y festivos de Colombia, Vaquitas y gastos compartidos, y Traductor de hábitos cotidianos.',

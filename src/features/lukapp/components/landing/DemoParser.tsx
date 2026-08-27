@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowDown, Calendar, CreditCard, MessageCircle, User } from 'lucide-react';
 import { parseTransaction } from '../../lib/parseTransaction';
-import { CATALOGO_BASE } from '../../categorias';
+import { CATALOGO_BASE, sugerirEmojiCategoria } from '../../categorias';
 import { formatCop } from '../../lib/formatCop';
 import { Reveal } from './primitivas';
 import { TituloPalabras } from './adornos';
@@ -41,6 +41,27 @@ export const DemoParser: React.FC = () => {
      exactamente lo que va a pasar cuando escriba eso mismo adentro. */
   const leido = useMemo(() => parseTransaction(texto), [texto]);
   const categoria = CATALOGO_BASE.de(leido.category);
+
+  const emojiDinamico = useMemo(() => {
+    const sugerido = sugerirEmojiCategoria(leido.description);
+    return sugerido !== '🏷️' ? sugerido : categoria.emoji;
+  }, [leido.description, categoria.emoji]);
+
+  const nombreCategoriaDinamico = useMemo(() => {
+    const desc = (leido.description || '').toLowerCase();
+    if (
+      desc.includes('perro') ||
+      desc.includes('gato') ||
+      desc.includes('mascota') ||
+      desc.includes('veterin') ||
+      desc.includes('purina') ||
+      desc.includes('whiskas') ||
+      desc.includes('concentrado')
+    ) {
+      return 'Mascotas';
+    }
+    return categoria.nombre;
+  }, [leido.description, categoria.nombre]);
 
   const insignias = [
     leido.dateOverride && {
@@ -110,7 +131,7 @@ export const DemoParser: React.FC = () => {
                   style={{ background: `${categoria.color}22` }}
                   aria-hidden="true"
                 >
-                  {categoria.emoji}
+                  {emojiDinamico}
                 </span>
 
                 {/* Descripción, categoría y monto se pintan sin transición de
@@ -120,7 +141,7 @@ export const DemoParser: React.FC = () => {
                     la nueva — se lee como un error de cálculo. */}
                 <div className="demo-texto">
                   <span className="demo-desc">{leido.description || 'Movimiento'}</span>
-                  <span className="demo-categoria">{categoria.nombre}</span>
+                  <span className="demo-categoria">{nombreCategoriaDinamico}</span>
                 </div>
 
                 <span className={`demo-monto ${leido.kind}`}>
