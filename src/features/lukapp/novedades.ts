@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.5.0',
+    fecha: '2026-08-27',
+    texto: 'Rediseño completo del Dashboard: nueva vista minimalista inspirada en las mejores apps fintech, con barras visuales de tus categorías principales, botón para alternar entre gráfica y lista, y botón rápido para registrar gastos.',
+  },
+  {
     version: '1.4.0',
     fecha: '2026-08-27',
     texto: 'Nueva experiencia animada en la landing: sección interactiva y visual que ilustra en bucle continuo el registro sin esfuerzo, la creación del hábito y la analítica del panorama completo.',

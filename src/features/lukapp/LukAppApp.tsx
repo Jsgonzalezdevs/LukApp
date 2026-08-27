@@ -714,6 +714,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             today={today}
             novedad={novedades.hayNovedad ? NOVEDADES[0] : null}
             onCerrarNovedad={() => novedades.marcarVista()}
+            onAnotar={() => setPending(movimientoEnBlanco())}
           />
         ) : null}
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
+  BarChart2,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
   Eye,
   EyeOff,
-  MessageSquare,
+  List,
+  Plus,
   RefreshCw,
   Search,
   Settings2,
@@ -21,27 +21,22 @@ import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
 import { calcularRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
-import { NovedadesCard } from './NovedadesCard';
 import type { Novedad } from '../novedades';
+import { useCatalogo } from '../catalogoContexto';
+import { tint } from '../types';
 
 interface InicioViewProps {
-  /** El período que se está mirando, ya formateado para mostrar ("agosto 2026",
-   * "18-24 ago", "Todo el tiempo" -- depende de la frecuencia elegida en Ajustes). */
   etiquetaPeriodo: string;
   onCambiarMes: () => void;
   onBuscar: () => void;
   onAjustes: () => void;
-  /** Lo que hay en total: cuentas + ahorros − deudas. */
   patrimonioCop: number;
-  /** Lo que salió y lo que entró este mes. */
   gastosCop: number;
   ingresosCop: number;
-  /** Se llama al tocar cualquiera de las dos mitades de la pastilla. */
   onVerMes: () => void;
   movimientos: readonly Transaction[];
   conSenal?: ReadonlySet<string>;
   onAbrirMovimiento: (tx: Transaction) => void;
-  /** Lo que la app notó por su cuenta este mes o generado por IA. */
   insights?: readonly (Insight & { onTocar?: () => void })[];
   cargandoIa?: boolean;
   onRefrescarInsights?: () => void;
@@ -52,10 +47,41 @@ interface InicioViewProps {
   modoPrivacidad?: boolean;
   onTogglePrivacidad?: () => void;
   today?: string;
-  /** Ausente cuando no hay nada nuevo que contar, o ya se cerró. */
   novedad?: Novedad | null;
   onCerrarNovedad?: () => void;
+  onAnotar?: () => void;
 }
+
+const CATEGORIA_EMOJI: Record<string, string> = {
+  mercado: '🥑',
+  comida: '🍔',
+  transporte: '🚗',
+  servicios: '💡',
+  entretenimiento: '💎',
+  salud: '💊',
+  hogar: '🏠',
+  suscripciones: '📱',
+  ropa: '👕',
+  educacion: '📚',
+  cafes_snacks: '☕',
+  mascotas: '🐾',
+  ingreso: '💰',
+  transferencia: '🔄',
+  otros: '📦',
+};
+
+const formatMontoCompacto = (monto: number): string => {
+  if (monto === 0) return '$0';
+  if (monto >= 1_000_000) {
+    const num = (monto / 1_000_000).toFixed(1).replace('.0', '');
+    return `$${num}M`;
+  }
+  if (monto >= 1_000) {
+    const num = (monto / 1_000).toFixed(1).replace('.0', '');
+    return `$${num}K`;
+  }
+  return `$${monto}`;
+};
 
 export const InicioView: React.FC<InicioViewProps> = ({
   etiquetaPeriodo,
@@ -81,56 +107,34 @@ export const InicioView: React.FC<InicioViewProps> = ({
   today,
   novedad,
   onCerrarNovedad,
+  onAnotar,
 }) => {
+  const catalogo = useCatalogo();
   const { isDismissed, dismiss } = useDismissedInsights();
   const [indiceRotacion, setIndiceRotacion] = useState(0);
   const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
-  const [minimizado, setMinimizado] = useState(() => {
-    try {
-      // Empieza minimizado salvo que el usuario ya haya elegido dejarlo abierto.
-      return localStorage.getItem('lukapp-tips-minimizado') !== 'false';
-    } catch {
-      return true;
-    }
-  });
+  const [modoCifra, setModoCifra] = useState<'gasto' | 'patrimonio'>('gasto');
+  const [vistaModo, setVistaModo] = useState<'grafica' | 'lista'>('grafica');
+  const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
 
   const infoRacha = useMemo(
     () => calcularRacha(movimientos, today || new Date().toISOString().slice(0, 10)),
     [movimientos, today],
   );
 
-  const toggleMinimizado = (val: boolean) => {
-    setMinimizado(val);
-    try {
-      localStorage.setItem('lukapp-tips-minimizado', String(val));
-    } catch {
-      // Ignorar
-    }
-  };
-
-  // Filtrar insights no descartados
   const insightsVisibles = useMemo(() => {
     if (!insights) return [];
     return insights.filter((i) => !isDismissed(i.id));
   }, [insights, isDismissed]);
 
-  // Rotar entre insights cada 50 segundos si hay múltiples
   useEffect(() => {
     if (insightsVisibles.length <= 1) return;
     const timer = setInterval(() => {
       setIndiceRotacion((prev) => (prev + 1) % insightsVisibles.length);
-    }, 50000);
+    }, 45000);
     return () => clearInterval(timer);
   }, [insightsVisibles.length]);
 
-  // Ajustar índice si la lista cambió
-  useEffect(() => {
-    if (indiceRotacion >= insightsVisibles.length && insightsVisibles.length > 0) {
-      setIndiceRotacion(0);
-    }
-  }, [insightsVisibles.length, indiceRotacion]);
-
-  // El insight a mostrar
   const insightActual = insightsVisibles[insightsVisibles.length > 1 ? indiceRotacion : 0] ?? null;
 
   const handleAccionInsight = (insight: Insight & { onTocar?: () => void }) => {
@@ -141,37 +145,74 @@ export const InicioView: React.FC<InicioViewProps> = ({
     }
   };
 
+  // Ranking y cálculo de las 4 categorías principales
+  const { categoriasTop, maxTotal } = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const m of movimientos) {
+      if (m.kind === 'gasto') {
+        mapa.set(m.category, (mapa.get(m.category) || 0) + m.amountCop);
+      }
+    }
+
+    const defaultKeys = ['mercado', 'comida', 'transporte', 'entretenimiento'];
+    for (const k of defaultKeys) {
+      if (!mapa.has(k)) {
+        mapa.set(k, 0);
+      }
+    }
+
+    const lista = Array.from(mapa.entries())
+      .map(([clave, total]) => {
+        const info = catalogo.de(clave);
+        const emoji = CATEGORIA_EMOJI[clave] || '🏷️';
+        return { clave, total, info, emoji };
+      })
+      .sort((a, b) => b.total - a.total);
+
+    const top4 = lista.slice(0, 4);
+    const maxVal = Math.max(...top4.map((c) => c.total), 1);
+    return { categoriasTop: top4, maxTotal: maxVal };
+  }, [movimientos, catalogo]);
+
+  // Movimientos visibles (filtrados por categoría si se hizo click en una barra)
+  const movimientosAMostrar = useMemo(() => {
+    if (!categoriaFiltro) return movimientos;
+    return movimientos.filter((m) => m.category === categoriaFiltro);
+  }, [movimientos, categoriaFiltro]);
+
   return (
-    <div className="flex flex-col">
-      {/* Arriba: el mes a la izquierda, botones de privacidad, búsqueda y ajustes a la derecha */}
+    <div className="flex flex-col pb-6">
+      {/* ── 1. Cabecera superior minimalista ─────────────────────────────── */}
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={onCambiarMes}
-          className="flex items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3.5 py-2 text-[15px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)]"
+          className="flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
         >
-          {etiquetaPeriodo}
+          <span className="text-[var(--fin-ink-soft)] text-[12px] uppercase tracking-wider">
+            {modoCifra === 'gasto' ? 'Gasto' : 'Saldo'}
+          </span>
+          <span className="text-[var(--fin-ink)] font-bold">{etiquetaPeriodo}</span>
           <ChevronDown
-            className="h-4 w-4 text-[var(--fin-ink-faint)]"
+            className="h-3.5 w-3.5 text-[var(--fin-ink-faint)]"
             strokeWidth={2.5}
             aria-hidden="true"
           />
         </button>
 
         <div className="flex items-center gap-1.5">
-          {/* Botón de Racha interactivo en la cabecera */}
+          {/* Botón de Racha */}
           <button
             type="button"
             onClick={() => setMostrarRachaModal(true)}
-            aria-label={infoRacha.anotadoHoy ? `Racha de ${infoRacha.rachaActual} días asegurada hoy` : 'Racha: anota un movimiento hoy'}
-            title={infoRacha.anotadoHoy ? `🔥 Racha de ${infoRacha.rachaActual} días asegurada hoy` : '🔥 Toca para ver tu racha y medallas'}
-            className={`flex h-9 items-center gap-1.5 rounded-[var(--fin-r-pill)] px-2.5 text-[13px] font-bold transition-all active:scale-95 ${
+            aria-label="Racha de días"
+            className={`flex h-8.5 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-bold transition-all active:scale-95 ${
               infoRacha.anotadoHoy
-                ? 'border border-orange-500/80 bg-gradient-to-r from-orange-500/20 to-amber-500/15 text-orange-400 ring-1 ring-orange-500/40 shadow-[0_0_12px_rgba(249,115,22,0.3)]'
-                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-faint)] opacity-85 hover:border-[var(--fin-ink-ghost)] hover:text-[var(--fin-ink)]'
+                ? 'border border-amber-500/50 bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
             }`}
           >
-            <span className={`text-[15px] transition-transform ${infoRacha.anotadoHoy ? 'scale-110 drop-shadow-[0_0_6px_rgba(249,115,22,0.8)]' : 'grayscale opacity-75'}`}>
+            <span className={infoRacha.anotadoHoy ? 'drop-shadow-sm' : 'grayscale opacity-70'}>
               🔥
             </span>
             <span className="tabular-nums font-extrabold">{infoRacha.rachaActual}</span>
@@ -181,277 +222,308 @@ export const InicioView: React.FC<InicioViewProps> = ({
             <button
               type="button"
               onClick={onTogglePrivacidad}
-              aria-label={modoPrivacidad ? 'Mostrar saldos' : 'Ocultar saldos (Modo Privacidad)'}
-              title={modoPrivacidad ? 'Mostrar cifras' : 'Ocultar cifras (Modo Privacidad en la calle)'}
-              className={`flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] transition-all active:scale-95 ${
+              aria-label={modoPrivacidad ? 'Mostrar saldos' : 'Ocultar saldos'}
+              className={`flex h-8.5 w-8.5 items-center justify-center rounded-full transition-all active:scale-95 ${
                 modoPrivacidad
-                  ? 'bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30'
+                  ? 'bg-amber-500/20 text-amber-500'
                   : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]'
               }`}
             >
               {modoPrivacidad ? (
-                <EyeOff className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                <EyeOff className="h-4 w-4" strokeWidth={2.2} />
               ) : (
-                <Eye className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                <Eye className="h-4 w-4" strokeWidth={2.2} />
               )}
             </button>
           )}
+
           <button
             type="button"
             onClick={onBuscar}
             aria-label="Buscar un movimiento"
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
+            className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >
-            <Search className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden="true" />
+            <Search className="h-4 w-4" strokeWidth={2.2} />
           </button>
+
           <button
             type="button"
             onClick={onAjustes}
             aria-label="Ajustes"
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
+            className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >
-            <Settings2 className="h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden="true" />
+            <Settings2 className="h-4 w-4" strokeWidth={2.2} />
           </button>
         </div>
       </div>
 
-      {/* El número principal */}
-      <p className="mt-6 text-center text-[13px] text-[var(--fin-ink-faint)]">
-        {modoPrivacidad ? 'Tienes en total (cifras ocultas)' : 'Tienes en total'}
-      </p>
-      <button
-        type="button"
-        data-guia="saldo"
-        onClick={onVerMes}
-        className="mt-1 self-center text-center tabular-nums text-[var(--fin-ink)]"
-        style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
-      >
-        <AnimatedNumber
-          value={patrimonioCop}
-          format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
-        />
-      </button>
-
-      {mostrarEfectivoSeparado && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
-        <div className="mt-3 flex flex-col gap-1.5 text-center text-[14px]">
-          <div className="text-[var(--fin-ink-soft)]">
-            En Bancos:{' '}
-            <span
-              className={`font-semibold tabular-nums ${saldoCuentasSinEfectivoCop < 0 ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink)]'}`}
-            >
-              {modoPrivacidad ? '$ ••••••' : formatCop(saldoCuentasSinEfectivoCop)}
-            </span>
-          </div>
-          <div className="text-[var(--fin-ink-soft)]">
-            Efectivo:{' '}
-            <span className="font-semibold tabular-nums text-[var(--fin-ink)]">
-              {modoPrivacidad ? '$ ••••••' : formatCop(saldoEfectivoCop)}
-            </span>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Salidas y Entradas */}
-      <div className="mt-4 flex justify-center">
-        <div className="flex overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
-          <button
-            type="button"
-            onClick={onVerMes}
-            className="px-4 py-2.5 text-[17px] font-semibold tabular-nums transition-colors hover:opacity-85"
-            style={{ color: 'var(--fin-out)' }}
+      {/* ── 2. Novedad / Tip de IA sutiles y no invasivos ────────────────── */}
+      <AnimatePresence>
+        {novedad && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="mt-3 flex items-center justify-between rounded-2xl bg-amber-500/10 border border-amber-500/25 px-3.5 py-2 text-[12.5px] text-amber-800 dark:text-amber-200"
           >
-            ↓{' '}
-            <AnimatedNumber
-              value={gastosCop}
-              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
-            />
-          </button>
-          <button
-            type="button"
-            onClick={onVerMes}
-            className="border-l border-[var(--fin-line)] px-4 py-2.5 text-[17px] font-semibold tabular-nums transition-colors hover:opacity-85"
-            style={{ color: 'var(--fin-in)' }}
-          >
-            ↑{' '}
-            <AnimatedNumber
-              value={ingresosCop}
-              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
-            />
-          </button>
-        </div>
-      </div>
-
-      {novedad && onCerrarNovedad ? <NovedadesCard novedad={novedad} onCerrar={onCerrarNovedad} /> : null}
-
-      {/* "Para ti" — Tips e Insights dinámicos (ocasional / colapsable / interactivo con Asesor) */}
-      {insightActual ? (
-        <div className="mt-5">
-          {minimizado ? (
-            /* Modo discreto/compacto cuando el usuario prefiere no tenerlo fijo */
-            <div className="flex justify-center">
+            <span className="truncate mr-2">
+              ✨ <strong>v{novedad.version}:</strong> {novedad.texto}
+            </span>
+            {onCerrarNovedad && (
               <button
                 type="button"
-                onClick={() => toggleMinimizado(false)}
-                className="group inline-flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)] shadow-sm transition-all hover:border-[var(--fin-accent)]/45 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                onClick={onCerrarNovedad}
+                className="p-1 hover:opacity-75 shrink-0"
               >
-                <Sparkles className="h-3.5 w-3.5 text-[var(--fin-accent)]" />
-                <span>Tip del Asesor: <strong className="font-semibold text-[var(--fin-ink)]">{insightActual.titulo}</strong></span>
-                <ChevronDown className="h-3.5 w-3.5 text-[var(--fin-ink-faint)] transition-transform group-hover:translate-y-0.5" />
+                <X className="h-3.5 w-3.5" />
               </button>
-            </div>
-          ) : (
-            /* Modo expandido completo */
-            <div className="relative overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 shadow-sm border border-[var(--fin-accent)]/15 transition-all hover:border-[var(--fin-accent)]/30">
-              <div
-                className="pointer-events-none absolute inset-x-0 top-0 h-[3px]"
-                style={{ background: 'linear-gradient(90deg, var(--fin-accent), transparent 85%)' }}
-                aria-hidden="true"
-              />
-              <div className="flex items-start gap-2.5">
-                <span
-                  className="mt-1 h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)]"
-                  style={{
-                    backgroundColor:
-                      insightActual.tono === 'atento'
-                        ? 'var(--fin-out)'
-                        : insightActual.tono === 'bien'
-                          ? 'var(--fin-in)'
-                          : 'var(--fin-ink-faint)',
-                  }}
-                  aria-hidden="true"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handleAccionInsight(insightActual)}
-                      className="text-left font-medium text-[15px] text-[var(--fin-ink)] hover:text-[var(--fin-ink)] hover:underline"
-                    >
-                      {insightActual.titulo}
-                    </button>
-                    {insightActual.origenIa && (
-                      <span className="inline-flex items-center gap-0.5 rounded-md bg-[var(--fin-accent)]/10 px-1.5 py-0.5 text-[10px] font-medium text-[var(--fin-accent)]">
-                        <Sparkles className="h-2.5 w-2.5" />
-                        Grok IA
-                      </span>
-                    )}
-                  </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                  <p
-                    onClick={() => handleAccionInsight(insightActual)}
-                    className="mt-1 text-[13px] text-[var(--fin-ink-soft)] leading-relaxed cursor-pointer hover:text-[var(--fin-ink)]"
-                  >
-                    {insightActual.detalle}
-                  </p>
-
-                  {/* Botón directo para profundizar con el Asesor */}
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleAccionInsight(insightActual)}
-                      className="inline-flex items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]/10 px-2.5 py-1 text-[11px] font-medium text-[var(--fin-accent)] transition-colors hover:bg-[var(--fin-accent)]/18"
-                    >
-                      <MessageSquare className="h-3 w-3" />
-                      <span>Preguntarle al Asesor sobre esto</span>
-                      <span className="text-[10px]">→</span>
-                    </button>
-                  </div>
-
-                  {/* Controles de navegación y rotación */}
-                  <div className="mt-3 flex items-center justify-between text-[11px] text-[var(--fin-ink-faint)]">
-                    {insightsVisibles.length > 1 ? (
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setIndiceRotacion(
-                              (prev) =>
-                                (prev - 1 + insightsVisibles.length) % insightsVisibles.length,
-                            )
-                          }
-                          aria-label="Insight anterior"
-                          className="rounded p-1 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-                        >
-                          <ChevronLeft className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="font-semibold tabular-nums">
-                          {indiceRotacion + 1} de {insightsVisibles.length}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setIndiceRotacion((prev) => (prev + 1) % insightsVisibles.length)
-                          }
-                          aria-label="Siguiente insight"
-                          className="rounded p-1 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-                        >
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <span />
-                    )}
-
-                    <div className="flex items-center gap-2">
-                      {onRefrescarInsights && (
-                        <button
-                          type="button"
-                          onClick={onRefrescarInsights}
-                          disabled={cargandoIa}
-                          title="Actualizar análisis con IA"
-                          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] disabled:opacity-50"
-                        >
-                          <RefreshCw
-                            className={`h-3 w-3 ${cargandoIa ? 'animate-spin text-[var(--fin-accent)]' : ''}`}
-                          />
-                          <span>{cargandoIa ? 'Analizando...' : 'Actualizar'}</span>
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => toggleMinimizado(true)}
-                        title="Minimizar para no dejarlo fijo"
-                        className="inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[11px] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                        <span>Minimizar</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
+      <AnimatePresence>
+        {insightActual && !novedad && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            className="mt-3 flex items-center justify-between rounded-2xl bg-[var(--fin-card)] border border-[var(--fin-accent)]/20 px-3.5 py-2 text-[12.5px] shadow-xs"
+          >
+            <button
+              type="button"
+              onClick={() => handleAccionInsight(insightActual)}
+              className="flex items-center gap-2 truncate text-left min-w-0"
+            >
+              <Sparkles className="h-3.5 w-3.5 text-[var(--fin-accent)] shrink-0" />
+              <span className="truncate text-[var(--fin-ink-soft)]">
+                <strong className="text-[var(--fin-ink)] font-semibold">
+                  {insightActual.titulo}:
+                </strong>{' '}
+                {insightActual.detalle}
+              </span>
+            </button>
+            <div className="flex items-center gap-1 shrink-0 ml-2">
+              {onRefrescarInsights && (
                 <button
                   type="button"
-                  onClick={() => dismiss(insightActual.id)}
-                  aria-label="Cerrar insight"
-                  className="shrink-0 rounded-lg p-1 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] transition-colors"
+                  onClick={onRefrescarInsights}
+                  title="Actualizar IA"
+                  className="p-1 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
                 >
-                  <X className="h-4 w-4" strokeWidth={2.2} />
+                  <RefreshCw
+                    className={`h-3 w-3 ${cargandoIa ? 'animate-spin text-[var(--fin-accent)]' : ''}`}
+                  />
                 </button>
-              </div>
+              )}
+              <button
+                type="button"
+                onClick={() => dismiss(insightActual.id)}
+                className="p-1 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
             </div>
-          )}
-        </div>
-      ) : null}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Modal de detalles de racha */}
+      {/* ── 3. Número Hero Principal + Toggle de Vista ───────────────────── */}
+      <div className="flex flex-col items-center justify-center pt-6 pb-2 text-center">
+        <button
+          type="button"
+          onClick={() => setModoCifra((prev) => (prev === 'gasto' ? 'patrimonio' : 'gasto'))}
+          className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/60 px-3 py-1 text-[12px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] transition-colors"
+        >
+          <span>{modoCifra === 'gasto' ? 'Gastado en este periodo' : 'Patrimonio total'}</span>
+          <span className="text-[10px] text-[var(--fin-ink-faint)]">⇄</span>
+        </button>
+
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={onVerMes}
+            className="text-[44px] sm:text-[52px] font-extrabold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
+            style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
+          >
+            <AnimatedNumber
+              value={modoCifra === 'gasto' ? gastosCop : patrimonioCop}
+              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
+            />
+          </button>
+        </div>
+
+        {/* Desglose bancos y efectivo si está activo */}
+        {mostrarEfectivoSeparado && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
+          <div className="mt-1 flex items-center gap-3 text-[13px] text-[var(--fin-ink-soft)]">
+            <span>
+              Bancos:{' '}
+              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
+                {modoPrivacidad ? '$ ••••••' : formatCop(saldoCuentasSinEfectivoCop)}
+              </strong>
+            </span>
+            <span>•</span>
+            <span>
+              Efectivo:{' '}
+              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
+                {modoPrivacidad ? '$ ••••••' : formatCop(saldoEfectivoCop)}
+              </strong>
+            </span>
+          </div>
+        ) : null}
+
+        {/* Botón pill de alternar entre Gráfica y Lista */}
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setVistaModo((prev) => (prev === 'grafica' ? 'lista' : 'grafica'))}
+            className="flex items-center gap-2 rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-4 py-2 text-[13px] font-semibold shadow-sm transition-all hover:opacity-90 active:scale-95"
+          >
+            {vistaModo === 'grafica' ? (
+              <>
+                <List className="h-4 w-4" />
+                <span>Ver lista de movimientos</span>
+              </>
+            ) : (
+              <>
+                <BarChart2 className="h-4 w-4" />
+                <span>Ver gráfica de categorías</span>
+              </>
+            )}
+          </button>
+
+          {/* Pastillas compactas de entradas y salidas */}
+          <button
+            type="button"
+            onClick={onVerMes}
+            className="flex items-center gap-2 rounded-full bg-[var(--fin-soft)] px-3.5 py-2 text-[12.5px] font-bold tabular-nums"
+          >
+            <span style={{ color: 'var(--fin-out)' }}>
+              ↓ {modoPrivacidad ? '•••' : formatMontoCompacto(gastosCop)}
+            </span>
+            <span className="text-[var(--fin-line)]">|</span>
+            <span style={{ color: 'var(--fin-in)' }}>
+              ↑ {modoPrivacidad ? '•••' : formatMontoCompacto(ingresosCop)}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── 4. Gráfica de Barras de Categorías (Estilo de la competencia) ─ */}
+      <div className="my-5">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+          {categoriasTop.map((cat, idx) => {
+            const pct = maxTotal > 0 ? (cat.total / maxTotal) * 100 : 15;
+            const alturaBarra = Math.min(100, Math.max(16, pct));
+            const seleccionada = categoriaFiltro === cat.clave;
+
+            return (
+              <motion.div
+                key={cat.clave}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => {
+                  if (categoriaFiltro === cat.clave) {
+                    setCategoriaFiltro(null);
+                  } else {
+                    setCategoriaFiltro(cat.clave);
+                    setVistaModo('lista');
+                  }
+                }}
+                className={`relative flex flex-col items-center justify-between rounded-[22px] sm:rounded-[26px] bg-[var(--fin-card)] border p-2 sm:p-3 h-[155px] sm:h-[175px] cursor-pointer transition-all overflow-hidden ${
+                  seleccionada
+                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/15 shadow-md'
+                    : 'border-[var(--fin-line)] shadow-xs hover:border-[var(--fin-ink-ghost)]'
+                }`}
+              >
+                {/* Relleno animado vertical de la barra */}
+                <div className="absolute inset-x-1.5 bottom-1.5 rounded-[17px] sm:rounded-[21px] bg-[var(--fin-soft)]/90 -z-0 overflow-hidden flex flex-col justify-end">
+                  <motion.div
+                    initial={{ height: 0 }}
+                    animate={{ height: `${alturaBarra}%` }}
+                    transition={{
+                      type: 'spring',
+                      stiffness: 110,
+                      damping: 17,
+                      delay: idx * 0.05,
+                    }}
+                    style={{
+                      backgroundColor: tint(cat.info.color, 0.22),
+                    }}
+                    className="w-full rounded-[17px] sm:rounded-[21px]"
+                  />
+                </div>
+
+                {/* Icono / Emoji superior */}
+                <div className="relative z-10 flex h-8 w-8 items-center justify-center text-[19px] sm:text-[21px] drop-shadow-xs">
+                  {cat.emoji}
+                </div>
+
+                {/* Monto y nombre inferior */}
+                <div className="relative z-10 flex flex-col items-center w-full">
+                  <span className="text-[12px] sm:text-[13.5px] font-bold tabular-nums text-[var(--fin-ink)] text-center">
+                    {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-[var(--fin-ink-soft)] truncate max-w-[58px] sm:max-w-[72px] text-center capitalize">
+                    {cat.info.nombre}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── 5. Botón suave de acción rápida [ + Anotar nuevo gasto ] ─────── */}
+      {onAnotar && (
+        <div className="flex justify-center my-3">
+          <button
+            type="button"
+            onClick={onAnotar}
+            className="flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] px-5 py-2.5 text-[13.5px] font-semibold text-[var(--fin-ink)] transition-all active:scale-95 shadow-xs"
+          >
+            <Plus className="h-4 w-4 text-[var(--fin-ink-soft)]" />
+            <span>Anotar nuevo gasto</span>
+          </button>
+        </div>
+      )}
+
+      {/* ── 6. Si se activó filtro por categoría ─────────────────────────── */}
+      {categoriaFiltro && (
+        <div className="my-2 flex items-center justify-between rounded-full bg-[var(--fin-soft)] px-4 py-1.5 text-[13px]">
+          <span className="text-[var(--fin-ink-soft)]">
+            Mostrando solo: <strong className="text-[var(--fin-ink)] capitalize">{categoriaFiltro}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setCategoriaFiltro(null)}
+            className="flex items-center gap-1 font-semibold text-[var(--fin-ink)] hover:underline"
+          >
+            <span>Ver todos</span>
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── 7. Lista de transacciones ────────────────────────────────────── */}
+      {(vistaModo === 'lista' || categoriaFiltro) && (
+        <div className="mt-4">
+          <TransactionList
+            transactions={movimientosAMostrar}
+            conSenal={conSenal}
+            onAbrir={onAbrirMovimiento}
+            modoPrivacidad={modoPrivacidad}
+          />
+        </div>
+      )}
+
+      {/* Modal de racha */}
       {mostrarRachaModal && (
         <RachaModal
           infoRacha={infoRacha}
           onCerrar={() => setMostrarRachaModal(false)}
         />
       )}
-
-      {/* Lista de movimientos */}
-      <div className="mt-6">
-        <TransactionList
-          transactions={movimientos}
-          conSenal={conSenal}
-          onAbrir={onAbrirMovimiento}
-          modoPrivacidad={modoPrivacidad}
-        />
-      </div>
     </div>
   );
 };
