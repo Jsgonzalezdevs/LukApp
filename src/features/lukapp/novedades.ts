@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.7.2',
+    fecha: '2026-08-27',
+    texto: 'Animación fluida en la landing: cápsula de gastos deslizante con entrada suave, matriz de consistencia con efecto ola y carrusel continuo deslizante para el panorama completo de categorías.',
+  },
+  {
     version: '1.7.1',
     fecha: '2026-08-27',
     texto: 'Claridad financiera: el Dashboard ahora destaca como cifra principal el dinero disponible real de la persona (patrimonio total en bancos y efectivo).',
