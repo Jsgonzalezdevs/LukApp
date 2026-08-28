@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.30',
+    fecha: '2026-08-28',
+    texto: 'Curvas ultra-suaves para Luki: modelado fluido de alta resolución sin aristas duras, torso torneado continuo, ojos y hocico tiernos y acabado de vinilo suave.',
+  },
+  {
     version: '1.11.29',
     fecha: '2026-08-28',
     texto: 'Suavizado orgánico total de Luki: malla continua de cuerpo y cabeza sin esferas de corte, degradado integrado de barriga lila y extremidades fluidas.',
