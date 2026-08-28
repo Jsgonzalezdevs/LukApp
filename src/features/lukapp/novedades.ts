@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.32',
+    fecha: '2026-08-28',
+    texto: 'Modelado facial refinado de Luki: sonrisa tallada continua, mandíbula esculpida, ojos expresivos integrados y conexión anatómica natural de hombros.',
+  },
+  {
     version: '1.11.31',
     fecha: '2026-08-28',
     texto: 'Acabado mate de arcilla y ultra-alta resolución para Luki: texturizado sin reflejos agresivos, mallas densas (128 sectores) y renderizado DPI 3x.',
