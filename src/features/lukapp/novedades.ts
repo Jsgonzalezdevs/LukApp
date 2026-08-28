@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.31',
+    fecha: '2026-08-28',
+    texto: 'Acabado mate de arcilla y ultra-alta resolución para Luki: texturizado sin reflejos agresivos, mallas densas (128 sectores) y renderizado DPI 3x.',
+  },
+  {
     version: '1.11.30',
     fecha: '2026-08-28',
     texto: 'Curvas ultra-suaves para Luki: modelado fluido de alta resolución sin aristas duras, torso torneado continuo, ojos y hocico tiernos y acabado de vinilo suave.',
