@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.10.3',
+    fecha: '2026-08-28',
+    texto: 'Protegemos tus datos: una respuesta vacía o incompleta del servidor ya no reemplaza silenciosamente tus cuentas, saldos ni movimientos guardados en el dispositivo.',
+  },
+  {
     version: '1.10.2',
     fecha: '2026-08-28',
     texto: 'Corregimos los ingresos dictados como “me pagó” o “me devolvieron” y reforzamos la carga del isotipo y el logotipo en la pantalla de acceso.',

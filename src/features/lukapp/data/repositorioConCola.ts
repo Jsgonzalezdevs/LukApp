@@ -59,6 +59,16 @@ export const tieneSincronizacion = (
 ): repo is Repositorio & RepositorioConSincronizacion =>
   typeof (repo as Partial<RepositorioConSincronizacion>).cambiosPendientes === 'function';
 
+const tieneDatos = (datos: Instantanea): boolean =>
+  datos.transacciones.length > 0 ||
+  datos.cajitas.length > 0 ||
+  datos.cajitaMovimientos.length > 0 ||
+  datos.metas.length > 0 ||
+  datos.categorias.length > 0 ||
+  datos.contactos.length > 0 ||
+  datos.presupuestos.length > 0 ||
+  datos.recurrentes.length > 0;
+
 export class RepositorioConCola implements Repositorio {
   private readonly local: Repositorio;
   private readonly remoto: Repositorio;
@@ -107,6 +117,13 @@ export class RepositorioConCola implements Repositorio {
       if ((await this.cola.contar()) === 0) {
         try {
           const fresco = await this.remoto.cargarTodo();
+          const local = await this.local.cargarTodo();
+          // Una respuesta completamente vacía no debe destruir una copia local
+          // válida. Esto ocurre cuando la sesión/RLS todavía no está lista o
+          // cuando el cliente apunta al proyecto equivocado; para una app de
+          // dinero es preferible conservar los datos y dejar visible el estado
+          // conocido que reemplazarlo silenciosamente por ceros.
+          if (tieneDatos(local) && !tieneDatos(fresco)) return local;
           await this.espejarEnLocal(fresco);
           return fresco;
         } catch (e) {
