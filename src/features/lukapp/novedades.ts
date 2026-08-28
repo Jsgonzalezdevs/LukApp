@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.10.2',
+    fecha: '2026-08-28',
+    texto: 'Corregimos los ingresos dictados como “me pagó” o “me devolvieron” y reforzamos la carga del isotipo y el logotipo en la pantalla de acceso.',
+  },
+  {
     version: '1.10.1',
     fecha: '2026-08-28',
     texto: 'Navegación más libre: puedes abrir y compartir la landing de LukApp aunque ya tengas una sesión iniciada; “Ir a mi app” te devuelve a tus finanzas sin recargar.',

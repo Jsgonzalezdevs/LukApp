@@ -75,6 +75,17 @@ describe('parseTransaction — expenses', () => {
   });
 });
 
+describe('parseTransaction — ingresos conversacionales', () => {
+  it('entiende que un dinero prestado que me pagaron es un ingreso', () => {
+    const r = parseTransaction(
+      'El día de ayer fui a Don Pedro a comer con mi amigo y él me pagó 50 mil que me debía',
+    );
+    expect(r.kind).toBe('ingreso');
+    expect(r.amount).toBe(50000);
+    expect(r.category).toBe('ingreso');
+  });
+});
+
 // "me" starts both income and expense phrases. Longest-first matching is what
 // keeps these on the correct side.
 describe('parseTransaction — the "me" trap', () => {

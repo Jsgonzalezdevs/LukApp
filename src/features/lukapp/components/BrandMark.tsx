@@ -14,10 +14,14 @@ interface BrandMarkProps {
  */
 export const BrandMark: React.FC<BrandMarkProps> = ({ className }) => (
   <img
-    src="/lukapp-isotipo.png"
+    src="/brand/lukapp-isotipo.png"
     alt="LukApp"
     className={className}
     style={{ objectFit: 'contain' }}
     draggable={false}
+    onError={(event) => {
+      event.currentTarget.onerror = null;
+      event.currentTarget.src = '/lukapp-isotipo.png';
+    }}
   />
 );

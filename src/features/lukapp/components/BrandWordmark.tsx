@@ -11,10 +11,14 @@ interface BrandWordmarkProps {
  */
 export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ className }) => (
   <img
-    src="/lukapp-wordmark.png"
+    src="/brand/lukapp-wordmark.png"
     alt="LukApp"
     className={className}
     style={{ objectFit: 'contain' }}
     draggable={false}
+    onError={(event) => {
+      event.currentTarget.onerror = null;
+      event.currentTarget.src = '/lukapp-wordmark.png';
+    }}
   />
 );

@@ -22,6 +22,7 @@ export const KIND_PHRASES: ReadonlyArray<{ seq: readonly string[]; kind: TxKind 
   { seq: ['me', 'descontaron'], kind: 'gasto' },
   { seq: ['me', 'entro'], kind: 'ingreso' },
   { seq: ['me', 'entraron'], kind: 'ingreso' },
+  { seq: ['me', 'pago'], kind: 'ingreso' },
   { seq: ['me', 'pagaron'], kind: 'ingreso' },
   { seq: ['me', 'consignaron'], kind: 'ingreso' },
   { seq: ['me', 'llego'], kind: 'ingreso' },
