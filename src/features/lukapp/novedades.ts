@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.29',
+    fecha: '2026-08-28',
+    texto: 'Suavizado orgánico total de Luki: malla continua de cuerpo y cabeza sin esferas de corte, degradado integrado de barriga lila y extremidades fluidas.',
+  },
+  {
     version: '1.11.28',
     fecha: '2026-08-28',
     texto: 'Rediseñamos a Luki fiel a su hoja de referencia de marca: hocico alargado de gecko, ojos elevados en cuencas, 4 dedos con almohadillas esféricas, cola curvada y barriga lila continua.',
