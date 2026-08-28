@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.28',
+    fecha: '2026-08-28',
+    texto: 'Rediseñamos a Luki fiel a su hoja de referencia de marca: hocico alargado de gecko, ojos elevados en cuencas, 4 dedos con almohadillas esféricas, cola curvada y barriga lila continua.',
+  },
+  {
     version: '1.11.27',
     fecha: '2026-08-28',
     texto: 'Completamos a Luki en 3D: pose en tres cuartos, asimetrías naturales, hocico estilizado, ojos expresivos y animaciones interactivas en código.',
