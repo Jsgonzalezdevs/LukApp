@@ -63,6 +63,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
   const [compacta, setCompacta] = useState(false);
   const [mostrarPWA, setMostrarPWA] = useState(false);
   const [pwaYaVisto, setPwaYaVisto] = useState(false);
+  const sesionActiva = sesion?.estado.modo === 'autenticado' || sesion?.estado.modo === 'local';
 
   /* La barra se encoge al bajar. `passive` porque el handler no llama a
      preventDefault y sin eso Chrome bloquea el hilo de scroll en móvil. */
@@ -121,7 +122,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
                 setMenuOpen(false);
               }}
             >
-              Acceder
+              {sesionActiva ? 'Ir a mi app' : 'Acceder'}
             </button>
           </div>
 

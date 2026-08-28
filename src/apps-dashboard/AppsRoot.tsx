@@ -73,16 +73,8 @@ export const AppsRoot: React.FC = () => {
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
 
-  const { ruta, ir, reemplazar } = useRuta();
+  const { ruta, ir } = useRuta();
   const enPortada = activeApp === 'finanzas' && (segmentosDe(ruta).length === 0 || ruta === '/' || ruta === '/finanzas');
-
-  // Si ya tiene sesión activa y está en la portada, va directo a la app
-  useEffect(() => {
-    if (!enPortada) return;
-    if (sesion.estado.modo === 'autenticado' || sesion.estado.modo === 'local') {
-      reemplazar(`${BASE_LUKAPP}/app`);
-    }
-  }, [enPortada, reemplazar, sesion.estado.modo]);
 
   // Admin impersonation banner
   const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {
@@ -288,6 +280,14 @@ export const AppsRoot: React.FC = () => {
         onVolverInicio={() => ir('/')}
       />
     );
+  }
+
+  // La portada es pública incluso con una sesión activa. Forzar `/app` desde
+  // aquí convertía el enlace raíz en un callejón sin salida para quien ya usa
+  // LukApp; no añade seguridad y tampoco es necesario para la PWA.
+  if (enPortada) {
+    const abrirApp = () => ir(`${BASE_LUKAPP}/app`);
+    return <LandingLukApp onGetStarted={abrirApp} onLogin={abrirApp} sesion={sesion} />;
   }
 
   if (!esAdminOStaff) {

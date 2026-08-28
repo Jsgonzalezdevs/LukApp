@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.10.1',
+    fecha: '2026-08-28',
+    texto: 'Navegación más libre: puedes abrir y compartir la landing de LukApp aunque ya tengas una sesión iniciada; “Ir a mi app” te devuelve a tus finanzas sin recargar.',
+  },
+  {
     version: '1.10.0',
     fecha: '2026-08-28',
     texto: 'Extractos de bancos colombianos con IA: reconoce cada movimiento por separado, con comercio o contraparte, categoría, referencia y explicación para revisarlo antes de importarlo.',
