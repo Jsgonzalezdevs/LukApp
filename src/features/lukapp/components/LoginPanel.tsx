@@ -616,7 +616,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           <div className="mt-7 flex items-center justify-center gap-6 border-t border-[var(--fin-line)]/50 pt-5 text-[12px] font-medium text-[var(--fin-ink-faint)]">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              Datos cifrados y privados
+              Tus datos son privados
             </span>
             <span className="flex items-center gap-1.5">
               <Smartphone className="h-3.5 w-3.5 text-sky-400" />

@@ -54,7 +54,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
       Icon: FileText,
       content: (
         <div className="tour-content-text">
-          <p>Davivienda, Bancolombia, Nequi, Nu — descarga el PDF y sube.</p>
+          <p>Descarga el PDF de tu banco colombiano y súbelo. La IA identifica cada movimiento para que lo revises antes de importar.</p>
           <p className="subtle">LukApp no duplica transacciones. Separa lo nuevo de lo que ya estaba.</p>
           <div className="supported-banks">
             <span className="bank">Davivienda</span>

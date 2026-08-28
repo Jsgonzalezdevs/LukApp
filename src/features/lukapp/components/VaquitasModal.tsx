@@ -11,14 +11,16 @@ import { formatCop } from '../lib/formatCop';
 interface VaquitasModalProps {
   isOpen: boolean;
   onClose: () => void;
+  userId?: string | null;
 }
 
 const STORAGE_KEY = 'lukapp_vaquitas_v1';
 
-export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose }) => {
+export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, userId }) => {
+  const claveStorage = `${STORAGE_KEY}:${userId ?? 'local'}`;
   const [vaquitas, setVaquitas] = useState<Vaquita[]>(() => {
     try {
-      const guardadas = localStorage.getItem(STORAGE_KEY);
+      const guardadas = localStorage.getItem(claveStorage);
       if (guardadas) {
         return JSON.parse(guardadas);
       }
@@ -39,11 +41,11 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose })
   // Persistir en localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(vaquitas));
+      localStorage.setItem(claveStorage, JSON.stringify(vaquitas));
     } catch {
       // Ignorar errores de storage
     }
-  }, [vaquitas]);
+  }, [claveStorage, vaquitas]);
 
   const vaquitaActiva =
     vaquitas.find((v) => v.id === vaquitaSeleccionadaId) || (vaquitas.length > 0 ? vaquitas[0] : null);

@@ -2,9 +2,9 @@ import React from 'react';
 import { Star } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
-import { ES_PASIVO } from '../data/modelos';
+import { ES_PASIVO, etiquetaTipoCajita } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
-import { idsPasivos, saldosPorCajita, totalVisible } from '../lib/cajitas';
+import { idsPasivos, patrimonio, saldosPorCajita } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
 import { AnimatedNumber } from './AnimatedNumber';
 
@@ -54,7 +54,9 @@ export const DineroView: React.FC<DineroViewProps> = ({
 }) => {
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
-  const totalCop = totalVisible(cajitas, movimientos, transacciones, mostrarAhorro);
+  const resumen = patrimonio(cajitas, movimientos, transacciones);
+  const reservadoCop = mostrarAhorro ? 0 : resumen.cajitasCop;
+  const disponibleCop = resumen.totalCop - reservadoCop - resumen.deudasCop;
 
   return (
     <div className="flex flex-col gap-8">
@@ -63,18 +65,21 @@ export const DineroView: React.FC<DineroViewProps> = ({
  entiende que entraste a su detalle y no a otra parte. */}
       <div>
         <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">
-          {modoPrivacidad ? 'Tienes en total (cifras ocultas)' : 'Tienes en total'}
+          {modoPrivacidad ? 'Disponible (cifras ocultas)' : 'Disponible'}
         </p>
         <p
           className="mt-1 text-center tabular-nums text-[var(--fin-ink)]"
           style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
         >
           <AnimatedNumber
-            value={totalCop}
+            value={disponibleCop}
             format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
           />
         </p>
       </div>
+      <p className="-mt-6 text-center text-[12px] text-[var(--fin-ink-faint)]">
+        Saldo total menos ahorros reservados y obligaciones.
+      </p>
 
       {vivas.length === 0 ? (
         <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-5 py-8 text-center">
@@ -150,6 +155,9 @@ export const DineroView: React.FC<DineroViewProps> = ({
                             </span>
                           )}
                         </div>
+                        <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
+                          {etiquetaTipoCajita(cajita)}
+                        </span>
                         {pct !== null ? (
                           <>
                             <span className="mt-1.5 block h-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">

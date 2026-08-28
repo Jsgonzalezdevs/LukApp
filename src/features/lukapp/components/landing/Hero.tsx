@@ -57,8 +57,8 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.24 }}
         >
-          Registra movimientos hablando. Sincroniza con tu banco. Visualiza patrones
-          de gasto en tiempo real.
+          Registra movimientos hablando e importa extractos PDF de bancos colombianos. La IA
+          identifica cada movimiento, comercio, categoría y detalle; LukApp no se conecta directamente a tu banco.
         </motion.p>
 
         <motion.div

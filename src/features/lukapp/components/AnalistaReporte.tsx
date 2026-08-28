@@ -182,6 +182,25 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
         </section>
       ) : null}
 
+      <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+        <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <ClipboardList className="h-4 w-4" strokeWidth={2.5} /> Movimientos reconocidos
+        </h2>
+        <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">Revisa el detalle antes de importar.</p>
+        <ul className="mt-3 flex flex-col gap-2">
+          {resultado.movimientos.map((movimiento, indice) => (
+            <li key={`${movimiento.fecha}-${movimiento.descripcion}-${indice}`} className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--fin-ink)]">{movimiento.descripcion}</span>
+                <span className="shrink-0 text-[13px] font-semibold tabular-nums" style={{ color: movimiento.tipo === 'ingreso' ? 'var(--fin-in)' : 'var(--fin-out)' }}>{movimiento.tipo === 'ingreso' ? '+' : '-'}{formatCop(movimiento.montoCop)}</span>
+              </div>
+              <p className="mt-1 text-[12px] text-[var(--fin-ink-soft)]">{movimiento.fecha} · {CATEGORY_LABELS[movimiento.categoria]}{movimiento.contraparte ? ` · ${movimiento.contraparte}` : ''}</p>
+              {movimiento.detalle ? <p className="mt-1 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">{movimiento.detalle}</p> : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       {/* Alerts */}
       {resultado.alertas.length > 0 ? (
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">

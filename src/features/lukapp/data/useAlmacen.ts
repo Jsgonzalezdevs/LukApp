@@ -10,8 +10,15 @@ import type { Pendiente, Recurrente } from '../lib/recurrentes';
 import { comoTransaccion } from '../lib/recurrentes';
 import { normalizarNombre } from '../lib/contactos';
 import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
-import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
-import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, cuentaEfectivo } from './modelos';
+import type {
+  Cajita,
+  CajitaMovimiento,
+  CajitaMovKind,
+  CajitaTipo,
+  ClaseCuenta,
+  Meta,
+} from './modelos';
+import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, claseDeCuenta } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
@@ -46,6 +53,7 @@ export interface Almacen {
     nombre: string;
     icon: string;
     tipo: CajitaTipo;
+    claseCuenta?: ClaseCuenta | null;
     metaCop: number | null;
     tasaEaPct: number | null;
     /** What is already in the pocket. Recorded as its opening movement. */
@@ -334,20 +342,6 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           }
         }
 
-        // Cash is seeded rather than shipped as a synthetic entry, so it behaves
-        // like every other account: it holds a balance, appears in Configuración,
-        // and can be renamed or archived. Keyed uniquely per user so multiple accounts
-        // do not collide on the primary key in Postgres.
-        if (!cargado.cajitas.some(esEfectivo)) {
-          const efectivo = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
-          cargado.cajitas = [...cargado.cajitas, efectivo];
-          try {
-            await repo.guardarCajita(efectivo);
-          } catch (e) {
-            console.warn('No se pudo persistir la cuenta de efectivo inicial:', e);
-          }
-        }
-
         setDatos(cargado);
         await actualizarPendientes();
       } catch (e) {
@@ -461,6 +455,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       nombre,
       icon,
       tipo,
+      claseCuenta,
       metaCop,
       tasaEaPct,
       saldoInicialCop,
@@ -468,15 +463,33 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       nombre: string;
       icon: string;
       tipo: CajitaTipo;
+      claseCuenta?: ClaseCuenta | null;
       metaCop: number | null;
       tasaEaPct: number | null;
       saldoInicialCop: number;
     }) => {
+      const baseNombre = nombre.trim();
+      const repetidas = new Set(
+        datos.cajitas
+          .filter((c) => c.archivedAt === null)
+          .map((c) => c.nombre.trim().toLocaleLowerCase('es')),
+      );
+      let nombreUnico = baseNombre;
+      let sufijo = 2;
+      while (repetidas.has(nombreUnico.toLocaleLowerCase('es'))) {
+        nombreUnico = `${baseNombre} (${sufijo})`;
+        sufijo += 1;
+      }
+
       const cajita: Cajita = {
         id: nuevoId('caj'),
-        nombre,
+        nombre: nombreUnico,
         icon,
         tipo,
+        claseCuenta:
+          tipo === 'cuenta'
+            ? (claseCuenta ?? claseDeCuenta({ tipo, nombre: baseNombre, claseCuenta: null }))
+            : null,
         metaCop,
         tasaEaPct,
         createdAt: new Date().toISOString(),

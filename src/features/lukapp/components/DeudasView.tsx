@@ -32,7 +32,7 @@ interface DeudasViewProps {
   ) => void;
   onEliminar: (cajitaId: string) => void;
   /** Live asset balances a payment can come out of. Never debts or cards. */
-  cuentas: readonly { id: string; nombre: string }[];
+  cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
   onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => void;
 }
 
@@ -258,7 +258,7 @@ const DeudaCard: React.FC<{
                 >
                   {cuentas.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.nombre}
+                        {c.etiqueta ?? c.nombre}
                     </option>
                   ))}
                 </select>

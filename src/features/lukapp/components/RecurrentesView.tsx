@@ -12,7 +12,7 @@ import { RippleButton } from './RippleButton';
 interface RecurrentesViewProps {
   recurrentes: readonly Recurrente[];
   transacciones: readonly Transaction[];
-  cuentas: readonly { id: string; nombre: string }[];
+  cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
   mes: string;
   hoy: string;
   onCrear: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => void;
@@ -227,7 +227,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 >
                   {catalogo.lista.map((c) => (
                     <option key={c.clave} value={c.clave}>
-                      {c.nombre}
+                    {c.nombre}
                     </option>
                   ))}
                 </select>
@@ -251,7 +251,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   <option value="">No indicar</option>
                   {cuentas.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.nombre}
+                      {c.etiqueta ?? c.nombre}
                     </option>
                   ))}
                 </select>

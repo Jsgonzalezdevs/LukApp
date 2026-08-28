@@ -15,7 +15,7 @@ interface PanelGmfProps {
   transacciones: readonly Transaction[];
   mes: string;
   anioActual: number;
-  cuentas: readonly { id: string; nombre: string; esBajoMonto?: boolean }[];
+  cuentas: readonly { id: string; nombre: string; etiqueta?: string; esBajoMonto?: boolean }[];
   uvt: ValorUvt;
   onCambiarUvt: (uvt: ValorUvt) => void;
   cuentasGmf: readonly string[];
@@ -145,7 +145,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
               <option value="">Ninguna</option>
               {cuentas.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.nombre}
+                  {c.etiqueta ?? c.nombre}
                 </option>
               ))}
             </select>
@@ -233,7 +233,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
               <li key={c.id}>
                 <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2.5">
                   <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--fin-ink)]">
-                    {c.nombre}
+                    {c.etiqueta ?? c.nombre}
                   </span>
                   <input
                     type="checkbox"

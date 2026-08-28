@@ -23,6 +23,10 @@ export interface MovimientoExtraido {
   montoCop: number;
   tipo: TxKind;
   categoria: Category;
+  /** Explicación concreta de qué identificó la IA o el banco en esta línea. */
+  detalle?: string | null;
+  /** Comercio, destinatario o referencia conservada del extracto cuando existe. */
+  contraparte?: string | null;
   /** 'alta' when the statement text was unambiguous. */
   confianza: 'alta' | 'media' | 'baja';
   /**

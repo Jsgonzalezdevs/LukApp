@@ -274,10 +274,10 @@ plantillas en `server_lib/plantillas/`.
 
 - Subes el **PDF del extracto** (token propio guardado en `localStorage`, límite
   de 4 MB, varios archivos en paralelo, reintento sin volver a elegir el archivo).
-- El servidor extrae el texto, **detecta el banco** y aplica plantilla:
-  **Nequi, Nu, Bancolombia y Davivienda**. Errores claros y distintos para PDF
-  corrupto/con contraseña, escaneo sin capa de texto, banco no soportado y
-  extracto sin movimientos.
+- El servidor extrae el texto y usa IA para interpretar extractos de bancos
+  colombianos, movimiento por movimiento. Conserva plantillas como respaldo para
+  Nequi, Nu, Bancolombia y Davivienda. Errores claros distinguen PDF
+  corrupto/con contraseña, escaneo sin capa de texto y extracto sin movimientos.
 - Devuelve movimientos con fecha, descripción, monto, tipo, categoría y
   **confianza**, más un motivo de **exclusión** cuando la fila no es un gasto
   real: traslado propio, pago de tarjeta, reverso o saldo informativo (sumar todo

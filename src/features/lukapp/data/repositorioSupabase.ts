@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
-import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, Meta } from './modelos';
+import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, ClaseCuenta, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
@@ -315,6 +315,7 @@ interface FilaCajita {
   nombre: string;
   emoji: string;
   tipo: string | null;
+  clase_cuenta?: string | null;
   meta_cop: number | null;
   tasa_ea_pct: number | null;
   created_at: string;
@@ -326,6 +327,12 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   nombre: fila.nombre,
   icon: fila.emoji,
   tipo: aTipo(fila.tipo),
+  claseCuenta:
+    fila.clase_cuenta === 'efectivo' ||
+    fila.clase_cuenta === 'banco' ||
+    fila.clase_cuenta === 'billetera'
+      ? (fila.clase_cuenta as ClaseCuenta)
+      : null,
   metaCop: fila.meta_cop === null ? null : Number(fila.meta_cop),
   tasaEaPct: fila.tasa_ea_pct === null ? null : Number(fila.tasa_ea_pct),
   createdAt: fila.created_at,
@@ -338,6 +345,7 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   nombre: c.nombre,
   emoji: c.icon,
   tipo: c.tipo,
+  clase_cuenta: c.tipo === 'cuenta' ? (c.claseCuenta ?? null) : null,
   meta_cop: c.metaCop,
   tasa_ea_pct: c.tasaEaPct,
   created_at: c.createdAt,

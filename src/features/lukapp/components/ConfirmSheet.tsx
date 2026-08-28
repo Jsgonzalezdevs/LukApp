@@ -52,7 +52,7 @@ interface ConfirmSheetProps {
    */
   modo?: 'crear' | 'editar';
   /** Accounts and pockets the money could have moved through. */
-  cuentas?: readonly { id: string; nombre: string }[];
+  cuentas?: readonly { id: string; nombre: string; etiqueta?: string }[];
   cuentaInicial?: string | null;
   /** El día que ya tiene el movimiento; abre el selector de fecha al editar. */
   fechaInicial?: string;
@@ -396,7 +396,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                 <option value="">{COPY.confirm.sinCuenta}</option>
                 {cuentas.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.nombre}
+                    {c.etiqueta ?? c.nombre}
                   </option>
                 ))}
               </select>

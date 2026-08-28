@@ -45,7 +45,7 @@ const FORMAS: {
   {
     Icono: FileText,
     titulo: 'Del extracto del banco',
-    texto: 'Sube el PDF de Davivienda, Bancolombia, Nequi o Nu y entra el mes completo.',
+    texto: 'Sube el PDF de cualquier banco colombiano: la IA identifica cada movimiento, comercio, categoría y referencia para que lo revises antes de importar.',
     ejemplo: 'PDF → 84 movimientos'
   },
   {

@@ -336,6 +336,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
             />
           </button>
         </div>
+        <p className="mt-1 text-[12px] text-[var(--fin-ink-faint)]">
+          Saldo total menos ahorros reservados y obligaciones.
+        </p>
 
         {/* Desglose bancos y efectivo si existen */}
         {saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (

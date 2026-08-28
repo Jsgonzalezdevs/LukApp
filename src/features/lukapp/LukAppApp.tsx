@@ -29,7 +29,7 @@ import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
 import { AnalistaView } from './components/AnalistaView';
 import { AsesorView } from './components/AsesorView';
-import { ES_PASIVO } from './data/modelos';
+import { ES_PASIVO, etiquetaTipoCajita } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
 import { PanelAtajos } from './components/PanelAtajos';
@@ -276,7 +276,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
-  const [dictadoTrigger, setDictadoTrigger] = useState(0);
   const guia = useGuiaApp();
 
   /* CUÁNDO SALE LA GUÍA
@@ -393,7 +392,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     () =>
       cajitas
         .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
-        .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: c.esBajoMonto })),
+        .map((c) => ({
+          id: c.id,
+          nombre: c.nombre,
+          etiqueta: `${c.nombre} · ${etiquetaTipoCajita(c)}`,
+          esBajoMonto: c.esBajoMonto,
+        })),
     [cajitas],
   );
 
@@ -623,7 +627,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onDictado={handleSubmit}
             onManual={() => setPending(movimientoEnBlanco())}
             onBuscar={() => setCapa('buscar')}
-            autoStartTrigger={dictadoTrigger}
           />
         }
       >
@@ -957,6 +960,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             ) : panelAjustes === 'compartido' ? (
               <EspaciosCompartidosView
                 onCerrar={() => setPanelAjustes(null)}
+                userId={userId}
                 onAnotarEnLukApp={(montoCop, descripcion, categoria) => {
                   const base = movimientoEnBlanco();
                   setPending({
@@ -990,7 +994,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 }}
               />
             ) : panelAjustes === 'vaquitas' ? (
-              <VaquitasModal isOpen={true} onClose={() => setPanelAjustes(null)} />
+              <VaquitasModal isOpen={true} onClose={() => setPanelAjustes(null)} userId={userId} />
             ) : panelAjustes === 'extractos' ? (
               <AnalistaView
                 existentes={transacciones}
@@ -1194,27 +1198,20 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
  aparecer el día que alguien borre su único movimiento. */}
         {!onboarding.terminado ? (
           <Onboarding
-            onTerminar={({ nombre, banco, saldoCop }) => {
+            onTerminar={({ nombre, banco, claseCuenta, saldoCop }) => {
               if (nombre) onboarding.guardarNombre(nombre);
               if (banco) {
                 void almacen.crearCajita({
                   nombre: banco,
                   icon: 'wallet',
                   tipo: 'cuenta',
+                  claseCuenta,
                   metaCop: null,
                   tasaEaPct: null,
                   saldoInicialCop: saldoCop ?? 0,
                 });
               }
               onboarding.terminar();
-            }}
-            onAnotarHablando={() => {
-              setEsPrimeraPrueba(true);
-              setDictadoTrigger(Date.now());
-            }}
-            onAnotarManual={() => {
-              setEsPrimeraPrueba(false);
-              setPending(movimientoEnBlanco());
             }}
           />
         ) : null}

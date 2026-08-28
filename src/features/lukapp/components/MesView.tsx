@@ -163,7 +163,7 @@ export const MesView: React.FC<MesViewProps> = ({
 
       <div>
         <p className="text-center text-[13px] text-[var(--fin-ink-faint)]">
-          {positivo ? 'Te sobró' : 'Te faltó'}
+          Balance del período
         </p>
         <p
           className="mt-1 text-center tabular-nums"

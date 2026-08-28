@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
@@ -20,6 +20,44 @@ interface HojaPanelProps {
  */
 export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children }) => {
   useBloqueoScroll(true);
+  const dialogoRef = useRef<HTMLDivElement>(null);
+  const cierreRef = useRef(onCerrar);
+
+  useEffect(() => {
+    cierreRef.current = onCerrar;
+  }, [onCerrar]);
+
+  useEffect(() => {
+    const focoAnterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const selectoresFoco = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const alPulsarTecla = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') {
+        evento.preventDefault();
+        cierreRef.current();
+        return;
+      }
+      if (evento.key !== 'Tab') return;
+
+      const foco = Array.from(dialogoRef.current?.querySelectorAll<HTMLElement>(selectoresFoco) ?? []);
+      if (foco.length === 0) return;
+      const primero = foco[0];
+      const ultimo = foco[foco.length - 1];
+      if (evento.shiftKey && document.activeElement === primero) {
+        evento.preventDefault();
+        ultimo.focus();
+      } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault();
+        primero.focus();
+      }
+    };
+
+    document.addEventListener('keydown', alPulsarTecla);
+    requestAnimationFrame(() => dialogoRef.current?.querySelector<HTMLElement>(selectoresFoco)?.focus());
+    return () => {
+      document.removeEventListener('keydown', alPulsarTecla);
+      focoAnterior?.focus();
+    };
+  }, []);
 
   return (
     <motion.div
@@ -31,6 +69,8 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
       role="dialog"
       aria-modal="true"
       aria-label={titulo}
+      ref={dialogoRef}
+      tabIndex={-1}
     >
       <div className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+3rem)] lg:max-w-[1100px] 2xl:max-w-[1400px]">
         {/* La cabecera se queda pegada arriba: en una lista larga uno tiene que

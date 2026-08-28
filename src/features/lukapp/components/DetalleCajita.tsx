@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Star, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
-import { CAJITA_ICONS, ES_PASIVO, TIPO_LABELS } from '../data/modelos';
+import { CAJITA_ICONS, ES_PASIVO, etiquetaTipoCajita } from '../data/modelos';
 import type { Transaction } from '../types';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { saldoDeCajita } from '../lib/cajitas';
@@ -147,7 +147,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[22px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
           <p className="mt-0.5 text-[13px] text-[var(--fin-ink-faint)]">
-            {TIPO_LABELS[cajita.tipo]}
+            {etiquetaTipoCajita(cajita)}
             {cajita.tasaEaPct ? ` · ${cajita.tasaEaPct}% E.A.` : ''}
           </p>
         </div>

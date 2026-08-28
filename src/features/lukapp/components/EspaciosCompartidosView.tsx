@@ -18,6 +18,7 @@ import {
 
 interface EspaciosCompartidosViewProps {
   onCerrar: () => void;
+  userId?: string | null;
   onAnotarEnLukApp?: (montoCop: number, descripcion: string, categoria: string) => void;
 }
 
@@ -26,6 +27,7 @@ const EMOJIS_PAREJA = ['👩🏼', '👦🏼', '👧🏽', '🧑🏻', '👩🏻
 
 export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = ({
   onCerrar,
+  userId,
   onAnotarEnLukApp,
 }) => {
   const haptic = useHapticFeedback();
@@ -37,10 +39,10 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
     agregarGasto,
     borrarGasto,
     saldarCuentas,
-  } = useEspaciosCompartidos();
+  } = useEspaciosCompartidos(userId);
 
   const [espacioIdActivo, setEspacioIdActivo] = useState<string>(
-    espacios[0]?.id ?? 'espacio-pareja-demo',
+    espacios[0]?.id ?? '',
   );
 
   const [modalGastoAbierto, setModalGastoAbierto] = useState(false);
@@ -77,25 +79,26 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   const balanceYo = pagadoPorYo - mitadTeorica;
   const nombreOtro = integrantes.find((i) => i.id !== 'yo')?.nombre || 'Tu pareja';
 
-  const handleCrearEspacio = (e: React.FormEvent) => {
+  const handleCrearEspacio = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoNombre.trim()) return;
     haptic.trigger('medium');
     audio.play('click');
-    const nuevo = crearEspacio(
+    const nuevo = await crearEspacio(
       nuevoNombre.trim(),
       nuevoIcono,
       '#8b5cf6',
       nombrePareja.trim() || 'Compañero/a',
       emojiPareja,
     );
+    if (!nuevo) return;
     setEspacioIdActivo(nuevo.id);
     setNuevoNombre('');
     setNombrePareja('');
     setModalNuevoEspacioAbierto(false);
   };
 
-  const handleGuardarGasto = (e: React.FormEvent) => {
+  const handleGuardarGasto = async (e: React.FormEvent) => {
     e.preventDefault();
     const monto = parseSaldoInput(montoGastoTexto) ?? 0;
     if (!descGasto.trim() || monto <= 0 || !espacioActivo) return;
@@ -103,7 +106,8 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
     haptic.trigger('medium');
     audio.play('click');
 
-    agregarGasto(espacioActivo.id, descGasto.trim(), monto, pagadoPorId, 'otros');
+    const guardado = await agregarGasto(espacioActivo.id, descGasto.trim(), monto, pagadoPorId, 'otros');
+    if (!guardado) return;
 
     if (guardarEnPersonal && onAnotarEnLukApp && pagadoPorId === 'yo') {
       // Registrar la mitad correspondiente en la contabilidad personal de LukApp
@@ -154,8 +158,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-xl min-h-screen sm:min-h-0 sm:max-h-[92vh] sm:rounded-[32px] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 sm:p-7 shadow-2xl flex flex-col overflow-y-auto">
+    <section className="mx-auto flex w-full max-w-xl flex-col rounded-[32px] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-2xl sm:p-7">
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-[var(--fin-line)]/50 pb-4">
           <div className="flex items-center gap-3">
@@ -606,7 +609,6 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
             </div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
+    </section>
   );
 };

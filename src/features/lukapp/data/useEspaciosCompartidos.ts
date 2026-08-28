@@ -29,68 +29,49 @@ export interface EspacioCompartido {
 
 const CLAVE_STORAGE = 'finanzas:espacios-compartidos';
 
-const ESPACIO_DEMO_INICIAL: EspacioCompartido = {
-  id: 'espacio-pareja-demo',
-  nombre: 'Mercado y Hogar',
-  icono: '🥑',
-  color: '#10b981',
-  integrantes: [
-    { id: 'yo', nombre: 'Tú', avatarColor: '#3b82f6', emoji: '👦🏼' },
-    { id: 'pareja', nombre: 'Pareja', avatarColor: '#ec4899', emoji: '👩🏼' },
-  ],
-  gastos: [
-    {
-      id: 'gasto-1',
-      descripcion: 'Mercado en Carulla',
-      montoCop: 180000,
-      fecha: new Date().toISOString().slice(0, 10),
-      pagadoPorId: 'yo',
-      categoria: 'mercado',
-    },
-    {
-      id: 'gasto-2',
-      descripcion: 'Frutas y verduras',
-      montoCop: 45000,
-      fecha: new Date().toISOString().slice(0, 10),
-      pagadoPorId: 'pareja',
-      categoria: 'mercado',
-    },
-  ],
-  createdAt: new Date().toISOString(),
-};
+const sinDemo = (valor: unknown): EspacioCompartido[] =>
+  Array.isArray(valor) ? (valor as EspacioCompartido[]).filter((espacio) => espacio.id !== 'espacio-pareja-demo') : [];
 
-export function useEspaciosCompartidos() {
+const claveParaUsuario = (userId?: string | null) => `${CLAVE_STORAGE}:${userId ?? 'local'}`;
+
+export function useEspaciosCompartidos(userId?: string | null) {
+  const claveStorage = claveParaUsuario(userId);
   const [espacios, setEspacios] = useState<EspacioCompartido[]>(() => {
     try {
-      const guardado = localStorage.getItem(CLAVE_STORAGE);
-      if (guardado) return JSON.parse(guardado);
+      const guardado = localStorage.getItem(claveStorage);
+      if (guardado) return sinDemo(JSON.parse(guardado));
     } catch {
       // Ignorar
     }
-    return [ESPACIO_DEMO_INICIAL];
+    return [];
   });
 
-  const guardarEspacios = useCallback((nuevos: EspacioCompartido[]) => {
+  const guardarEspacios = useCallback(async (nuevos: EspacioCompartido[]) => {
+    const anteriores = espacios;
     setEspacios(nuevos);
     try {
-      localStorage.setItem(CLAVE_STORAGE, JSON.stringify(nuevos));
+      localStorage.setItem(claveStorage, JSON.stringify(nuevos));
     } catch {
       // Ignorar
     }
 
     const supabase = obtenerSupabase();
-    if (supabase) {
-      void supabase.auth.getUser().then(({ data }) => {
-        if (!data?.user) return;
-        void supabase.auth.updateUser({
-          data: { espaciosCompartidos: nuevos },
-        });
-      });
+    if (!supabase || !userId) return true;
+    const { error } = await supabase.auth.updateUser({ data: { espaciosCompartidos: nuevos } });
+    if (error) {
+      setEspacios(anteriores);
+      try {
+        localStorage.setItem(claveStorage, JSON.stringify(anteriores));
+      } catch {
+        // Ignorar
+      }
+      return false;
     }
-  }, []);
+    return true;
+  }, [claveStorage, espacios, userId]);
 
   const crearEspacio = useCallback(
-    (nombre: string, icono: string, color: string, nombrePareja: string, emojiPareja = '👩🏼') => {
+    async (nombre: string, icono: string, color: string, nombrePareja: string, emojiPareja = '👩🏼') => {
       const nuevo: EspacioCompartido = {
         id: `espacio-${Date.now()}`,
         nombre,
@@ -104,14 +85,13 @@ export function useEspaciosCompartidos() {
         createdAt: new Date().toISOString(),
       };
       const actualizados = [nuevo, ...espacios];
-      guardarEspacios(actualizados);
-      return nuevo;
+      return (await guardarEspacios(actualizados)) ? nuevo : null;
     },
     [espacios, guardarEspacios],
   );
 
   const agregarGasto = useCallback(
-    (espacioId: string, descripcion: string, montoCop: number, pagadoPorId: string, categoria = 'otros') => {
+    async (espacioId: string, descripcion: string, montoCop: number, pagadoPorId: string, categoria = 'otros') => {
       const actualizados = espacios.map((esp) => {
         if (esp.id !== espacioId) return esp;
         const nuevoGasto: GastoCompartido = {
@@ -127,13 +107,13 @@ export function useEspaciosCompartidos() {
           gastos: [nuevoGasto, ...esp.gastos],
         };
       });
-      guardarEspacios(actualizados);
+      return guardarEspacios(actualizados);
     },
     [espacios, guardarEspacios],
   );
 
   const borrarGasto = useCallback(
-    (espacioId: string, gastoId: string) => {
+    async (espacioId: string, gastoId: string) => {
       const actualizados = espacios.map((esp) => {
         if (esp.id !== espacioId) return esp;
         return {
@@ -141,13 +121,13 @@ export function useEspaciosCompartidos() {
           gastos: esp.gastos.filter((g) => g.id !== gastoId),
         };
       });
-      guardarEspacios(actualizados);
+      return guardarEspacios(actualizados);
     },
     [espacios, guardarEspacios],
   );
 
   const saldarCuentas = useCallback(
-    (espacioId: string) => {
+    async (espacioId: string) => {
       const actualizados = espacios.map((esp) => {
         if (esp.id !== espacioId) return esp;
         return {
@@ -155,37 +135,36 @@ export function useEspaciosCompartidos() {
           gastos: [],
         };
       });
-      guardarEspacios(actualizados);
+      return guardarEspacios(actualizados);
     },
     [espacios, guardarEspacios],
   );
 
   const borrarEspacio = useCallback(
-    (espacioId: string) => {
+    async (espacioId: string) => {
       const actualizados = espacios.filter((e) => e.id !== espacioId);
-      guardarEspacios(actualizados);
+      return guardarEspacios(actualizados);
     },
     [espacios, guardarEspacios],
   );
 
   // Sincronizar desde Supabase
   useEffect(() => {
+    if (!userId) return;
     const supabase = obtenerSupabase();
     if (!supabase) return;
     void supabase.auth.getUser().then(({ data }) => {
-      if (data?.user?.user_metadata?.espaciosCompartidos) {
-        const remotos = data.user.user_metadata.espaciosCompartidos as EspacioCompartido[];
-        if (Array.isArray(remotos) && remotos.length > 0) {
-          setEspacios(remotos);
+      if (data?.user?.id === userId && Array.isArray(data.user.user_metadata?.espaciosCompartidos)) {
+        const remotos = sinDemo(data.user.user_metadata.espaciosCompartidos);
+        setEspacios(remotos);
           try {
-            localStorage.setItem(CLAVE_STORAGE, JSON.stringify(remotos));
+            localStorage.setItem(claveStorage, JSON.stringify(remotos));
           } catch {
             // Ignorar
           }
-        }
       }
     });
-  }, []);
+  }, [claveStorage, userId]);
 
   return {
     espacios,

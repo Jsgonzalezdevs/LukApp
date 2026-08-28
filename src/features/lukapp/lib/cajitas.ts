@@ -1,6 +1,6 @@
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
-import { ES_PASIVO, ID_EFECTIVO, ID_EFECTIVO_VIEJO } from '../data/modelos';
+import { ES_PASIVO, ID_EFECTIVO, ID_EFECTIVO_VIEJO, claseDeCuenta } from '../data/modelos';
 
 /**
  * A pocket's balance is always the sum of its movements — never a stored number.
@@ -261,12 +261,7 @@ export const totalVisible = (
 export const esCuentaEfectivo = (cajita: Cajita): boolean => {
   if (cajita.tipo !== 'cuenta') return false;
   if (cajita.id === ID_EFECTIVO || cajita.id === ID_EFECTIVO_VIEJO) return true;
-  return cajita.nombre
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase()
-    .startsWith('efectivo');
+  return claseDeCuenta(cajita) === 'efectivo';
 };
 
 /** Balance of every cash account that is not archived. */

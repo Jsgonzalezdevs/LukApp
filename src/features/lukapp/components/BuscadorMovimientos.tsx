@@ -11,7 +11,7 @@ interface BuscadorMovimientosProps {
   onCambiar: (filtro: Filtro) => void;
   /** The rows the current filter produced, for the running total. */
   resultados: readonly Transaction[];
-  cuentas: readonly { id: string; nombre: string }[];
+  cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
 }
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
@@ -84,7 +84,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
             <option value="">Toda cuenta</option>
             {cuentas.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.nombre}
+                {c.etiqueta ?? c.nombre}
               </option>
             ))}
           </select>

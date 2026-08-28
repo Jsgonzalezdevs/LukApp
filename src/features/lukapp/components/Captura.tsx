@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Loader2, Sparkles, Star, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, Transaction, TxKind } from '../types';
-import type { Cajita } from '../data/modelos';
+import { etiquetaTipoCajita, type Cajita } from '../data/modelos';
 import type { CategoriaPersonal } from '../categorias';
 import { iconoDeCajita } from '../cajitaIconos';
 import { formatAmountInput } from '../lib/formatCop';
@@ -432,7 +432,12 @@ export const Captura: React.FC<CapturaProps> = ({
                       >
                         <div className="flex items-center gap-2.5 truncate">
                           <Icon className="h-4 w-4 shrink-0 text-[var(--fin-ink-soft)]" />
-                          <span className="truncate">{c.nombre}</span>
+                          <span className="min-w-0 truncate">
+                            <span className="block truncate">{c.nombre}</span>
+                            <span className="block text-[11px] font-normal text-[var(--fin-ink-faint)]">
+                              {etiquetaTipoCajita(c)}
+                            </span>
+                          </span>
                           {c.id === cuentaPorDefecto && (
                             <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-500">
                               <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" /> Principal
@@ -683,4 +688,3 @@ export const Captura: React.FC<CapturaProps> = ({
     </motion.div>
   );
 };
-

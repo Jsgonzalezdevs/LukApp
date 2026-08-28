@@ -396,8 +396,9 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
             aria-hidden="true"
           />
           <span>
-            El análisis se hace con plantillas propias, sin inteligencia artificial: tu extracto
-            nunca sale de este servidor. Soporta Nequi, Nu, Bancolombia y Davivienda.
+            La IA lee extractos de bancos colombianos y te muestra cada movimiento, categoría,
+            comercio y referencia para revisión antes de importarlo. Las plantillas locales siguen
+            disponibles como respaldo para Nequi, Nu, Bancolombia y Davivienda.
           </span>
         </p>
       </section>

@@ -1,51 +1,69 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Check, Mic } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { formatAmountInput } from '../lib/formatCop';
+import type { ClaseCuenta } from '../data/modelos';
 import { TecladoNumerico } from './TecladoNumerico';
 import { TypingText } from './TypingText';
 
 interface OnboardingProps {
-  onTerminar: (datos: { nombre: string; banco: string | null; saldoCop: number | null }) => void;
-  /** Abre la pantalla de dictado por voz para hablarle de inmediato. */
-  onAnotarHablando: () => void;
-  /** Abre la pantalla de anotación manual si prefiere escribir. */
-  onAnotarManual?: () => void;
+  onTerminar: (datos: {
+    nombre: string;
+    banco: string | null;
+    claseCuenta: ClaseCuenta | null;
+    saldoCop: number | null;
+  }) => void;
 }
 
-/** Los bancos y billeteras que más se usan en Colombia, para no hacer escribir a nadie. */
-const BANCOS = [
-  'Bancolombia',
-  'Nu',
-  'Nequi',
-  'Daviplata',
-  'Davivienda',
-  'Lulo Bank',
-  'BBVA',
-  'Falabella',
-  'Efectivo',
-  'Otro',
+interface FuenteDinero {
+  nombre: string;
+  claseCuenta: ClaseCuenta;
+}
+
+/** Bancos, billeteras y efectivo son medios distintos aunque compartan saldo. */
+const FUENTES: readonly FuenteDinero[] = [
+  { nombre: 'Bancolombia', claseCuenta: 'banco' },
+  { nombre: 'Nu', claseCuenta: 'banco' },
+  { nombre: 'Nequi', claseCuenta: 'billetera' },
+  { nombre: 'Daviplata', claseCuenta: 'billetera' },
+  { nombre: 'Davivienda', claseCuenta: 'banco' },
+  { nombre: 'Lulo Bank', claseCuenta: 'banco' },
+  { nombre: 'BBVA', claseCuenta: 'banco' },
+  { nombre: 'Falabella', claseCuenta: 'banco' },
+  { nombre: 'Efectivo', claseCuenta: 'efectivo' },
+  { nombre: 'Otro', claseCuenta: 'banco' },
 ];
+
+const ETIQUETA_CLASE: Record<ClaseCuenta, string> = {
+  efectivo: 'Efectivo',
+  banco: 'Cuenta bancaria',
+  billetera: 'Billetera digital',
+};
 
 /**
  * La bienvenida: cuatro pantallas, UNA pregunta en cada una.
  */
 export const Onboarding: React.FC<OnboardingProps> = ({
   onTerminar,
-  onAnotarHablando,
-  onAnotarManual,
 }) => {
   const [paso, setPaso] = useState(0);
   const [nombre, setNombre] = useState('');
-  const [banco, setBanco] = useState<string | null>(null);
+  const [fuente, setFuente] = useState<FuenteDinero | null>(null);
   const [otroBanco, setOtroBanco] = useState('');
   const [digitos, setDigitos] = useState('');
 
-  const bancoFinal = banco === 'Otro' ? otroBanco.trim() || null : banco;
+  const bancoFinal = fuente?.nombre === 'Otro' ? otroBanco.trim() || null : (fuente?.nombre ?? null);
+  const claseCuentaFinal = bancoFinal ? (fuente?.claseCuenta ?? 'banco') : null;
   const saldoCop = digitos === '' ? null : Number(digitos);
 
   const siguiente = () => setPaso((p) => Math.min(p + 1, pasos.length - 1));
-  const cerrar = () => onTerminar({ nombre: nombre.trim(), banco: bancoFinal, saldoCop });
+  const cerrar = () =>
+    onTerminar({
+      nombre: nombre.trim(),
+      banco: bancoFinal,
+      claseCuenta: claseCuentaFinal,
+      saldoCop,
+    });
 
   const pasos = [
     {
@@ -71,23 +89,23 @@ export const Onboarding: React.FC<OnboardingProps> = ({
       cuerpo: (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">
-            {BANCOS.map((b) => (
+            {FUENTES.map((opcion) => (
               <button
-                key={b}
+                key={opcion.nombre}
                 type="button"
-                onClick={() => setBanco(b)}
-                aria-pressed={banco === b}
+                onClick={() => setFuente(opcion)}
+                aria-pressed={fuente?.nombre === opcion.nombre}
                 className={`rounded-[var(--fin-r-pill)] px-4 py-2.5 text-[15px] font-semibold transition-colors ${
-                  banco === b
+                  fuente?.nombre === opcion.nombre
                     ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                     : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
                 }`}
               >
-                {b}
+                {opcion.nombre}
               </button>
             ))}
           </div>
-          {banco === 'Otro' ? (
+          {fuente?.nombre === 'Otro' ? (
             <input
               autoFocus
               value={otroBanco}
@@ -128,15 +146,39 @@ export const Onboarding: React.FC<OnboardingProps> = ({
       salida: 'Después',
     },
     {
-      titulo: nombre.trim() ? `Listo, ${nombre.trim()}.` : 'Listo.',
-      ayuda: 'Ahora anota un gasto como se lo dirías a un amigo.',
+      titulo: nombre.trim() ? `Listo, ${nombre.trim()}.` : 'Todo listo.',
+      ayuda: 'Revisa lo que se guardará. Puedes volver a corregir el saldo antes de terminar.',
       cuerpo: (
-        <p className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3.5 text-[17px] italic text-[var(--fin-ink-soft)]">
-          «gasté 20 mil en el almuerzo»
-        </p>
+        <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-4">
+          {bancoFinal && claseCuentaFinal ? (
+            <>
+              <p className="text-[13px] text-[var(--fin-ink-faint)]">Crearás 1 cuenta</p>
+              <p className="mt-1 text-[17px] font-semibold text-[var(--fin-ink)]">
+                {bancoFinal} · {ETIQUETA_CLASE[claseCuentaFinal]}
+              </p>
+              <p className="mt-1 tabular-nums text-[15px] text-[var(--fin-ink-soft)]">
+                Saldo inicial: ${formatAmountInput(saldoCop)}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPaso(2)}
+                className="mt-3 text-[14px] font-semibold text-[var(--fin-accent)]"
+              >
+                Editar saldo inicial
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-[17px] font-semibold text-[var(--fin-ink)]">No crearás cuentas todavía</p>
+              <p className="mt-1 text-[14px] text-[var(--fin-ink-soft)]">
+                LukApp empezará completamente vacía y podrás agregar una cuenta desde Dinero.
+              </p>
+            </>
+          )}
+        </div>
       ),
-      boton: 'Decirlo en voz alta',
-      salida: 'Prefiero escribirlo',
+      boton: 'Entrar a LukApp',
+      salida: 'Volver',
     },
   ];
 
@@ -194,15 +236,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({
                 return;
               }
               cerrar();
-              onAnotarHablando();
             }}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)]"
           >
-            {ultimo ? (
-              <Mic className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            ) : (
-              <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            )}
+            <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             {actual.boton}
             {!ultimo ? (
               <ArrowRight className="h-4 w-4 opacity-60" strokeWidth={2.5} aria-hidden="true" />
@@ -213,8 +250,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
             type="button"
             onClick={() => {
               if (ultimo) {
-                cerrar();
-                onAnotarManual?.();
+                setPaso((p) => Math.max(0, p - 1));
               } else {
                 siguiente();
               }

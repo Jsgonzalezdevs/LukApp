@@ -76,6 +76,9 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
+      await result.current.crearCajita({ nombre: 'Bancolombia', icon: 'Landmark', tipo: 'cuenta', claseCuenta: 'banco', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+    });
+    await act(async () => {
       await result.current.crearCajita({
         nombre: 'Vacaciones',
         icon: '🏖️',
@@ -233,18 +236,16 @@ describe('useAlmacen', () => {
     expect((await repo.cargarTodo()).cajitaMovimientos).toEqual([]);
   });
 
-  it('seeds a cash account, and only ever one', async () => {
+  it('starts with no account for a new person', async () => {
     const repo = new RepositorioMemoria();
     const { result, unmount } = await montar(repo);
 
-    expect(result.current.datos.cajitas.map((c) => c.nombre)).toEqual(['Efectivo']);
+    expect(result.current.datos.cajitas).toEqual([]);
     unmount();
 
-    // A second session must not add a second one.
+    // A second session must remain empty too.
     const otra = await montar(repo);
-    expect(otra.result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(
-      1,
-    );
+    expect(otra.result.current.datos.cajitas).toEqual([]);
   });
 
   it('does not resurrect the cash account once it has been archived', async () => {
@@ -321,6 +322,9 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
+      await result.current.crearCajita({ nombre: 'Bancolombia', icon: 'Landmark', tipo: 'cuenta', claseCuenta: 'banco', metaCop: null, tasaEaPct: null, saldoInicialCop: 500_000 });
+    });
+    await act(async () => {
       await result.current.crearCajita({
         nombre: 'Visa',
         icon: 'CreditCard',
@@ -331,7 +335,7 @@ describe('useAlmacen', () => {
       });
     });
     const deudaId = result.current.datos.cajitas.find((c) => c.nombre === 'Visa')!.id;
-    const cuentaId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+    const cuentaId = result.current.datos.cajitas.find((c) => c.nombre === 'Bancolombia')!.id;
 
     await act(async () => {
       await result.current.abonarDeuda({ deudaId, cuentaId, montoCop: 40_000 });
@@ -418,6 +422,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
+      await result.current.crearCajita({ nombre: 'Efectivo', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'efectivo', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
       await result.current.crearCajita({
         nombre: 'Nequi',
         icon: 'Wallet',
@@ -426,6 +431,9 @@ describe('useAlmacen', () => {
         tasaEaPct: null,
         saldoInicialCop: 500_000,
       });
+    });
+    await act(async () => {
+      await result.current.crearCajita({ nombre: 'Bancolombia', icon: 'Landmark', tipo: 'cuenta', claseCuenta: 'banco', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
     });
     await act(async () => {
       await result.current.crearCajita({
@@ -458,6 +466,9 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
+      await result.current.crearCajita({ nombre: 'Bancolombia', icon: 'Landmark', tipo: 'cuenta', claseCuenta: 'banco', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+    });
+    await act(async () => {
       await result.current.crearCajita({
         nombre: 'Viaje',
         icon: 'Plane',
@@ -468,7 +479,7 @@ describe('useAlmacen', () => {
       });
     });
 
-    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Bancolombia')!.id;
     const destinoId = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
 
     await act(async () => {
@@ -482,6 +493,7 @@ describe('useAlmacen', () => {
     // Dejaría dos filas en el historial que se anulan y no explican nada.
     const repo = new RepositorioMemoria();
     const { result } = await montar(repo);
+    await act(async () => { await result.current.crearCajita({ nombre: 'Efectivo', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'efectivo', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 }); });
     const id = result.current.datos.cajitas[0].id;
 
     await act(async () => {
@@ -500,6 +512,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
+      await result.current.crearCajita({ nombre: 'Efectivo', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'efectivo', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
       await result.current.crearCajita({
         nombre: 'Viaje',
         icon: 'Plane',
@@ -524,6 +537,9 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
+      await result.current.crearCajita({ nombre: 'Bancolombia', icon: 'Landmark', tipo: 'cuenta', claseCuenta: 'banco', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+    });
+    await act(async () => {
       await result.current.crearCajita({
         nombre: 'Viaje',
         icon: 'Plane',
@@ -533,7 +549,7 @@ describe('useAlmacen', () => {
         saldoInicialCop: 0,
       });
     });
-    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!.id;
+    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Bancolombia')!.id;
     const destinoId = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
 
     await act(async () => {
@@ -541,15 +557,16 @@ describe('useAlmacen', () => {
     });
 
     const notas = result.current.datos.cajitaMovimientos.map((m) => m.nota).sort();
-    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Efectivo']);
+    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Bancolombia']);
   });
 
-  it('el id de Efectivo es un UUID válido', async () => {
+  it('el id de una cuenta creada es un UUID válido', async () => {
     // `cajitas.id` es uuid en Postgres. Con la cadena 'efectivo' la cuenta
     // nunca se guardaba y cada movimiento que la nombraba moría con
     // "invalid input syntax for type uuid".
     const repo = new RepositorioMemoria();
     const { result } = await montar(repo);
+    await act(async () => { await result.current.crearCajita({ nombre: 'Efectivo', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'efectivo', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 }); });
 
     const efectivo = result.current.datos.cajitas.find((c) => c.nombre === 'Efectivo')!;
     expect(efectivo.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
@@ -723,13 +740,13 @@ describe('useAlmacen — el Efectivo duplicado', () => {
     archivedAt: null,
   });
 
-  it('siembra Efectivo una sola vez cuando no hay nada', async () => {
+  it('no siembra Efectivo cuando no hay nada', async () => {
     const { result } = await montar();
 
     const efectivos = result.current.datos.cajitas.filter(
       (c) => c.nombre.toLowerCase() === 'efectivo',
     );
-    expect(efectivos).toHaveLength(1);
+    expect(efectivos).toHaveLength(0);
   });
 
   it('colapsa los Efectivo vacíos que dejó el sembrado repetido', async () => {

@@ -14,6 +14,9 @@ import type { Category } from '../types';
  */
 export type CajitaTipo = 'cuenta' | 'cajita' | 'deuda' | 'tarjeta';
 
+/** El medio concreto detrás de una cuenta de dinero. */
+export type ClaseCuenta = 'efectivo' | 'banco' | 'billetera';
+
 /**
  * Debts and credit cards are the same structure INVERTED: the balance is what
  * you owe rather than what you have, so a purchase raises it and a payment
@@ -29,10 +32,16 @@ export const ES_PASIVO: Record<CajitaTipo, boolean> = {
 };
 
 export const TIPO_LABELS: Record<CajitaTipo, string> = {
-  cuenta: 'Cuenta bancaria',
+  cuenta: 'Cuenta',
   cajita: 'Cajita de ahorro',
   deuda: 'Deuda',
   tarjeta: 'Tarjeta de crédito',
+};
+
+export const CLASE_CUENTA_LABELS: Record<ClaseCuenta, string> = {
+  efectivo: 'Efectivo',
+  banco: 'Cuenta bancaria',
+  billetera: 'Billetera digital',
 };
 
 /** A balance tracked by hand — nothing here talks to a bank. */
@@ -42,6 +51,12 @@ export interface Cajita {
   icon: string;
   /** Defaults to 'cajita' so rows written before accounts existed still load. */
   tipo: CajitaTipo;
+  /**
+   * Distingue efectivo, banco y billetera sin romper el tipo estructural
+   * `cuenta` que ya usan los saldos y movimientos. Las filas antiguas pueden no
+   * traerlo; `claseDeCuenta` las clasifica de forma compatible al leerlas.
+   */
+  claseCuenta?: ClaseCuenta | null;
   /** Optional target for this pocket alone, independent of any Meta. */
   metaCop: number | null;
   /**
@@ -120,10 +135,9 @@ export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
 /**
  * The cash account.
  *
- * A fixed id rather than a generated one so seeding is idempotent: the app can
- * check whether it exists — archived or not — and never end up with two. It is
- * an ordinary `cuenta` in every other respect, so it has a balance, shows up in
- * Configuración, and can be renamed or archived like the rest.
+ * El id legado de la cuenta de efectivo que antiguamente sembraba la app. Ya no
+ * se crean cuentas automáticamente; se conserva para reparar referencias
+ * existentes sin perder sus movimientos.
  */
 export const ID_EFECTIVO = '00000000-0000-4000-8000-0000000000ef';
 
@@ -142,11 +156,36 @@ export const cuentaEfectivo = (createdAt: string, id: string = ID_EFECTIVO): Caj
   nombre: 'Efectivo',
   icon: 'Wallet',
   tipo: 'cuenta',
+  claseCuenta: 'efectivo',
   metaCop: null,
   tasaEaPct: null,
   createdAt,
   archivedAt: null,
 });
+
+const SIN_TILDES = (texto: string): string =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+
+const BILLETERAS_CONOCIDAS = ['nequi', 'daviplata', 'dale', 'movii', 'rappi pay', 'rappipay'];
+
+/** Clasifica cuentas antiguas por nombre y respeta siempre el dato explícito. */
+export const claseDeCuenta = (cajita: Pick<Cajita, 'tipo' | 'nombre' | 'claseCuenta'>): ClaseCuenta | null => {
+  if (cajita.tipo !== 'cuenta') return null;
+  if (cajita.claseCuenta) return cajita.claseCuenta;
+  const nombre = SIN_TILDES(cajita.nombre);
+  if (nombre.startsWith('efectivo')) return 'efectivo';
+  if (BILLETERAS_CONOCIDAS.some((billetera) => nombre.includes(billetera))) return 'billetera';
+  return 'banco';
+};
+
+export const etiquetaTipoCajita = (cajita: Pick<Cajita, 'tipo' | 'nombre' | 'claseCuenta'>): string => {
+  const clase = claseDeCuenta(cajita);
+  return clase ? CLASE_CUENTA_LABELS[clase] : TIPO_LABELS[cajita.tipo];
+};
 
 export const CAJITA_ICONS = [
   'Wallet',

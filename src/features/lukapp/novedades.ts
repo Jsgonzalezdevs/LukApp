@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.10.0',
+    fecha: '2026-08-28',
+    texto: 'Extractos de bancos colombianos con IA: reconoce cada movimiento por separado, con comercio o contraparte, categoría, referencia y explicación para revisarlo antes de importarlo.',
+  },
+  {
+    version: '1.9.6',
+    fecha: '2026-08-28',
+    texto: 'Inicio limpio y cifras más claras: no se crean datos de ejemplo, las cuentas distinguen efectivo, banco y billetera, y los paneles explican saldo, disponible y balance del período.',
+  },
+  {
     version: '1.9.5',
     fecha: '2026-08-27',
     texto: 'Deslizamiento horizontal fluido: discriminación inteligente de gestos táctiles para navegar carruseles y categorías sin activar el gesto de recarga accidentalmente.',

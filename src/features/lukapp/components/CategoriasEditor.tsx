@@ -289,6 +289,11 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
       </AnimatePresence>
 
       <ul className="mt-3 flex flex-col gap-2">
+        {propias.length === 0 && !creando ? (
+          <li className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-4 py-5 text-center text-[14px] text-[var(--fin-ink-soft)]">
+            Aún no tienes categorías propias. Crea una para clasificar mejor tus movimientos.
+          </li>
+        ) : null}
         {propias.map((cat, idx) => {
           const enUso = usos.get(cat.id) ?? 0;
           const archivada = cat.archivedAt !== null;

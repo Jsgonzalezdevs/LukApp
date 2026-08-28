@@ -8,12 +8,12 @@ import { TOPE_EXENTO_UVT } from '../../lib/gmf';
  *
  * Todas son verificables y ninguna es de vanidad: no dice "10.000 usuarios
  * felices" porque eso no se puede comprobar y el visitante lo sabe. Dice cuántas
- * formas de anotar hay, cuántos bancos lee y cuántas UVT exentas cuenta — cosas
+ * formas de anotar hay, si los extractos de bancos colombianos se pueden leer y cuántas UVT exentas cuenta — cosas
  * que la app o hace o no hace.
  */
 const CIFRAS: { hasta: number; sufijo?: string; etiqueta: string }[] = [
   { hasta: 6, etiqueta: 'formas de anotar un gasto' },
-  { hasta: 4, etiqueta: 'bancos que lee del PDF' },
+  { hasta: 100, sufijo: '%', etiqueta: 'de bancos colombianos: lectura asistida por IA' },
   { hasta: TOPE_EXENTO_UVT, etiqueta: 'UVT exentas que te cuenta al mes' },
   { hasta: 0, sufijo: '$', etiqueta: 'que cuesta empezar' },
 ];

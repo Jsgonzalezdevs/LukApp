@@ -9,6 +9,8 @@ import { PDFParse } from 'pdf-parse';
 import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
+import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
+import { CATEGORIES, type Category, type TxKind } from './src/features/lukapp/types.ts';
 import {
   generarLlave,
   hashLlave,
@@ -1044,20 +1046,16 @@ app.post('/api/analizar-extracto', async (req, res) => {
     });
   }
 
-  if (!detectarBanco(textoCrudo)) {
-    return res.status(422).json({
-      ok: false,
-      codigo: 'banco-no-soportado',
-      mensaje: 'Este extracto no coincide con ninguna plantilla soportada (Nequi, Nu, Bancolombia, Davivienda).',
-    });
-  }
-
-  const resultado = analizarConPlantilla(textoCrudo);
+  // Las plantillas conservan una lectura rápida y determinista de los cuatro
+  // formatos que conocemos. Para cualquier otra entidad, la IA interpreta las
+  // columnas y los conceptos del PDF sin depender de una lista cerrada de bancos.
+  const resultado = (await analizarExtractoConIA(textoCrudo)) ??
+    (detectarBanco(textoCrudo) ? analizarConPlantilla(textoCrudo) : null);
   if (!resultado) {
     return res.status(422).json({
       ok: false,
       codigo: 'sin-movimientos',
-      mensaje: 'Se reconoció el banco pero no se pudo leer ningún movimiento de este extracto.',
+      mensaje: 'No se pudo leer ningún movimiento de este extracto. Verifica que el PDF tenga texto seleccionable y vuelve a intentarlo.',
     });
   }
 
@@ -1283,6 +1281,73 @@ function limpiarTextoIA(raw: string): string {
   return res.trim();
 }
 
+const CATEGORIAS_EXTRACTO = new Set<string>(CATEGORIES);
+const esFechaExtracto = (valor: unknown): valor is string =>
+  typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valor);
+
+/**
+ * Parses a statement format that has no local template. The model returns only
+ * the evidence visible in the PDF; totals are recalculated below rather than
+ * trusted from its prose so the person can audit every imported line.
+ */
+async function analizarExtractoConIA(textoCrudo: string): Promise<AnalisisResultado | null> {
+  const textoLimitado = textoCrudo.slice(0, 75_000);
+  const respuesta = await consultarModeloIA({
+    temperature: 0,
+    maxTokens: 8_000,
+    responseFormat: { type: 'json_object' },
+    systemPrompt: `Eres un lector preciso de extractos bancarios colombianos. Devuelve JSON, sin Markdown. Solo extrae filas que estén explícitas en el PDF. Nunca inventes comercio, fecha, monto, categoría ni referencia. Cada movimiento debe tener fecha YYYY-MM-DD, descripcion literal y legible, montoCop entero positivo, tipo gasto o ingreso, categoria entre: ${CATEGORIES.join(', ')}, confianza alta/media/baja, exclusion null/traslado-propio/pago-tarjeta/reverso/saldo-informativo, contraparte y detalle. detalle debe explicar brevemente por qué se asignó esa categoría y qué concepto del extracto se reconoció. Incluye periodo {desde,hasta,etiqueta}, veredicto, advertencias y movimientos.`,
+    userPrompt: `Lee este texto extraído de un PDF bancario. Identifica la entidad aunque no esté en una lista previa y conserva cada movimiento por separado. Si una fecha o monto no se lee con seguridad, no lo inventes: omite la fila y explica la duda en advertencias.\n\n${textoLimitado}`,
+  });
+  if (!respuesta.texto) return null;
+
+  let bruto: unknown;
+  try {
+    bruto = JSON.parse(respuesta.texto);
+  } catch {
+    return null;
+  }
+  if (!bruto || typeof bruto !== 'object') return null;
+  const objeto = bruto as Record<string, unknown>;
+  const movimientos: MovimientoExtraido[] = Array.isArray(objeto.movimientos)
+    ? objeto.movimientos.flatMap((fila): MovimientoExtraido[] => {
+        if (!fila || typeof fila !== 'object') return [];
+        const mov = fila as Record<string, unknown>;
+        const monto = Number(mov.montoCop);
+        const tipo: TxKind | null = mov.tipo === 'gasto' || mov.tipo === 'ingreso' ? mov.tipo : null;
+        const categoria = typeof mov.categoria === 'string' && CATEGORIAS_EXTRACTO.has(mov.categoria)
+          ? mov.categoria as Category
+          : 'otros';
+        if (!esFechaExtracto(mov.fecha) || typeof mov.descripcion !== 'string' || !tipo || !Number.isFinite(monto) || monto <= 0) return [];
+        return [{
+          fecha: mov.fecha,
+          descripcion: mov.descripcion.trim().slice(0, 180),
+          montoCop: Math.round(monto),
+          tipo,
+          categoria,
+          confianza: mov.confianza === 'alta' || mov.confianza === 'media' ? mov.confianza : 'baja',
+          exclusion: mov.exclusion === 'traslado-propio' || mov.exclusion === 'pago-tarjeta' || mov.exclusion === 'reverso' || mov.exclusion === 'saldo-informativo' ? mov.exclusion : null,
+          contraparte: typeof mov.contraparte === 'string' ? mov.contraparte.trim().slice(0, 120) || null : null,
+          detalle: typeof mov.detalle === 'string' ? mov.detalle.trim().slice(0, 240) || null : null,
+        }];
+      })
+    : [];
+  if (movimientos.length === 0) return null;
+  const ingresos = movimientos.filter((m) => m.exclusion === null && m.tipo === 'ingreso').reduce((total, m) => total + m.montoCop, 0);
+  const gastos = movimientos.filter((m) => m.exclusion === null && m.tipo === 'gasto').reduce((total, m) => total + m.montoCop, 0);
+  const periodo = objeto.periodo && typeof objeto.periodo === 'object' ? objeto.periodo as Record<string, unknown> : {};
+  const advertencias = Array.isArray(objeto.advertencias) ? objeto.advertencias.filter((a): a is string => typeof a === 'string').slice(0, 8) : [];
+  return {
+    periodo: { desde: esFechaExtracto(periodo.desde) ? periodo.desde : '', hasta: esFechaExtracto(periodo.hasta) ? periodo.hasta : '', etiqueta: typeof periodo.etiqueta === 'string' ? periodo.etiqueta.slice(0, 80) : 'Extracto bancario' },
+    veredicto: typeof objeto.veredicto === 'string' ? objeto.veredicto.slice(0, 500) : `Se reconocieron ${movimientos.length} movimientos para tu revisión.`,
+    metricas: [{ etiqueta: 'Total ingresos', valorCop: ingresos, nota: null }, { etiqueta: 'Total gastos', valorCop: gastos, nota: null }, { etiqueta: 'Balance del período', valorCop: ingresos - gastos, nota: null }],
+    alertas: [],
+    recomendaciones: [],
+    movimientos,
+    advertencias: [...advertencias, `Lectura asistida por IA (${respuesta.proveedor || 'proveedor configurado'}). Revisa cada movimiento antes de importarlo.`],
+  };
+}
+
 async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIAResult> {
   const {
     systemPrompt,
@@ -1448,6 +1513,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           ],
           temperature,
           max_tokens: maxTokens,
+          ...(responseFormat ? { response_format: responseFormat } : {}),
         }),
       });
       if (res.ok) {
