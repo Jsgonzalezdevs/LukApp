@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useEffect, useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
 import * as THREE from 'three';
 
 export type EstadoLuki = 'quieta' | 'pensando' | 'contenta' | 'sorprendida';
@@ -18,40 +18,38 @@ interface LukiProps {
 
 type Punto3D = readonly [number, number, number];
 
-/* Paleta oficial de color mate de Luki (Gecko violeta 3D de LukApp) */
-const MORADO_BASE = '#6826d0';
-const MORADO_OSCURO = '#240848';
-const LILA_BARRIGA = '#9f70eb';
-const ROSA_LENGUA = '#db4c90';
-const BOCA_FONDO = '#200522';
-const OJO_BLANCO = '#faf8fc';
-const PUPILA_NEGRA = '#100d18';
+/* Paleta oficial de color de Luki (Gecko violeta 3D idéntico a la referencia) */
+const MORADO_BASE = '#7034dc';
+const MORADO_OSCURO = '#2a0a54';
+const LILA_BARRIGA = '#9f70ee';
+const OJO_BLANCO = '#fefeff';
+const PUPILA_NEGRA = '#120e1e';
 
-/** Perfil anatómico de ultra-alta resolución para el torso torneado con LatheGeometry (128 sectores) */
+/** Perfil anatómico esbelto y fluido para el torso de Luki */
 const PERFIL_TORSO = [
-  new THREE.Vector2(0.12, -0.64),
-  new THREE.Vector2(0.22, -0.58),
-  new THREE.Vector2(0.30, -0.46),
-  new THREE.Vector2(0.34, -0.30),
-  new THREE.Vector2(0.36, -0.10),
-  new THREE.Vector2(0.36, 0.10),
-  new THREE.Vector2(0.33, 0.30),
-  new THREE.Vector2(0.28, 0.50),
-  new THREE.Vector2(0.23, 0.68),
-  new THREE.Vector2(0.18, 0.84),
-  new THREE.Vector2(0.14, 0.94),
+  new THREE.Vector2(0.12, -0.66),
+  new THREE.Vector2(0.20, -0.60),
+  new THREE.Vector2(0.28, -0.46),
+  new THREE.Vector2(0.31, -0.28),
+  new THREE.Vector2(0.32, -0.06),
+  new THREE.Vector2(0.31, 0.14),
+  new THREE.Vector2(0.28, 0.34),
+  new THREE.Vector2(0.24, 0.50),
+  new THREE.Vector2(0.18, 0.66),
+  new THREE.Vector2(0.15, 0.82),
+  new THREE.Vector2(0.13, 0.92),
 ];
 
-/** Textura procedural mate muy sutil tipo arcilla / plastilina de estudio de animación */
+/** Textura procedural mate muy suave tipo arcilla / vinilo de estudio 3D */
 const crearTexturaPiel = () => {
   const lado = 256;
   const datos = new Uint8Array(lado * lado);
   for (let y = 0; y < lado; y += 1) {
     for (let x = 0; x < lado; x += 1) {
       const onda =
-        Math.sin(x * 0.75 + y * 0.35) * 3 +
-        Math.sin(y * 0.95 - x * 0.28) * 2 +
-        Math.sin((x + y) * 1.3) * 1.5;
+        Math.sin(x * 0.7 + y * 0.35) * 3 +
+        Math.sin(y * 0.9 - x * 0.25) * 2 +
+        Math.sin((x + y) * 1.2) * 1.5;
       datos[y * lado + x] = Math.round(128 + onda);
     }
   }
@@ -63,7 +61,7 @@ const crearTexturaPiel = () => {
   return textura;
 };
 
-/** Genera la cola de gecko con ultra-alta densidad poligonal y disminución continua */
+/** Genera la cola de gecko con curvatura suave y adelgazamiento continuo hacia la punta */
 const crearGeometriaCola = (curva: THREE.CatmullRomCurve3) => {
   const tramos = 96;
   const lados = 32;
@@ -76,8 +74,8 @@ const crearGeometriaCola = (curva: THREE.CatmullRomCurve3) => {
   for (let tramo = 0; tramo <= tramos; tramo += 1) {
     const t = tramo / tramos;
     curva.getPointAt(t, centro);
-    // Disminución cónica perfectamente suave hacia la punta fina
-    const radio = 0.004 + 0.22 * Math.pow(1 - t, 0.74);
+    // Disminución cónica suave hacia la punta fina
+    const radio = 0.004 + 0.21 * Math.pow(1 - t, 0.74);
     for (let lado = 0; lado <= lados; lado += 1) {
       const angulo = (lado / lados) * Math.PI * 2;
       normal.copy(marcos.normals[tramo]).multiplyScalar(Math.cos(angulo));
@@ -150,82 +148,6 @@ const crearGeometriaTubo = (curva: THREE.CatmullRomCurve3, radioBase: number, ra
   return geometria;
 };
 
-/** Ojo de gecko expresivo y tierno con cuencas integradas */
-const OjoGecko: React.FC<{
-  posicion: Punto3D;
-  rotacionY?: number;
-  rotacionZ?: number;
-  seguirCursor: boolean;
-  escala?: number;
-  asustado?: boolean;
-}> = ({ posicion, rotacionY = 0, rotacionZ = 0, seguirCursor, escala = 1, asustado = false }) => {
-  const ojoRef = useRef<THREE.Group>(null);
-  const pupilaRef = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock, pointer }) => {
-    const ciclo = clock.elapsedTime % 4.4;
-    const parpadeo = ciclo > 4.12 && ciclo < 4.26;
-    if (ojoRef.current) {
-      ojoRef.current.scale.y = parpadeo ? 0.08 : escala * (asustado ? 1.25 : 1);
-      ojoRef.current.scale.x = escala * (asustado ? 1.25 : 1);
-      ojoRef.current.scale.z = escala * (asustado ? 1.25 : 1);
-    }
-    if (pupilaRef.current && seguirCursor) {
-      pupilaRef.current.position.x = THREE.MathUtils.lerp(pupilaRef.current.position.x, pointer.x * 0.032, 0.12);
-      pupilaRef.current.position.y = THREE.MathUtils.lerp(pupilaRef.current.position.y, pointer.y * 0.028, 0.12);
-    }
-  });
-
-  return (
-    <group ref={ojoRef} position={posicion} rotation={[0, rotacionY, rotacionZ]}>
-      {/* Cuenca y párpado suave posterior */}
-      <mesh position={[0, -0.015, -0.02]} rotation={[-0.18, 0, 0]} scale={[1.12, 1.08, 1.1]} castShadow>
-        <sphereGeometry args={[0.132, 48, 36, 0, Math.PI * 2, 0, Math.PI * 0.72]} />
-        <meshPhysicalMaterial
-          color={MORADO_BASE}
-          roughness={0.82}
-          metalness={0.0}
-          clearcoat={0.0}
-          sheen={0.12}
-          sheenColor="#8a4ee0"
-        />
-      </mesh>
-
-      {/* Globo ocular blanco satinado */}
-      <mesh castShadow>
-        <sphereGeometry args={[0.132, 64, 48]} />
-        <meshPhysicalMaterial
-          color={OJO_BLANCO}
-          roughness={0.22}
-          metalness={0.0}
-          clearcoat={0.28}
-          clearcoatRoughness={0.15}
-          emissive="#241a30"
-          emissiveIntensity={0.015}
-        />
-      </mesh>
-
-      {/* Pupila negra redonda y tierna */}
-      <mesh ref={pupilaRef} position={[0, 0, 0.126]} castShadow>
-        <sphereGeometry args={[0.066, 48, 36]} />
-        <meshPhysicalMaterial color={PUPILA_NEGRA} roughness={0.16} metalness={0.0} clearcoat={0.25} />
-      </mesh>
-
-      {/* Destello de luz suave */}
-      <mesh position={[-0.024, 0.032, 0.174]}>
-        <sphereGeometry args={[0.02, 24, 18]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-
-      {/* Segundo destello menor */}
-      <mesh position={[0.026, -0.02, 0.17]}>
-        <sphereGeometry args={[0.01, 16, 12]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-    </group>
-  );
-};
-
 /** Dedo suave con almohadilla de succión redondeada */
 const DedoGecko: React.FC<{
   inicio: Punto3D;
@@ -254,7 +176,7 @@ const DedoGecko: React.FC<{
       <mesh geometry={geo} castShadow>
         <meshPhysicalMaterial
           color={color}
-          roughness={0.82}
+          roughness={0.78}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.12}
@@ -266,7 +188,7 @@ const DedoGecko: React.FC<{
         <sphereGeometry args={[radioPunta, 32, 24]} />
         <meshPhysicalMaterial
           color={color}
-          roughness={0.80}
+          roughness={0.76}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.14}
@@ -277,192 +199,188 @@ const DedoGecko: React.FC<{
   );
 };
 
-/** Mano de gecko con 4 dedos abiertos y almohadillas redondeadas */
-const ManoGecko: React.FC<{
-  lado: -1 | 1;
+/** Ojo tierno de gecko montado sobre la bóveda craneal (idéntico a la referencia) */
+const OjoGecko: React.FC<{
   posicion: Punto3D;
   rotacion: Punto3D;
-  gesto: GestoLuki;
-}> = ({ lado, posicion, rotacion, gesto }) => {
-  const esPresume = gesto === 'presume';
-  const esSaluda = gesto === 'saluda' && lado === 1;
-
+  pupilaOffset: Punto3D;
+  escala?: number;
+}> = ({ posicion, rotacion, pupilaOffset, escala = 1 }) => {
   return (
-    <group position={posicion} rotation={[rotacion[0], rotacion[1], rotacion[2]]}>
-      {/* Palma suave */}
-      <mesh scale={[0.1, 0.08, 0.08]} castShadow>
-        <sphereGeometry args={[1, 32, 24]} />
+    <group position={posicion} rotation={[rotacion[0], rotacion[1], rotacion[2]]} scale={[escala, escala, escala]}>
+      {/* Párpado / Cuenca posterior suave */}
+      <mesh position={[0, -0.015, -0.02]} scale={[1.1, 1.06, 1.08]} castShadow>
+        <sphereGeometry args={[0.136, 48, 36, 0, Math.PI * 2, 0, Math.PI * 0.72]} />
         <meshPhysicalMaterial
           color={MORADO_BASE}
-          roughness={0.82}
+          roughness={0.78}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.12}
         />
       </mesh>
 
-      {esPresume ? (
-        /* Puño en flexión */
-        [-0.04, -0.01, 0.02, 0.05].map((x, i) => (
-          <mesh key={i} position={[x, 0.045, 0.04]} scale={[0.03, 0.036, 0.032]} castShadow>
-            <sphereGeometry args={[1, 20, 16]} />
-            <meshPhysicalMaterial color={MORADO_BASE} roughness={0.82} metalness={0.0} />
-          </mesh>
-        ))
-      ) : (
-        /* 4 dedos extendidos de gecko con almohadillas */
-        <>
-          <DedoGecko
-            inicio={[-lado * 0.042, 0.02, 0.02]}
-            direccion={[-lado * 0.55, 0.75, 0.25]}
-            largo={esSaluda ? 0.095 : 0.075}
-            grosor={0.022}
-            radioPunta={0.032}
-          />
-          <DedoGecko
-            inicio={[-lado * 0.016, 0.03, 0.03]}
-            direccion={[-lado * 0.2, 0.95, 0.2]}
-            largo={esSaluda ? 0.11 : 0.088}
-            grosor={0.024}
-            radioPunta={0.035}
-          />
-          <DedoGecko
-            inicio={[lado * 0.016, 0.03, 0.03]}
-            direccion={[lado * 0.2, 0.95, 0.2]}
-            largo={gesto === 'idea' && lado === 1 ? 0.13 : esSaluda ? 0.11 : 0.088}
-            grosor={0.024}
-            radioPunta={0.035}
-          />
-          <DedoGecko
-            inicio={[lado * 0.042, 0.01, 0.02]}
-            direccion={[lado * 0.65, 0.65, 0.25]}
-            largo={esSaluda ? 0.085 : 0.07}
-            grosor={0.022}
-            radioPunta={0.032}
-          />
-        </>
-      )}
+      {/* Globo ocular blanco esférico */}
+      <mesh castShadow>
+        <sphereGeometry args={[0.136, 64, 48]} />
+        <meshPhysicalMaterial
+          color={OJO_BLANCO}
+          roughness={0.18}
+          metalness={0.0}
+          clearcoat={0.25}
+          clearcoatRoughness={0.15}
+          emissive="#241a30"
+          emissiveIntensity={0.015}
+        />
+      </mesh>
+
+      {/* Pupila negra redonda mirando hacia arriba/izquierda como en la referencia */}
+      <mesh position={pupilaOffset} castShadow>
+        <sphereGeometry args={[0.062, 48, 36]} />
+        <meshPhysicalMaterial color={PUPILA_NEGRA} roughness={0.12} metalness={0.0} clearcoat={0.25} />
+      </mesh>
+
+      {/* Destello de luz suave */}
+      <mesh position={[pupilaOffset[0] - 0.02, pupilaOffset[1] + 0.028, pupilaOffset[2] + 0.045]}>
+        <sphereGeometry args={[0.018, 20, 16]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
     </group>
   );
 };
 
-/** Brazo fluido continuo conectado orgánicamente a los hombros */
-const BrazoGecko: React.FC<{
-  lado: -1 | 1;
-  gesto: GestoLuki;
-  estado: EstadoLuki;
-}> = ({ lado, gesto, estado }) => {
-  const brazoRef = useRef<THREE.Group>(null);
+/** Cabeza achatada tipo gecko con hocico ancho, sonrisa continua y ojos elevados */
+const CabezaGecko: React.FC<{ texturaPiel: THREE.DataTexture }> = ({ texturaPiel }) => {
+  // Sonrisa amplia y alegre trazada de extremo a extremo del hocico
+  const curvaSonrisa = useMemo(
+    () =>
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.36, -0.02, 0.14),
+        new THREE.Vector3(-0.24, -0.06, 0.32),
+        new THREE.Vector3(0.0, -0.07, 0.40),
+        new THREE.Vector3(0.24, -0.06, 0.32),
+        new THREE.Vector3(0.36, 0.02, 0.14),
+      ]),
+    [],
+  );
 
+  return (
+    // Cabeza inclinada alegremente hacia la derecha y arriba como en la foto de referencia
+    <group position={[0, 0.92, 0.06]} rotation={[0.06, 0.14, -0.08]}>
+      {/* Bóveda craneal ancha y aplanada (forma de espátula/gecko) */}
+      <mesh scale={[1.34, 0.50, 1.08]} castShadow>
+        <sphereGeometry args={[0.38, 64, 48]} />
+        <meshPhysicalMaterial
+          color={MORADO_BASE}
+          roughness={0.78}
+          metalness={0.0}
+          clearcoat={0.0}
+          sheen={0.12}
+          sheenColor="#8a4ee0"
+          bumpMap={texturaPiel}
+          bumpScale={0.003}
+        />
+      </mesh>
+
+      {/* Fosas nasales sutiles en el hocico */}
+      <mesh position={[-0.042, 0.04, 0.44]}>
+        <sphereGeometry args={[0.011, 16, 12]} />
+        <meshBasicMaterial color={MORADO_OSCURO} />
+      </mesh>
+      <mesh position={[0.042, 0.04, 0.44]}>
+        <sphereGeometry args={[0.011, 16, 12]} />
+        <meshBasicMaterial color={MORADO_OSCURO} />
+      </mesh>
+
+      {/* Línea tallada de la sonrisa */}
+      <mesh position={[0, 0, 0.02]}>
+        <tubeGeometry args={[curvaSonrisa, 64, 0.014, 12, false]} />
+        <meshPhysicalMaterial color={MORADO_OSCURO} roughness={0.7} />
+      </mesh>
+
+      {/* Ojos elevados y juntos sobre la coronilla de la cabeza (como en la imagen 1) */}
+      <OjoGecko
+        posicion={[-0.092, 0.18, -0.02]}
+        rotacion={[-0.24, -0.12, 0.14]}
+        pupilaOffset={[-0.032, 0.042, 0.124]}
+        escala={1.04}
+      />
+      <OjoGecko
+        posicion={[0.092, 0.18, -0.02]}
+        rotacion={[-0.24, 0.12, -0.14]}
+        pupilaOffset={[-0.032, 0.042, 0.124]}
+        escala={1.04}
+      />
+    </group>
+  );
+};
+
+/** Brazo en pose de flexión de bíceps (como la imagen oficial de referencia) */
+const BrazoFlex: React.FC<{ lado: -1 | 1 }> = ({ lado }) => {
   const puntosBrazo = useMemo(() => {
-    // Origen del hombro dentro del contorno del torso
-    const hombro = new THREE.Vector3(lado * 0.22, 0.50, 0.0);
-
-    if (gesto === 'presume') {
-      return [
-        hombro,
-        new THREE.Vector3(lado * 0.52, 0.48, 0.06),
-        new THREE.Vector3(lado * 0.58, 0.64, 0.1),
-        new THREE.Vector3(lado * 0.48, 0.86, 0.14),
-      ];
-    }
-    if (gesto === 'idea' && lado === 1) {
-      return [
-        hombro,
-        new THREE.Vector3(lado * 0.46, 0.44, 0.08),
-        new THREE.Vector3(lado * 0.50, 0.70, 0.16),
-        new THREE.Vector3(lado * 0.40, 0.96, 0.24),
-      ];
-    }
-    if (gesto === 'saluda' && lado === 1) {
-      return [
-        hombro,
-        new THREE.Vector3(lado * 0.50, 0.66, 0.1),
-        new THREE.Vector3(lado * 0.56, 0.90, 0.16),
-        new THREE.Vector3(lado * 0.48, 1.12, 0.2),
-      ];
-    }
-    if ((gesto === 'pensando' || estado === 'pensando') && lado === -1) {
-      return [
-        hombro,
-        new THREE.Vector3(lado * 0.44, 0.42, 0.08),
-        new THREE.Vector3(lado * 0.32, 0.66, 0.2),
-        new THREE.Vector3(lado * 0.14, 0.82, 0.28),
-      ];
-    }
-    // Pose por defecto: mano izquierda en cadera, mano derecha relajada o en pose de 3/4
-    if (lado === -1) {
-      return [
-        hombro,
-        new THREE.Vector3(-0.46, 0.32, 0.06),
-        new THREE.Vector3(-0.48, 0.12, 0.12),
-        new THREE.Vector3(-0.36, 0.04, 0.18),
-      ];
-    }
-    return [
-      hombro,
-      new THREE.Vector3(0.42, 0.34, 0.06),
-      new THREE.Vector3(0.44, 0.14, 0.12),
-      new THREE.Vector3(0.32, 0.04, 0.18),
-    ];
-  }, [estado, gesto, lado]);
+    const hombro = new THREE.Vector3(lado * 0.22, 0.46, 0.0);
+    const codo = new THREE.Vector3(lado * 0.64, 0.42, 0.04);
+    const antebrazo = new THREE.Vector3(lado * 0.60, 0.70, 0.08);
+    const muneca = new THREE.Vector3(lado * 0.52, 0.82, 0.12);
+    return [hombro, codo, antebrazo, muneca];
+  }, [lado]);
 
   const curva = useMemo(() => new THREE.CatmullRomCurve3(puntosBrazo), [puntosBrazo]);
-  const geo = useMemo(() => crearGeometriaTubo(curva, 0.096, 0.076), [curva]);
+  const geo = useMemo(() => crearGeometriaTubo(curva, 0.092, 0.076), [curva]);
   useEffect(() => () => geo.dispose(), [geo]);
-
-  useFrame(({ clock }) => {
-    if (!brazoRef.current) return;
-    if (gesto === 'saluda' && lado === 1) {
-      brazoRef.current.rotation.z = Math.sin(clock.elapsedTime * 6.5) * 0.28;
-    } else if (gesto === 'equilibrio') {
-      brazoRef.current.rotation.z = lado * Math.sin(clock.elapsedTime * 3) * 0.2;
-    } else {
-      brazoRef.current.rotation.z = 0;
-    }
-  });
 
   const posMuneca = puntosBrazo[puntosBrazo.length - 1];
 
   return (
-    <group ref={brazoRef}>
+    <group>
+      {/* Tubo del brazo en L fuerte */}
       <mesh geometry={geo} castShadow>
         <meshPhysicalMaterial
           color={MORADO_BASE}
-          roughness={0.82}
+          roughness={0.78}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.12}
           sheenColor="#8a4ee0"
         />
       </mesh>
-      <ManoGecko
-        lado={lado}
-        posicion={[posMuneca.x, posMuneca.y, posMuneca.z]}
-        rotacion={[gesto === 'presume' ? 0.3 : 0, 0, lado === 1 ? -0.2 : 0.2]}
-        gesto={gesto}
-      />
+
+      {/* Puño cerrado con 4 nudillos redondos en lo alto */}
+      <group position={[posMuneca.x, posMuneca.y, posMuneca.z]} rotation={[0.2, 0, lado === 1 ? -0.3 : 0.3]}>
+        {/* Base de la mano */}
+        <mesh scale={[0.08, 0.07, 0.07]} castShadow>
+          <sphereGeometry args={[1, 24, 18]} />
+          <meshPhysicalMaterial color={MORADO_BASE} roughness={0.78} />
+        </mesh>
+        {/* 4 dedos recogidos en flexión */}
+        {[-0.038, -0.012, 0.014, 0.040].map((x, i) => (
+          <mesh key={i} position={[x, 0.04, 0.03]} scale={[0.026, 0.032, 0.028]} castShadow>
+            <sphereGeometry args={[1, 16, 12]} />
+            <meshPhysicalMaterial color={MORADO_BASE} roughness={0.76} />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 };
 
-/** Pata continua de gecko con 4 dedos y ventosas planas sobre el suelo */
+/** Pata de gecko en postura ancha y firme con 4 dedos y ventosas planas */
 const PiernaGecko: React.FC<{ lado: -1 | 1 }> = ({ lado }) => {
   const caderaX = lado * 0.20;
-  const rodillaX = lado * 0.32;
-  const pieX = lado * 0.32;
+  const rodillaX = lado * 0.38;
+  const pieX = lado * 0.34;
 
   const puntosPierna = useMemo(
     () => [
       new THREE.Vector3(caderaX, -0.42, 0.0),
-      new THREE.Vector3(rodillaX, -0.68, 0.06),
+      new THREE.Vector3(rodillaX, -0.66, 0.08),
       new THREE.Vector3(pieX, -0.96, 0.14),
     ],
     [caderaX, pieX, rodillaX],
   );
 
   const curva = useMemo(() => new THREE.CatmullRomCurve3(puntosPierna), [puntosPierna]);
-  const geo = useMemo(() => crearGeometriaTubo(curva, 0.125, 0.088), [curva]);
+  const geo = useMemo(() => crearGeometriaTubo(curva, 0.128, 0.086), [curva]);
   useEffect(() => () => geo.dispose(), [geo]);
 
   return (
@@ -470,7 +388,7 @@ const PiernaGecko: React.FC<{ lado: -1 | 1 }> = ({ lado }) => {
       <mesh geometry={geo} castShadow>
         <meshPhysicalMaterial
           color={MORADO_BASE}
-          roughness={0.82}
+          roughness={0.78}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.12}
@@ -481,26 +399,21 @@ const PiernaGecko: React.FC<{ lado: -1 | 1 }> = ({ lado }) => {
       {/* Empeine / Talón suave */}
       <mesh position={[pieX, -0.98, 0.20]} scale={[0.13, 0.045, 0.16]} castShadow>
         <sphereGeometry args={[1, 32, 24]} />
-        <meshPhysicalMaterial
-          color={MORADO_BASE}
-          roughness={0.82}
-          metalness={0.0}
-          clearcoat={0.0}
-        />
+        <meshPhysicalMaterial color={MORADO_BASE} roughness={0.78} />
       </mesh>
 
       {/* 4 dedos de la pata con ventosas circulares */}
-      {[-0.072, -0.024, 0.024, 0.072].map((desfase, indice) => {
-        const angulo = (indice - 1.5) * 0.26;
-        const largo = 0.08 + Math.cos(angulo) * 0.02;
+      {[-0.076, -0.026, 0.026, 0.076].map((desfase, indice) => {
+        const angulo = (indice - 1.5) * 0.28;
+        const largo = 0.082 + Math.cos(angulo) * 0.02;
         return (
           <group key={desfase}>
             <DedoGecko
               inicio={[pieX + desfase * 0.5, -0.98, 0.22]}
-              direccion={[Math.sin(angulo) * 0.35, 0, Math.cos(angulo)]}
+              direccion={[Math.sin(angulo) * 0.38, 0, Math.cos(angulo)]}
               largo={largo}
               grosor={0.022}
-              radioPunta={0.032}
+              radioPunta={0.034}
             />
           </group>
         );
@@ -510,20 +423,17 @@ const PiernaGecko: React.FC<{ lado: -1 | 1 }> = ({ lado }) => {
 };
 
 /** Cola dinámica con silueta fluida de gecko curvada hacia arriba */
-const ColaGecko: React.FC<{ gesto: GestoLuki }> = ({ gesto }) => {
-  const colaRef = useRef<THREE.Group>(null);
-
+const ColaGecko: React.FC = () => {
   const curvaCola = useMemo(
     () =>
       new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0.0, -0.46, -0.12),
-        new THREE.Vector3(0.18, -0.54, -0.28),
-        new THREE.Vector3(0.48, -0.50, -0.34),
-        new THREE.Vector3(0.76, -0.26, -0.32),
-        new THREE.Vector3(0.90, 0.10, -0.26),
-        new THREE.Vector3(0.92, 0.48, -0.18),
-        new THREE.Vector3(0.82, 0.82, -0.12),
-        new THREE.Vector3(0.70, 0.98, -0.08),
+        new THREE.Vector3(0.0, -0.42, -0.10),
+        new THREE.Vector3(0.24, -0.56, -0.16),
+        new THREE.Vector3(0.58, -0.44, -0.12),
+        new THREE.Vector3(0.72, -0.12, -0.06),
+        new THREE.Vector3(0.76, 0.26, 0.0),
+        new THREE.Vector3(0.68, 0.62, 0.04),
+        new THREE.Vector3(0.56, 0.78, 0.06),
       ]),
     [],
   );
@@ -531,166 +441,24 @@ const ColaGecko: React.FC<{ gesto: GestoLuki }> = ({ gesto }) => {
   const geometria = useMemo(() => crearGeometriaCola(curvaCola), [curvaCola]);
   useEffect(() => () => geometria.dispose(), [geometria]);
 
-  useFrame(({ clock }) => {
-    if (!colaRef.current) return;
-    const intensidad = gesto === 'equilibrio' ? 0.32 : gesto === 'mareada' ? 0.26 : 0.08;
-    colaRef.current.rotation.z = Math.sin(clock.elapsedTime * (gesto === 'mareada' ? 5.2 : 2.1)) * intensidad;
-    colaRef.current.rotation.y = Math.cos(clock.elapsedTime * 1.7) * (intensidad * 0.6);
-  });
-
   return (
-    <group ref={colaRef}>
+    <group>
       <mesh geometry={geometria} castShadow receiveShadow>
         <meshPhysicalMaterial
           color={MORADO_BASE}
-          roughness={0.82}
+          roughness={0.78}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.14}
           sheenColor="#8a4ee0"
-          emissive={MORADO_OSCURO}
-          emissiveIntensity={0.03}
         />
       </mesh>
     </group>
   );
 };
 
-/** Cabeza esculpida con bóveda craneal, hocico alargado de gecko, sonrisa tallada y ojos elevados */
-const CabezaGecko: React.FC<{
-  estado: EstadoLuki;
-  mirarCursor: boolean;
-  texturaPiel: THREE.DataTexture;
-}> = ({ estado, mirarCursor, texturaPiel }) => {
-  const cabezaRef = useRef<THREE.Group>(null);
-
-  useFrame(({ pointer }) => {
-    if (!cabezaRef.current || !mirarCursor) return;
-    cabezaRef.current.rotation.y = THREE.MathUtils.lerp(cabezaRef.current.rotation.y, pointer.x * 0.16, 0.08);
-    cabezaRef.current.rotation.x = THREE.MathUtils.lerp(cabezaRef.current.rotation.x, -pointer.y * 0.10, 0.08);
-  });
-
-  const asustado = estado === 'sorprendida';
-  const estaContenta = estado === 'contenta';
-
-  // Sonrisa alegre tallada a lo largo del hocico
-  const curvaSonrisa = useMemo(
-    () =>
-      new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.28, -0.02, 0.16),
-        new THREE.Vector3(-0.22, -0.06, 0.32),
-        new THREE.Vector3(0.0, -0.07, 0.42),
-        new THREE.Vector3(0.22, -0.06, 0.32),
-        new THREE.Vector3(0.28, -0.02, 0.16),
-      ]),
-    [],
-  );
-
-  return (
-    <group ref={cabezaRef} position={[0, 0.94, 0.06]} rotation={[0.04, 0, 0]}>
-      {/* Bóveda craneal suave de alta resolución */}
-      <mesh scale={[1.06, 0.70, 0.88]} castShadow>
-        <sphereGeometry args={[0.38, 64, 48]} />
-        <meshPhysicalMaterial
-          color={MORADO_BASE}
-          roughness={0.82}
-          metalness={0.0}
-          clearcoat={0.0}
-          sheen={0.12}
-          sheenColor="#8a4ee0"
-          bumpMap={texturaPiel}
-          bumpScale={0.003}
-        />
-      </mesh>
-
-      {/* Hocico superior alargado hacia el frente */}
-      <mesh position={[0, -0.03, 0.22]} scale={[0.82, 0.34, 0.88]} castShadow>
-        <sphereGeometry args={[0.36, 64, 48]} />
-        <meshPhysicalMaterial
-          color={MORADO_BASE}
-          roughness={0.82}
-          metalness={0.0}
-          clearcoat={0.0}
-          sheen={0.12}
-          sheenColor="#8a4ee0"
-          bumpMap={texturaPiel}
-          bumpScale={0.003}
-        />
-      </mesh>
-
-      {/* Mandíbula inferior suave */}
-      <mesh position={[0, -0.14, 0.16]} scale={[0.74, 0.22, 0.74]} castShadow>
-        <sphereGeometry args={[0.34, 48, 36]} />
-        <meshPhysicalMaterial
-          color={MORADO_BASE}
-          roughness={0.82}
-          metalness={0.0}
-          clearcoat={0.0}
-          sheen={0.12}
-          sheenColor="#8a4ee0"
-        />
-      </mesh>
-
-      {/* Fosas nasales en la punta del hocico */}
-      <mesh position={[-0.042, 0.04, 0.50]}>
-        <sphereGeometry args={[0.012, 16, 12]} />
-        <meshBasicMaterial color={MORADO_OSCURO} />
-      </mesh>
-      <mesh position={[0.042, 0.04, 0.50]}>
-        <sphereGeometry args={[0.012, 16, 12]} />
-        <meshBasicMaterial color={MORADO_OSCURO} />
-      </mesh>
-
-      {/* Ojos elevados en cuencas superiores de la cabeza */}
-      <OjoGecko
-        posicion={[-0.14, 0.18, 0.12]}
-        rotacionY={-0.16}
-        rotacionZ={0.08}
-        seguirCursor={mirarCursor}
-        escala={1}
-        asustado={asustado}
-      />
-      <OjoGecko
-        posicion={[0.14, 0.18, 0.12]}
-        rotacionY={0.16}
-        rotacionZ={-0.08}
-        seguirCursor={mirarCursor}
-        escala={1}
-        asustado={asustado}
-      />
-
-      {/* Línea tallada de la sonrisa */}
-      <mesh position={[0, 0, 0.02]}>
-        <tubeGeometry args={[curvaSonrisa, 48, 0.016, 12, false]} />
-        <meshPhysicalMaterial color={MORADO_OSCURO} roughness={0.7} />
-      </mesh>
-
-      {/* Lengua asomándose ligeramente cuando está contenta */}
-      {estaContenta && (
-        <mesh position={[0, -0.08, 0.40]} scale={[0.14, 0.04, 0.12]} castShadow>
-          <sphereGeometry args={[1, 24, 18]} />
-          <meshPhysicalMaterial color={ROSA_LENGUA} roughness={0.4} clearcoat={0.1} />
-        </mesh>
-      )}
-
-      {/* Hendidura bucal suave al sorprenderse */}
-      {asustado && (
-        <mesh position={[0, -0.08, 0.42]} scale={[0.12, 0.14, 0.06]}>
-          <sphereGeometry args={[1, 24, 18]} />
-          <meshBasicMaterial color={BOCA_FONDO} />
-        </mesh>
-      )}
-    </group>
-  );
-};
-
-/** Modelo completo orgánico y armónico de Luki */
-const ModeloLuki: React.FC<{
-  estado: EstadoLuki;
-  gesto: GestoLuki;
-  mirarCursor: boolean;
-}> = ({ estado, gesto, mirarCursor }) => {
-  const lukiRef = useRef<THREE.Group>(null);
+/** Modelo completo estático y fiel de Luki (Idéntico al render 3D oficial) */
+const ModeloLuki: React.FC = () => {
   const texturaPiel = useMemo(crearTexturaPiel, []);
 
   useEffect(() => {
@@ -699,33 +467,26 @@ const ModeloLuki: React.FC<{
     };
   }, [texturaPiel]);
 
-  useFrame(({ clock }) => {
-    if (!lukiRef.current) return;
-    const respirar = Math.sin(clock.elapsedTime * 2.2) * 0.012;
-    lukiRef.current.scale.set(1 + respirar * 0.25, 1 + respirar, 1 + respirar * 0.25);
-    lukiRef.current.position.y =
-      -0.06 + (estado === 'contenta' ? Math.abs(Math.sin(clock.elapsedTime * 5.4)) * 0.06 : 0);
-  });
-
   return (
-    <group ref={lukiRef} rotation={[0.02, -0.16, -0.02]}>
-      {/* Cola fluida de gecko curvada hacia arriba */}
-      <ColaGecko gesto={gesto} />
+    // Pose en tres cuartos dinámica con leve giro
+    <group rotation={[0.02, -0.14, -0.02]}>
+      {/* Cola de gecko en arco ascendente detrás del brazo derecho */}
+      <ColaGecko />
 
-      {/* Brazos orgánicos continuos */}
-      <BrazoGecko lado={-1} gesto={gesto} estado={estado} />
-      <BrazoGecko lado={1} gesto={gesto} estado={estado} />
+      {/* Brazos flexionando bíceps con fuerza y orgullo */}
+      <BrazoFlex lado={-1} />
+      <BrazoFlex lado={1} />
 
-      {/* Patas con ventosas de succión planas */}
+      {/* Patas con postura ancha y dedos con ventosas planas */}
       <PiernaGecko lado={-1} />
       <PiernaGecko lado={1} />
 
-      {/* Torso torneado con LatheGeometry (128 sectores de ultra-alta resolución) */}
+      {/* Torso esbelto torneado en alta definición (128 sectores) */}
       <mesh position={[0, -0.02, 0]} castShadow receiveShadow>
         <latheGeometry args={[PERFIL_TORSO, 128]} />
         <meshPhysicalMaterial
           color={MORADO_BASE}
-          roughness={0.82}
+          roughness={0.78}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.12}
@@ -735,12 +496,12 @@ const ModeloLuki: React.FC<{
         />
       </mesh>
 
-      {/* Barriga en lila mate suave ajustada al torso */}
-      <mesh position={[0, 0.06, 0.23]} scale={[0.42, 0.74, 0.10]}>
-        <capsuleGeometry args={[0.42, 0.44, 32, 64]} />
+      {/* Barriga en lila mate continuo desde el pecho hasta abajo */}
+      <mesh position={[0, 0.04, 0.22]} scale={[0.48, 0.80, 0.12]}>
+        <capsuleGeometry args={[0.38, 0.44, 32, 64]} />
         <meshPhysicalMaterial
           color={LILA_BARRIGA}
-          roughness={0.85}
+          roughness={0.82}
           metalness={0.0}
           clearcoat={0.0}
           sheen={0.1}
@@ -750,17 +511,13 @@ const ModeloLuki: React.FC<{
         />
       </mesh>
 
-      {/* Cabeza de gecko esculpida con ojos, hocico y boca */}
-      <CabezaGecko
-        estado={estado}
-        mirarCursor={mirarCursor}
-        texturaPiel={texturaPiel}
-      />
+      {/* Cabeza ancha de gecko con ojos elevados e inclinación alegre */}
+      <CabezaGecko texturaPiel={texturaPiel} />
 
       {/* Sombra de contacto suave en el suelo */}
       <mesh position={[0, -1.02, 0.08]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[0.72, 48]} />
-        <meshBasicMaterial color="#220a3b" transparent opacity={0.14} depthWrite={false} />
+        <meshBasicMaterial color="#1a0632" transparent opacity={0.18} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -772,60 +529,30 @@ export const Luki: React.FC<LukiProps> = ({
   size = 160,
   estado = 'quieta',
   gesto = 'presume',
-  mirarCursor = true,
-  reaccionaAlTocar = true,
-  autoAnimar = true,
   alt = 'Luki, la mascota de LukApp',
 }) => {
-  const [estadoTemporal, setEstadoTemporal] = useState<EstadoLuki | null>(null);
-  const [gestoTemporal, setGestoTemporal] = useState<GestoLuki | null>(null);
-  const estadoVisible = estadoTemporal ?? estado;
-  const gestoVisible = gestoTemporal ?? gesto;
-
-  useEffect(() => {
-    if (!autoAnimar) return undefined;
-    const acciones: readonly GestoLuki[] = ['saluda', 'idea', 'presume', 'equilibrio', 'mareada'];
-    let indice = 0;
-    const intervalo = window.setInterval(() => {
-      setGestoTemporal(acciones[indice % acciones.length]);
-      indice += 1;
-      window.setTimeout(() => setGestoTemporal(null), 1800);
-    }, 7000);
-    return () => window.clearInterval(intervalo);
-  }, [autoAnimar]);
-
-  const celebrar = () => {
-    if (!reaccionaAlTocar) return;
-    setEstadoTemporal('contenta');
-    setGestoTemporal('saluda');
-    window.setTimeout(() => {
-      setEstadoTemporal(null);
-      setGestoTemporal(null);
-    }, 1000);
-  };
-
   return (
     <div
       className={`luki-3d ${className}`}
       style={{ '--tamano-luki': `${size}px` } as React.CSSProperties}
       role="img"
       aria-label={alt}
-      data-gesto={gestoVisible}
+      data-gesto={gesto}
+      data-estado={estado}
     >
       <Canvas
-        camera={{ position: [0, 0.26, 6.2], fov: 31 }}
+        camera={{ position: [0, 0.16, 5.8], fov: 32 }}
         dpr={[2, 3]}
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         shadows
-        onClick={celebrar}
       >
-        {/* Iluminación de estudio suave y difusa (acabado arcilla mate sin brillos agresivos) */}
-        <ambientLight intensity={0.95} color="#f6f0ff" />
-        <hemisphereLight args={['#f8f2ff', '#220644', 0.8]} />
-        <directionalLight position={[-2.5, 3.5, 4.5]} intensity={1.6} color="#fffbfa" castShadow />
-        <directionalLight position={[3.0, 1.0, 2.0]} intensity={0.7} color="#d6c5fa" />
-        <directionalLight position={[0.0, 3.0, -4.0]} intensity={1.2} color="#8b4df5" />
-        <ModeloLuki estado={estadoVisible} gesto={gestoVisible} mirarCursor={mirarCursor} />
+        {/* Iluminación de estudio suave difusa idéntica al render oficial */}
+        <ambientLight intensity={1.1} color="#f6f0ff" />
+        <hemisphereLight args={['#f8f2ff', '#1a0438', 0.85]} />
+        <directionalLight position={[-2.2, 3.8, 4.2]} intensity={1.8} color="#fffbfa" castShadow />
+        <directionalLight position={[3.2, 1.2, 2.2]} intensity={0.7} color="#d4c0fa" />
+        <directionalLight position={[0.0, 3.2, -3.8]} intensity={1.3} color="#8a4bf5" />
+        <ModeloLuki />
       </Canvas>
     </div>
   );

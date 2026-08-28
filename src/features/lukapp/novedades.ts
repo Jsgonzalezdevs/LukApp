@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.33',
+    fecha: '2026-08-28',
+    texto: 'Pose de fuerza oficial de Luki: clonado milimétrico de la referencia de marca (cabeza espátula inclinada, ojos en coronilla, brazos en flexión y barriga continua).',
+  },
+  {
     version: '1.11.32',
     fecha: '2026-08-28',
     texto: 'Modelado facial refinado de Luki: sonrisa tallada continua, mandíbula esculpida, ojos expresivos integrados y conexión anatómica natural de hombros.',
