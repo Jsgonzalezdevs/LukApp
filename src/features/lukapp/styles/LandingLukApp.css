@@ -718,9 +718,40 @@
   margin-bottom: 0.6rem;
 }
 
+.landing-finanzas .cta-luki {
+  width: clamp(96px, 13vw, 148px);
+  display: block;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0.6rem;
+}
+
+/* El lienzo ocupa el mismo espacio que usaba la ilustración, pero ahora Luki
+   se renderiza como mallas WebGL con profundidad y no como un dibujo plano. */
+.landing-finanzas .luki-3d {
+  width: min(var(--tamano-luki, 160px), 100%);
+  aspect-ratio: 0.8;
+}
+
+.landing-finanzas .cta-luki.luki-3d {
+  width: clamp(145px, 18vw, 200px);
+}
+
+.landing-finanzas .luki-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  cursor: pointer;
+}
+
 /* La cabecera de registro centra sus hijos con `text-align`, que no mueve un
    inline-flex: se centra a mano. */
 .landing-finanzas .registro-cabecera .cta-estrella {
+  align-self: center;
+  margin-inline: auto;
+}
+
+.landing-finanzas .registro-cabecera .cta-luki {
   align-self: center;
   margin-inline: auto;
 }

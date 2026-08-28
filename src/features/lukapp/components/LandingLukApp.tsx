@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { BrandWordmark } from './BrandWordmark';
-import { Estrella } from './Estrella';
 import { Hero } from './landing/Hero';
 import { DemoParser } from './landing/DemoParser';
 import { Funciones } from './landing/Funciones';
@@ -16,6 +15,7 @@ import { SeccionApplePay } from './landing/SeccionApplePay';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
+import { Luki } from './Luki';
 import '../styles/LandingLukApp.css';
 
 /* La cinta que corre bajo el hero. Son frases que la app de verdad entiende
@@ -161,9 +161,10 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       ) : (
         <section className="final-cta">
           <Reveal>
-            {/* El único sitio de la portada con aire para el personaje entero:
-                despedida, no adorno repetido a lo largo de la página. */}
-            <Estrella variante="cuerpo" className="cta-estrella" />
+            {/* La pose maestra se usa aquí sin reinterpretarla: es la referencia
+                visual aprobada para Luki y evita que el cierre compita con la
+                Estrella, reservada para el asesor IA. */}
+            <Luki className="cta-luki" gesto="presume" />
             <h2>¿Listo?</h2>
             <p>Toma el control de tu dinero desde hoy.</p>
             <button className="btn-primary-lg" onClick={handleGetStarted}>

@@ -23,6 +23,141 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.27',
+    fecha: '2026-08-28',
+    texto: 'Completamos a Luki en 3D: pose en tres cuartos, asimetrías naturales, hocico estilizado, ojos expresivos y animaciones interactivas en código.',
+  },
+  {
+    version: '1.11.26',
+    fecha: '2026-08-28',
+    texto: 'Pulimos el modelo 3D de Luki con torso proporcional, cuello continuo, reflejos suaves y movimiento natural de la cabeza.',
+  },
+  {
+    version: '1.11.25',
+    fecha: '2026-08-28',
+    texto: 'Ajustamos la pose 3D de Luki con brazos continuos, ojos más cercanos y una cola de curva suave terminada en punta.',
+  },
+  {
+    version: '1.11.24',
+    fecha: '2026-08-28',
+    texto: 'Luki ahora es un personaje 3D real: tiene mallas, luces, profundidad, cola puntiaguda y animaciones sin usar imágenes.',
+  },
+  {
+    version: '1.11.23',
+    fecha: '2026-08-28',
+    texto: 'Reconstruimos la pose base de Luki: hocico bajo, ojos más vivos, brazos en flexión y silueta de lagartija esbelta.',
+  },
+  {
+    version: '1.11.22',
+    fecha: '2026-08-28',
+    texto: 'Afinamos la cola y las extremidades de Luki para recuperar una silueta delgada, dinámica y más cercana a la referencia.',
+  },
+  {
+    version: '1.11.21',
+    fecha: '2026-08-28',
+    texto: 'Redibujamos el torso de Luki con hombros y cadera más suaves, manteniendo el cuello estrecho de la referencia.',
+  },
+  {
+    version: '1.11.20',
+    fecha: '2026-08-28',
+    texto: 'Pulimos el volumen de Luki con luz radial en la cabeza y una sombra suave bajo los pies, sin añadir rasgos nuevos.',
+  },
+  {
+    version: '1.11.19',
+    fecha: '2026-08-28',
+    texto: 'Reconstruimos la unión de cabeza y cuello de Luki y cambiamos las patas por pies pequeños con dedos definidos.',
+  },
+  {
+    version: '1.11.18',
+    fecha: '2026-08-28',
+    texto: 'Ajustamos el violeta de Luki con los tonos reales de la referencia para que el personaje se sienta más suave y natural.',
+  },
+  {
+    version: '1.11.17',
+    fecha: '2026-08-28',
+    texto: 'Afinamos la silueta de Luki para acercarla a la referencia: cabeza baja, proporción horizontal y cola curva.',
+  },
+  {
+    version: '1.11.16',
+    fecha: '2026-08-28',
+    texto: 'Mejoramos la comprobación de las acciones de Luki para asegurar que sus gestos se activen desde el componente SVG.',
+  },
+  {
+    version: '1.11.15',
+    fecha: '2026-08-28',
+    texto: 'Retiramos los recursos de imagen de Luki: la mascota de la landing vive íntegramente en código SVG.',
+  },
+  {
+    version: '1.11.14',
+    fecha: '2026-08-28',
+    texto: 'Luki vuelve a estar hecho completamente en código: respira, parpadea y cambia de acción sin usar imágenes.',
+  },
+  {
+    version: '1.11.13',
+    fecha: '2026-08-28',
+    texto: 'Luki ahora respira, parpadea, alterna acciones y celebra cuando la tocas en la landing.',
+  },
+  {
+    version: '1.11.12',
+    fecha: '2026-08-28',
+    texto: 'La pose maestra de Luki se muestra ahora directamente en la landing con su composición original.',
+  },
+  {
+    version: '1.11.11',
+    fecha: '2026-08-28',
+    texto: 'Luki vuelve a quedar al frente de la sección de registro, sin que los fondos decorativos oculten su pose.',
+  },
+  {
+    version: '1.11.10',
+    fecha: '2026-08-28',
+    texto: 'Actualizamos la carga de Luki para que la pose aprobada se vea siempre completa, incluso después de cambios de diseño.',
+  },
+  {
+    version: '1.11.9',
+    fecha: '2026-08-28',
+    texto: 'Corregimos la visualización de la pose maestra de Luki para que se muestre completa en todos los navegadores.',
+  },
+  {
+    version: '1.11.8',
+    fecha: '2026-08-28',
+    texto: 'Luki usa ahora su pose maestra aprobada en la landing, conservando exactamente su silueta y expresión.',
+  },
+  {
+    version: '1.11.7',
+    fecha: '2026-08-28',
+    texto: 'Ajustamos la pose de Luki: cabeza y mandíbula más finas, ojos más juntos, cuerpo compacto y cola más alta.',
+  },
+  {
+    version: '1.11.6',
+    fecha: '2026-08-28',
+    texto: 'Rediseñamos a Luki con una silueta más fiel: cabeza baja, mandíbula fina, cuerpo compacto y brazos flexionados.',
+  },
+  {
+    version: '1.11.5',
+    fecha: '2026-08-28',
+    texto: 'Luki ahora aparece tanto en el cierre público como en el registro, para acompañarte sin importar cómo llegues a la landing.',
+  },
+  {
+    version: '1.11.4',
+    fecha: '2026-08-28',
+    texto: 'Luki suma gestos animables: puede saludar, tener una idea, perder el equilibrio o marearse según lo que pase en la web.',
+  },
+  {
+    version: '1.11.3',
+    fecha: '2026-08-28',
+    texto: 'Luki ya acompaña el cierre de la landing: parpadea, sigue tu cursor y celebra cuando la tocas.',
+  },
+  {
+    version: '1.11.2',
+    fecha: '2026-08-28',
+    texto: 'Luki ya es interactiva: parpadea, sigue el cursor y cambia de gesto para acompañar la experiencia de la web.',
+  },
+  {
+    version: '1.11.1',
+    fecha: '2026-08-28',
+    texto: 'Nueva mascota de LukApp: una lagartija violeta expresiva, con una hoja de gestos lista para usarse en la web.',
+  },
+  {
     version: '1.11.0',
     fecha: '2026-08-28',
     texto: 'Base técnica para espacios compartidos reales: invitaciones seguras por enlace, membresías separadas y permisos para colaborar sin exponer las finanzas personales.',
