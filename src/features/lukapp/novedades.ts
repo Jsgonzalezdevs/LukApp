@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.0',
+    fecha: '2026-08-28',
+    texto: 'Base técnica para espacios compartidos reales: invitaciones seguras por enlace, membresías separadas y permisos para colaborar sin exponer las finanzas personales.',
+  },
+  {
     version: '1.10.3',
     fecha: '2026-08-28',
     texto: 'Protegemos tus datos: una respuesta vacía o incompleta del servidor ya no reemplaza silenciosamente tus cuentas, saldos ni movimientos guardados en el dispositivo.',
