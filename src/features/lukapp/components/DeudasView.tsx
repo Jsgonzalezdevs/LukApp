@@ -11,7 +11,7 @@ import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { bogotaDate, monthKey } from '../lib/localDate';
-import { pagoMensualTarjeta } from '../lib/cuotasTarjeta';
+import { pagoPendienteTarjeta } from '../lib/cuotasTarjeta';
 import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
 
@@ -88,7 +88,7 @@ const DeudaCard: React.FC<{
     .filter((tx) => tx.cuentaId === cajita.id)
     .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
   const pagoDelMes = cajita.tipo === 'tarjeta'
-    ? pagoMensualTarjeta(transacciones, cajita.id, monthKey(bogotaDate()))
+    ? pagoPendienteTarjeta(transacciones, movimientos, cajita.id, monthKey(bogotaDate()), bogotaDate())
     : 0;
   const Icono = iconoDeCajita(cajita.icon);
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
