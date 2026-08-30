@@ -336,6 +336,10 @@ export const tokenize = (input: string): Token[] => {
   return out;
 };
 
+/** Normalización de frase completa para reconocer etiquetas del comprobante. */
+const normalizarTextoOCR = (texto: string): string =>
+  normalizeWord(texto).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
 /** Every maximal numeral in the input, with the token span it occupies. */
 export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
   const norms = tokens.map((t) => t.norm);
@@ -356,7 +360,12 @@ export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
     if (match.hasScale) score += 3;
     if (match.value >= 1000) score += 2;
 
-    const STRONG_CUES = new Set(['$', 'usd', 'cop', 'cuanto', 'valor']);
+    // En facturas y comprobantes suele haber fecha, referencia y número de
+    // cuenta antes del dinero. Estas etiquetas hacen que el total real gane
+    // sobre esos números incidentales.
+    const STRONG_CUES = new Set([
+      '$', 'usd', 'cop', 'cuanto', 'valor', 'total', 'importe', 'monto', 'pagado', 'recibido',
+    ]);
     if (before) {
       if (AMOUNT_CUES.has(before)) score += 5;
       if (STRONG_CUES.has(before)) score += 15;
@@ -806,6 +815,22 @@ export const parseTransaction = (
       for (let k = kindMatches[m].startIndex; k < kindMatches[m].endIndex; k++) {
         consumed[k] = true;
       }
+    }
+  }
+
+  if (kindSource === 'default' && raw.startsWith('[OCR]')) {
+    const ocrNormalizado = normalizarTextoOCR(raw);
+    const esIngresoEnComprobante = /\b(?:transferencia|pago|abono|deposito|dinero|saldo) recibid[oa]\b|\bingreso\b|\bcredito aplicado\b|\bsaldo a favor\b/.test(
+      ocrNormalizado,
+    );
+    const esEgresoEnComprobante = /\b(?:envio|transferencia|pago) realizad[oa]\b|\bcompra aprobada\b|\bdebito\b|\bcobro exitoso\b|\btotal a pagar\b|\bgracias por su compra\b/.test(
+      ocrNormalizado,
+    );
+    if (esIngresoEnComprobante || esEgresoEnComprobante) {
+      kind = esIngresoEnComprobante ? 'ingreso' : 'gasto';
+      // Es una señal explícita del documento, con la misma fuerza que una
+      // palabra de dirección pronunciada por la persona.
+      kindSource = 'keyword';
     }
   }
 

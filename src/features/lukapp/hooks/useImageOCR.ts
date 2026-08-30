@@ -6,7 +6,10 @@ const prepararImagen = async (file: File): Promise<Blob | File> => {
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const MAX_DIM = 1200;
+      // Una factura suele traer letra bastante más pequeña que un recibo de
+      // transferencia. 2.000 px mantiene legible ese detalle sin mandar una
+      // foto original enorme al worker de OCR.
+      const MAX_DIM = 2000;
       let width = img.width;
       let height = img.height;
       if (width > MAX_DIM || height > MAX_DIM) {
@@ -29,7 +32,7 @@ const prepararImagen = async (file: File): Promise<Blob | File> => {
       // Los comprobantes suelen tener letra pequeña sobre fondos con degradado.
       // Este contraste moderado ayuda al OCR sin convertir una foto normal en
       // una imagen ilegible ni depender de servicios externos.
-      ctx.filter = 'grayscale(1) contrast(1.45) brightness(1.08)';
+      ctx.filter = 'grayscale(1) contrast(1.55) brightness(1.1)';
       ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(
         (blob) => {
@@ -73,6 +76,7 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
       const text = result.data.text;
       const cleanText = text
         .replace(/[|]/g, 'I')
+        .replace(/[“”]/g, '"')
         .replace(/\n+/g, ' ')
         .replace(/\s{2,}/g, ' ')
         .trim();
@@ -81,6 +85,8 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
         throw new Error('La imagen no contenía texto legible');
       }
 
+      // El prefijo permite al parser aplicar reglas propias de facturas y
+      // comprobantes, sin confundirlas con un dictado normal.
       onSuccess(`[OCR] ${cleanText}`);
     } catch (err) {
       console.error('Error procesando imagen con OCR:', err);

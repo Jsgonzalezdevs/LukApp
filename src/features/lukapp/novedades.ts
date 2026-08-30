@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.12.0',
+    fecha: '2026-08-30',
+    texto: 'Registro por imagen completo: analiza fotos, facturas y comprobantes, identifica el total y te muestra si detectó un ingreso o un gasto antes de guardarlo.',
+  },
+  {
     version: '1.11.37',
     fecha: '2026-08-30',
     texto: 'Mejoramos el control de versiones: cada entrega queda identificada también en el mensaje de su commit.',

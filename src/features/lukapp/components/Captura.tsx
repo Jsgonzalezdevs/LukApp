@@ -69,6 +69,7 @@ export const Captura: React.FC<CapturaProps> = ({
   const [editandoTexto, setEditandoTexto] = useState(false);
   const [desplegarCuentas, setDesplegarCuentas] = useState(false);
   const [pidiendoCuenta, setPidiendoCuenta] = useState(false);
+  const [resultadoImagen, setResultadoImagen] = useState<TxKind | null>(null);
 
   // Cuentas bancarias disponibles activas
   const cuentasActivas = useMemo(
@@ -127,7 +128,12 @@ export const Captura: React.FC<CapturaProps> = ({
     }
   };
 
-  const { scanImage: escanearEnCaptura, isScanning: escaneandoFoto, progress: progresoFoto } = useImageOCR((ocrText) => {
+  const {
+    scanImage: escanearEnCaptura,
+    isScanning: escaneandoFoto,
+    progress: progresoFoto,
+    error: errorImagen,
+  } = useImageOCR((ocrText) => {
     haptic.trigger('medium');
     audio.play('click');
     const reparseado = parseTransaction(ocrText, cuentasActivas, categorias, lexico, transacciones);
@@ -143,6 +149,7 @@ export const Captura: React.FC<CapturaProps> = ({
     }
     if (reparseado.kind) {
       setKind(reparseado.kind);
+      setResultadoImagen(reparseado.kind);
     }
     if (reparseado.cuentaId) {
       setCuentaId(reparseado.cuentaId);
@@ -372,6 +379,19 @@ export const Captura: React.FC<CapturaProps> = ({
           <Loader2 className="h-4 w-4 animate-spin" />
           Escaneando comprobante con IA… {Math.round(progresoFoto * 100)}%
         </div>
+      ) : null}
+      {!escaneandoFoto && resultadoImagen ? (
+        <div className={`mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border py-2 px-3 text-[12.5px] font-semibold ${
+          resultadoImagen === 'ingreso'
+            ? 'border-[var(--fin-in)]/25 bg-[var(--fin-in)]/10 text-[var(--fin-in)]'
+            : 'border-[var(--fin-out)]/25 bg-[var(--fin-out)]/10 text-[var(--fin-out)]'
+        }`}>
+          <Check className="h-4 w-4" />
+          Imagen analizada: {resultadoImagen === 'ingreso' ? 'Ingreso detectado' : 'Gasto detectado'} · Revisa antes de guardar
+        </div>
+      ) : null}
+      {!escaneandoFoto && errorImagen ? (
+        <p className="mt-2 text-center text-[12px] font-medium text-[var(--fin-out)]">{errorImagen}</p>
       ) : null}
 
       {/* Selector Plegable de Banco / Cuenta */}

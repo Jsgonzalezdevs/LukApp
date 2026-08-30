@@ -309,6 +309,26 @@ describe('parseTransaction — description', () => {
     expect(tx.description).not.toContain('Escanea');
     expect(tx.description).toBe('Transferencia');
   });
+
+  it('prioriza el total y la dirección explícita de facturas y comprobantes', () => {
+    const factura = parseTransaction(
+      '[OCR] FACTURA DE VENTA Fecha 28/08/2026 Referencia 989010 Total a pagar $ 128.900 Gracias por su compra',
+    );
+    expect(factura.kind).toBe('gasto');
+    expect(factura.amount).toBe(128900);
+
+    const recibido = parseTransaction(
+      '[OCR] Comprobante Transferencia recibida Fecha 28/08/2026 Valor $ 350.000 Referencia 123456',
+    );
+    expect(recibido.kind).toBe('ingreso');
+    expect(recibido.amount).toBe(350000);
+
+    const enviado = parseTransaction(
+      '[OCR] Envío realizado exitosamente Valor $ 85.000 Cuenta destino 123456789',
+    );
+    expect(enviado.kind).toBe('gasto');
+    expect(enviado.amount).toBe(85000);
+  });
 });
 
 describe('parseTransaction — confidence', () => {
