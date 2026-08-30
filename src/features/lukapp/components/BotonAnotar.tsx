@@ -31,6 +31,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectorFotosAbiertoRef = useRef(false);
 
   const [overlayAbierto, setOverlayAbierto] = useState(false);
   const [textoRevelado, setTextoRevelado] = useState<string | null>(null);
@@ -39,6 +40,16 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   // los dos toques que un móvil puede entregar antes de que aparezca la fase
   // de procesamiento: solo el primero puede detener la grabación.
   const confirmacionEnCursoRef = useRef(false);
+
+  useEffect(() => {
+    const liberarSelectorAlVolver = () => {
+      if (!selectorFotosAbiertoRef.current) return;
+      selectorFotosAbiertoRef.current = false;
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+    window.addEventListener('focus', liberarSelectorAlVolver);
+    return () => window.removeEventListener('focus', liberarSelectorAlVolver);
+  }, []);
 
   const manejarTextoFinal = useCallback((texto: string) => {
     if (descartadoRef.current) {
@@ -154,6 +165,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         accept="image/*"
         className="hidden"
         onChange={(e) => {
+          selectorFotosAbiertoRef.current = false;
           const file = e.target.files?.[0];
           if (file) {
             haptic.trigger('medium');
@@ -198,7 +210,11 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             onClick={() => {
               haptic.trigger('light');
               audio.play('click');
-              fileInputRef.current?.click();
+              if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+                selectorFotosAbiertoRef.current = true;
+                fileInputRef.current.click();
+              }
             }}
             aria-label="Escanear comprobante o foto"
             title="Escanear recibo o comprobante de Nequi / Bancolombia"

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.16.1',
+    fecha: '2026-08-30',
+    texto: 'Cancelar el selector de fotos ya no bloquea la cámara: puedes volver a abrir Archivos y elegir tu comprobante enseguida.',
+  },
+  {
     version: '1.16.0',
     fecha: '2026-08-30',
     texto: 'Nueva sección de Tarjetas de crédito: consulta cuántas tienes, la deuda total, cada banco y agrega tarjetas para registrar tus compras.',

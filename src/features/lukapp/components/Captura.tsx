@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Loader2, Sparkles, Star, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
@@ -98,9 +98,31 @@ export const Captura: React.FC<CapturaProps> = ({
   const descRef = useRef<HTMLTextAreaElement>(null);
   const capturaRef = useRef<HTMLDivElement>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
+  const selectorFotosAbiertoRef = useRef(false);
   const catalogo = useCatalogo();
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+
+  const abrirSelectorFotos = () => {
+    const selector = fotoInputRef.current;
+    if (!selector) return;
+    // Safari conserva el valor del selector si se vuelve desde Archivos sin
+    // elegir nada. Limpiarlo antes de cada apertura hace que el siguiente toque
+    // siempre sea una solicitud nueva, incluso si se intenta la misma foto.
+    selector.value = '';
+    selectorFotosAbiertoRef.current = true;
+    selector.click();
+  };
+
+  useEffect(() => {
+    const liberarSelectorAlVolver = () => {
+      if (!selectorFotosAbiertoRef.current) return;
+      selectorFotosAbiertoRef.current = false;
+      if (fotoInputRef.current) fotoInputRef.current.value = '';
+    };
+    window.addEventListener('focus', liberarSelectorAlVolver);
+    return () => window.removeEventListener('focus', liberarSelectorAlVolver);
+  }, []);
 
   // Inferencia en tiempo real cuando el usuario escribe en la descripción
   const handleDescriptionChange = (texto: string) => {
@@ -336,6 +358,7 @@ export const Captura: React.FC<CapturaProps> = ({
             accept="image/*"
             className="hidden"
             onChange={(e) => {
+              selectorFotosAbiertoRef.current = false;
               const file = e.target.files?.[0];
               if (file) {
                 haptic.trigger('medium');
@@ -350,7 +373,7 @@ export const Captura: React.FC<CapturaProps> = ({
             type="button"
             onClick={() => {
               if (onFoto) onFoto();
-              else fotoInputRef.current?.click();
+              else abrirSelectorFotos();
             }}
             disabled={escaneandoFoto}
             aria-label="Escanear comprobante"
