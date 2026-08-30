@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.3',
+    fecha: '2026-08-30',
+    texto: 'Si una pantalla falla inesperadamente, LukApp ya no queda en blanco: explica cómo volver a abrirla sin poner en riesgo tus datos guardados.',
+  },
+  {
     version: '2.0.2',
     fecha: '2026-08-30',
     texto: 'El dictado ahora se recupera si el micrófono se desconecta de golpe, sin quedarse bloqueado ni intentar guardar una nota incompleta.',
