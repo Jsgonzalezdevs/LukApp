@@ -878,10 +878,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 ) : null;
               })()
             ) : /* Si no hay ID, mostrar lista de todas las cajitas del tipo */
-            panelDinero === 'deuda' ? (
+            panelDinero === 'deuda' || panelDinero === 'tarjeta' ? (
               <DeudasView
+                soloTipo={panelDinero === 'tarjeta' ? 'tarjeta' : 'deuda'}
                 cajitas={cajitas}
                 movimientos={cajitaMovimientos}
+                transacciones={transacciones}
                 onCrear={(datos) => void almacen.crearCajita(datos)}
                 onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
                 onMovimiento={(cajitaId, kind, deltaCop, categoria) =>

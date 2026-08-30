@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
+import type { Transaction } from '../types';
 import { DeudasView } from './DeudasView';
 
 const caj = (over: Partial<Cajita> = {}): Cajita => ({
@@ -27,6 +28,21 @@ const mov = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => ({
   ...over,
 });
 
+const compra = (over: Partial<Transaction> = {}): Transaction => ({
+  id: 't1',
+  kind: 'gasto',
+  amountCop: 899_259,
+  category: 'educacion',
+  description: 'Bold Sa*Platzi',
+  occurredOn: '2026-08-29',
+  cuentaId: 'd1',
+  rawTranscript: '',
+  cuotasTotal: 12,
+  cuotaCop: 74_938,
+  createdAt: '2026-08-29T12:00:00.000Z',
+  ...over,
+});
+
 const montar = (props: Partial<React.ComponentProps<typeof DeudasView>> = {}) => {
   const onCrear = vi.fn();
   const onFijarSaldo = vi.fn();
@@ -38,6 +54,7 @@ const montar = (props: Partial<React.ComponentProps<typeof DeudasView>> = {}) =>
     <DeudasView
       cajitas={[caj()]}
       movimientos={[mov()]}
+      transacciones={[]}
       onCrear={onCrear}
       onFijarSaldo={onFijarSaldo}
       onMovimiento={onMovimiento}
@@ -60,7 +77,7 @@ describe('DeudasView', () => {
     // absence of a minus rather than on a single node.
     expect(screen.getAllByText('$200.000').length).toBeGreaterThan(0);
     expect(screen.queryByText('-$200.000')).not.toBeInTheDocument();
-    expect(screen.getByText('debes')).toBeInTheDocument();
+    expect(screen.getByText('saldo usado')).toBeInTheDocument();
   });
 
   it('only counts debts and cards, never accounts or pockets', () => {
@@ -71,6 +88,24 @@ describe('DeudasView', () => {
 
     expect(screen.queryByText('Ahorros')).not.toBeInTheDocument();
     expect(screen.queryByText('$5.000.000')).not.toBeInTheDocument();
+  });
+
+  it('includes purchases captured by voice or a receipt in the card balance and history', () => {
+    montar({ movimientos: [], transacciones: [compra()] });
+
+    expect(screen.getAllByText('$899.259').length).toBeGreaterThan(0);
+    expect(screen.getByText('Bold Sa*Platzi')).toBeInTheDocument();
+    expect(screen.getByText(/12 cuotas de \$74\.938/)).toBeInTheDocument();
+  });
+
+  it('makes this month\'s card payment visible without reducing available money', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-30T12:00:00-05:00'));
+    montar({ movimientos: [], transacciones: [compra()] });
+
+    expect(screen.getByText('Para pagar este mes')).toBeInTheDocument();
+    expect(screen.getByText('$74.938')).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it('a purchase RAISES what you owe', () => {

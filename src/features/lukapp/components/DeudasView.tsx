@@ -3,18 +3,25 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CreditCard, Plus, Trash2 } from 'lucide-react';
 import { CATEGORIES, CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { Category } from '../types';
+import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS, CAJITA_MOV_LABELS, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
 import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
+import { bogotaDate, monthKey } from '../lib/localDate';
+import { pagoMensualTarjeta } from '../lib/cuotasTarjeta';
 import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
 
 interface DeudasViewProps {
+  /** La sección de tarjetas no debe mezclar préstamos en el flujo rápido. */
+  soloTipo?: 'tarjeta' | 'deuda';
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
+  /** Compras creadas desde voz, texto o comprobantes atribuidas a una tarjeta. */
+  transacciones: readonly Transaction[];
   onCrear: (datos: {
     nombre: string;
     icon: string;
@@ -50,6 +57,7 @@ const DeudaCard: React.FC<{
   cajita: Cajita;
   saldoCop: number;
   movimientos: readonly CajitaMovimiento[];
+  transacciones: readonly Transaction[];
   onFijarSaldo: DeudasViewProps['onFijarSaldo'];
   onMovimiento: DeudasViewProps['onMovimiento'];
   onEliminar: DeudasViewProps['onEliminar'];
@@ -59,6 +67,7 @@ const DeudaCard: React.FC<{
   cajita,
   saldoCop,
   movimientos,
+  transacciones,
   onFijarSaldo,
   onMovimiento,
   onEliminar,
@@ -75,6 +84,12 @@ const DeudaCard: React.FC<{
   const [confirmando, setConfirmando] = useState(false);
 
   const historial = historialDeCajita(movimientos, cajita.id);
+  const comprasRegistradas = transacciones
+    .filter((tx) => tx.cuentaId === cajita.id)
+    .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
+  const pagoDelMes = cajita.tipo === 'tarjeta'
+    ? pagoMensualTarjeta(transacciones, cajita.id, monthKey(bogotaDate()))
+    : 0;
   const Icono = iconoDeCajita(cajita.icon);
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
   const valor = leer(texto);
@@ -122,7 +137,9 @@ const DeudaCard: React.FC<{
           <p className="mt-0.5 text-[28px] font-semibold tabular-nums text-[var(--fin-out)]">
             <AnimatedNumber value={saldoCop} format={formatCop} />
           </p>
-          <p className="text-[13px] text-[var(--fin-ink-faint)]">debes</p>
+          <p className="text-[13px] text-[var(--fin-ink-faint)]">
+            {cajita.tipo === 'tarjeta' ? 'saldo usado' : 'debes'}
+          </p>
         </div>
 
         <button
@@ -134,6 +151,18 @@ const DeudaCard: React.FC<{
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
         </button>
       </div>
+
+      {pagoDelMes > 0 ? (
+        <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-3 py-2.5">
+          <p className="text-[13px] font-semibold text-[var(--fin-out-ink)]">Para pagar este mes</p>
+          <p className="mt-0.5 text-[20px] font-semibold tabular-nums text-[var(--fin-out)]">
+            {formatCop(pagoDelMes)}
+          </p>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--fin-out-ink)]">
+            Es la suma de tus cuotas vigentes; abónala desde una cuenta cuando la pagues.
+          </p>
+        </div>
+      ) : null}
 
       {confirmando ? (
         <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-3">
@@ -305,15 +334,44 @@ const DeudaCard: React.FC<{
           ))}
         </ul>
       ) : (
-        <p className="mt-3 px-1 text-[13px] text-[var(--fin-ink-faint)]">Sin cargos todavía.</p>
+        <p className="mt-3 px-1 text-[13px] text-[var(--fin-ink-faint)]">Sin movimientos manuales todavía.</p>
       )}
+
+      {comprasRegistradas.length > 0 ? (
+        <div className="mt-3">
+          <p className="px-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Compras registradas</p>
+          <ul className="mt-1.5 flex flex-col gap-1.5">
+            {comprasRegistradas.slice(0, 6).map((tx) => (
+              <li
+                key={tx.id}
+                className="flex items-center gap-2.5 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold text-[var(--fin-ink)]">{tx.description}</p>
+                  <p className="text-[13px] text-[var(--fin-ink-faint)]">
+                    {dayLabel(tx.occurredOn)}
+                    {(tx.cuotasTotal ?? 0) >= 2 && (tx.cuotaCop ?? 0) > 0
+                      ? ` · ${tx.cuotasTotal} cuotas de ${formatCop(tx.cuotaCop ?? 0)}`
+                      : ''}
+                  </p>
+                </div>
+                <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--fin-out)]">
+                  +{formatCop(tx.amountCop)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 };
 
 export const DeudasView: React.FC<DeudasViewProps> = ({
+  soloTipo,
   cajitas,
   movimientos,
+  transacciones,
   onCrear,
   onFijarSaldo,
   onMovimiento,
@@ -323,11 +381,13 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
 }) => {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
-  const [tipo, setTipo] = useState<CajitaTipo>('tarjeta');
+  const [tipo, setTipo] = useState<CajitaTipo>(soloTipo ?? 'tarjeta');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
   const [saldoTexto, setSaldoTexto] = useState('');
 
-  const filas = resumenDePasivos(cajitas, movimientos);
+  const filas = resumenDePasivos(cajitas, movimientos, transacciones).filter(
+    (fila) => !soloTipo || fila.cajita.tipo === soloTipo,
+  );
   const total = filas.reduce((t, f) => t + f.saldoCop, 0);
 
   const crear = (e: React.FormEvent) => {
@@ -345,7 +405,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
     });
     setNombre('');
     setSaldoTexto('');
-    setTipo('tarjeta');
+    setTipo(soloTipo ?? 'tarjeta');
     setCreando(false);
   };
 
@@ -358,7 +418,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-            Lo que debes
+            {soloTipo === 'tarjeta' ? 'Deuda de tarjetas' : soloTipo === 'deuda' ? 'Deudas pendientes' : 'Lo que debes'}
           </h2>
           <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-out)]">
             <AnimatedNumber value={total} format={formatCop} />
@@ -380,10 +440,10 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             onSubmit={crear}
             className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-              Nueva obligación
+              {soloTipo === 'tarjeta' ? 'Nueva tarjeta de crédito' : soloTipo === 'deuda' ? 'Nueva deuda' : 'Nueva obligación'}
             </h2>
 
-            <fieldset className="mt-4">
+            {!soloTipo ? <fieldset className="mt-4">
               <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 ¿Qué es?
               </legend>
@@ -404,7 +464,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
                   </button>
                 ))}
               </div>
-            </fieldset>
+            </fieldset> : null}
 
             <label
               htmlFor="deuda-nombre"
@@ -491,7 +551,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             className="flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
           >
             <Plus className="h-4 w-4" strokeWidth={3} />
-            Nueva deuda o tarjeta
+            {soloTipo === 'tarjeta' ? 'Agregar tarjeta de crédito' : soloTipo === 'deuda' ? 'Agregar deuda' : 'Nueva deuda o tarjeta'}
           </button>
         )}
         </AnimatePresence>
@@ -504,10 +564,10 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
               aria-hidden="true"
             />
             <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
-              No debes nada registrado.
+              {soloTipo === 'tarjeta' ? 'Aún no tienes tarjetas registradas.' : 'No debes nada registrado.'}
             </p>
             <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">
-              Agrega una tarjeta o un préstamo para llevarle el rastro.
+              {soloTipo === 'tarjeta' ? 'Agrega una tarjeta y registra compras o pagos en un solo lugar.' : 'Agrega una tarjeta o un préstamo para llevarle el rastro.'}
             </p>
           </div>
         ) : null}
@@ -521,6 +581,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
               cajita={fila.cajita}
               saldoCop={fila.saldoCop}
               movimientos={movimientos}
+              transacciones={transacciones}
               onFijarSaldo={onFijarSaldo}
               onMovimiento={onMovimiento}
               onEliminar={onEliminar}
