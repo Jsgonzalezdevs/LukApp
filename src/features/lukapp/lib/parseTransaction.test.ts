@@ -2,6 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { parseTransaction } from './parseTransaction';
 
 describe('parseTransaction — expenses', () => {
+  it('en un comprobante a cuotas guarda el total y solo deja la cuota como contexto', () => {
+    const r = parseTransaction(
+      '[OCR] 12:47 Bold Sa*Platzi $899.259,00 en 12x de $74.938,25 08:52, Sábado, 29 de Agosto de 2026 Resolver dudas',
+    );
+    expect(r.kind).toBe('gasto');
+    expect(r.amount).toBe(899_259);
+    expect(r.description).toBe('Bold Sa*Platzi');
+    expect(r.category).toBe('educacion');
+    expect(r.signals.ambiguousAmount).toBe(false);
+  });
+
   it('reads a full expense sentence with a merchant', () => {
     const r = parseTransaction('gasté 20 mil en el mercado del D1');
     expect(r.kind).toBe('gasto');

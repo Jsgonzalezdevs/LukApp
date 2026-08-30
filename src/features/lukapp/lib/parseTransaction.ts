@@ -340,6 +340,36 @@ export const tokenize = (input: string): Token[] => {
 const normalizarTextoOCR = (texto: string): string =>
   normalizeWord(texto).replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
 
+interface CompraACuotasOCR {
+  totalCop: number;
+  cuotas: number;
+  comercio: string;
+}
+
+/**
+ * En el detalle de una compra a cuotas el último monto es la cuota, no la
+ * compra. El OCR no conoce esa jerarquía visual y por eso hay que leer la
+ * frase completa antes de escoger el número que aparece más cerca al final.
+ */
+const compraACuotasDesdeOCR = (raw: string): CompraACuotasOCR | null => {
+  if (!raw.startsWith('[OCR]')) return null;
+  const match = /\$\s*([\d.]+(?:,\d{2})?)\s+en\s+(\d{1,2})\s*[x×]\s*(?:de\s*)?\$\s*[\d.]+(?:,\d{2})?/i.exec(raw);
+  if (!match || match.index === undefined) return null;
+
+  const totalCop = Number(match[1].replace(/\./g, '').replace(',', '.'));
+  const cuotas = Number(match[2]);
+  if (!Number.isFinite(totalCop) || totalCop <= 0 || !Number.isInteger(cuotas) || cuotas < 2) return null;
+
+  const prefijo = raw
+    .slice(0, match.index)
+    .replace(/^\[OCR\]\s*/i, '')
+    .replace(/\b\d{1,2}:\d{2}\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const comercio = prefijo.replace(/^[-–—:]+|[-–—:]+$/g, '').trim();
+  return { totalCop: Math.round(totalCop), cuotas, comercio };
+};
+
 /** Every maximal numeral in the input, with the token span it occupies. */
 export const findAmountCandidates = (tokens: readonly Token[]): Candidate[] => {
   const norms = tokens.map((t) => t.norm);
@@ -688,6 +718,7 @@ export const parseTransaction = (
 ): ParsedTransaction => {
   const tokens = tokenize(raw);
   const consumed = new Array<boolean>(tokens.length).fill(false);
+  const compraACuotasOCR = compraACuotasDesdeOCR(raw);
 
   // 1 — Amount. Extracted FIRST, and its tokens are removed from everything
   // downstream, so the category matcher can never see `mil` and the description
@@ -775,6 +806,10 @@ export const parseTransaction = (
       consumed[firstStart - 1] = true;
     }
   }
+
+  // Una compra a cuotas presenta dos precios. El total es el que representa
+  // la deuda/costo de la compra; la cuota solo explica cómo se pagará.
+  if (compraACuotasOCR) amount = compraACuotasOCR.totalCop;
 
   const available = () =>
     tokens.map((t, index) => ({ ...t, index })).filter((t) => !consumed[t.index]);
@@ -1080,6 +1115,22 @@ export const parseTransaction = (
     categorySource = sortedCandidates[0][1].source;
   }
 
+  // El total y las cuotas pueden consumir tokens cercanos al comercio. Cuando
+  // viene de un comprobante de tarjeta usamos el comercio ya aislado como
+  // segunda fuente, para que “Platzi” no se pierda entre cifras y fechas.
+  if (category === 'otros' && compraACuotasOCR?.comercio) {
+    const categoriaComercio = normalizeWord(compraACuotasOCR.comercio)
+      .split(/[^a-z0-9]+/)
+      .filter(Boolean)
+      .map((token) => MERCHANTS[token])
+      .find((valor): valor is Category => Boolean(valor));
+    if (categoriaComercio) {
+      category = categoriaComercio;
+      categorySource = 'merchant';
+      addCategoryScore(categoriaComercio, 'merchant', 80);
+    }
+  }
+
   if (categorySource === 'default' && kind === 'ingreso') {
     category = 'ingreso';
     addCategoryScore('ingreso', 'default', 10);
@@ -1224,7 +1275,7 @@ export const parseTransaction = (
 
   if (isOCR) {
     const catLabel = CATEGORY_LABELS[category as Category] ?? (category === 'ingreso' ? 'Ingreso' : 'Transferencia');
-    description = limpiarOCRDescripcion(raw, catLabel, destinatario ?? undefined);
+    description = compraACuotasOCR?.comercio || limpiarOCRDescripcion(raw, catLabel, destinatario ?? undefined);
   } else {
     const GREETINGS_NOISE = new Set([
       'hola', 'como', 'estas', 'estás', 'buenas', 'buenos', 'dias', 'días', 'tardes', 'noches',
@@ -1275,7 +1326,9 @@ export const parseTransaction = (
   }
 
   const timeMatch = raw.match(/\b([01]?[0-9]|2[0-3]):([0-5][0-9])\b/);
-  if (timeMatch && !description.includes(timeMatch[0])) {
+  // En el recibo de tarjeta el comercio ya está aislado; pegarle la hora del
+  // encabezado vuelve a ensuciar justo la descripción que acabamos de limpiar.
+  if (timeMatch && !compraACuotasOCR && !description.includes(timeMatch[0])) {
     description += ` (${timeMatch[0]})`;
   }
 
@@ -1377,13 +1430,13 @@ export const parseTransaction = (
     confianzaGranular,
     needsReview: amount === null || kindSource === 'default' || confidence < REVIEW_THRESHOLD,
     signals: {
-      amountSource: best ? classifyAmountSource(best) : 'none',
+      amountSource: compraACuotasOCR ? 'digits' : best ? classifyAmountSource(best) : 'none',
       kindSource,
       categorySource,
       cuentaSource,
       paymentMethod,
       recurringPattern: detectarRecurrencia(raw).patrón,
-      ambiguousAmount,
+      ambiguousAmount: compraACuotasOCR ? false : ambiguousAmount,
       destinatario,
       ubicacion,
       tags,

@@ -71,9 +71,11 @@ export const Captura: React.FC<CapturaProps> = ({
   const [pidiendoCuenta, setPidiendoCuenta] = useState(false);
   const [resultadoImagen, setResultadoImagen] = useState<TxKind | null>(null);
 
-  // Cuentas bancarias disponibles activas
+  // Una tarjeta es un medio de pago aunque su saldo sea una deuda. Incluirla
+  // aquí permite que una foto de compra se cargue a la tarjeta correcta en vez
+  // de descontar efectivo por accidente.
   const cuentasActivas = useMemo(
-    () => cajitas.filter((c) => !c.archivedAt && c.tipo === 'cuenta'),
+    () => cajitas.filter((c) => !c.archivedAt && (c.tipo === 'cuenta' || c.tipo === 'tarjeta')),
     [cajitas],
   );
 
@@ -408,7 +410,7 @@ export const Captura: React.FC<CapturaProps> = ({
           >
             <IconoCuenta className={`h-4 w-4 shrink-0 ${cuentaSeleccionada ? 'text-[var(--fin-ink-soft)]' : 'text-amber-500'}`} />
             <span className="truncate max-w-[170px]">
-              {cuentaSeleccionada ? cuentaSeleccionada.nombre : '¿De qué cuenta? (Elegir)'}
+              {cuentaSeleccionada ? cuentaSeleccionada.nombre : '¿Desde qué cuenta o tarjeta?'}
             </span>
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -428,7 +430,7 @@ export const Captura: React.FC<CapturaProps> = ({
                 style={{ backgroundColor: 'var(--fin-surface)' }}
               >
                 <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
-                  Cuenta o medio de pago
+                  Cuenta o tarjeta de pago
                 </p>
                 <div className="mt-1 flex flex-col gap-1 max-h-52 overflow-y-auto">
                   {cuentasActivas.map((c) => {

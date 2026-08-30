@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.15.0',
+    fecha: '2026-08-30',
+    texto: 'Los comprobantes de tarjeta a cuotas ahora detectan el total real de la compra, conservan el comercio limpio y permiten cargarla directamente a tu tarjeta de crédito.',
+  },
+  {
     version: '1.14.0',
     fecha: '2026-08-30',
     texto: 'Las transferencias entre tus cuentas ahora también aparecen en el historial, claramente marcadas y sin alterar tus gastos ni ingresos.',
