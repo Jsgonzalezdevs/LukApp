@@ -392,6 +392,11 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     detenerSegmentos();
     const grabadora = grabadoraRef.current;
     if (grabadora && grabadora.state !== 'inactive') {
+      // Cambiar la interfaz antes de pedirle al navegador que pare evita una
+      // ventana en la que un segundo toque parece ignorado. En iOS `onstop`
+      // puede llegar varios frames después de `stop()`, sobre todo al volver
+      // de segundo plano; el usuario ya confirmó y debe verlo enseguida.
+      setStatus('processing');
       // `onstop` hace el resto: cierra el micrófono y sube el audio.
       grabadora.stop();
     }

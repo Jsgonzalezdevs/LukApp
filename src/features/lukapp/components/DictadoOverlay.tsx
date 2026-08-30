@@ -92,11 +92,12 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 </p>
               </motion.div>
             ) : palabras.length > 0 ? (
-              <p
-                className={`text-[26px] font-bold leading-tight sm:text-[30px] ${
-                  fase === 'escuchando' || fase === 'procesando' ? 'text-white/60 italic' : 'text-white'
-                }`}
-              >
+              <div className="flex flex-col items-center gap-5">
+                <p
+                  className={`text-[26px] font-bold leading-tight sm:text-[30px] ${
+                    fase === 'escuchando' || fase === 'procesando' ? 'text-white/60 italic' : 'text-white'
+                  }`}
+                >
                 {/* Mientras se escucha o procesa, el texto es solo el mejor intento
  de cada segmento por separado -- puede tener palabras cortadas o
  directamente inventadas. Se muestra apagado e itálico a propósito,
@@ -127,7 +128,19 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                     aria-hidden="true"
                   />
                 ) : null}
-              </p>
+                </p>
+                {fase === 'procesando' ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-black/15 px-4 py-2 text-sm font-semibold text-white/90"
+                    aria-live="polite"
+                  >
+                    <span className="h-2.5 w-2.5 animate-pulse rounded-[var(--fin-r-pill)] bg-white" aria-hidden="true" />
+                    Confirmando lo que dijiste…
+                  </motion.div>
+                ) : null}
+              </div>
             ) : (
               <>
                 <motion.p

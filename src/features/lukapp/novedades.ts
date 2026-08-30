@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.13.4',
+    fecha: '2026-08-30',
+    texto: 'El check del dictado ahora responde al instante: detiene la escucha de forma segura y muestra que está confirmando tu voz.',
+  },
+  {
     version: '1.13.3',
     fecha: '2026-08-30',
     texto: 'La confirmación de transferencias ahora tiene un fondo sólido y más contraste para leerse con claridad.',

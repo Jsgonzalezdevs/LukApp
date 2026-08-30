@@ -35,6 +35,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   const [overlayAbierto, setOverlayAbierto] = useState(false);
   const [textoRevelado, setTextoRevelado] = useState<string | null>(null);
   const descartadoRef = useRef(false);
+  // El estado de React se actualiza en el siguiente render. Este ref protege
+  // los dos toques que un móvil puede entregar antes de que aparezca la fase
+  // de procesamiento: solo el primero puede detener la grabación.
+  const confirmacionEnCursoRef = useRef(false);
 
   const manejarTextoFinal = useCallback((texto: string) => {
     if (descartadoRef.current) {
@@ -53,6 +57,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
 
   const escuchando = dictation.status === 'listening';
   const procesando = dictation.status === 'processing';
+
+  useEffect(() => {
+    if (!escuchando) confirmacionEnCursoRef.current = false;
+  }, [escuchando]);
 
   // Si se solicita el inicio automático desde el onboarding u otra acción
   useEffect(() => {
@@ -105,6 +113,8 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   };
 
   const confirmarDictado = () => {
+    if (!escuchando || confirmacionEnCursoRef.current) return;
+    confirmacionEnCursoRef.current = true;
     haptic.trigger('medium');
     audio.play('click');
     dictation.stop();

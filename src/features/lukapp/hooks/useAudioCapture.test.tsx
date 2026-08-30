@@ -21,6 +21,7 @@ let ahora = 0;
 class MediaRecorderFalso {
   static lanzarAlConstruir = false;
   static emitirVacio = false;
+  static demorarStop = false;
   static isTypeSupported = vi.fn(() => true);
   state: 'inactive' | 'recording' = 'inactive';
   mimeType = 'audio/webm';
@@ -40,8 +41,12 @@ class MediaRecorderFalso {
   stop = () => {
     if (this.state === 'inactive') return;
     this.state = 'inactive';
-    this.ondataavailable?.({ data: new Blob(MediaRecorderFalso.emitirVacio ? [] : ['voz'], { type: this.mimeType }) });
-    this.onstop?.();
+    const terminar = () => {
+      this.ondataavailable?.({ data: new Blob(MediaRecorderFalso.emitirVacio ? [] : ['voz'], { type: this.mimeType }) });
+      this.onstop?.();
+    };
+    if (MediaRecorderFalso.demorarStop) setTimeout(terminar, 0);
+    else terminar();
   };
 
   romper = () => {
@@ -67,6 +72,7 @@ beforeEach(() => {
   pista.stop.mockReset();
   MediaRecorderFalso.lanzarAlConstruir = false;
   MediaRecorderFalso.emitirVacio = false;
+  MediaRecorderFalso.demorarStop = false;
   MediaRecorderFalso.isTypeSupported = vi.fn(() => true);
   Object.defineProperty(window, 'MediaRecorder', { configurable: true, value: MediaRecorderFalso });
   Object.defineProperty(navigator, 'mediaDevices', {
@@ -118,6 +124,22 @@ describe('useAudioCapture', () => {
     expect(pista.stop).toHaveBeenCalled();
     expect(result.current.status).toBe('idle');
     expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('pasa a procesando en el mismo toque aunque el navegador tarde en emitir onstop', async () => {
+    MediaRecorderFalso.demorarStop = true;
+    const { result } = renderHook(() => useAudioCapture(vi.fn()));
+    await act(async () => result.current.start());
+
+    act(() => {
+      ahora += 900;
+      result.current.stop();
+    });
+
+    expect(result.current.status).toBe('processing');
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
   });
 
   it('no sube una pulsación demasiado corta', async () => {
