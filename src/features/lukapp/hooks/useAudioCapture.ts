@@ -81,14 +81,12 @@ const MIN_MS = 800;
  * transcripción DEFINITIVA (la que de verdad se guarda) sigue viniendo de una
  * sola grabación continua sin cortes, igual que antes de este cambio.
  *
- * 2200ms se sentía "vivo" pero le daba a Whisper muy poco contexto por
- * segmento: cortaba palabras a la mitad y, peor, a veces alucinaba una frase
- * entera sin relación con lo dicho (el modelo rellena con lo más probable
- * cuando el audio es ambiguo o muy corto). Subirlo a 4000ms sacrifica un poco
- * de "vivacidad" en el parcial a cambio de segmentos con frases más
- * completas, que Whisper transcribe con mucha más fidelidad.
+ * 2,8 segundos conserva suficiente contexto para una frase financiera corta,
+ * pero muestra una primera lectura mucho antes que esperar cuatro segundos.
+ * La grabación completa sigue siendo la única que se usa para confirmar.
  */
-const DURACION_SEGMENTO_MS = 4000;
+const DURACION_SEGMENTO_MS = 2800;
+const TIEMPO_MAX_TRANSCRIPCION_MS = 18_000;
 
 /**
  * En Wi‑Fi/4G se conserva más detalle de consonantes y nombres propios; en
@@ -161,7 +159,7 @@ const peticionTranscribir = async (
 ): Promise<{ text?: string; offline?: boolean; error?: string } | null> => {
   const intentar = async (url: string) => {
     const controlador = new AbortController();
-    const tiempo = setTimeout(() => controlador.abort(), 35_000);
+    const tiempo = setTimeout(() => controlador.abort(), TIEMPO_MAX_TRANSCRIPCION_MS);
     try {
       const res = await fetch(url, {
         method: 'POST',
@@ -169,29 +167,32 @@ const peticionTranscribir = async (
         body: audioBlob,
         signal: controlador.signal,
       });
-      if (!res.ok) return null;
-      return (await res.json().catch(() => null)) as {
+      // Un 4xx no mejora al reenviar el mismo audio: duplicarlo era una espera
+      // inútil. Un 5xx o una caída de red sí merece un único reintento.
+      if (!res.ok) return { data: null, reintentar: res.status >= 500 };
+      const data = (await res.json().catch(() => null)) as {
         text?: string;
         offline?: boolean;
         error?: string;
       } | null;
+      return { data, reintentar: data === null };
     } catch {
-      return null;
+      return { data: null, reintentar: true };
     } finally {
       clearTimeout(tiempo);
     }
   };
 
   const urlPrimaria = apiUrl('/api/transcribir');
-  // Una señal intermitente suele perder el primer intento; reintentar una vez
-  // antes de cambiar de origen evita exigirle al usuario repetir el dictado.
   const primaria = await intentar(urlPrimaria);
-  if (primaria) return primaria;
-  const reintento = await intentar(urlPrimaria);
-  if (reintento) return reintento;
+  if (primaria.data) return primaria.data;
+  if (primaria.reintentar) {
+    const reintento = await intentar(urlPrimaria);
+    if (reintento.data) return reintento.data;
+  }
 
   if (urlPrimaria !== '/api/transcribir') {
-    return intentar('/api/transcribir');
+    return (await intentar('/api/transcribir')).data;
   }
 
   return null;

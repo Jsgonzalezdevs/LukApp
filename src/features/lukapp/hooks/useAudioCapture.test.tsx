@@ -242,6 +242,21 @@ describe('useAudioCapture', () => {
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
+  it('no reenvía el mismo audio ante un rechazo 4xx', async () => {
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      Promise.resolve(new Response('{}', { status: 400 })),
+    );
+    const { result } = renderHook(() => useAudioCapture(vi.fn()));
+    await act(async () => result.current.start());
+    await act(async () => {
+      ahora += 900;
+      result.current.stop();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(result.current.error).toContain('No se pudo conectar'));
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it('reintenta un error HTTP temporal y conserva una transcripción que sí llegó', async () => {
     vi.mocked(fetch)
       .mockImplementationOnce(() => respuesta({}, false))

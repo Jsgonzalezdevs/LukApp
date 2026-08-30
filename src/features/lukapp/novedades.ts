@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.13.2',
+    fecha: '2026-08-30',
+    texto: 'La voz ahora muestra una lectura previa más rápido y evita reenvíos lentos cuando el servidor rechaza el audio.',
+  },
+  {
     version: '1.13.1',
     fecha: '2026-08-30',
     texto: 'Afinamos la voz para transferencias: conserva más claridad con buena señal y reconoce variaciones fonéticas de Nequi y Bancolombia sin convertirlas en gasto.',
