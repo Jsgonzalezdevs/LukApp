@@ -676,8 +676,29 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         },
       ];
 
-      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, ...par] }, () =>
-        repo.guardarCajitaMovimientos(par),
+      // El par mueve los saldos. Esta tercera fila es deliberadamente neutral:
+      // existe para que el traslado se pueda consultar en el historial general
+      // sin aumentar los gastos o los ingresos del mes, ni tocar una cuenta
+      // por segunda vez.
+      const transferencia: Transaction = {
+        id: nuevoId('tx'),
+        kind: 'transferencia',
+        amountCop: monto,
+        category: 'transferencia',
+        description: `Transferencia de ${nombreDe(origenId)} a ${nombreDe(destinoId)}`.trim(),
+        occurredOn: base.occurredOn,
+        cuentaId: null,
+        rawTranscript: '',
+        createdAt: base.createdAt,
+      };
+
+      await aplicar(
+        {
+          ...datos,
+          cajitaMovimientos: [...datos.cajitaMovimientos, ...par],
+          transacciones: [transferencia, ...datos.transacciones],
+        },
+        () => Promise.all([repo.guardarCajitaMovimientos(par), repo.guardarTransacciones([transferencia])]).then(() => undefined),
       );
     },
     [aplicar, datos, repo],

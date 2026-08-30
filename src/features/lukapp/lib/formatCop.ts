@@ -16,8 +16,8 @@ export const formatCopOculto = (value: number, oculto?: boolean): string => {
 };
 
 /** Same, prefixed with an explicit direction sign for ledger rows. */
-export const formatSigned = (value: number, kind: 'gasto' | 'ingreso'): string =>
-  `${kind === 'ingreso' ? '+' : '−'}${formatCop(Math.abs(value))}`;
+export const formatSigned = (value: number, kind: 'gasto' | 'ingreso' | 'transferencia'): string =>
+  `${kind === 'ingreso' ? '+' : kind === 'gasto' ? '−' : '↔'}${formatCop(Math.abs(value))}`;
 
 /** Digits only, for a controlled numeric input: 1234567 -> "1.234.567". */
 export const formatAmountInput = (value: number | null): string =>

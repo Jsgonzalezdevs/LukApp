@@ -37,7 +37,7 @@ export const monthTotals = (transactions: readonly Transaction[]): MonthTotals =
 
   for (const tx of transactions) {
     if (tx.kind === 'ingreso') ingresos += tx.amountCop;
-    else gastos += tx.amountCop;
+    else if (tx.kind === 'gasto') gastos += tx.amountCop;
   }
 
   return {

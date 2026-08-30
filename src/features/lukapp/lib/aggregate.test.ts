@@ -54,6 +54,15 @@ describe('monthTotals', () => {
   it('is all zeros for no transactions', () => {
     expect(monthTotals([])).toEqual({ ingresos: 0, gastos: 0, balance: 0, tasaAhorro: null });
   });
+
+  it('keeps transfers out of income, expenses and the balance', () => {
+    const t = monthTotals([
+      tx('ingreso', 500_000, 'ingreso'),
+      tx('gasto', 120_000, 'comida'),
+      tx('transferencia', 80_000, 'transferencia'),
+    ]);
+    expect(t).toMatchObject({ ingresos: 500_000, gastos: 120_000, balance: 380_000 });
+  });
 });
 
 describe('byCategory', () => {

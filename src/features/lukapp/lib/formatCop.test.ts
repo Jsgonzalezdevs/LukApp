@@ -33,6 +33,7 @@ describe('formatSigned', () => {
   it('marks direction explicitly so colour is never the only cue', () => {
     expect(formatSigned(45000, 'gasto')).toBe('−$45.000');
     expect(formatSigned(45000, 'ingreso')).toBe('+$45.000');
+    expect(formatSigned(45000, 'transferencia')).toBe('↔$45.000');
   });
 });
 

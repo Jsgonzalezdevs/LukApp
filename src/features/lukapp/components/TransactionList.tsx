@@ -47,7 +47,7 @@ const groupByDay = (transactions: readonly Transaction[]): DayGroup[] => {
       date,
       items: [...items].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
       net: items.reduce(
-        (sum, tx) => sum + (tx.kind === 'ingreso' ? tx.amountCop : -tx.amountCop),
+        (sum, tx) => sum + (tx.kind === 'ingreso' ? tx.amountCop : tx.kind === 'gasto' ? -tx.amountCop : 0),
         0,
       ),
     }));
@@ -121,6 +121,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               const entrada = catalogo.de(tx.category);
               const color = entrada.color;
               const esIngreso = tx.kind === 'ingreso';
+              const esTransferencia = tx.kind === 'transferencia';
               const ultima = idx === group.items.length - 1;
 
               return (
@@ -172,10 +173,10 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
                     <span
                       className="shrink-0 text-[17px] font-semibold tabular-nums"
-                      style={{ color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)' }}
+                      style={{ color: esIngreso ? 'var(--fin-in)' : esTransferencia ? 'var(--fin-ink-soft)' : 'var(--fin-out)' }}
                     >
                       {modoPrivacidad
-                        ? `${esIngreso ? '+' : '−'}$ ••••••`
+                        ? `${esIngreso ? '+' : esTransferencia ? '↔' : '−'}$ ••••••`
                         : formatSigned(tx.amountCop, tx.kind)}
                     </span>
                   </motion.button>

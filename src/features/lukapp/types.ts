@@ -21,7 +21,8 @@ export type Category = (typeof CATEGORIES)[number];
 /** A `Category`, or a user-created category's id. See categorias.ts. */
 export type CategoriaClave = string;
 
-export type TxKind = 'gasto' | 'ingreso';
+/** Una transferencia propia se ve en el historial, pero no es gasto ni ingreso. */
+export type TxKind = 'gasto' | 'ingreso' | 'transferencia';
 
 export const CATEGORY_LABELS: Record<Category, string> = {
   mercado: 'Mercado',

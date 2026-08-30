@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.14.0',
+    fecha: '2026-08-30',
+    texto: 'Las transferencias entre tus cuentas ahora también aparecen en el historial, claramente marcadas y sin alterar tus gastos ni ingresos.',
+  },
+  {
     version: '1.13.4',
     fecha: '2026-08-30',
     texto: 'El check del dictado ahora responde al instante: detiene la escucha de forma segura y muestra que está confirmando tu voz.',

@@ -42,9 +42,10 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
   const catalogo = useCatalogo();
   const entrada = catalogo.de(tx.category);
   const esIngreso = tx.kind === 'ingreso';
+  const esTransferencia = tx.kind === 'transferencia';
   useBloqueoScroll(true);
 
-  const acciones = [
+  const acciones = esTransferencia ? [] : [
     { icono: Sparkles, texto: 'Analizar', alTocar: () => onAnalizar(tx) },
     { icono: Pencil, texto: 'Editar', alTocar: () => onEditar(tx) },
     { icono: Trash2, texto: 'Borrar', alTocar: () => onBorrar(tx.id), peligro: true },
@@ -93,7 +94,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
             style={{
               font: 'var(--fin-t-cifra)',
               letterSpacing: 'var(--fin-track-cifra)',
-              color: esIngreso ? 'var(--fin-in)' : 'var(--fin-out)',
+              color: esIngreso ? 'var(--fin-in)' : esTransferencia ? 'var(--fin-ink-soft)' : 'var(--fin-out)',
             }}
           >
             {formatSigned(tx.amountCop, tx.kind)}
@@ -116,6 +117,11 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
           ) : null}
         </div>
 
+        {esTransferencia ? (
+          <p className="mt-5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-center text-[13px] text-[var(--fin-ink-soft)]">
+            Es un traslado entre tus cuentas: no suma como gasto ni ingreso.
+          </p>
+        ) : (
         <div className="mt-5 grid grid-cols-3 gap-2">
           {acciones.map((accion) => (
             <button
@@ -130,6 +136,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
             </button>
           ))}
         </div>
+        )}
       </motion.div>
     </motion.div>
   );

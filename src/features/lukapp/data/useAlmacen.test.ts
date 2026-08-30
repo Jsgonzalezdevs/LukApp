@@ -459,9 +459,7 @@ describe('useAlmacen', () => {
     expect(saldoDeCajita(movs, destinoId)).toBe(120_000);
   });
 
-  it('una transferencia no es ni gasto ni ingreso del mes', async () => {
-    // Como movimiento del libro inflaría LOS DOS lados del mes y el resumen
-    // reportaría actividad que nunca ocurrió.
+  it('muestra la transferencia en el historial sin contarla como gasto ni ingreso', async () => {
     const repo = new RepositorioMemoria();
     const { result } = await montar(repo);
 
@@ -486,7 +484,14 @@ describe('useAlmacen', () => {
       await result.current.transferirEntreCuentas({ origenId, destinoId, montoCop: 50_000 });
     });
 
-    expect(result.current.datos.transacciones).toEqual([]);
+    expect(result.current.datos.transacciones).toHaveLength(1);
+    expect(result.current.datos.transacciones[0]).toMatchObject({
+      kind: 'transferencia',
+      amountCop: 50_000,
+      category: 'transferencia',
+      description: 'Transferencia de Bancolombia a Viaje',
+      cuentaId: null,
+    });
   });
 
   it('no registra una transferencia de una cuenta a sí misma', async () => {
