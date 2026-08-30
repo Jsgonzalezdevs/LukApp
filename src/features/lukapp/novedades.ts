@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.37',
+    fecha: '2026-08-30',
+    texto: 'Mejoramos el control de versiones: cada entrega queda identificada también en el mensaje de su commit.',
+  },
+  {
     version: '1.11.36',
     fecha: '2026-08-30',
     texto: 'La app instalada ahora abre directamente tu Dashboard. Las instalaciones anteriores también se corrigen al iniciar.',

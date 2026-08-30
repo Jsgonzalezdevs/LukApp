@@ -64,6 +64,19 @@ a propósito.
 git tag -a v1.0.0 -m "LukApp v1.0.0"
 ```
 
+### 7. Todos los commits llevan la versión
+
+El mensaje de **cada commit** debe incluir la versión de LukApp que deja el
+árbol de trabajo. Formato recomendado:
+
+```
+tipo: v1.0.0 — resumen corto del cambio
+```
+
+Antes de enviar cambios al remoto, revisa los commits aún no publicados y
+corrige los que no incluyan `vX.Y.Z`. Esta regla vive aquí para que cualquier
+agente futuro —sin importar el modelo— la siga igual.
+
 ### Dónde se ve la versión
 
 - **Ajustes → Cuenta**, al pie de la pantalla.
