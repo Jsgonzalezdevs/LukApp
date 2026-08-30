@@ -33,6 +33,18 @@ export const KIND_PHRASES: ReadonlyArray<{ seq: readonly string[]; kind: TxKind 
   { seq: ['me', 'abonaron'], kind: 'ingreso' },
   { seq: ['me', 'depositaron'], kind: 'ingreso' },
   { seq: ['me', 'prestaron'], kind: 'ingreso' },
+  // Formas muy comunes en Colombia. Sin estas, el valor por defecto del
+  // parser (gasto) convertía una plata que entró en una salida.
+  { seq: ['me', 'dio'], kind: 'ingreso' },
+  { seq: ['me', 'dieron'], kind: 'ingreso' },
+  { seq: ['me', 'transfirio'], kind: 'ingreso' },
+  { seq: ['me', 'paso'], kind: 'ingreso' },
+  { seq: ['me', 'mandaron'], kind: 'ingreso' },
+  { seq: ['me', 'enviaron'], kind: 'ingreso' },
+  { seq: ['te', 'enviaron'], kind: 'ingreso' },
+  { seq: ['recibiste'], kind: 'ingreso' },
+  { seq: ['recibido'], kind: 'ingreso' },
+  { seq: ['recibida'], kind: 'ingreso' },
 
   { seq: ['gaste'], kind: 'gasto' },
   { seq: ['pague'], kind: 'gasto' },

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.34',
+    fecha: '2026-08-30',
+    texto: 'Mejoramos el registro por voz y foto: reconoce frases como “me dio” y “me transfirió” como ingresos, usa menos datos en señal débil y lee comprobantes con más claridad.',
+  },
+  {
     version: '1.11.33',
     fecha: '2026-08-28',
     texto: 'Pose de fuerza oficial de Luki: clonado milimétrico de la referencia de marca (cabeza espátula inclinada, ojos en coronilla, brazos en flexión y barriga continua).',

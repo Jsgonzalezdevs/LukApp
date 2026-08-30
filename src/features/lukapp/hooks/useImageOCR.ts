@@ -26,6 +26,10 @@ const prepararImagen = async (file: File): Promise<Blob | File> => {
         resolve(file);
         return;
       }
+      // Los comprobantes suelen tener letra pequeña sobre fondos con degradado.
+      // Este contraste moderado ayuda al OCR sin convertir una foto normal en
+      // una imagen ilegible ni depender de servicios externos.
+      ctx.filter = 'grayscale(1) contrast(1.45) brightness(1.08)';
       ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(
         (blob) => {
@@ -67,7 +71,15 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
       });
 
       const text = result.data.text;
-      const cleanText = text.replace(/\n+/g, ' ').trim();
+      const cleanText = text
+        .replace(/[|]/g, 'I')
+        .replace(/\n+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+
+      if (cleanText.length < 3) {
+        throw new Error('La imagen no contenía texto legible');
+      }
 
       onSuccess(`[OCR] ${cleanText}`);
     } catch (err) {
@@ -81,4 +93,3 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
 
   return { scanImage, isScanning, progress, error };
 };
-

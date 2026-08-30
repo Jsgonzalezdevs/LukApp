@@ -136,6 +136,18 @@ describe('parseTransaction — income', () => {
     expect(parseTransaction('me llegó el pago de 800 mil').kind).toBe('ingreso');
   });
 
+  it('entiende formas coloquiales de plata que entró', () => {
+    for (const texto of [
+      'Juan me dio 30 mil',
+      'mi mamá me dieron 50 mil',
+      'Laura me transfirió 120 mil',
+      'me enviaron 75 mil por Nequi',
+      '[OCR] Transferencia recibida Valor $ 45.000',
+    ]) {
+      expect(parseTransaction(texto).kind).toBe('ingreso');
+    }
+  });
+
   it('infers income from morphology for verbs not in the table', () => {
     const r = parseTransaction('me reembolsaron 20 mil');
     expect(r.kind).toBe('ingreso');

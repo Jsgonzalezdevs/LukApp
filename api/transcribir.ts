@@ -49,6 +49,7 @@ const CONTEXTO_ES =
   'Bancos y aplicaciones: Nequi, Daviplata, Bancolombia, Davivienda, Nu, Rappi, ' +
   'RappiPay, Lulo, Ualá, Falabella, Scotiabank, Colpatria, BBVA, Bold, Addi. ' +
   'Palabras frecuentes: pagué, gasté, compré, retiré, transferí, me dieron, ' +
+  'me transfirieron, me transfirió, me pagaron, recibí, recibiste, ' +
   'mercado, almuerzo, desayuno, comida, domicilio, transporte, gasolina, ' +
   'arriendo, servicios, crédito, cuota, mil, millón.';
 

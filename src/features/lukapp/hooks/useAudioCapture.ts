@@ -91,6 +91,27 @@ const MIN_MS = 800;
 const DURACION_SEGMENTO_MS = 4000;
 
 /**
+ * Una nota de voz para registrar un movimiento no necesita calidad musical.
+ * Pedir 32 kbps reduce drásticamente lo que se sube en señal débil, sin perder
+ * inteligibilidad para Whisper. El navegador puede ignorarlo si su códec no lo
+ * admite, pero no se rompe el camino de grabación.
+ */
+const BITS_POR_SEGUNDO_VOZ = 32_000;
+
+const opcionesGrabadora = (formato: string): MediaRecorderOptions => ({
+  ...(formato ? { mimeType: formato } : {}),
+  audioBitsPerSecond: BITS_POR_SEGUNDO_VOZ,
+});
+
+/** En 2G/3G los parciales compiten con el audio final y lo dejan sin datos. */
+const conexionPermiteParciales = (): boolean => {
+  const conexion = (navigator as Navigator & {
+    connection?: { effectiveType?: string; saveData?: boolean };
+  }).connection;
+  return !conexion?.saveData && !['slow-2g', '2g', '3g'].includes(conexion?.effectiveType ?? '');
+};
+
+/**
  * Lo que Whisper devuelve cuando le llega silencio.
  *
  * No es un error suyo: el modelo se entrenó con subtítulos de video, y en un
@@ -140,43 +161,39 @@ const peticionTranscribir = async (
   audioBlob: Blob,
   tipoMime: string,
 ): Promise<{ text?: string; offline?: boolean; error?: string } | null> => {
-  const urlPrimaria = apiUrl('/api/transcribir');
-  try {
-    const res = await fetch(urlPrimaria, {
-      method: 'POST',
-      headers: { 'Content-Type': tipoMime },
-      body: audioBlob,
-    });
-    if (res.ok) {
-      const data = (await res.json().catch(() => null)) as {
+  const intentar = async (url: string) => {
+    const controlador = new AbortController();
+    const tiempo = setTimeout(() => controlador.abort(), 35_000);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': tipoMime },
+        body: audioBlob,
+        signal: controlador.signal,
+      });
+      if (!res.ok) return null;
+      return (await res.json().catch(() => null)) as {
         text?: string;
         offline?: boolean;
         error?: string;
       } | null;
-      if (data) return data;
+    } catch {
+      return null;
+    } finally {
+      clearTimeout(tiempo);
     }
-  } catch {
-    // Intentar con el fallback
-  }
+  };
+
+  const urlPrimaria = apiUrl('/api/transcribir');
+  // Una señal intermitente suele perder el primer intento; reintentar una vez
+  // antes de cambiar de origen evita exigirle al usuario repetir el dictado.
+  const primaria = await intentar(urlPrimaria);
+  if (primaria) return primaria;
+  const reintento = await intentar(urlPrimaria);
+  if (reintento) return reintento;
 
   if (urlPrimaria !== '/api/transcribir') {
-    try {
-      const resLocal = await fetch('/api/transcribir', {
-        method: 'POST',
-        headers: { 'Content-Type': tipoMime },
-        body: audioBlob,
-      });
-      if (resLocal.ok) {
-        const dataLocal = (await resLocal.json().catch(() => null)) as {
-          text?: string;
-          offline?: boolean;
-          error?: string;
-        } | null;
-        if (dataLocal) return dataLocal;
-      }
-    } catch {
-      // Sin conexión
-    }
+    return intentar('/api/transcribir');
   }
 
   return null;
@@ -301,7 +318,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     const formato = primerFormatoSoportado();
     let segmento: MediaRecorder;
     try {
-      segmento = formato ? new MediaRecorder(stream, { mimeType: formato }) : new MediaRecorder(stream);
+      segmento = new MediaRecorder(stream, opcionesGrabadora(formato));
     } catch {
       // Sin segmentos -- pero la grabación principal (y la transcripción
       // final) no se enteran ni se afectan por esto.
@@ -450,7 +467,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       const formato = primerFormatoSoportado();
       // Sin formato explícito, el navegador escoge el suyo — que es justo lo que
       // se quiere cuando ninguno de la lista está disponible.
-      grabadora = formato ? new MediaRecorder(stream, { mimeType: formato }) : new MediaRecorder(stream);
+      grabadora = new MediaRecorder(stream, opcionesGrabadora(formato));
     } catch {
       cerrarMicrofono();
       setStatus('idle');
@@ -540,9 +557,11 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     inicioRef.current = Date.now();
     grabadora.start();
     iniciarMedidor(stream);
-    relanzarSegmentosRef.current = true;
+    // Los parciales son solo una ayuda visual. En señal reducida se omiten para
+    // reservar toda la subida para la transcripción definitiva.
+    relanzarSegmentosRef.current = conexionPermiteParciales();
     textoAcumuladoRef.current = '';
-    iniciarSegmento(stream, miSesion);
+    if (relanzarSegmentosRef.current) iniciarSegmento(stream, miSesion);
     setStatus('listening');
     topeRef.current = setTimeout(stop, MAX_MS);
   }, [supported, quitarTope, stop, iniciarMedidor, detenerMedidor, detenerSegmentos, iniciarSegmento, permiso]);
