@@ -13,9 +13,19 @@ const textoPlano = (texto: string): string =>
 
 const escapado = (texto: string): string => texto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+// Whisper a veces escribe los bancos por fonética. Son alias deliberadamente
+// estrechos y solo se usan dentro de una frase con dos cuentas, nunca para
+// clasificar un gasto normal por la palabra "Colombia" aislada.
+const patronCuenta = (cuenta: CuentaConocida): string => {
+  const nombre = escapado(textoPlano(cuenta.nombre));
+  if (nombre === 'nequi') return '(?:nequi|neki)';
+  if (nombre === 'bancolombia') return '(?:bancolombia|colombia)';
+  return nombre;
+};
+
 const cuentaTras = (texto: string, preposiciones: string, cuentas: readonly CuentaConocida[]): CuentaConocida | null => {
   for (const cuenta of [...cuentas].sort((a, b) => b.nombre.length - a.nombre.length)) {
-    const nombre = escapado(textoPlano(cuenta.nombre));
+    const nombre = patronCuenta(cuenta);
     if (new RegExp(`\\b(?:${preposiciones})\\s+(?:la\\s+|el\\s+)?${nombre}\\b`).test(texto)) return cuenta;
   }
   return null;
@@ -27,10 +37,16 @@ export const parseTransferenciaVoz = (
   cuentas: readonly CuentaConocida[],
 ): TransferenciaPorVoz | null => {
   const plano = textoPlano(raw);
-  if (!/\b(?:transfier(?:e|a|o)?|transfer(?:i|e|ir)|pasa(?:r|me)?|mueve|envia|consigna)\b/.test(plano)) return null;
+  const diceTransferir = /\b(?:transfier(?:e|a|o)?|transfer(?:i|e|ir)|pasa(?:r|me)?|mueve|envia|consigna)\b/.test(plano);
+  const menciones = cuentas.filter((cuenta) => new RegExp(`\\b${patronCuenta(cuenta)}\\b`).test(plano));
+  // «me de Neki o Colombia» es la degradación fonética observada de «me
+  // transferí de Nequi a Bancolombia». Exigir dos cuentas evita convertir una
+  // transcripción corta o un gasto ordinario en una transferencia.
+  const transferenciaDegradada = /^me de\b/.test(plano) && menciones.length >= 2;
+  if (!diceTransferir && !transferenciaDegradada) return null;
 
-  const origen = cuentaTras(plano, 'de|desde', cuentas);
-  const destino = cuentaTras(plano, 'a|hacia|para', cuentas);
+  const origen = cuentaTras(plano, 'de|desde', cuentas) ?? (transferenciaDegradada ? menciones[0] : null);
+  const destino = cuentaTras(plano, 'a|hacia|para|o', cuentas) ?? (transferenciaDegradada ? menciones[1] : null);
   const monto = parseTransaction(raw, cuentas).amount;
   if (!origen || !destino || origen.id === destino.id || monto === null || monto <= 0) return null;
 

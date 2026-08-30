@@ -18,4 +18,10 @@ describe('parseTransferenciaVoz', () => {
     expect(parseTransferenciaVoz('pagué 50 mil desde Nequi', CUENTAS)).toBeNull();
     expect(parseTransferenciaVoz('transfiere 50 mil de Nequi', CUENTAS)).toBeNull();
   });
+
+  it('recupera la transcripción fonética degradada sin convertirla en gasto', () => {
+    expect(parseTransferenciaVoz('Me de Neki o Colombia 18000', CUENTAS)).toMatchObject({
+      origenId: 'nequi', destinoId: 'banco', montoCop: 18000,
+    });
+  });
 });

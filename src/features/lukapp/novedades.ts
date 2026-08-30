@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.13.1',
+    fecha: '2026-08-30',
+    texto: 'Afinamos la voz para transferencias: conserva más claridad con buena señal y reconoce variaciones fonéticas de Nequi y Bancolombia sin convertirlas en gasto.',
+  },
+  {
     version: '1.13.0',
     fecha: '2026-08-30',
     texto: 'Ahora puedes transferir entre tus cuentas por voz: di el monto, la cuenta de origen y la de destino, y confirma para actualizar ambos saldos.',

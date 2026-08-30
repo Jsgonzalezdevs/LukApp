@@ -91,16 +91,14 @@ const MIN_MS = 800;
 const DURACION_SEGMENTO_MS = 4000;
 
 /**
- * Una nota de voz para registrar un movimiento no necesita calidad musical.
- * Pedir 32 kbps reduce drásticamente lo que se sube en señal débil, sin perder
- * inteligibilidad para Whisper. El navegador puede ignorarlo si su códec no lo
- * admite, pero no se rompe el camino de grabación.
+ * En Wi‑Fi/4G se conserva más detalle de consonantes y nombres propios; en
+ * señal débil se baja el peso para que la subida sí llegue al servidor.
  */
-const BITS_POR_SEGUNDO_VOZ = 32_000;
+const BITS_POR_SEGUNDO_VOZ = 64_000;
 
 const opcionesGrabadora = (formato: string): MediaRecorderOptions => ({
   ...(formato ? { mimeType: formato } : {}),
-  audioBitsPerSecond: BITS_POR_SEGUNDO_VOZ,
+  audioBitsPerSecond: conexionPermiteParciales() ? BITS_POR_SEGUNDO_VOZ : 32_000,
 });
 
 /** En 2G/3G los parciales compiten con el audio final y lo dejan sin datos. */
