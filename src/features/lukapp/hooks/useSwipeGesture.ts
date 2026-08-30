@@ -123,5 +123,5 @@ export const useSwipeGesture = (
       element.removeEventListener('touchstart', handleTouchStart, false);
       element.removeEventListener('touchend', handleTouchEnd, false);
     };
-  }, [onSwipe, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, threshold]);
+  }, [elementRef, onSwipe, onSwipeLeft, onSwipeRight, onSwipeUp, onSwipeDown, threshold]);
 };

@@ -65,7 +65,7 @@ export const useLongPress = (
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [onLongPress, delay, onStart, onEnd]);
+  }, [elementRef, onLongPress, delay, onStart, onEnd]);
 
   return isLongPressRef;
 };
