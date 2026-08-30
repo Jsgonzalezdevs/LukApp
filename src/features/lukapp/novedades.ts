@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.13.0',
+    fecha: '2026-08-30',
+    texto: 'Ahora puedes transferir entre tus cuentas por voz: di el monto, la cuenta de origen y la de destino, y confirma para actualizar ambos saldos.',
+  },
+  {
     version: '1.12.0',
     fecha: '2026-08-30',
     texto: 'Registro por imagen completo: analiza fotos, facturas y comprobantes, identifica el total y te muestra si detectó un ingreso o un gasto antes de guardarlo.',

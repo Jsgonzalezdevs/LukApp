@@ -12,6 +12,7 @@ import { claveDePeriodo, etiquetaDePeriodo, periodoAdyacente } from './lib/perio
 import { nuevoId } from './lib/id';
 import { movimientoEnBlanco } from './lib/parseTransaction';
 import { parseMultipleTransactions } from './lib/parseMultipleTransactions';
+import { parseTransferenciaVoz, type TransferenciaPorVoz } from './lib/parseTransferenciaVoz';
 import type { ParsedTransaction } from './lib/parseTransaction';
 import { ReporteFinancieroModal } from './components/ReporteFinancieroModal';
 import { MultiCapturaModal } from './components/MultiCapturaModal';
@@ -253,6 +254,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
   const [multiPending, setMultiPending] = useState<ParsedTransaction[] | null>(null);
+  const [transferenciaPorVoz, setTransferenciaPorVoz] = useState<TransferenciaPorVoz | null>(null);
   const [editando, setEditando] = useState<Transaction | null>(null);
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
   // Una sola variable de navegación. Antes eran tres a la vez (la sección, la
@@ -432,6 +434,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   }, [cajitas, cajitaMovimientos, transacciones]);
 
   const handleSubmit = (text: string) => {
+    const transferencia = parseTransferenciaVoz(text, cuentasParaElegir);
+    if (transferencia) {
+      setTransferenciaPorVoz(transferencia);
+      return;
+    }
     const parseados = parseMultipleTransactions(text, cuentasParaElegir, categorias, lexico, transacciones);
     if (parseados.length > 1) {
       setMultiPending(parseados);
@@ -1182,6 +1189,27 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onSave={handleUpdate}
             onCancel={() => setEditando(null)}
           />
+        ) : null}
+
+        {transferenciaPorVoz ? (
+          <div className="fixed inset-0 z-[80] flex items-end bg-black/55 p-4 sm:items-center sm:justify-center">
+            <div className="w-full max-w-md rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-5 shadow-2xl">
+              <h2 className="text-lg font-bold text-[var(--fin-ink)]">Confirmar transferencia</h2>
+              <p className="mt-2 text-sm text-[var(--fin-ink-soft)]">
+                Mover {formatCop(transferenciaPorVoz.montoCop)} de{' '}
+                <strong>{nombreDeCuenta(transferenciaPorVoz.origenId)}</strong> a{' '}
+                <strong>{nombreDeCuenta(transferenciaPorVoz.destinoId)}</strong>.
+              </p>
+              <p className="mt-2 text-xs text-[var(--fin-ink-faint)]">Se actualizarán los saldos de las dos cuentas.</p>
+              <div className="mt-5 flex gap-2">
+                <button type="button" onClick={() => setTransferenciaPorVoz(null)} className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3 font-semibold text-[var(--fin-ink-soft)]">Cancelar</button>
+                <button type="button" onClick={() => {
+                  void almacen.transferirEntreCuentas(transferenciaPorVoz);
+                  setTransferenciaPorVoz(null);
+                }} className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 font-semibold text-[var(--fin-on-accent)]">Transferir</button>
+              </div>
+            </div>
+          </div>
         ) : null}
 
         <AvisoGuardado
