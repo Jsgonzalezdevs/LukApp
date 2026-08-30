@@ -38,6 +38,8 @@ export interface ConfirmDraft {
    * fecha es hoy y la pone quien guarda, no este formulario.
    */
   occurredOn?: string;
+  cuotasTotal?: number | null;
+  cuotaCop?: number | null;
 }
 
 interface ConfirmSheetProps {

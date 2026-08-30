@@ -282,6 +282,8 @@ interface FilaTransaccion {
   occurred_on: string;
   cuenta_id: string | null;
   raw_transcript: string;
+  cuotas_total: number | null;
+  cuota_cop: number | null;
   created_at: string;
 }
 
@@ -294,6 +296,8 @@ const aTransaccion = (fila: FilaTransaccion): Transaction => ({
   occurredOn: fila.occurred_on,
   cuentaId: fila.cuenta_id,
   rawTranscript: fila.raw_transcript,
+  cuotasTotal: fila.cuotas_total,
+  cuotaCop: fila.cuota_cop === null ? null : Number(fila.cuota_cop),
   createdAt: fila.created_at,
 });
 
@@ -307,6 +311,8 @@ const desdeTransaccion = (tx: Transaction, userId: string) => ({
   occurred_on: tx.occurredOn,
   cuenta_id: tx.cuentaId,
   raw_transcript: tx.rawTranscript,
+  cuotas_total: tx.cuotasTotal ?? null,
+  cuota_cop: tx.cuotaCop ?? null,
   created_at: tx.createdAt,
 });
 

@@ -462,6 +462,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       occurredOn: draft.occurredOn || bogotaDate(),
       cuentaId: draft.cuentaId,
       rawTranscript: draft.rawTranscript,
+      cuotasTotal: draft.cuotasTotal ?? null,
+      cuotaCop: draft.cuotaCop ?? null,
       createdAt: new Date().toISOString(),
     });
     // Jump back to the period the entry landed in, so a save is never invisible

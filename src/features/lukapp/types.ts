@@ -139,5 +139,8 @@ export interface Transaction {
   cuentaId: string | null;
   /** The untouched dictation, kept so a mis-parse can always be reconstructed. */
   rawTranscript: string;
+  /** Compra diferida: la deuda total y su cuota mensual no son lo mismo. */
+  cuotasTotal?: number | null;
+  cuotaCop?: number | null;
   createdAt: string;
 }

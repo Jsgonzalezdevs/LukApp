@@ -4,7 +4,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { ES_PASIVO, etiquetaTipoCajita } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
-import { idsPasivos, patrimonio, saldosPorCajita } from '../lib/cajitas';
+import { idsPasivos, patrimonio, saldosPorCajita, totalPorTipo } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
 import { AnimatedNumber } from './AnimatedNumber';
 
@@ -60,7 +60,8 @@ export const DineroView: React.FC<DineroViewProps> = ({
   const vivas = cajitas.filter((c) => c.archivedAt === null);
   const resumen = patrimonio(cajitas, movimientos, transacciones);
   const reservadoCop = mostrarAhorro ? 0 : resumen.cajitasCop;
-  const disponibleCop = resumen.totalCop - reservadoCop - resumen.deudasCop;
+  const deudaTarjetasCop = Math.abs(totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones));
+  const disponibleCop = resumen.totalCop - reservadoCop - (resumen.deudasCop - deudaTarjetasCop);
 
   return (
     <div className="flex flex-col gap-8">
@@ -137,6 +138,11 @@ export const DineroView: React.FC<DineroViewProps> = ({
                 const pasivo = ES_PASIVO[cajita.tipo];
                 const meta = cajita.metaCop;
                 const pct = meta && meta > 0 ? Math.min(100, (saldo / meta) * 100) : null;
+                const pagoMensualCop = cajita.tipo === 'tarjeta'
+                  ? transacciones
+                    .filter((tx) => tx.cuentaId === cajita.id && tx.cuotaCop)
+                    .reduce((total, tx) => total + (tx.cuotaCop ?? 0), 0)
+                  : 0;
 
                 return (
                   <li key={cajita.id}>
@@ -171,7 +177,9 @@ export const DineroView: React.FC<DineroViewProps> = ({
                           )}
                         </div>
                         <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
-                          {etiquetaTipoCajita(cajita)}
+                          {cajita.tipo === 'tarjeta' && pagoMensualCop > 0
+                            ? `Pago mensual estimado: ${formatCop(pagoMensualCop)}`
+                            : etiquetaTipoCajita(cajita)}
                         </span>
                         {pct !== null ? (
                           <>

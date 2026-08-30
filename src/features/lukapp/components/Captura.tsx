@@ -236,6 +236,8 @@ export const Captura: React.FC<CapturaProps> = ({
         cuentaId: idCuentaFinal,
         rawTranscript: parsed.raw,
         occurredOn: parsed.dateOverride,
+        cuotasTotal: parsed.cuotasTotal,
+        cuotaCop: parsed.cuotaCop,
       });
     } catch (error) {
       console.error('Error al guardar:', error);
@@ -414,6 +416,11 @@ export const Captura: React.FC<CapturaProps> = ({
           <Check className="h-4 w-4" />
           Imagen analizada: {resultadoImagen === 'ingreso' ? 'Ingreso detectado' : 'Gasto detectado'} · Revisa antes de guardar
         </div>
+      ) : null}
+      {parsed.cuotasTotal && parsed.cuotaCop ? (
+        <p className="mt-2 rounded-[var(--fin-r-card)] border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-[12.5px] font-semibold text-amber-600 dark:text-amber-400">
+          Compra a {parsed.cuotasTotal} cuotas de ${formatAmountInput(parsed.cuotaCop)} al mes. Se cargará a tu tarjeta cuando la elijas.
+        </p>
       ) : null}
       {!escaneandoFoto && errorImagen ? (
         <p className="mt-2 text-center text-[12px] font-medium text-[var(--fin-out)]">{errorImagen}</p>

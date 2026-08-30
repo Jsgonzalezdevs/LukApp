@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.17.0',
+    fecha: '2026-08-30',
+    texto: 'Las compras a cuotas ahora conservan su pago mensual. Las tarjetas muestran ese aviso y ya no reducen tu dinero disponible hasta que pagues.',
+  },
+  {
     version: '1.16.3',
     fecha: '2026-08-30',
     texto: 'Los comprobantes a cuotas ahora limpian los símbolos que el lector confunde con texto antes del nombre del comercio.',

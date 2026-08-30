@@ -256,6 +256,8 @@ export interface ParsedTransaction {
   raw: string;
   /** Extracted date override in YYYY-MM-DD format, e.g. from 'ayer' or 'anoche'. */
   dateOverride?: string;
+  cuotasTotal?: number | null;
+  cuotaCop?: number | null;
   confidence: number;
   confianzaGranular: ConfianzaGranular;
   needsReview: boolean;
@@ -343,6 +345,7 @@ const normalizarTextoOCR = (texto: string): string =>
 interface CompraACuotasOCR {
   totalCop: number;
   cuotas: number;
+  cuotaCop: number;
   comercio: string;
 }
 
@@ -353,11 +356,12 @@ interface CompraACuotasOCR {
  */
 const compraACuotasDesdeOCR = (raw: string): CompraACuotasOCR | null => {
   if (!raw.startsWith('[OCR]')) return null;
-  const match = /\$\s*([\d.]+(?:,\d{2})?)\s+en\s+(\d{1,2})\s*[x×]\s*(?:de\s*)?\$\s*[\d.]+(?:,\d{2})?/i.exec(raw);
+  const match = /\$\s*([\d.]+(?:,\d{2})?)\s+en\s+(\d{1,2})\s*[x×]\s*(?:de\s*)?\$\s*([\d.]+(?:,\d{2})?)/i.exec(raw);
   if (!match || match.index === undefined) return null;
 
   const totalCop = Number(match[1].replace(/\./g, '').replace(',', '.'));
   const cuotas = Number(match[2]);
+  const cuotaCop = Number(match[3].replace(/\./g, '').replace(',', '.'));
   if (!Number.isFinite(totalCop) || totalCop <= 0 || !Number.isInteger(cuotas) || cuotas < 2) return null;
 
   const prefijo = raw
@@ -373,7 +377,7 @@ const compraACuotasDesdeOCR = (raw: string): CompraACuotasOCR | null => {
   const comercio = (inicioComercio >= 0 ? prefijo.slice(inicioComercio) : prefijo)
     .replace(/^[-–—:]+|[-–—:]+$/g, '')
     .trim();
-  return { totalCop: Math.round(totalCop), cuotas, comercio };
+  return { totalCop: Math.round(totalCop), cuotas, cuotaCop: Math.round(cuotaCop), comercio };
 };
 
 /** Every maximal numeral in the input, with the token span it occupies. */
@@ -1428,6 +1432,8 @@ export const parseTransaction = (
     amount,
     category,
     dateOverride,
+    cuotasTotal: compraACuotasOCR?.cuotas ?? null,
+    cuotaCop: compraACuotasOCR?.cuotaCop ?? null,
     suggestedCategories,
     cuentaId,
     description,

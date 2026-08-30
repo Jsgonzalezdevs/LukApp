@@ -243,7 +243,11 @@ export const totalVisible = (
   contarAhorros: boolean,
 ): number => {
   const p = patrimonio(cajitas, movimientos, transacciones);
-  return contarAhorros ? p.netoCop : p.cuentasCop - p.deudasCop;
+  // Una tarjeta no vacía la cuenta hoy: muestra una obligación futura y el
+  // pago mensual se avisa en su sección. Las deudas directas sí se descuentan
+  // porque ya son dinero exigible fuera de ese ciclo de facturación.
+  const deudasDirectasCop = Math.abs(totalPorTipo(cajitas, movimientos, 'deuda', transacciones));
+  return contarAhorros ? p.totalCop - deudasDirectasCop : p.cuentasCop - deudasDirectasCop;
 };
 
 /**
