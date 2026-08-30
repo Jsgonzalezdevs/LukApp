@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.16.3',
+    fecha: '2026-08-30',
+    texto: 'Los comprobantes a cuotas ahora limpian los símbolos que el lector confunde con texto antes del nombre del comercio.',
+  },
+  {
     version: '1.16.2',
     fecha: '2026-08-30',
     texto: 'El análisis de imágenes ya no culpa a una foto nítida por fallos técnicos: reintenta con el archivo original y explica el problema real.',

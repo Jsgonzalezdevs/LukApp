@@ -13,6 +13,13 @@ describe('parseTransaction — expenses', () => {
     expect(r.signals.ambiguousAmount).toBe(false);
   });
 
+  it('quita los símbolos que el OCR inventa antes del comercio en una compra a cuotas', () => {
+    const r = parseTransaction(
+      '[OCR] 0 62 < € 00 00 Bold Sa*Platzi $899.259,00 en 12x de $74.938,25',
+    );
+    expect(r.description).toBe('Bold Sa*Platzi');
+  });
+
   it('reads a full expense sentence with a merchant', () => {
     const r = parseTransaction('gasté 20 mil en el mercado del D1');
     expect(r.kind).toBe('gasto');

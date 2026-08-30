@@ -366,7 +366,13 @@ const compraACuotasDesdeOCR = (raw: string): CompraACuotasOCR | null => {
     .replace(/\b\d{1,2}:\d{2}\b/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-  const comercio = prefijo.replace(/^[-–—:]+|[-–—:]+$/g, '').trim();
+  // Los iconos del comprobante (red, batería, botones) suelen quedar como
+  // cifras y símbolos antes del comercio. Conservamos desde la primera letra:
+  // “0 62 < € 00 00 Bold Sa*Platzi” pasa a “Bold Sa*Platzi”.
+  const inicioComercio = prefijo.search(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]/);
+  const comercio = (inicioComercio >= 0 ? prefijo.slice(inicioComercio) : prefijo)
+    .replace(/^[-–—:]+|[-–—:]+$/g, '')
+    .trim();
   return { totalCop: Math.round(totalCop), cuotas, comercio };
 };
 
