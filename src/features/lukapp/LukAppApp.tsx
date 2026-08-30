@@ -541,7 +541,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   // acciones de verdad (crear, transferir, aportar, abonar) siguen viviendo en
   // las vistas de siempre, que se abren desde aquí. Así la pantalla nueva es
   // más limpia sin que se pierda nada de lo que la app sabía hacer.
-  const [panelDinero, setPanelDinero] = useState<'cuenta' | 'cajita' | 'deuda' | null>(null);
+  const [panelDinero, setPanelDinero] = useState<'cuenta' | 'cajita' | 'deuda' | 'tarjeta' | null>(null);
   const [panelDineroCajitaId, setPanelDineroCajitaId] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<Transaction | null>(null);
   const [guardado, setGuardado] = useState<Guardado | null>(null);
@@ -742,8 +742,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onAbrir={(cajita) => {
               setPanelDineroCajitaId(cajita.id);
               setPanelDinero(
-                ES_PASIVO[cajita.tipo] ? 'deuda' : cajita.tipo === 'cajita' ? 'cajita' : 'cuenta',
+                cajita.tipo === 'tarjeta' ? 'tarjeta' : ES_PASIVO[cajita.tipo] ? 'deuda' : cajita.tipo === 'cajita' ? 'cajita' : 'cuenta',
               );
+            }}
+            onAbrirTarjetas={() => {
+              setPanelDineroCajitaId(null);
+              setPanelDinero('tarjeta');
             }}
             onCrear={() => {
               setPanelDineroCajitaId(null);
@@ -837,7 +841,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             titulo={
               panelDineroCajitaId !== null
                 ? cajitas.find((c) => c.id === panelDineroCajitaId)?.nombre ?? ''
-                : panelDinero === 'deuda'
+                : panelDinero === 'tarjeta'
+                  ? 'Tarjetas de crédito'
+                  : panelDinero === 'deuda'
                   ? 'Tarjetas y deudas'
                   : panelDinero === 'cajita'
                     ? 'Ahorros'

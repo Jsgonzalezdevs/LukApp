@@ -15,6 +15,8 @@ interface DineroViewProps {
   mostrarAhorro: boolean;
   /** Abre el detalle de una cuenta: historial, saldo, editar. */
   onAbrir: (cajita: Cajita) => void;
+  /** Abre el espacio dedicado a tarjetas, incluso si aún no hay ninguna. */
+  onAbrirTarjetas: () => void;
   onCrear: () => void;
   modoPrivacidad?: boolean;
   cuentaFavoritaId?: string | null;
@@ -24,7 +26,8 @@ interface DineroViewProps {
 const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string }> = [
   { tipos: ['cuenta'], titulo: 'Cuentas' },
   { tipos: ['cajita'], titulo: 'Ahorros' },
-  { tipos: ['tarjeta', 'deuda'], titulo: 'Tarjetas y deudas' },
+  { tipos: ['tarjeta'], titulo: 'Tarjetas de crédito' },
+  { tipos: ['deuda'], titulo: 'Deudas' },
 ];
 
 /**
@@ -48,6 +51,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
   movimientos,
   mostrarAhorro,
   onAbrir,
+  onAbrirTarjetas,
   onCrear,
   modoPrivacidad = false,
   cuentaFavoritaId = null,
@@ -109,7 +113,18 @@ export const DineroView: React.FC<DineroViewProps> = ({
 
         return (
           <section key={grupo.titulo}>
-            <h2 className="px-1 pb-2 text-[13px] text-[var(--fin-ink-faint)]">{grupo.titulo}</h2>
+            <div className="flex items-center justify-between px-1 pb-2">
+              <h2 className="text-[13px] text-[var(--fin-ink-faint)]">{grupo.titulo}</h2>
+              {grupo.tipos.length === 1 && grupo.tipos[0] === 'tarjeta' ? (
+                <button
+                  type="button"
+                  onClick={onAbrirTarjetas}
+                  className="text-[13px] font-semibold text-[var(--fin-ink-soft)] underline underline-offset-4"
+                >
+                  Ver todas
+                </button>
+              ) : null}
+            </div>
 
             {/* Una sola tarjeta con filas separadas por una línea, como la lista
  de Ajustes de iOS. Antes cada cuenta era su propia tarjeta con su
@@ -189,13 +204,22 @@ export const DineroView: React.FC<DineroViewProps> = ({
       })}
 
       {vivas.length > 0 ? (
-        <button
-          type="button"
-          onClick={onCrear}
-          className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
-        >
-          Agregar una cuenta
-        </button>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={onCrear}
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+          >
+            Agregar cuenta
+          </button>
+          <button
+            type="button"
+            onClick={onAbrirTarjetas}
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-line)]"
+          >
+            Tarjetas de crédito
+          </button>
+        </div>
       ) : null}
     </div>
   );

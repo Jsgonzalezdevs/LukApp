@@ -74,6 +74,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const propias = cajitas.filter((c) => c.tipo === tipo);
   const resumenes = resumenDeCajitas(propias, movimientos, transacciones);
   const esCuenta = tipo === 'cuenta';
+  const esTarjeta = tipo === 'tarjeta';
+  const nombreTipo = esTarjeta ? 'tarjeta de crédito' : esCuenta ? 'cuenta' : 'cajita';
   const total = resumenes.reduce((t, r) => t + r.saldoCop, 0);
 
   const crear = (e: React.FormEvent) => {
@@ -113,14 +115,14 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <PiggyBank className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
-            {esCuenta ? COPY.cuentas.total : COPY.cajitas.total}
+            {esTarjeta ? 'Deuda total de tarjetas' : esCuenta ? COPY.cuentas.total : COPY.cajitas.total}
           </h2>
           <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-ink)]">
             <AnimatedNumber value={total} format={formatCop} />
           </p>
           {resumenes.length > 0 ? (
             <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
-              repartido en {resumenes.length} {esCuenta ? 'cuenta' : 'cajita'}
+            repartido en {resumenes.length} {nombreTipo}
               {resumenes.length === 1 ? '' : 's'}
             </p>
           ) : null}
@@ -180,7 +182,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             onSubmit={crear}
             className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-              {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
+              {esTarjeta ? 'Nueva tarjeta de crédito' : esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
             </h2>
 
             <label
@@ -194,7 +196,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder={
-                esCuenta ? COPY.cuentas.nombrePlaceholder : COPY.cajitas.nombrePlaceholder
+                esTarjeta ? 'Ej. Bancolombia Mastercard' : esCuenta ? COPY.cuentas.nombrePlaceholder : COPY.cajitas.nombrePlaceholder
               }
               autoFocus
               className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
@@ -204,7 +206,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               htmlFor="cajita-saldo"
               className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
-              {esCuenta ? COPY.cuentas.saldoInicial : COPY.cajitas.saldoInicial}
+              {esTarjeta ? 'Deuda actual (opcional)' : esCuenta ? COPY.cuentas.saldoInicial : COPY.cajitas.saldoInicial}
             </label>
             <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
               <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
@@ -218,7 +220,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               />
             </div>
             <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-              {COPY.cajitas.saldoInicialHint}
+              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : COPY.cajitas.saldoInicialHint}
             </p>
 
             <fieldset className="mt-4">
@@ -248,7 +250,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               </div>
             </fieldset>
 
-            {!esCuenta ? (
+            {!esCuenta && !esTarjeta ? (
               <>
                 <label
                   htmlFor="cajita-meta"
@@ -272,7 +274,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               </>
             ) : null}
 
-            {!esCuenta ? (
+            {!esCuenta && !esTarjeta ? (
               <>
                 <label
                   htmlFor="cajita-tasa"
@@ -306,7 +308,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
-                {esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
+                {esTarjeta ? 'Crear tarjeta' : esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
               </RippleButton>
               <button
                 type="button"
@@ -324,7 +326,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             className="flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
           >
             <Plus className="h-4 w-4" strokeWidth={3} />
-            {esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
+            {esTarjeta ? 'Agregar tarjeta de crédito' : esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
           </button>
         )}
         </AnimatePresence>
@@ -339,10 +341,10 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               <PiggyBank className="h-10 w-10" strokeWidth={1.5} />
             </span>
             <p className="mt-3 text-[17px] font-semibold text-[var(--fin-ink)]">
-              {esCuenta ? COPY.cuentas.vacio : COPY.cajitas.vacio}
+              {esTarjeta ? 'Aún no tienes tarjetas de crédito' : esCuenta ? COPY.cuentas.vacio : COPY.cajitas.vacio}
             </p>
             <p className="mt-1 text-[15px] text-[var(--fin-ink-faint)]">
-              {esCuenta ? COPY.cuentas.vacioHint : COPY.cajitas.vacioHint}
+              {esTarjeta ? 'Agrega la tarjeta de tu banco para registrar compras y ver cuánto debes.' : esCuenta ? COPY.cuentas.vacioHint : COPY.cajitas.vacioHint}
             </p>
           </div>
         ) : null}
