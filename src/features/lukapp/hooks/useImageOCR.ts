@@ -1,5 +1,20 @@
 import { useState } from 'react';
 
+class SinTextoEnImagenError extends Error {
+  constructor() {
+    super('La imagen no contenía texto legible');
+    this.name = 'SinTextoEnImagenError';
+  }
+}
+
+const limpiarTextoOCR = (text: string): string =>
+  text
+    .replace(/[|]/g, 'I')
+    .replace(/[“”]/g, '"')
+    .replace(/\n+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
 const prepararImagen = async (file: File): Promise<Blob | File> => {
   return new Promise((resolve) => {
     const img = new Image();
@@ -65,32 +80,48 @@ export const useImageOCR = (onSuccess: (text: string) => void) => {
 
       // Import dinámico a propósito: Tesseract solo se descarga cuando se usa
       const { default: Tesseract } = await import('tesseract.js');
-      const result = await Tesseract.recognize(optimizado, 'spa', {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            setProgress(m.progress);
-          }
-        },
-      });
+      const reconocer = async (imagen: Blob | File) => {
+        const result = await Tesseract.recognize(imagen, 'spa', {
+          logger: (m) => {
+            if (m.status === 'recognizing text') setProgress(m.progress);
+          },
+        });
+        return limpiarTextoOCR(result.data.text);
+      };
 
-      const text = result.data.text;
-      const cleanText = text
-        .replace(/[|]/g, 'I')
-        .replace(/[“”]/g, '"')
-        .replace(/\n+/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-
-      if (cleanText.length < 3) {
-        throw new Error('La imagen no contenía texto legible');
+      let cleanText = '';
+      try {
+        cleanText = await reconocer(optimizado);
+      } catch (errorOptimizado) {
+        if (optimizado === file) throw errorOptimizado;
+        // El JPEG derivado puede fallar en Safari aunque el archivo original
+        // sea perfectamente válido para el worker de OCR.
+        cleanText = await reconocer(file);
       }
+
+      // Algunos comprobantes ya nítidos (sobre todo capturas de apps bancarias)
+      // pierden trazos finos al pasar por el canvas de iOS. Si no se obtuvo
+      // texto útil, el archivo original tiene una segunda oportunidad antes de
+      // decirle a la persona que su foto tiene un problema.
+      if (cleanText.length < 3 && optimizado !== file) {
+        cleanText = await reconocer(file);
+      }
+
+      if (cleanText.length < 3) throw new SinTextoEnImagenError();
 
       // El prefijo permite al parser aplicar reglas propias de facturas y
       // comprobantes, sin confundirlas con un dictado normal.
       onSuccess(`[OCR] ${cleanText}`);
     } catch (err) {
       console.error('Error procesando imagen con OCR:', err);
-      setError('No se pudo analizar la imagen. Intenta con otra foto más nítida.');
+      if (err instanceof SinTextoEnImagenError) {
+        setError('No encontramos texto en la imagen. Sube el comprobante completo o inténtalo de nuevo.');
+      } else {
+        // Una caída del worker, falta de memoria o un formato que el navegador
+        // no abre no dicen nada sobre la nitidez. El mensaje anterior culpaba
+        // erróneamente a la foto y escondía la posibilidad de reintentar.
+        setError('No pudimos leer el archivo en este momento. Tu foto puede estar bien; inténtalo otra vez.');
+      }
     } finally {
       setIsScanning(false);
       setProgress(0);

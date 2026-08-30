@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.16.2',
+    fecha: '2026-08-30',
+    texto: 'El análisis de imágenes ya no culpa a una foto nítida por fallos técnicos: reintenta con el archivo original y explica el problema real.',
+  },
+  {
     version: '1.16.1',
     fecha: '2026-08-30',
     texto: 'Cancelar el selector de fotos ya no bloquea la cámara: puedes volver a abrir Archivos y elegir tu comprobante enseguida.',
