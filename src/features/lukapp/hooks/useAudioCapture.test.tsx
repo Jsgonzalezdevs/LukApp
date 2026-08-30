@@ -14,7 +14,13 @@ type GrabadoraFalsa = {
 };
 
 const grabadoras: GrabadoraFalsa[] = [];
-const pista = { stop: vi.fn() };
+let alTerminarPista: (() => void) | undefined;
+const pista = {
+  stop: vi.fn(),
+  addEventListener: vi.fn((evento: string, escuchar: () => void) => {
+    if (evento === 'ended') alTerminarPista = escuchar;
+  }),
+};
 const flujo = { getTracks: () => [pista] } as unknown as MediaStream;
 let ahora = 0;
 
@@ -70,6 +76,8 @@ beforeEach(() => {
   vi.spyOn(Date, 'now').mockImplementation(() => ahora);
   grabadoras.length = 0;
   pista.stop.mockReset();
+  pista.addEventListener.mockClear();
+  alTerminarPista = undefined;
   MediaRecorderFalso.lanzarAlConstruir = false;
   MediaRecorderFalso.emitirVacio = false;
   MediaRecorderFalso.demorarStop = false;
@@ -207,6 +215,19 @@ describe('useAudioCapture', () => {
     expect(result.current.status).toBe('idle');
     expect(result.current.error).toBe('Se interrumpió la grabación.');
     expect(pista.stop).toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('sale con un mensaje claro si la pista termina sin que MediaRecorder informe error', async () => {
+    const alFinal = vi.fn();
+    const { result } = renderHook(() => useAudioCapture(alFinal));
+    await act(async () => result.current.start());
+
+    await act(async () => alTerminarPista?.());
+
+    expect(result.current.status).toBe('idle');
+    expect(result.current.error).toContain('micrófono se desconectó');
+    expect(alFinal).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
   });
 

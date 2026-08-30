@@ -461,7 +461,13 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       return;
     }
 
+    // `MediaRecorder.onerror` no está garantizado cuando el sistema corta una
+    // pista (llamada entrante, permiso revocado o Bluetooth desconectado). La
+    // pista sí termina; escucharla evita que el dictado quede congelado como si
+    // aún estuviera esperando una respuesta que nunca llegará.
+    let cerrandoMicrofono = false;
     const cerrarMicrofono = () => {
+      cerrandoMicrofono = true;
       stream.getTracks().forEach((pista) => pista.stop());
       detenerMedidor();
     };
@@ -498,6 +504,25 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
       setStatus('idle');
       setError('Se interrumpió la grabación.');
     };
+
+    const interrumpirPorPista = () => {
+      // Al cerrar normalmente, `track.stop()` también puede emitir `ended`.
+      // En ese caso el `onstop` normal conserva y transcribe el audio.
+      if (cerrandoMicrofono || canceladoRef.current) return;
+      canceladoRef.current = true;
+      quitarTope();
+      detenerSegmentos();
+      setError('El micrófono se desconectó. Intenta grabar de nuevo.');
+      if (grabadora.state !== 'inactive') grabadora.stop();
+      else {
+        cerrarMicrofono();
+        grabadoraRef.current = null;
+        setStatus('idle');
+      }
+    };
+    stream.getTracks().forEach((pista) => {
+      pista.addEventListener('ended', interrumpirPorPista, { once: true });
+    });
 
     grabadora.onstop = async () => {
       quitarTope();

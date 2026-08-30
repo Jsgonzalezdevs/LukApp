@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.2',
+    fecha: '2026-08-30',
+    texto: 'El dictado ahora se recupera si el micrófono se desconecta de golpe, sin quedarse bloqueado ni intentar guardar una nota incompleta.',
+  },
+  {
     version: '2.0.1',
     fecha: '2026-08-30',
     texto: 'Las tarjetas ahora unen las compras registradas por voz o comprobante con el saldo y muestran, en un solo lugar, qué cuota debes pagar este mes.',
