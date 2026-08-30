@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.5',
+    fecha: '2026-08-30',
+    texto: 'Cada actualización de LukApp ahora renueva el caché de la app instalada, evitando que una PWA conserve archivos antiguos.',
+  },
+  {
     version: '2.0.4',
     fecha: '2026-08-30',
     texto: 'Los abonos a tarjeta ahora también se aplican a la cuota pendiente del mes, para que el aviso no te cobre dos veces lo que ya pagaste.',

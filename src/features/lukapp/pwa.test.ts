@@ -9,6 +9,7 @@ const leer = (ruta: string) => readFileSync(resolve(raiz, ruta), 'utf8');
 const manifest = JSON.parse(leer('public/ecosistema.webmanifest'));
 const sw = leer('public/sw.js');
 const html = leer('index.html');
+const version = leer('src/version.ts').match(/VERSION = '([^']+)'/)?.[1];
 
 describe('manifest', () => {
   it('declares what a browser needs before it offers to install', () => {
@@ -57,6 +58,11 @@ describe('manifest', () => {
 });
 
 describe('service worker', () => {
+  it('renueva el caché con cada versión publicada de LukApp', () => {
+    expect(version).toBeTruthy();
+    expect(sw).toContain(`const VERSION = 'v${version}'`);
+  });
+
   it('never caches the API, Supabase or auth', () => {
     expect(sw).toContain("url.pathname.startsWith('/api/')");
     expect(sw).toContain("url.hostname.endsWith('.supabase.co')");
