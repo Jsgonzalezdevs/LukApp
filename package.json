@@ -1,7 +1,7 @@
 {
   "name": "lukapp",
   "private": true,
-  "version": "1.11.34",
+  "version": "1.11.35",
   "type": "module",
   "description": "LukApp — Plataforma de finanzas personales asistida por IA y comandos de voz",
   "scripts": {
@@ -11,7 +11,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:audio-cobertura": "vitest run --coverage --coverage.include=src/features/lukapp/hooks/useAudioCapture.ts --coverage.thresholds.lines=95 --coverage.thresholds.statements=95"
   },
   "dependencies": {
     "@react-three/fiber": "^9.7.0",
@@ -37,6 +38,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.11",
     "autoprefixer": "^10.5.2",
     "fake-indexeddb": "^6.2.5",
     "jsdom": "^30.0.1",

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.35',
+    fecha: '2026-08-30',
+    texto: 'Reforzamos las pruebas del micrófono: ahora cubren señal caída, desconexión abrupta, permisos, audio vacío, reintentos y transcripción parcial.',
+  },
+  {
     version: '1.11.34',
     fecha: '2026-08-30',
     texto: 'Mejoramos el registro por voz y foto: reconoce frases como “me dio” y “me transfirió” como ingresos, usa menos datos en señal débil y lee comprobantes con más claridad.',
