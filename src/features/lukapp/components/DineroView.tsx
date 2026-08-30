@@ -7,6 +7,8 @@ import { iconoDeCajita } from '../cajitaIconos';
 import { idsPasivos, patrimonio, saldosPorCajita, totalPorTipo } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
 import { AnimatedNumber } from './AnimatedNumber';
+import { pagoMensualTarjeta } from '../lib/cuotasTarjeta';
+import { monthKey, bogotaDate } from '../lib/localDate';
 
 interface DineroViewProps {
   transacciones: readonly Transaction[];
@@ -139,9 +141,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
                 const meta = cajita.metaCop;
                 const pct = meta && meta > 0 ? Math.min(100, (saldo / meta) * 100) : null;
                 const pagoMensualCop = cajita.tipo === 'tarjeta'
-                  ? transacciones
-                    .filter((tx) => tx.cuentaId === cajita.id && tx.cuotaCop)
-                    .reduce((total, tx) => total + (tx.cuotaCop ?? 0), 0)
+                  ? pagoMensualTarjeta(transacciones, cajita.id, monthKey(bogotaDate()))
                   : 0;
 
                 return (

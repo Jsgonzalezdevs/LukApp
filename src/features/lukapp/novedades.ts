@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.0',
+    fecha: '2026-08-30',
+    texto: 'LukApp 2.0 renueva las tarjetas: calcula cada cuota por mes, separa la deuda del efectivo disponible y hace más claro qué debes pagar.',
+  },
+  {
     version: '1.17.0',
     fecha: '2026-08-30',
     texto: 'Las compras a cuotas ahora conservan su pago mensual. Las tarjetas muestran ese aviso y ya no reducen tu dinero disponible hasta que pagues.',
