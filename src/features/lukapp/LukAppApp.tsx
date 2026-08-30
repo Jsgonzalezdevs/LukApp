@@ -1192,8 +1192,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         ) : null}
 
         {transferenciaPorVoz ? (
-          <div className="fixed inset-0 z-[80] flex items-end bg-black/55 p-4 sm:items-center sm:justify-center">
-            <div className="w-full max-w-md rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-5 shadow-2xl">
+          <div className="fixed inset-0 z-[80] flex items-end bg-black/80 p-4 backdrop-blur-sm sm:items-center sm:justify-center">
+            <div className="w-full max-w-md rounded-[var(--fin-r-sheet)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
               <h2 className="text-lg font-bold text-[var(--fin-ink)]">Confirmar transferencia</h2>
               <p className="mt-2 text-sm text-[var(--fin-ink-soft)]">
                 Mover {formatCop(transferenciaPorVoz.montoCop)} de{' '}

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.13.3',
+    fecha: '2026-08-30',
+    texto: 'La confirmación de transferencias ahora tiene un fondo sólido y más contraste para leerse con claridad.',
+  },
+  {
     version: '1.13.2',
     fecha: '2026-08-30',
     texto: 'La voz ahora muestra una lectura previa más rápido y evita reenvíos lentos cuando el servidor rechaza el audio.',
