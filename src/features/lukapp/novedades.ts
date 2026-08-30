@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '1.11.36',
+    fecha: '2026-08-30',
+    texto: 'La app instalada ahora abre directamente tu Dashboard. Las instalaciones anteriores también se corrigen al iniciar.',
+  },
+  {
     version: '1.11.35',
     fecha: '2026-08-30',
     texto: 'Reforzamos las pruebas del micrófono: ahora cubren señal caída, desconexión abrupta, permisos, audio vacío, reintentos y transcripción parcial.',

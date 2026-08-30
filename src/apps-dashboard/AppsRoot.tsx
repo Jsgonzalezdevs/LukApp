@@ -51,6 +51,11 @@ function detectActiveAppFromPath(pathname: string): AppId {
   return 'finanzas';
 }
 
+/** Una PWA ya instalada puede conservar la URL raíz de un manifiesto antiguo. */
+const esPwaInstalada = (): boolean =>
+  window.matchMedia?.('(display-mode: standalone)').matches === true ||
+  (navigator as Navigator & { standalone?: boolean }).standalone === true;
+
 interface AdminBackup {
   access_token: string;
   refresh_token: string;
@@ -74,7 +79,16 @@ export const AppsRoot: React.FC = () => {
   const [loadingRol, setLoadingRol] = useState(true);
 
   const { ruta, ir } = useRuta();
-  const enPortada = activeApp === 'finanzas' && (segmentosDe(ruta).length === 0 || ruta === '/' || ruta === '/finanzas');
+  const enPortada =
+    !esPwaInstalada() &&
+    activeApp === 'finanzas' &&
+    (segmentosDe(ruta).length === 0 || ruta === '/' || ruta === '/finanzas');
+
+  // Además del `start_url` del manifiesto, esto repara instalaciones hechas
+  // antes de que la PWA apuntara al Dashboard y deja la URL coherente al abrir.
+  useEffect(() => {
+    if (esPwaInstalada() && ruta === '/') ir('/app');
+  }, [ir, ruta]);
 
   // Admin impersonation banner
   const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {

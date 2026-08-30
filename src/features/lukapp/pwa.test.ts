@@ -14,7 +14,7 @@ describe('manifest', () => {
   it('declares what a browser needs before it offers to install', () => {
     expect(manifest.name).toBeTruthy();
     expect(manifest.short_name).toBeTruthy();
-    expect(manifest.start_url).toBe('/');
+    expect(manifest.start_url).toBe('/app');
     expect(manifest.display).toBe('standalone');
   });
 

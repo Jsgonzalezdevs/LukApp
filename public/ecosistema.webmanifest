@@ -5,7 +5,7 @@
   "description": "Tus finanzas personales inteligentes: cuentas, ahorro, presupuestos y control por voz.",
   "lang": "es-CO",
   "dir": "ltr",
-  "start_url": "/",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
