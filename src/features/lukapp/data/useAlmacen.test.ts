@@ -718,6 +718,47 @@ describe('useAlmacen — recargar', () => {
     expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['recien-anotada']);
   });
 
+  it('ignora una recarga vieja que termina después de que el guardado ya acabó', async () => {
+    // La recarga sale primero y obtiene una foto sin el movimiento. La escritura
+    // termina rápido; si la respuesta vieja se aplicara después, la fila
+    // desaparecería aunque ya esté persistida.
+    let demorarLectura = false;
+    let soltarLectura: () => void = () => {};
+    const bloqueo = new Promise<void>((res) => {
+      soltarLectura = res;
+    });
+    const base = new RepositorioMemoria();
+    const repo: Repositorio = {
+      ...base,
+      cargarTodo: async () => {
+        const foto = await base.cargarTodo();
+        if (demorarLectura) await bloqueo;
+        return foto;
+      },
+      guardarTransacciones: (transacciones) => base.guardarTransacciones(transacciones),
+    } as Repositorio;
+    const { result } = await montar(repo);
+
+    demorarLectura = true;
+    const recargando = result.current.recargar();
+    // Deja que `cargarTodo()` tome su foto antigua y quede esperando antes de
+    // guardar; no envolvemos esta promesa incompleta en `act` porque React la
+    // esperaría hasta que el propio test la libere.
+    await Promise.resolve();
+
+    await act(async () => {
+      await result.current.agregarTransaccion(tx({ id: 'guardada-despues' }));
+    });
+    expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['guardada-despues']);
+
+    soltarLectura();
+    await act(async () => {
+      await recargando;
+    });
+
+    expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['guardada-despues']);
+  });
+
   it('si no hay conexión, se queda con lo que ya tenía en vez de vaciarse', async () => {
     const repo = new RepositorioMemoria({ transacciones: [tx()] });
     const { result } = await montar(repo);

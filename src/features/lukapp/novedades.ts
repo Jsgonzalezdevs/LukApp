@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.7',
+    fecha: '2026-08-30',
+    texto: 'Un movimiento recién guardado ya no puede desaparecer si una sincronización anterior termina unos segundos después.',
+  },
+  {
     version: '2.0.6',
     fecha: '2026-08-30',
     texto: 'También afinamos los gestos táctiles para que, al cambiar de pantalla, no se queden escuchando una referencia anterior.',

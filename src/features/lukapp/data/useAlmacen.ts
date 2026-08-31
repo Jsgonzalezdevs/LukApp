@@ -194,6 +194,18 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   const escrituras = useRef(0);
 
   /**
+   * Cada escritura invalida las lecturas que ya estaban en camino.
+   *
+   * El contador de arriba cubre la parte evidente: no iniciar una recarga
+   * mientras se guarda. Pero una recarga puede haber empezado ANTES del
+   * guardado y terminar DESPUÉS, cuando el contador ya volvió a cero. Esa
+   * respuesta trae la foto anterior y, si se aplicara, haría desaparecer por
+   * unos segundos un movimiento que sí quedó guardado. Esta revisión permite
+   * distinguir esa respuesta vieja de una lectura que sí empezó después.
+   */
+  const revisionDeDatos = useRef(0);
+
+  /**
    * Vuelve a preguntarle al repositorio cuántos cambios sin subir tiene. No
    * pasa nada si `repo` no lo soporta (todo lo que no sea `RepositorioConCola`
    * — sin cola no hay nada que contar) ni si falla la propia pregunta.
@@ -230,9 +242,16 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
    */
   const recargar = useCallback(async () => {
     if (escrituras.current > 0) return;
+    const revisionAlEmpezar = revisionDeDatos.current;
     try {
       const fresco = await repo.cargarTodo();
-      if (montado.current && escrituras.current === 0) setDatos(fresco);
+      if (
+        montado.current &&
+        escrituras.current === 0 &&
+        revisionDeDatos.current === revisionAlEmpezar
+      ) {
+        setDatos(fresco);
+      }
     } catch {
       // Sin internet o con el servidor caído se sigue viendo lo que ya había,
       // que es correcto: son datos de verdad, solo que de hace un rato.
@@ -370,6 +389,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   const aplicar = useCallback(
     async (siguiente: Instantanea, escribir: () => Promise<void>) => {
       const anterior = datos;
+      // Invalida primero una lectura que hubiera salido justo antes de este
+      // cambio. Si llega tarde, ya no podrá reemplazar este estado nuevo.
+      revisionDeDatos.current += 1;
       setDatos(siguiente);
       // Se apunta ANTES de escribir y se descuenta en el finally, pase lo que
       // pase. Mientras esté por encima de cero, `recargar` se abstiene: una
