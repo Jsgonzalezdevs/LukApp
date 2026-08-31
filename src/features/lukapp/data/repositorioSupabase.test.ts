@@ -157,6 +157,18 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
     // real quedaría disfrazado de sesión inválida y nadie lo encontraría.
     await expect(
       new RepositorioSupabase(clienteQueFalla('column "color" does not exist'), 'u1').cargarTodo(),
-    ).rejects.toThrow('No se pudieron leer las categorías: column "color" does not exist');
+    ).rejects.toThrow('incompleta o desactualizada');
+  });
+
+  it('no llama base vacía a una base que solo tiene una migración atrasada', async () => {
+    await expect(
+      new RepositorioSupabase(clienteQueFalla('relation "public.contactos" does not exist'), 'u1').cargarTodo(),
+    ).rejects.toThrow('incompleta o desactualizada');
+  });
+
+  it('traduce también una columna nueva que todavía no existe', async () => {
+    await expect(
+      new RepositorioSupabase(clienteQueFalla('column "cuenta_id" does not exist in schema cache'), 'u1').cargarTodo(),
+    ).rejects.toThrow('incompleta o desactualizada');
   });
 });

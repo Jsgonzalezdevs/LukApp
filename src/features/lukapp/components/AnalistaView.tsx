@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import type { Transaction } from '../types';
+import type { Category } from '../types';
 import { planearImportacion } from '../analista/aMovimientos';
 import type { Trabajo } from '../analista/useAnalista';
 import { useAnalista } from '../analista/useAnalista';
@@ -21,7 +22,9 @@ import { AnalistaReporte } from './AnalistaReporte';
 
 interface AnalistaViewProps {
   existentes: readonly Transaction[];
+  cuentas: readonly { id: string; nombre: string }[];
   onImportar: (nuevos: Transaction[]) => void;
+  onCompletar: (movimiento: Transaction) => void;
 }
 
 const nuevoId = (): string =>
@@ -97,7 +100,9 @@ const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar
 interface TrabajoListoProps {
   trabajo: Trabajo;
   existentes: readonly Transaction[];
+  cuentaId: string | null;
   onImportar: (nuevos: Transaction[]) => void;
+  onCompletar: (movimiento: Transaction) => void;
   onQuitar: (id: string) => void;
   contraido: boolean;
   onToggle: (id: string) => void;
@@ -106,7 +111,9 @@ interface TrabajoListoProps {
 const TrabajoListo: React.FC<TrabajoListoProps> = ({
   trabajo,
   existentes,
+  cuentaId,
   onImportar,
+  onCompletar,
   onQuitar,
   contraido,
   onToggle,
@@ -119,7 +126,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   // Recomputed on every render from the CURRENT ledger, not memoized against a
   // stale snapshot — importing job A must immediately stop job B from also
   // offering the same overlapping rows as "new".
-  const plan = planearImportacion(trabajo.resultado.movimientos, existentes, nuevoId);
+  const plan = planearImportacion(trabajo.resultado.movimientos, existentes, nuevoId, undefined, cuentaId);
 
   return (
     <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
@@ -240,6 +247,21 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                             />
                             Son distintos, impórtalo también
                           </label>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onCompletar({
+                                ...p.yaTengo,
+                                description: p.movimiento.descripcion,
+                                category: p.movimiento.categoria as Category,
+                                cuentaId: p.yaTengo.cuentaId ?? cuentaId,
+                                rawTranscript: `${p.yaTengo.rawTranscript} · extracto: ${p.movimiento.descripcion}`.trim(),
+                              })
+                            }
+                            className="mt-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-in-bg)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-in)]"
+                          >
+                            Completar este movimiento
+                          </button>
                         </li>
                       );
                     })}
@@ -290,8 +312,9 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 
 // -----------------------------------------------------------------------------
 
-export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImportar }) => {
+export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas, onImportar, onCompletar }) => {
   const analista = useAnalista();
+  const [cuentaId, setCuentaId] = useState<string | null>(cuentas.length === 1 ? cuentas[0].id : null);
   const [arrastrando, setArrastrando] = useState(false);
   const [contraidos, setContraidos] = useState<Set<string>>(new Set());
   const inputArchivo = useRef<HTMLInputElement>(null);
@@ -403,6 +426,24 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
         </p>
       </section>
 
+      <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+        <label className="block text-[15px] font-semibold text-[var(--fin-ink)]" htmlFor="cuenta-extracto">
+          ¿A qué cuenta pertenece este extracto?
+        </label>
+        <select
+          id="cuenta-extracto"
+          value={cuentaId ?? ''}
+          onChange={(e) => setCuentaId(e.target.value || null)}
+          className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-[15px] text-[var(--fin-ink)]"
+        >
+          <option value="">No asignar todavía</option>
+          {cuentas.map((cuenta) => <option key={cuenta.id} value={cuenta.id}>{cuenta.nombre}</option>)}
+        </select>
+        <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
+          Los movimientos nuevos actualizarán el saldo. Los que ya anotaste se pueden completar sin duplicarlos.
+        </p>
+      </section>
+
       {/* ---------- Jobs in flight ---------- */}
       {enCurso.length > 0 ? (
         <ul className="flex flex-col gap-3">
@@ -438,7 +479,9 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, onImport
               key={trabajo.id}
               trabajo={trabajo}
               existentes={existentes}
+              cuentaId={cuentaId}
               onImportar={onImportar}
+              onCompletar={onCompletar}
               onQuitar={analista.quitarTrabajo}
               contraido={contraidos.has(trabajo.id)}
               onToggle={toggleContraido}

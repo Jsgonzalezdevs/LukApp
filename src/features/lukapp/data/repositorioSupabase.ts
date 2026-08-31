@@ -81,12 +81,17 @@ export class RepositorioSupabase implements Repositorio {
       throw new Error('Ese registro ya existe.');
     }
 
-    // PostgREST reports an unmigrated database as a missing table in its schema
-    // cache. Raw, that reads like a bug in the app; it is almost always the
-    // migration simply not having been run yet, so say that instead.
-    if (error.message.includes('schema cache')) {
+    // PostgREST uses "schema cache" for both a completely new database and a
+    // database that is missing a later table or column. Calling every one of
+    // those cases "base vacía" sent people back to 0001 even when that
+    // migration was already applied. The fix is the same operationally, but
+    // the message must describe an incomplete/out-of-date schema.
+    if (
+      error.message.includes('schema cache') ||
+      /relation .* does not exist|column .* does not exist/i.test(error.message)
+    ) {
       throw new Error(
-        'La base de datos está vacía: falta correr la migración de supabase/migrations/0001_finanzas.sql en el SQL Editor de Supabase.',
+        'La base de datos de LukApp está incompleta o desactualizada. Ejecuta, en orden, las migraciones de la carpeta supabase/migrations/ en el SQL Editor de Supabase y vuelve a cargar la app.',
       );
     }
 

@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.9',
+    fecha: '2026-08-31',
+    texto: 'Los extractos ahora comparan lo que ya anotaste, completan ese movimiento sin duplicarlo y permiten asociar los movimientos nuevos a una cuenta.',
+  },
+  {
+    version: '2.0.8',
+    fecha: '2026-08-31',
+    texto: 'Corregimos el aviso de conexión con la base de datos: ahora explica cuando faltan migraciones, sin decir por error que toda la base está vacía.',
+  },
+  {
     version: '2.0.7',
     fecha: '2026-08-30',
     texto: 'Un movimiento recién guardado ya no puede desaparecer si una sincronización anterior termina unos segundos después.',

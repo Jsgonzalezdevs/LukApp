@@ -1015,7 +1015,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             ) : panelAjustes === 'extractos' ? (
               <AnalistaView
                 existentes={transacciones}
+                cuentas={cuentasParaElegir}
                 onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
+                onCompletar={(movimiento) => void almacen.actualizarTransaccion(movimiento)}
               />
             ) : panelAjustes === 'atajos' ? (
               <PanelAtajos />
