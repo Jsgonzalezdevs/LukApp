@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.10',
+    fecha: '2026-08-31',
+    texto: 'Retiramos por completo la mascota actual de la landing para dejar el espacio limpio antes de construir la nueva versión.',
+  },
+  {
     version: '2.0.9',
     fecha: '2026-08-31',
     texto: 'Los extractos ahora comparan lo que ya anotaste, completan ese movimiento sin duplicarlo y permiten asociar los movimientos nuevos a una cuenta.',

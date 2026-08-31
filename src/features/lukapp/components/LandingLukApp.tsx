@@ -15,7 +15,6 @@ import { SeccionApplePay } from './landing/SeccionApplePay';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
-import { Luki } from './Luki';
 import '../styles/LandingLukApp.css';
 
 /* La cinta que corre bajo el hero. Son frases que la app de verdad entiende
@@ -161,10 +160,6 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       ) : (
         <section className="final-cta">
           <Reveal>
-            {/* La pose maestra se usa aquí sin reinterpretarla: es la referencia
-                visual aprobada para Luki y evita que el cierre compita con la
-                Estrella, reservada para el asesor IA. */}
-            <Luki className="cta-luki" gesto="presume" />
             <h2>¿Listo?</h2>
             <p>Toma el control de tu dinero desde hoy.</p>
             <button className="btn-primary-lg" onClick={handleGetStarted}>

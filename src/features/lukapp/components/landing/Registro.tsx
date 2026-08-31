@@ -4,7 +4,6 @@ import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-re
 import type { Sesion } from '../../data/useSesion';
 import { Reveal } from './primitivas';
 import { TituloPalabras } from './adornos';
-import { Luki } from '../Luki';
 
 /** Lo mínimo que pide Supabase. Decirlo antes evita el viaje de ida y vuelta. */
 const MINIMO_PASSWORD = 6;
@@ -92,9 +91,6 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
   return (
     <section className="registro" id="registro">
       <Reveal as="header" className="seccion-cabecera registro-cabecera">
-        {/* La pose aprobada de Luki se repite en ambos cierres para conservar
-            una identidad reconocible sin asociarla al personaje de IA. */}
-        <Luki className="cta-luki" gesto="presume" />
         <span className="seccion-etiqueta">Crea tu cuenta</span>
         <TituloPalabras texto="Empieza en menos de un minuto" resaltarUltimas={2} />
         <p className="seccion-sub">
