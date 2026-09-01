@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.37',
+    fecha: '2026-09-01',
+    texto: 'Quitamos únicamente el fondo crema del PNG de Luki. La nutria conserva exactamente su dibujo, pero ya se integra con el color de la landing sin verse dentro de un cuadro.',
+  },
+  {
+    version: '2.0.36',
+    fecha: '2026-09-01',
+    texto: 'Dejamos a Luki tal como fue aprobada: la landing ahora usa únicamente su ilustración PNG original, estática y sin reconstrucciones ni animaciones que cambien su forma.',
+  },
+  {
     version: '2.0.35',
     fecha: '2026-08-31',
     texto: 'Quitamos del SVG de Luki el fondo blanco que venía de la lámina de Illustrator: ahora la nutria queda transparente e integrada a la landing, sin tarjeta detrás.',
