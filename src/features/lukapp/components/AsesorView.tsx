@@ -578,7 +578,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
             <MascotaLuki
-              className="h-28 w-28 shrink-0 object-contain"
+              className="h-36 w-36 shrink-0 object-contain sm:h-40 sm:w-40 md:h-44 md:w-44 lg:h-48 lg:w-48"
               src={imagenLuki.src}
               alt={imagenLuki.alt}
             />

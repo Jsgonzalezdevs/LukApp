@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.63',
+    fecha: '2026-09-01',
+    texto: 'Agrandamos a Luki de forma adaptable: ahora aprovecha mejor el espacio en celulares, tablets y pantallas grandes sin deformarse.',
+  },
+  {
     version: '2.0.62',
     fecha: '2026-09-01',
     texto: 'Añadimos cuatro nuevas poses estáticas de Luki: durmiendo, sorprendida, pensando y saltando de alegría, con el saludo principal como gesto más común.',
