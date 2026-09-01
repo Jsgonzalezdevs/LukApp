@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.52',
+    fecha: '2026-09-01',
+    texto: 'Corregimos la pose de Luki que aparecía rota y dejamos todas sus imágenes del Asesor listas para producción.',
+  },
+  {
+    version: '2.0.51',
+    fecha: '2026-09-01',
+    texto: 'Añadimos a Luki leyendo con sus gafas y su libro como una nueva pose estática del Asesor.',
+  },
+  {
     version: '2.0.50',
     fecha: '2026-09-01',
     texto: 'Luki ahora cambia entre varias ilustraciones estáticas al abrir el Asesor: saludo, atención, gesto chistoso y una sorpresa secreta.',
