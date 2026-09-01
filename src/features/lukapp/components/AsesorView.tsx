@@ -96,6 +96,23 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   onCrearTransaccion,
 }) => {
   const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
+  const [imagenLuki] = useState(() => {
+    const imagenes = [
+      { src: '/brand/luki-nutria-saludo-transparente.png', alt: 'Luki, la mascota de LukApp, saludando' },
+      { src: '/luki-vector/luki-neutral.svg', alt: 'Luki, la mascota de LukApp, atenta' },
+      { src: '/brand/luki-gesto-chistoso.png', alt: 'Luki, la mascota de LukApp, haciendo un gesto chistoso' },
+      { src: '/brand/luki-easter-egg-lengua.png', alt: 'Luki, la mascota de LukApp, sacando la lengua' },
+    ] as const;
+    if (Math.random() < 0.01) return imagenes[3];
+    try {
+      const anterior = Number(localStorage.getItem('lukapp.asesor.luki.imagen'));
+      const siguiente = Number.isInteger(anterior) && anterior >= 0 && anterior < 3 ? (anterior + 1) % 3 : 0;
+      localStorage.setItem('lukapp.asesor.luki.imagen', String(siguiente));
+      return imagenes[siguiente];
+    } catch {
+      return imagenes[Math.floor(Math.random() * 3)];
+    }
+  });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'init',
@@ -552,8 +569,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 el usuario se encuentra con la IA. */}
             <MascotaLuki
               className="h-28 w-28 shrink-0 object-contain"
-              src="/brand/luki-gesto-chistoso.png"
-              alt="Luki, la mascota de LukApp, haciendo un gesto chistoso"
+              src={imagenLuki.src}
+              alt={imagenLuki.alt}
             />
             <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}

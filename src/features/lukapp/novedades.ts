@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.50',
+    fecha: '2026-09-01',
+    texto: 'Luki ahora cambia entre varias ilustraciones estáticas al abrir el Asesor: saludo, atención, gesto chistoso y una sorpresa secreta.',
+  },
+  {
+    version: '2.0.48',
+    fecha: '2026-09-01',
+    texto: 'Luki guarda una sorpresa: en una de cada cien aperturas del Asesor aparece haciendo su gesto secreto.',
+  },
+  {
     version: '2.0.47',
     fecha: '2026-09-01',
     texto: 'Luki aparece quieta en el Asesor con un gesto chistoso nuevo: ojos cruzados, cachetes inflados y doble pulgar arriba.',
