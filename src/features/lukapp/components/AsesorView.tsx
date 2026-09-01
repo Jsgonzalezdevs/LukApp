@@ -17,7 +17,6 @@ import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import { Estrella } from './Estrella';
-import { EstrellaSecuencia } from './EstrellaSecuencia';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
@@ -28,6 +27,7 @@ import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
+import { MascotaLuki } from './landing/MascotaLuki';
 
 interface Message {
   id: string;
@@ -550,7 +550,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             {/* El personaje entero, no un icono: es la única pantalla con
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
-            <EstrellaSecuencia size={112} className="shrink-0" />
+            <MascotaLuki className="h-28 w-28 shrink-0 object-contain" />
             <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>

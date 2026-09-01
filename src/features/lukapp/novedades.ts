@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.40',
+    fecha: '2026-09-01',
+    texto: 'Luki ahora te acompaña también al entrar al Asesor, junto al saludo inicial para que la conversación empiece con su personaje oficial.',
+  },
+  {
     version: '2.0.39',
     fecha: '2026-09-01',
     texto: 'El selector de septiembre ya no crece en dos líneas y el PWA renueva correctamente su caché cuando publicamos una versión nueva.',
