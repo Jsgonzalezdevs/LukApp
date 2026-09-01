@@ -251,6 +251,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         revisionDeDatos.current === revisionAlEmpezar
       ) {
         setDatos(fresco);
+        setError(null);
       }
     } catch {
       // Sin internet o con el servidor caído se sigue viendo lo que ya había,
@@ -362,13 +363,18 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         }
 
         setDatos(cargado);
+        setError(null);
+        setPersistente(elegido.persistente);
         await actualizarPendientes();
       } catch (e) {
         if (!cancelado) {
           setError(mensajeDeError(e));
-          // Storage exists but would not open. The session still works; it just
-          // will not survive a reload, and the banner has to say that.
-          setPersistente(false);
+          // Solo IndexedDB puede volver no persistente este repositorio. Un
+          // error remoto deja la caché local intacta y no debe disfrazarse como
+          // si el navegador hubiera perdido su almacenamiento.
+          if (!elegido.persistente || /indexeddb/i.test(mensajeDeError(e))) {
+            setPersistente(false);
+          }
         }
       } finally {
         if (!cancelado) setCargando(false);
@@ -377,7 +383,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     return () => {
       cancelado = true;
     };
-  }, [repo, actualizarPendientes]);
+  }, [elegido.persistente, repo, actualizarPendientes]);
 
   /**
    * Applies a change to the screen first, then writes it.

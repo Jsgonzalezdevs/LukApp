@@ -178,7 +178,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
         <button
           type="button"
           onClick={onCambiarMes}
-          className="flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
+          className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
         >
           <span className="text-[13px] opacity-80">🗓️</span>
           <span className="text-[var(--fin-ink)] font-bold">{etiquetaPeriodo}</span>

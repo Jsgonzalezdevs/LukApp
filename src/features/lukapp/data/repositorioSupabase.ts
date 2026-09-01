@@ -81,6 +81,12 @@ export class RepositorioSupabase implements Repositorio {
       throw new Error('Ese registro ya existe.');
     }
 
+    if (/cuotas_total|cuota_cop/i.test(error.message)) {
+      throw new Error(
+        'Falta actualizar Supabase para guardar comprobantes a cuotas. Ejecuta la migración supabase/migrations/20260830190000_cuotas_tarjetas.sql y vuelve a intentar.',
+      );
+    }
+
     // PostgREST uses "schema cache" for both a completely new database and a
     // database that is missing a later table or column. Calling every one of
     // those cases "base vacía" sent people back to 0001 even when that

@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.39',
+    fecha: '2026-09-01',
+    texto: 'El selector de septiembre ya no crece en dos líneas y el PWA renueva correctamente su caché cuando publicamos una versión nueva.',
+  },
+  {
+    version: '2.0.38',
+    fecha: '2026-09-01',
+    texto: 'Corregimos el aviso de Supabase que podía quedarse pegado después de una lectura temporalmente fallida: cuando la conexión se recupera, la app limpia el mensaje y conserva la persistencia local.',
+  },
+  {
     version: '2.0.37',
     fecha: '2026-09-01',
     texto: 'Quitamos únicamente el fondo crema del PNG de Luki. La nutria conserva exactamente su dibujo, pero ya se integra con el color de la landing sin verse dentro de un cuadro.',

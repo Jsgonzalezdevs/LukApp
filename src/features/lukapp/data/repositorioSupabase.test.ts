@@ -171,4 +171,23 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
       new RepositorioSupabase(clienteQueFalla('column "cuenta_id" does not exist in schema cache'), 'u1').cargarTodo(),
     ).rejects.toThrow('incompleta o desactualizada');
   });
+
+  it('identifica la migración de cuotas al guardar un comprobante', async () => {
+    const cliente = {
+      from: () => ({
+        upsert: () => Promise.resolve({ error: { message: 'column "cuotas_total" does not exist in schema cache' } }),
+      }),
+    } as unknown as SupabaseClient;
+
+    await expect(
+      new RepositorioSupabase(cliente, 'u1').guardarTransacciones([
+        {
+          id: 't-cuotas', kind: 'gasto', amountCop: 1000, category: 'otros',
+          description: 'Comprobante', occurredOn: '2026-08-31', cuentaId: null,
+          rawTranscript: '[OCR] Comprobante', cuotasTotal: 3, cuotaCop: 334,
+          createdAt: '2026-08-31T00:00:00.000Z',
+        },
+      ]),
+    ).rejects.toThrow('20260830190000_cuotas_tarjetas.sql');
+  });
 });
