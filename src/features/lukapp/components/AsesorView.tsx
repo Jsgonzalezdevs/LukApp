@@ -107,6 +107,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       { src: '/brand/luki-sorprendida-transparente.png', alt: 'Luki, la mascota de LukApp, sorprendida' },
       { src: '/brand/luki-pensando-transparente.png', alt: 'Luki, la mascota de LukApp, pensando' },
       { src: '/brand/luki-saltando-transparente.png', alt: 'Luki, la mascota de LukApp, saltando de alegría' },
+      { src: '/brand/luki-timida-transparente.png', alt: 'Luki, la mascota de LukApp, haciendo un gesto tímido' },
       { src: '/brand/luki-easter-egg-lengua.png', alt: 'Luki, la mascota de LukApp, sacando la lengua' },
     ] as const;
     let ultima = -1;
@@ -118,7 +119,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
     const elegirPose = () => {
       const azar = Math.random();
-      if (azar < 0.0001) return 9; // 0,01 %
+    if (azar < 0.0001) return 10; // 0,01 %
       if (azar < 0.40) return 0;
       if (azar < 0.48) return 1;
       if (azar < 0.56) return 2;
@@ -126,8 +127,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       if (azar < 0.72) return 4;
       if (azar < 0.78) return 5;
       if (azar < 0.84) return 6;
-      if (azar < 0.90) return 7;
-      return 8;
+    if (azar < 0.90) return 7;
+    if (azar < 0.95) return 8;
+    return 9;
     };
 
     let indice = elegirPose();
