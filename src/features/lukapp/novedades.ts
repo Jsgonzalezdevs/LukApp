@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.64',
+    fecha: '2026-09-01',
+    texto: 'Corregimos los fondos incrustados de las poses de Luki: ahora todas se integran correctamente sin recuadros blancos.',
+  },
+  {
     version: '2.0.63',
     fecha: '2026-09-01',
     texto: 'Agrandamos a Luki de forma adaptable: ahora aprovecha mejor el espacio en celulares, tablets y pantallas grandes sin deformarse.',
