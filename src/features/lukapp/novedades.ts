@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.47',
+    fecha: '2026-09-01',
+    texto: 'Luki aparece quieta en el Asesor con un gesto chistoso nuevo: ojos cruzados, cachetes inflados y doble pulgar arriba.',
+  },
+  {
+    version: '2.0.46',
+    fecha: '2026-09-01',
+    texto: 'Luki ya no se mueve al abrir el Asesor: ahora aparece quieta con una pose estática diferente en cada entrada.',
+  },
+  {
     version: '2.0.45',
     fecha: '2026-09-01',
     texto: 'Ampliamos los gestos de Luki en el Asesor: ahora tiene ocho movimientos sutiles y elige uno diferente al abrirse.',

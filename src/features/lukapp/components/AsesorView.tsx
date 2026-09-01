@@ -96,19 +96,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   onCrearTransaccion,
 }) => {
   const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
-  const [gestoLuki] = useState(() => {
-    const gestos = [
-      'luki-saludo',
-      'luki-balanceo',
-      'luki-curiosa',
-      'luki-rebote',
-      'luki-inclinacion',
-      'luki-pasitos',
-      'luki-estiramiento',
-      'luki-saludo-largo',
-    ] as const;
-    return gestos[Math.floor(Math.random() * gestos.length)];
-  });
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'init',
@@ -563,7 +550,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             {/* El personaje entero, no un icono: es la única pantalla con
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
-            <MascotaLuki className={`h-28 w-28 shrink-0 object-contain ${gestoLuki}`} />
+            <MascotaLuki
+              className="h-28 w-28 shrink-0 object-contain"
+              src="/brand/luki-gesto-chistoso.png"
+              alt="Luki, la mascota de LukApp, haciendo un gesto chistoso"
+            />
             <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
