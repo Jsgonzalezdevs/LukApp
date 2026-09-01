@@ -23,6 +23,21 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.62',
+    fecha: '2026-09-01',
+    texto: 'Añadimos cuatro nuevas poses estáticas de Luki: durmiendo, sorprendida, pensando y saltando de alegría, con el saludo principal como gesto más común.',
+  },
+  {
+    version: '2.0.61',
+    fecha: '2026-09-01',
+    texto: 'Corregimos el ciclo de poses de Luki: ya no incluye la imagen con fondo blanco, y todas las poses se muestran con tamaño uniforme.',
+  },
+  {
+    version: '2.0.53',
+    fecha: '2026-09-01',
+    texto: 'Quitamos el recuadro blanco de la pose de Luki leyendo: ahora se integra con cualquier fondo.',
+  },
+  {
     version: '2.0.52',
     fecha: '2026-09-01',
     texto: 'Corregimos la pose de Luki que aparecía rota y dejamos todas sus imágenes del Asesor listas para producción.',

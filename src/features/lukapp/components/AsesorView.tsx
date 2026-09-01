@@ -99,20 +99,29 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [imagenLuki] = useState(() => {
     const imagenes = [
       { src: '/brand/luki-nutria-saludo-transparente.png', alt: 'Luki, la mascota de LukApp, saludando' },
-      { src: '/brand/luki-leyendo.png', alt: 'Luki, la mascota de LukApp, leyendo un libro' },
+      { src: '/brand/luki-leyendo-transparente.png', alt: 'Luki, la mascota de LukApp, leyendo un libro' },
+      { src: '/brand/luki-escribiendo-transparente.png', alt: 'Luki, la mascota de LukApp, tomando notas' },
+      { src: '/brand/luki-abierto-transparente.png', alt: 'Luki, la mascota de LukApp, abriendo el espacio' },
       { src: '/brand/luki-gesto-chistoso.png', alt: 'Luki, la mascota de LukApp, haciendo un gesto chistoso' },
-      { src: '/brand/luki-leyendo.png', alt: 'Luki, la mascota de LukApp, leyendo un libro' },
+      { src: '/brand/luki-durmiendo-transparente.png', alt: 'Luki, la mascota de LukApp, durmiendo' },
+      { src: '/brand/luki-sorprendida-transparente.png', alt: 'Luki, la mascota de LukApp, sorprendida' },
+      { src: '/brand/luki-pensando-transparente.png', alt: 'Luki, la mascota de LukApp, pensando' },
+      { src: '/brand/luki-saltando-transparente.png', alt: 'Luki, la mascota de LukApp, saltando de alegría' },
       { src: '/brand/luki-easter-egg-lengua.png', alt: 'Luki, la mascota de LukApp, sacando la lengua' },
     ] as const;
-    if (Math.random() < 0.01) return imagenes[4];
-    try {
-      const anterior = Number(localStorage.getItem('lukapp.asesor.luki.imagen'));
-      const siguiente = Number.isInteger(anterior) && anterior >= 0 && anterior < 4 ? (anterior + 1) % 4 : 0;
-      localStorage.setItem('lukapp.asesor.luki.imagen', String(siguiente));
-      return imagenes[siguiente];
-    } catch {
-      return imagenes[Math.floor(Math.random() * 4)];
-    }
+    const azar = Math.random();
+    // El saludo es la identidad principal del Asesor. Las otras poses son
+    // sorpresas ocasionales; la lengua queda como easter egg auténtico.
+    if (azar < 0.0001) return imagenes[9]; // 0,01 %
+    if (azar < 0.40) return imagenes[0];
+    if (azar < 0.48) return imagenes[1];
+    if (azar < 0.56) return imagenes[2];
+    if (azar < 0.64) return imagenes[3];
+    if (azar < 0.72) return imagenes[4];
+    if (azar < 0.78) return imagenes[5];
+    if (azar < 0.84) return imagenes[6];
+    if (azar < 0.90) return imagenes[7];
+    return imagenes[8];
   });
   const [messages, setMessages] = useState<Message[]>([
     {
