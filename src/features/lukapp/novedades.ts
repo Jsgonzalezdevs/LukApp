@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.65',
+    fecha: '2026-09-01',
+    texto: 'Luki ya no repite la misma pose dos veces seguidas al abrir el Asesor: cada entrada muestra un gesto diferente.',
+  },
+  {
     version: '2.0.64',
     fecha: '2026-09-01',
     texto: 'Corregimos los fondos incrustados de las poses de Luki: ahora todas se integran correctamente sin recuadros blancos.',

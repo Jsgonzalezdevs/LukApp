@@ -109,19 +109,41 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       { src: '/brand/luki-saltando-transparente.png', alt: 'Luki, la mascota de LukApp, saltando de alegría' },
       { src: '/brand/luki-easter-egg-lengua.png', alt: 'Luki, la mascota de LukApp, sacando la lengua' },
     ] as const;
-    const azar = Math.random();
+    let ultima = -1;
+    try {
+      ultima = Number(sessionStorage.getItem('lukapp-ultima-pose-luki'));
+    } catch {
+      // Algunos navegadores bloquean el almacenamiento; la selección sigue funcionando.
+    }
+
+    const elegirPose = () => {
+      const azar = Math.random();
+      if (azar < 0.0001) return 9; // 0,01 %
+      if (azar < 0.40) return 0;
+      if (azar < 0.48) return 1;
+      if (azar < 0.56) return 2;
+      if (azar < 0.64) return 3;
+      if (azar < 0.72) return 4;
+      if (azar < 0.78) return 5;
+      if (azar < 0.84) return 6;
+      if (azar < 0.90) return 7;
+      return 8;
+    };
+
+    let indice = elegirPose();
+    for (let intento = 0; indice === ultima && intento < 20; intento += 1) {
+      indice = elegirPose();
+    }
+    if (indice === ultima) indice = (indice + 1) % imagenes.length;
+    try {
+      sessionStorage.setItem('lukapp-ultima-pose-luki', String(indice));
+    } catch {
+      // La pose actual ya quedó elegida aunque no pueda persistirse.
+    }
+
     // El saludo es la identidad principal del Asesor. Las otras poses son
     // sorpresas ocasionales; la lengua queda como easter egg auténtico.
-    if (azar < 0.0001) return imagenes[9]; // 0,01 %
-    if (azar < 0.40) return imagenes[0];
-    if (azar < 0.48) return imagenes[1];
-    if (azar < 0.56) return imagenes[2];
-    if (azar < 0.64) return imagenes[3];
-    if (azar < 0.72) return imagenes[4];
-    if (azar < 0.78) return imagenes[5];
-    if (azar < 0.84) return imagenes[6];
-    if (azar < 0.90) return imagenes[7];
-    return imagenes[8];
+    return imagenes[indice];
   });
   const [messages, setMessages] = useState<Message[]>([
     {
