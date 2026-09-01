@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-react';
 import type { Sesion } from '../../data/useSesion';
 import { Reveal } from './primitivas';
-import { TituloPalabras } from './adornos';
+import { MascotaLuki } from './MascotaLuki';
 
 /** Lo mínimo que pide Supabase. Decirlo antes evita el viaje de ida y vuelta. */
 const MINIMO_PASSWORD = 6;
@@ -91,8 +91,9 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
   return (
     <section className="registro" id="registro">
       <Reveal as="header" className="seccion-cabecera registro-cabecera">
+        <MascotaLuki />
         <span className="seccion-etiqueta">Crea tu cuenta</span>
-        <TituloPalabras texto="Empieza en menos de un minuto" resaltarUltimas={2} />
+        <h2>Empieza en menos de un minuto</h2>
         <p className="seccion-sub">
           Sin tarjeta, sin llamadas, sin esperar a que alguien te apruebe.
           Correo, contraseña y ya estás adentro.

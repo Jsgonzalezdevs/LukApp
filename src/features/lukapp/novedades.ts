@@ -23,6 +23,131 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.35',
+    fecha: '2026-08-31',
+    texto: 'Quitamos del SVG de Luki el fondo blanco que venía de la lámina de Illustrator: ahora la nutria queda transparente e integrada a la landing, sin tarjeta detrás.',
+  },
+  {
+    version: '2.0.34',
+    fecha: '2026-08-31',
+    texto: 'Luki dejó de verse chato y cuadrado: ahora es la nutria estilizada de la marca, con el torso y el saco más largos, las piernas más abajo y el isotipo bien centrado. Es el mismo dibujo de siempre, solo con las proporciones corregidas.',
+  },
+  {
+    version: '2.0.33',
+    fecha: '2026-08-31',
+    texto: 'Luki se ve entero y bien encuadrado junto a "Crea tu cuenta": ya no se arma con recortes que le partían el torso. Descansa con una respiración muy leve, te acompaña con la mirada y saluda una sola vez cuando lo tocas.',
+  },
+  {
+    version: '2.0.32',
+    fecha: '2026-08-31',
+    texto: 'Hicimos natural la animación de Luki: ahora descansa con respiración, parpadeo y cola sutiles; el saludo sucede solo al tocarlo. También respetamos la preferencia de reducir movimiento.',
+  },
+  {
+    version: '2.0.31',
+    fecha: '2026-08-31',
+    texto: 'Luki dejó de cargarse como un documento incrustado: ahora su SVG vectorial vive directamente en el código de React. También unimos visualmente privacidad y registro para que la mascota no quede flotando aislada.',
+  },
+  {
+    version: '2.0.30',
+    fecha: '2026-08-31',
+    texto: 'Ajustamos el cierre de la landing: Luki queda más cerca de su mensaje, el título de creación de cuenta siempre se muestra y la sección ya no acumula espacios vacíos entre bloques.',
+  },
+  {
+    version: '2.0.29',
+    fecha: '2026-08-31',
+    texto: 'Luki ya aparece en la landing como un solo vector transparente e interactivo: conserva su respiración, parpadeo, saludo, cola y caminata, sigue suavemente el cursor y responde al toque sin deformar ni separar la ilustración.',
+  },
+  {
+    version: '2.0.28',
+    fecha: '2026-08-31',
+    texto: 'Luki ya se anima ensamblado y completo -- respira, parpadea, saluda, mueve la cola y camina sin huecos en ningún cuadro, usando su ilustración real superpuesta sobre sí misma en vez de piezas sueltas.',
+  },
+  {
+    version: '2.0.27',
+    fecha: '2026-08-31',
+    texto: 'Extrajimos 43 piezas reales de Luki desde el archivo vectorial luki-plantilla3.ai (torso, saco, brazos, manos con dedos, piernas, cola en segmentos, isotipo y cabeza completa) con mapa de capas, pivotes y una demo de animación por pieza.',
+  },
+  {
+    version: '2.0.26',
+    fecha: '2026-08-31',
+    texto: 'Añadimos una guía de animación de respaldo con variantes faciales, manos, pies, cola y poses para preparar el rig de Luki.',
+  },
+  {
+    version: '2.0.25',
+    fecha: '2026-08-31',
+    texto: 'Guardamos un respaldo exacto de la guía completa de rigging de Luki para proteger el trabajo antes de continuar editando.',
+  },
+  {
+    version: '2.0.24',
+    fecha: '2026-08-31',
+    texto: 'Ampliamos la guía de Luki con solapes ocultos, variantes de manos y pies, segmentos de cola y expresiones faciales para un rig más robusto.',
+  },
+  {
+    version: '2.0.23',
+    fecha: '2026-08-31',
+    texto: 'Creamos una lámina específica con torso, saco, brazos, mangas, piernas y base de cola para vectorizar manualmente a Luki.',
+  },
+  {
+    version: '2.0.22',
+    fecha: '2026-08-31',
+    texto: 'Rehicimos la guía de piezas de Luki a partir del vector real de la mascota, no de una recreación: cabeza, ojos, manos, pies, isotipo y más, listos para redibujar y animar.',
+  },
+  {
+    version: '2.0.21',
+    fecha: '2026-08-31',
+    texto: 'Los errores al guardar comprobantes ahora indican exactamente qué migración de Supabase falta cuando la base está atrasada.',
+  },
+  {
+    version: '2.0.20',
+    fecha: '2026-08-31',
+    texto: 'Limpiamos la guía de rigging de Luki y eliminamos todos los puntos, marcadores y símbolos visuales de las piezas.',
+  },
+  {
+    version: '2.0.19',
+    fecha: '2026-08-31',
+    texto: 'Generamos una guía de rigging ampliada para Luki con piezas, articulaciones y poses de movimiento listas para vectorización detallada.',
+  },
+  {
+    version: '2.0.18',
+    fecha: '2026-08-31',
+    texto: 'Añadimos una guía visual de piezas de Luki para facilitar su vectorización modular y posterior animación.',
+  },
+  {
+    version: '2.0.17',
+    fecha: '2026-08-31',
+    texto: 'Convertimos la ilustración final de Luki saludando en un SVG por piezas —cabeza, orejas, ojos, brazos, cola, saco e isotipo— lista para animarse, extraída del arte aprobado sin redibujar nada.',
+  },
+  {
+    version: '2.0.16',
+    fecha: '2026-08-31',
+    texto: 'Reconstruimos a Luki con anatomía real de nutria: cabeza compacta, cuello marcado, cuerpo delgado y cola en punta, lista para animarse (respiración, parpadeo, ojos que siguen el cursor, saludo).',
+  },
+  {
+    version: '2.0.15',
+    fecha: '2026-08-31',
+    texto: 'Redibujamos a Luki de cero para que coincida con el arte de referencia: cara, orejas, brazos, cola y logo del pecho ya no se ven deformes.',
+  },
+  {
+    version: '2.0.14',
+    fecha: '2026-08-31',
+    texto: 'Ajustamos a Luki a la silueta de nutria solicitada: cabeza compacta, torso vertical estrecho, ojos pequeños y cola larga puntiaguda, conservando el isotipo oficial.',
+  },
+  {
+    version: '2.0.13',
+    fecha: '2026-08-31',
+    texto: 'Reconstruimos a Luki como un sistema SVG modular y editable, con expresiones, poses, pivotes y ejemplos listos para animación web.',
+  },
+  {
+    version: '2.0.12',
+    fecha: '2026-08-31',
+    texto: 'Creamos una propuesta simplificada de Luki, pensada para convertirse en SVG por capas y animarse fácilmente en la web.',
+  },
+  {
+    version: '2.0.11',
+    fecha: '2026-08-31',
+    texto: 'Presentamos el nuevo concepto 2D de Luki: una nutria tierna con saco morado de LukApp, diseñada como referencia para futuras animaciones expresivas.',
+  },
+  {
     version: '2.0.10',
     fecha: '2026-08-31',
     texto: 'Retiramos por completo la mascota actual de la landing para dejar el espacio limpio antes de construir la nueva versión.',

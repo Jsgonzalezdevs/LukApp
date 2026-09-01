@@ -9,6 +9,7 @@ import { FormasDeRegistrar } from './landing/FormasDeRegistrar';
 import { Privacidad } from './landing/Privacidad';
 import { BandaCifras } from './landing/BandaCifras';
 import { Registro } from './landing/Registro';
+import { MascotaLuki } from './landing/MascotaLuki';
 import { PWAInstall } from './landing/PWAInstall';
 import { SecuenciaAnimada } from './landing/SecuenciaAnimada';
 import { SeccionApplePay } from './landing/SeccionApplePay';
@@ -160,6 +161,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       ) : (
         <section className="final-cta">
           <Reveal>
+            <MascotaLuki />
             <h2>¿Listo?</h2>
             <p>Toma el control de tu dinero desde hoy.</p>
             <button className="btn-primary-lg" onClick={handleGetStarted}>

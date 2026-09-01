@@ -1444,6 +1444,139 @@
   margin: 0.75rem 0 2rem;
 }
 
+/* Luki se dibuja una sola vez. El archivo fuente es la demo del rig y apila
+   siete copias recortadas del mismo dibujo; el componente las descarta antes de
+   montarlo. Aquí, por tanto, no se anima ninguna pieza suelta: se mueve el
+   personaje entero por capas, que es lo único que garantiza que nunca aparezcan
+   cortes, huecos ni contornos duplicados. */
+.landing-finanzas .luki-mascota {
+  width: clamp(132px, 15vw, 172px);
+  display: block;
+  margin: 0 auto 0.25rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.landing-finanzas .luki-mascota:focus-visible {
+  outline: 3px solid var(--lp-accent);
+  outline-offset: 6px;
+  border-radius: 18px;
+}
+
+/* Capa 1: hacia dónde mira. El desplazamiento es de pocos píxeles y el giro no
+   llega al grado y medio, así que la silueta no se deforma. */
+.landing-finanzas .luki-mascota-escena {
+  display: block;
+  transform: translate3d(var(--luki-desplazamiento-x, 0), var(--luki-desplazamiento-y, 0), 0)
+    rotate(var(--luki-giro, 0deg));
+  transform-origin: 50% 92%;
+  transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1), filter 200ms ease-out;
+  will-change: transform;
+}
+
+.landing-finanzas .luki-mascota:hover .luki-mascota-escena {
+  filter: drop-shadow(0 10px 12px rgb(37 21 51 / 12%));
+}
+
+/* Capa 2: la respiración. Capa 3: el saludo de un solo toque. Capa 4: un
+   balanceo mucho más lento. Al vivir en elementos distintos y con periodos que
+   no encajan entre sí, el reposo nunca cae en el bucle mecánico de un rig de
+   prueba. */
+.landing-finanzas .luki-mascota-cuerpo,
+.landing-finanzas .luki-mascota-gesto,
+.landing-finanzas .luki-mascota-arte {
+  display: block;
+  transform-origin: 50% 97%;
+}
+
+.landing-finanzas .luki-mascota-arte {
+  width: 100%;
+  aspect-ratio: 240 / 344;
+  pointer-events: none;
+}
+
+.landing-finanzas .luki-mascota-arte > svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+@keyframes luki-respirar {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+
+  50% {
+    transform: scale(0.996, 1.011);
+  }
+}
+
+@keyframes luki-mecer {
+  0%,
+  100% {
+    transform: rotate(-0.55deg);
+  }
+
+  50% {
+    transform: rotate(0.55deg);
+  }
+}
+
+.landing-finanzas .luki-mascota-cuerpo {
+  animation: luki-respirar 5.4s ease-in-out infinite;
+}
+
+.landing-finanzas .luki-mascota-arte {
+  animation: luki-mecer 9.1s ease-in-out infinite;
+}
+
+/* El saludo: se inclina, sube y vuelve a apoyarse. Una sola pasada, sin
+   `infinite`, para que sea una respuesta al toque y no un tic. */
+@keyframes luki-saludo {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  22% {
+    transform: translateY(-9px) rotate(-3.2deg);
+  }
+
+  48% {
+    transform: translateY(-2px) rotate(2.4deg);
+  }
+
+  72% {
+    transform: translateY(-5px) rotate(-1.6deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+.landing-finanzas .luki-mascota.celebrando .luki-mascota-gesto {
+  animation: luki-saludo 900ms cubic-bezier(0.22, 0.9, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Solo se neutralizan las capas de animación, que son `span`. El `transform`
+     no puede llegar al SVG: el dibujo se coloca dentro con un `transform` de
+     maquetación, y anularlo dejaría a Luki fuera de su marco. */
+  .landing-finanzas .luki-mascota-escena,
+  .landing-finanzas .luki-mascota-cuerpo,
+  .landing-finanzas .luki-mascota-gesto,
+  .landing-finanzas .luki-mascota-arte {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
 .landing-finanzas .btn-primary-lg {
   padding: 1rem 2rem;
   background: var(--lp-accent);
@@ -1534,6 +1667,10 @@
 }
 
 @media (max-width: 480px) {
+  .landing-finanzas .luki-mascota {
+    width: 132px;
+  }
+
   .landing-finanzas .hero-ctas {
     flex-direction: column;
     align-items: stretch;
@@ -1791,16 +1928,39 @@
 .landing-finanzas .registro {
   max-width: 560px;
   margin: 0 auto;
-  padding: clamp(3.5rem, 8vw, 6rem) 1.5rem clamp(4rem, 9vw, 7rem);
+  /* La sección anterior ya termina con aire generoso; repetirlo arriba
+     alejaba a Luki del contenido que presenta. */
+  padding: 0 1.5rem clamp(4rem, 9vw, 7rem);
+}
+
+/* Privacidad y registro forman el cierre de la landing. Entre ambas basta un
+   respiro; dos paddings consecutivos convertían a Luki en una isla. */
+.landing-finanzas .privacidad {
+  padding-bottom: clamp(2rem, 4vw, 3rem);
 }
 
 .landing-finanzas .registro-cabecera {
   text-align: center;
+  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
 }
 
 .landing-finanzas .registro-cabecera .seccion-sub {
   margin-left: auto;
   margin-right: auto;
+}
+
+.landing-finanzas .registro-cabecera h2 {
+  margin: 0;
+  color: var(--lp-ink);
+  font-size: clamp(1.75rem, 3.4vw, 2.35rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.landing-finanzas .registro-cabecera .seccion-etiqueta {
+  margin-bottom: 0.45rem;
 }
 
 .landing-finanzas .registro-caja {
