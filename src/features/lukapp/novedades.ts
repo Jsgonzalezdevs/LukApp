@@ -23,6 +23,31 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.45',
+    fecha: '2026-09-01',
+    texto: 'Ampliamos los gestos de Luki en el Asesor: ahora tiene ocho movimientos sutiles y elige uno diferente al abrirse.',
+  },
+  {
+    version: '2.0.44',
+    fecha: '2026-09-01',
+    texto: 'Luki ahora elige un gesto diferente cada vez que abres el Asesor: saluda, se balancea, mira con curiosidad o da un pequeño rebote.',
+  },
+  {
+    version: '2.0.43',
+    fecha: '2026-09-01',
+    texto: 'Los extractos ya no permiten importar automáticamente movimientos que el sistema no leyó con alta certeza: primero hay que revisar las filas dudosas.',
+  },
+  {
+    version: '2.0.42',
+    fecha: '2026-09-01',
+    texto: 'El parser de Nu ahora reconoce extractos con período de corte entre dos meses, como 29 JUL 2026 - 28 AGO, sin leer el resumen de la tarjeta como movimientos.',
+  },
+  {
+    version: '2.0.41',
+    fecha: '2026-09-01',
+    texto: 'Los extractos de bancos conocidos ahora se leen primero con el parser determinista y luego la IA los audita sin reemplazar sus datos.',
+  },
+  {
     version: '2.0.40',
     fecha: '2026-09-01',
     texto: 'Luki ahora te acompaña también al entrar al Asesor, junto al saludo inicial para que la conversación empiece con su personaje oficial.',
