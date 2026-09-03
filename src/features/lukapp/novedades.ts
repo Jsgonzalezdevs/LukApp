@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.5',
+    fecha: '2026-09-03',
+    texto: 'Replanteamos las siete formas de registrar: hablar ocupa el lugar protagonista y las alternativas se leen como un repertorio, no como una cuadrícula de tarjetas.',
+  },
+  {
     version: '2.1.4',
     fecha: '2026-09-03',
     texto: 'Aumentamos el tamaño de Luki en las respuestas del Analista para que sus expresiones se entiendan de un vistazo sin romper el panel.',

@@ -10,7 +10,6 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { Reveal } from './primitivas';
-import { TituloPalabras } from './adornos';
 
 const FORMAS: {
   Icono: LucideIcon;
@@ -66,7 +65,10 @@ export const FormasDeRegistrar: React.FC = () => (
   <section className="formas" id="formas">
     <Reveal as="header" className="seccion-cabecera">
       <span className="seccion-etiqueta">Siete maneras</span>
-      <TituloPalabras texto="Registra como te quede cómodo" resaltarUltimas={1} />
+      <h2>
+        Registra como te quede cómodo.
+        <span className="formas-titulo-acento"> Sin pelearte con la app.</span>
+      </h2>
       <p className="seccion-sub">
         La app que usas es la que no te estorba. Si una forma no te sirve un día,
         hay otras seis.
@@ -75,7 +77,12 @@ export const FormasDeRegistrar: React.FC = () => (
 
     <div className="formas-grid">
       {FORMAS.map(({ Icono, titulo, texto, ejemplo }, i) => (
-        <Reveal as="article" className="forma" key={titulo} delay={i * 0.06}>
+        <Reveal
+          as="article"
+          className={`forma ${titulo === 'Hablando' ? 'forma-destacada' : ''}`}
+          key={titulo}
+          delay={i * 0.06}
+        >
           <span className="forma-icono">
             <Icono size={19} strokeWidth={1.5} aria-hidden />
           </span>
