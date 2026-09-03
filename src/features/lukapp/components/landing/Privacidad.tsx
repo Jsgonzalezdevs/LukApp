@@ -1,7 +1,6 @@
 import React from 'react';
 import { Braces, HardDrive, RefreshCw, ShieldCheck, type LucideIcon } from 'lucide-react';
 import { Reveal } from './primitivas';
-import { TituloPalabras } from './adornos';
 
 const PUNTOS: { Icono: LucideIcon; titulo: string; texto: string }[] = [
   {
@@ -34,19 +33,17 @@ export const Privacidad: React.FC = () => (
   <section className="privacidad" id="privacidad">
     <div className="privacidad-composicion">
       <Reveal as="header" className="privacidad-cabecera">
-        <span className="seccion-etiqueta">Tus datos, tus reglas</span>
-        <TituloPalabras texto="Tu plata no es el producto" resaltarUltimas={2} />
+        <span className="seccion-etiqueta">Privacidad</span>
+        <h2>Tu información es tuya.</h2>
         <p className="seccion-sub">
-          Empieza sin entregar información personal. La nube aparece solo si tú
-          decides que la necesitas.
+          Empieza sin cuenta. Si después quieres usar tus datos en otro equipo,
+          tú decides si los llevas a la nube.
         </p>
-        <span className="privacidad-promesa">Sin anuncios. Sin letra pequeña.</span>
       </Reveal>
 
-      <div className="privacidad-lista">
+      <ul className="privacidad-lista">
         {PUNTOS.map(({ Icono, titulo, texto }, i) => (
-          <Reveal as="article" className="privacidad-item" key={titulo} delay={i * 0.06}>
-            <span className="privacidad-indice" aria-hidden="true">0{i + 1}</span>
+          <Reveal as="li" className="privacidad-item" key={titulo} delay={i * 0.05}>
             <span className="privacidad-icono">
               <Icono size={19} strokeWidth={1.6} aria-hidden />
             </span>
@@ -56,7 +53,7 @@ export const Privacidad: React.FC = () => (
             </div>
           </Reveal>
         ))}
-      </div>
+      </ul>
     </div>
   </section>
 );

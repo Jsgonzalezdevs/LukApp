@@ -65,19 +65,15 @@ export const FormasDeRegistrar: React.FC = () => (
   <section className="formas" id="formas">
     <div className="formas-composicion">
       <Reveal as="header" className="formas-cabecera">
-        <span className="seccion-etiqueta">Siete maneras, cero formularios</span>
+        <span className="seccion-etiqueta">Registrar un gasto</span>
         <h2>
-          Registra a tu manera.
-          <span className="formas-titulo-acento"> La app se adapta.</span>
+          Así de simple.
+          <span className="formas-titulo-acento"> Sigue con tu día.</span>
         </h2>
         <p className="seccion-sub">
-          Habla, escribe, toma una foto o deja que ocurra solo. Cambia de método
-          cuando quieras sin cambiar cómo llevas tus cuentas.
+          Cuéntalo, escríbelo o mándale una foto. LukApp deja el movimiento listo
+          sin pedirte que pares lo que estabas haciendo.
         </p>
-        <span className="formas-conteo" aria-hidden="true">
-          <strong>07</strong>
-          <span>caminos al mismo registro</span>
-        </span>
       </Reveal>
 
       <div className="formas-repertorio">
@@ -87,34 +83,28 @@ export const FormasDeRegistrar: React.FC = () => (
               <span className="forma-principal-icono">
                 <Icono size={22} strokeWidth={1.6} aria-hidden />
               </span>
-              <span>La forma más natural</span>
+              <span>{titulo}</span>
             </div>
             <div className="forma-principal-cuerpo">
-              <div>
-                <h3>{titulo}</h3>
-                <p>{texto}</p>
-              </div>
-              <span className="forma-principal-ejemplo">{ejemplo}</span>
+              <p className="forma-principal-frase">{ejemplo}</p>
+              <p className="forma-principal-resultado">Almuerzo · −$40.000</p>
             </div>
+            <p className="forma-principal-ayuda">{texto}</p>
           </Reveal>
         ))}
 
-        <div className="formas-lista">
-          {FORMAS.filter(({ titulo }) => titulo !== 'Hablando').map(({ Icono, titulo, texto, ejemplo }, i) => (
-            <Reveal as="article" className="forma-alternativa" key={titulo} delay={i * 0.05}>
-              <span className="forma-numero" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+        <div className="formas-alternativas">
+          <p>También puedes registrar con:</p>
+          <ul className="formas-lista">
+          {FORMAS.filter(({ titulo }) => titulo !== 'Hablando').map(({ Icono, titulo }, i) => (
+            <Reveal as="li" className="forma-alternativa" key={titulo} delay={i * 0.04}>
               <span className="forma-icono">
                 <Icono size={18} strokeWidth={1.6} aria-hidden />
               </span>
-              <div className="forma-contenido">
-                <div className="forma-titulo-fila">
-                  <h3>{titulo}</h3>
-                  <span className="forma-ejemplo">{ejemplo}</span>
-                </div>
-                <p>{texto}</p>
-              </div>
+              <span>{titulo}</span>
             </Reveal>
           ))}
+          </ul>
         </div>
       </div>
     </div>

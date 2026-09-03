@@ -2510,6 +2510,217 @@
   }
 }
 
+/* Una segunda pasada más sobria: estas dos secciones explican una acción y una
+   promesa. Si necesitan leerse como un sistema para entenderse, ya perdieron. */
+.landing-finanzas .formas {
+  padding-top: clamp(2.5rem, 5vw, 4rem);
+  padding-bottom: clamp(2.75rem, 5vw, 4rem);
+}
+
+.landing-finanzas .formas-composicion,
+.landing-finanzas .privacidad-composicion {
+  grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(2.5rem, 6vw, 5rem);
+}
+
+.landing-finanzas .formas-cabecera {
+  position: static;
+}
+
+.landing-finanzas .formas h2,
+.landing-finanzas .privacidad-cabecera h2 {
+  max-width: 10ch;
+  font-size: clamp(2.25rem, 4.2vw, 3.45rem);
+  line-height: 1.06;
+  letter-spacing: -0.045em;
+}
+
+.landing-finanzas .formas-titulo-acento {
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .formas-cabecera .seccion-sub,
+.landing-finanzas .privacidad-cabecera .seccion-sub {
+  max-width: 37ch;
+}
+
+.landing-finanzas .forma-principal {
+  padding: clamp(1.35rem, 2.5vw, 1.8rem);
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.landing-finanzas .forma-principal-cabecera {
+  padding-bottom: 0.9rem;
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+}
+
+.landing-finanzas .forma-principal-icono {
+  width: 34px;
+  height: 34px;
+}
+
+.landing-finanzas .forma-principal-cuerpo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-top: 1.15rem;
+}
+
+.landing-finanzas .forma-principal-frase {
+  margin: 0;
+  color: var(--lp-bg);
+  font-size: clamp(1.25rem, 2.6vw, 1.8rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.landing-finanzas .forma-principal-resultado {
+  flex: none;
+  margin: 0;
+  color: #ff9bbf;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.landing-finanzas .forma-principal-ayuda {
+  max-width: none;
+  margin: 0.8rem 0 0;
+  color: color-mix(in srgb, var(--lp-bg) 62%, transparent);
+  font-size: 0.77rem;
+  line-height: 1.5;
+}
+
+.landing-finanzas .formas-alternativas {
+  margin-top: 1.25rem;
+}
+
+.landing-finanzas .formas-alternativas > p {
+  margin: 0 0 0.65rem;
+  color: var(--lp-ink-soft);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.landing-finanzas .formas-lista {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-finanzas .forma-alternativa {
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border: 0;
+  color: var(--lp-ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.landing-finanzas .forma-alternativa:hover {
+  border-color: transparent;
+  transform: none;
+}
+
+.landing-finanzas .forma-icono {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .forma-alternativa:hover .forma-icono {
+  transform: none;
+  background: transparent;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .privacidad {
+  padding-top: 0;
+}
+
+.landing-finanzas .privacidad-composicion {
+  padding-top: clamp(2.25rem, 4vw, 3.5rem);
+  border-top: 1px solid var(--lp-ink);
+}
+
+.landing-finanzas .privacidad-cabecera h2 {
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .privacidad-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-finanzas .privacidad-item {
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.85rem;
+  padding: 1.1rem 0;
+  border-color: var(--lp-line);
+}
+
+.landing-finanzas .privacidad-item:hover {
+  border-color: var(--lp-line);
+  transform: none;
+}
+
+.landing-finanzas .privacidad-icono {
+  width: 30px;
+  height: 30px;
+  background: transparent;
+}
+
+.landing-finanzas .privacidad-item:hover .privacidad-icono {
+  transform: none;
+  background: transparent;
+  color: var(--lp-ink);
+}
+
+.landing-finanzas .privacidad-item h3 {
+  margin-bottom: 0.2rem;
+  font-size: 0.92rem;
+}
+
+.landing-finanzas .privacidad-item p {
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .landing-finanzas .formas-composicion,
+  .landing-finanzas .privacidad-composicion {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 620px) {
+  .landing-finanzas .forma-principal-cuerpo,
+  .landing-finanzas .formas-lista {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-finanzas .forma-principal-cuerpo {
+    gap: 0.45rem;
+  }
+
+  .landing-finanzas .formas-lista {
+    gap: 0.15rem;
+  }
+}
+
 /* Los botones principales se hunden al pulsarlos, no solo al pasar por encima:
    sin el estado activo, en un móvil —donde no hay hover— no hay respuesta
    táctil de ningún tipo. */
