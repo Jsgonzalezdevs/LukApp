@@ -1808,9 +1808,9 @@
    regla va después del tamaño general de `.luki-mascota` para que la pose no
    pueda crecer y romper el ritmo de las burbujas. */
 .landing-finanzas .mk-chat .mk-luki {
-  width: 42px;
-  height: 42px;
-  margin-bottom: -2px;
+  width: 72px;
+  height: 72px;
+  margin-bottom: -5px;
 }
 
 .landing-finanzas .mk-chat .mk-luki img {

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.4',
+    fecha: '2026-09-03',
+    texto: 'Aumentamos el tamaño de Luki en las respuestas del Analista para que sus expresiones se entiendan de un vistazo sin romper el panel.',
+  },
+  {
     version: '2.1.3',
     fecha: '2026-09-03',
     texto: 'Corregimos las poses de Luki en el chat del Analista: ahora se comportan como avatares y no desbordan las respuestas.',
