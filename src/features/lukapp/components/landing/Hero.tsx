@@ -32,46 +32,26 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
   const quieto = useReducedMotion();
 
   return (
-    <section className="hero">
+    <section className="hero" aria-labelledby="titulo-lukapp">
       <div className="hero-text">
-        <h1>
-          <motion.span
-            initial={quieto ? false : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          >
-            Controla tus finanzas
-          </motion.span>
-          <motion.span
-            initial={quieto ? false : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          >
+        <h1 id="titulo-lukapp">
+          <span>Controla tus gastos</span>{' '}
+          <span>
             sin <em>perder tiempo</em>.
-          </motion.span>
+          </span>
         </h1>
 
-        <motion.p
-          className="hero-sub"
-          initial={quieto ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.24 }}
-        >
+        <p className="hero-sub">
           Registra movimientos hablando e importa extractos PDF de bancos colombianos. La IA
           identifica cada movimiento, comercio, categoría y detalle; LukApp no se conecta directamente a tu banco.
-        </motion.p>
+        </p>
 
-        <motion.div
-          className="hero-ctas"
-          initial={quieto ? false : { opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.34 }}
-        >
+        <div className="hero-ctas">
           <button className="btn-primary" onClick={onGetStarted}>
             Comenzar ahora
             <ArrowRight size={17} strokeWidth={2} aria-hidden />
           </button>
-        </motion.div>
+        </div>
 
       </div>
 

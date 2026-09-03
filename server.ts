@@ -1046,11 +1046,23 @@ app.post('/api/analizar-extracto', async (req, res) => {
     });
   }
 
-  // Las plantillas conservan una lectura rápida y determinista de los cuatro
-  // formatos que conocemos. Para cualquier otra entidad, la IA interpreta las
-  // columnas y los conceptos del PDF sin depender de una lista cerrada de bancos.
-  const resultado = (await analizarExtractoConIA(textoCrudo)) ??
-    (detectarBanco(textoCrudo) ? analizarConPlantilla(textoCrudo) : null);
+  // Un banco conocido debe pasar primero por su parser determinista. La IA
+  // audita esa lectura después, pero no puede sustituirla silenciosamente.
+  // Solo los formatos aún no soportados usan IA como lector principal.
+  const banco = detectarBanco(textoCrudo);
+  let resultado = banco ? analizarConPlantilla(textoCrudo) : null;
+  if (resultado) {
+    const validacion = await validarExtractoConIA(textoCrudo, resultado);
+    if (validacion) {
+      resultado = {
+        ...resultado,
+        advertencias: [...resultado.advertencias, ...validacion.advertencias],
+        alertas: [...resultado.alertas, ...validacion.alertas],
+      };
+    }
+  } else {
+    resultado = await analizarExtractoConIA(textoCrudo);
+  }
   if (!resultado) {
     return res.status(422).json({
       ok: false,
@@ -1346,6 +1358,55 @@ async function analizarExtractoConIA(textoCrudo: string): Promise<AnalisisResult
     movimientos,
     advertencias: [...advertencias, `Lectura asistida por IA (${respuesta.proveedor || 'proveedor configurado'}). Revisa cada movimiento antes de importarlo.`],
   };
+}
+
+interface ValidacionExtractoIA {
+  advertencias: string[];
+  alertas: AnalisisResultado['alertas'];
+}
+
+/** Audits parser output against the PDF without being allowed to rewrite it. */
+async function validarExtractoConIA(
+  textoCrudo: string,
+  resultado: AnalisisResultado,
+): Promise<ValidacionExtractoIA | null> {
+  const respuesta = await consultarModeloIA({
+    temperature: 0,
+    maxTokens: 1_500,
+    responseFormat: { type: 'json_object' },
+    systemPrompt: `Eres un auditor de extractos bancarios. Compara el texto original con la lista extraída por un parser determinista. Devuelve JSON con valido (boolean), discrepancias (array de strings) y filasDudosas (array de números, índices desde 0). No corrijas ni inventes datos. Marca si falta una fila, sobra una fila, un monto/signo/fecha no coincide o una exclusión parece incorrecta.`,
+    userPrompt: `Texto original del extracto:\n${textoCrudo.slice(0, 75_000)}\n\nResultado del parser (fuente de verdad):\n${JSON.stringify(resultado.movimientos)}`,
+  });
+  if (!respuesta.texto) return null;
+
+  try {
+    const objeto = JSON.parse(respuesta.texto) as Record<string, unknown>;
+    const discrepancias = Array.isArray(objeto.discrepancias)
+      ? objeto.discrepancias.filter((d): d is string => typeof d === 'string').slice(0, 8)
+      : [];
+    const filasDudosas = Array.isArray(objeto.filasDudosas)
+      ? objeto.filasDudosas.filter((i): i is number => Number.isInteger(i) && i >= 0)
+      : [];
+    if (objeto.valido === true && discrepancias.length === 0 && filasDudosas.length === 0) {
+      return { advertencias: ['La IA validó que el parser coincide con el extracto.'], alertas: [] };
+    }
+    return {
+      advertencias: [
+        'La IA encontró diferencias o filas que requieren revisión. Los datos mostrados siguen siendo los del parser y no se corrigieron automáticamente.',
+        ...discrepancias,
+      ],
+      alertas: [{
+        severidad: 'alta',
+        titulo: 'Revisión necesaria antes de importar',
+        detalle: `${discrepancias.length + filasDudosas.length} posible${discrepancias.length + filasDudosas.length === 1 ? '' : 's'} diferencia${discrepancias.length + filasDudosas.length === 1 ? '' : 's'} detectada${discrepancias.length + filasDudosas.length === 1 ? '' : 's'} por la validación automática.`,
+      }],
+    };
+  } catch {
+    return {
+      advertencias: ['La validación automática no pudo confirmar el resultado; revisa las filas antes de importar.'],
+      alertas: [],
+    };
+  }
 }
 
 async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIAResult> {

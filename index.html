@@ -3,11 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>LukApp — Finanzas Personales Inteligentes</title>
-    <meta name="description" content="LukApp es tu asistente de finanzas personales en Colombia. Registra gastos por voz, gestiona presupuestos, calcula el 4x1000 y optimiza tu dinero con IA." />
-    <meta name="keywords" content="LukApp, Finanzas personales, Colombia, Control de gastos por voz, Presupuesto, 4x1000, Nequi, Bancolombia, Ahorro, Asesor IA" />
+    <title>App para Controlar Gastos en Colombia | LukApp</title>
+    <meta name="description" content="Registra gastos por voz, organiza presupuestos e importa extractos bancarios. Empieza gratis con LukApp, hecha para Colombia." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="keywords" content="LukApp, finanzas personales Colombia, controlar gastos, app para registrar gastos, presupuesto personal, 4x1000, gastos por voz, extractos bancarios, ahorro" />
     <meta name="author" content="LukApp" />
     <link rel="canonical" href="https://lukapp.app/" />
+    <link rel="alternate" hreflang="es-CO" href="https://lukapp.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://lukapp.app/" />
+    <style>
+      .contenido-seo-inicial { box-sizing: border-box; min-height: 100vh; max-width: 72rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; background: #fff; color: #1c1917; font: 400 1rem/1.6 Poppins, Arial, sans-serif; }
+      .contenido-seo-inicial header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 2rem; border-bottom: 1px solid #ede9e3; }
+      .contenido-seo-inicial .marca-seo-inicial { margin: 0; color: #772aea; font-size: 1.3rem; font-weight: 800; }
+      .contenido-seo-inicial nav { display: flex; flex-wrap: wrap; gap: 1rem; }
+      .contenido-seo-inicial a { color: #5b21b6; font-weight: 700; }
+      .contenido-seo-inicial section { max-width: 48rem; padding-top: 3rem; }
+      .contenido-seo-inicial h1 { max-width: 12ch; margin: 0; font-size: clamp(2.2rem, 6vw, 4.2rem); line-height: 1.05; letter-spacing: -0.04em; }
+      .contenido-seo-inicial h2 { margin-bottom: 0.5rem; font-size: 1.5rem; line-height: 1.2; }
+      @media (max-width: 38rem) { .contenido-seo-inicial header { align-items: flex-start; flex-direction: column; } }
+    </style>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://lukapp.app/#organization",
+            "name": "LukApp",
+            "url": "https://lukapp.app/",
+            "logo": "https://lukapp.app/lukapp-icon-512.png",
+            "areaServed": "CO"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://lukapp.app/#website",
+            "url": "https://lukapp.app/",
+            "name": "LukApp",
+            "alternateName": "LukApp Finanzas Personales",
+            "inLanguage": "es-CO",
+            "publisher": { "@id": "https://lukapp.app/#organization" }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://lukapp.app/#application",
+            "name": "LukApp",
+            "url": "https://lukapp.app/",
+            "description": "Registra gastos por voz, organiza presupuestos e importa extractos bancarios con LukApp, la app de finanzas personales para Colombia.",
+            "applicationCategory": "FinanceApplication",
+            "operatingSystem": "Web",
+            "inLanguage": "es-CO",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "COP" },
+            "publisher": { "@id": "https://lukapp.app/#organization" }
+          }
+        ]
+      }
+    </script>
 
     <!-- PWA & Mobile Web App Meta -->
     <meta name="theme-color" content="#fbf9f6" />
@@ -24,28 +77,74 @@
     <!-- Google Fonts Preconnect and Optimization -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="LukApp" />
     <meta property="og:locale" content="es_CO" />
     <meta property="og:url" content="https://lukapp.app/" />
-    <meta property="og:title" content="LukApp — Control de finanzas personales inteligente" />
-    <meta property="og:description" content="Registra gastos por voz, organiza presupuestos y recibe consejos financieros con inteligencia artificial." />
+    <meta property="og:title" content="App para Controlar Gastos en Colombia | LukApp" />
+    <meta property="og:description" content="Registra gastos por voz, organiza presupuestos e importa extractos bancarios. Empieza gratis con LukApp, hecha para Colombia." />
     <meta property="og:image" content="https://lukapp.app/lukapp-og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Logo de LukApp" />
+    <meta property="og:image:type" content="image/png" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="LukApp — Finanzas Personales Inteligentes" />
-    <meta name="twitter:description" content="Registra gastos por voz, organiza presupuestos y recibe consejos financieros con inteligencia artificial." />
+    <meta name="twitter:title" content="App para Controlar Gastos en Colombia | LukApp" />
+    <meta name="twitter:description" content="Registra gastos por voz, organiza presupuestos e importa extractos bancarios. Empieza gratis con LukApp, hecha para Colombia." />
     <meta name="twitter:image" content="https://lukapp.app/lukapp-og.png" />
   </head>
   <body class="fin-page">
-    <div id="root"></div>
+    <!-- Este contenido permite entender la propuesta de valor aun si el
+         rastreador no ejecuta JavaScript. React lo reemplaza al iniciar con la
+         experiencia interactiva, que contiene el mismo contenido y sus CTA. -->
+    <div id="root">
+      <main id="contenido-principal" class="contenido-seo-inicial">
+        <header>
+          <p class="marca-seo-inicial">LukApp</p>
+          <nav aria-label="Navegación principal">
+            <a href="#funciones">Funciones</a>
+            <a href="#cuatro-por-mil">4×1000</a>
+            <a href="#privacidad">Privacidad</a>
+            <a href="/entrar">Crear cuenta</a>
+          </nav>
+        </header>
+        <section aria-labelledby="titulo-inicial">
+          <h1 id="titulo-inicial">App para controlar gastos y finanzas en Colombia</h1>
+          <p>
+            LukApp te ayuda a registrar gastos por voz, importar extractos bancarios,
+            organizar presupuestos, crear metas de ahorro y entender el 4×1000.
+          </p>
+          <a href="/entrar">Comenzar gratis con LukApp</a>
+        </section>
+        <section id="funciones" aria-labelledby="funciones-inicial">
+          <h2 id="funciones-inicial">Una app para manejar tu dinero sin perder tiempo</h2>
+          <p>
+            Anota un gasto hablando o escribiendo, toma una foto al recibo o importa el
+            PDF de tu banco colombiano. LukApp clasifica los movimientos y te muestra
+            presupuestos, tendencias, deudas, ahorro y un asesor con IA.
+          </p>
+        </section>
+        <section id="cuatro-por-mil" aria-labelledby="gmf-inicial">
+          <h2 id="gmf-inicial">Control del 4×1000 para Colombia</h2>
+          <p>
+            Lleva el cupo exento del GMF entre tus cuentas y estima cuánto cuesta mover
+            tu plata antes de hacerlo.
+          </p>
+        </section>
+        <section id="privacidad" aria-labelledby="privacidad-inicial">
+          <h2 id="privacidad-inicial">Tus datos y tus finanzas son tuyos</h2>
+          <p>
+            Puedes empezar sin cuenta. Tus movimientos se guardan en tu navegador y la
+            sincronización en la nube es opcional.
+          </p>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -51,6 +51,7 @@ interface AsesorViewProps {
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+const PROBABILIDAD_LENGUA = 0.0001; // 0,01 %
 
 /** Chips para arrancar una conversación vacía — el punto de entrada más usado. */
 const SUGERENCIAS_INICIALES = [
@@ -119,7 +120,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
     const elegirPose = () => {
       const azar = Math.random();
-    if (azar < 0.0001) return 10; // 0,01 %
+      if (azar < PROBABILIDAD_LENGUA) return 10;
       if (azar < 0.40) return 0;
       if (azar < 0.48) return 1;
       if (azar < 0.56) return 2;

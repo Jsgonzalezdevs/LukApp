@@ -104,73 +104,81 @@ export const LandingLukApp: React.FC<LandingProps> = ({
 
   return (
     <div className="landing-finanzas">
-      <nav className={`nav-bar ${compacta ? 'compacta' : ''}`}>
-        <BarraProgreso />
-        <div className="nav-content">
-          <BrandWordmark className="logo" />
+      <a className="saltar-contenido" href="#contenido-principal">
+        Saltar al contenido principal
+      </a>
+      <header>
+        <nav className={`nav-bar ${compacta ? 'compacta' : ''}`} aria-label="Navegación principal">
+          <BarraProgreso />
+          <div className="nav-content">
+            <a className="logo-enlace" href="/" aria-label="Inicio de LukApp">
+              <BrandWordmark className="logo" />
+            </a>
 
-          <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-            {ENLACES.map(({ href, texto }) => (
-              <a href={href} key={href} onClick={() => setMenuOpen(false)}>
-                {texto}
-              </a>
-            ))}
+            <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
+              {ENLACES.map(({ href, texto }) => (
+                <a href={href} key={href} onClick={() => setMenuOpen(false)}>
+                  {texto}
+                </a>
+              ))}
+              <button
+                className="link-btn"
+                onClick={() => {
+                  onLogin?.();
+                  setMenuOpen(false);
+                }}
+              >
+                {sesionActiva ? 'Ir a mi app' : 'Acceder'}
+              </button>
+            </div>
             <button
-              className="link-btn"
-              onClick={() => {
-                onLogin?.();
-                setMenuOpen(false);
-              }}
+              className="menu-btn"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={menuOpen}
             >
-              {sesionActiva ? 'Ir a mi app' : 'Acceder'}
+              {menuOpen ? <X size={22} strokeWidth={1.75} /> : <Menu size={22} strokeWidth={1.75} />}
             </button>
           </div>
+        </nav>
+      </header>
 
-          <button
-            className="menu-btn"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <X size={22} strokeWidth={1.75} /> : <Menu size={22} strokeWidth={1.75} />}
-          </button>
-        </div>
-      </nav>
+      <main id="contenido-principal">
+        <Hero onGetStarted={handleGetStarted} />
+        <Ticker frases={FRASES_TICKER} />
+        <SecuenciaAnimada />
+        <DemoParser />
+        <SeccionApplePay />
+        <BandaCifras />
+        <Funciones />
+        <Cupo4x1000 />
+        <FormasDeRegistrar />
+        <Privacidad />
 
-      <Hero onGetStarted={handleGetStarted} />
-      <Ticker frases={FRASES_TICKER} />
-      <SecuenciaAnimada />
-      <DemoParser />
-      <SeccionApplePay />
-      <BandaCifras />
-      <Funciones />
-      <Cupo4x1000 />
-      <FormasDeRegistrar />
-      <Privacidad />
+        {mostrarPWA && (
+          <PWAInstall
+            onClose={handlePWAClose}
+            onSkip={handlePWASkip}
+            onProceed={handlePWAProceed}
+          />
+        )}
 
-      {mostrarPWA && (
-        <PWAInstall
-          onClose={handlePWAClose}
-          onSkip={handlePWASkip}
-          onProceed={handlePWAProceed}
-        />
-      )}
-
-      {sesion ? (
-        <Registro sesion={sesion} onIrAEntrar={onLogin} />
-      ) : (
-        <section className="final-cta">
-          <Reveal>
-            <MascotaLuki />
-            <h2>¿Listo?</h2>
-            <p>Toma el control de tu dinero desde hoy.</p>
-            <button className="btn-primary-lg" onClick={handleGetStarted}>
-              Comenzar ahora
-              <ArrowRight size={18} strokeWidth={2} aria-hidden />
-            </button>
-          </Reveal>
-        </section>
-      )}
+        {sesion ? (
+          <Registro sesion={sesion} onIrAEntrar={onLogin} />
+        ) : (
+          <section className="final-cta">
+            <Reveal>
+              <MascotaLuki />
+              <h2>¿Listo?</h2>
+              <p>Toma el control de tu dinero desde hoy.</p>
+              <button className="btn-primary-lg" onClick={handleGetStarted}>
+                Comenzar ahora
+                <ArrowRight size={18} strokeWidth={2} aria-hidden />
+              </button>
+            </Reveal>
+          </section>
+        )}
+      </main>
 
       <footer className="footer">
         <p>© 2026 LukApp — Tu dinero, bajo control</p>

@@ -127,6 +127,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   // stale snapshot — importing job A must immediately stop job B from also
   // offering the same overlapping rows as "new".
   const plan = planearImportacion(trabajo.resultado.movimientos, existentes, nuevoId, undefined, cuentaId);
+  const movimientosDudosos = trabajo.resultado.movimientos.filter((m) => m.confianza !== 'alta');
 
   return (
     <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
@@ -270,6 +271,16 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
               </div>
             ) : null}
 
+            {movimientosDudosos.length > 0 && importado === 0 ? (
+              <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-3">
+                <p className="text-[13px] leading-relaxed text-[var(--fin-out)]">
+                  Hay {movimientosDudosos.length} movimiento{movimientosDudosos.length === 1 ? '' : 's'}
+                  {' '}que no se leyó{movimientosDudosos.length === 1 ? '' : 'eron'} con certeza.
+                  Revisa esas filas y no se importarán automáticamente para evitar alterar tus totales.
+                </p>
+              </div>
+            ) : null}
+
             {importado > 0 ? (
               <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-in-bg)] px-3 py-2.5 text-[15px] font-semibold text-[var(--fin-in)]">
                 Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
@@ -277,7 +288,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : (
               <button
                 type="button"
-                disabled={plan.nuevos.length + aceptados.size === 0}
+                disabled={plan.nuevos.length + aceptados.size === 0 || movimientosDudosos.length > 0}
                 onClick={() => {
                   const extra = plan.posibles
                     .filter((p) => aceptados.has(p.clave))
@@ -288,7 +299,9 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                 }}
                 className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
-                {plan.nuevos.length + aceptados.size === 0
+                {movimientosDudosos.length > 0
+                  ? 'Revisión necesaria antes de importar'
+                  : plan.nuevos.length + aceptados.size === 0
                   ? 'Nada nuevo por importar'
                   : `Importar ${plan.nuevos.length + aceptados.size} movimiento${
                       plan.nuevos.length + aceptados.size === 1 ? '' : 's'
@@ -434,7 +447,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           id="cuenta-extracto"
           value={cuentaId ?? ''}
           onChange={(e) => setCuentaId(e.target.value || null)}
-          className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-[15px] text-[var(--fin-ink)]"
+          className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-base text-[var(--fin-ink)]"
         >
           <option value="">No asignar todavía</option>
           {cuentas.map((cuenta) => <option key={cuenta.id} value={cuenta.id}>{cuenta.nombre}</option>)}

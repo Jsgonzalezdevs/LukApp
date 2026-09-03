@@ -32,6 +32,14 @@ describe('plantilla Nu', () => {
     });
   });
 
+  it('extrae el período de corte que Nu imprime entre dos meses', () => {
+    expect(periodoNu('Llegó tu extracto de Agosto\n29 JUL 2026 - 28 AGO\nMovimientos')).toEqual({
+      desde: '2026-07-29',
+      hasta: '2026-08-28',
+      etiqueta: '29 JUL 2026 - 28 AGO',
+    });
+  });
+
   it('parsea movimientos con fecha corta y monto en formato latino', () => {
     const movimientos = parsearNu(EXTRACTO);
     expect(movimientos).toHaveLength(4);

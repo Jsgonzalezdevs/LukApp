@@ -23,6 +23,31 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.71',
+    fecha: '2026-09-02',
+    texto: 'Aceleramos la portada, protegimos las rutas privadas de buscadores y corregimos enlaces, metadatos y páginas inexistentes.',
+  },
+  {
+    version: '2.0.70',
+    fecha: '2026-09-02',
+    texto: 'La pose sorpresa de Luki ahora aparece solo en el 0,01 % de las aperturas del Asesor.',
+  },
+  {
+    version: '2.0.69',
+    fecha: '2026-09-02',
+    texto: 'Corregimos la mascota del Asesor para que su fondo sea transparente y se integre correctamente en el tema oscuro.',
+  },
+  {
+    version: '2.0.68',
+    fecha: '2026-09-01',
+    texto: 'La portada de LukApp ahora carga más rápido y deja clara su información esencial para buscadores incluso antes de ejecutar JavaScript.',
+  },
+  {
+    version: '2.0.67',
+    fecha: '2026-09-01',
+    texto: 'Mejoramos la presencia de LukApp en buscadores: sitemap, robots.txt, metadatos y datos estructurados ahora describen correctamente la app de finanzas personales en Colombia.',
+  },
+  {
     version: '2.0.66',
     fecha: '2026-09-01',
     texto: 'Añadimos la nueva pose tímida de Luki, con sus patitas cerca de la boca y fondo transparente.',

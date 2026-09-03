@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import './styles/premium-effects.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
@@ -14,8 +14,6 @@ import { movimientoEnBlanco } from './lib/parseTransaction';
 import { parseMultipleTransactions } from './lib/parseMultipleTransactions';
 import { parseTransferenciaVoz, type TransferenciaPorVoz } from './lib/parseTransferenciaVoz';
 import type { ParsedTransaction } from './lib/parseTransaction';
-import { ReporteFinancieroModal } from './components/ReporteFinancieroModal';
-import { MultiCapturaModal } from './components/MultiCapturaModal';
 import { aprenderDe } from './lib/aprendizaje';
 import { useAlmacen } from './data/useAlmacen';
 import { useSincronizacion } from './data/useSincronizacion';
@@ -28,8 +26,6 @@ import { RepositorioConCola } from './data/repositorioConCola';
 import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
-import { AnalistaView } from './components/AnalistaView';
-import { AsesorView } from './components/AsesorView';
 import { ES_PASIVO, etiquetaTipoCajita } from './data/modelos';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
@@ -79,11 +75,9 @@ import { useAiInsights } from './hooks/useAiInsights';
 import type { Insight } from './lib/insights';
 import { DineroView } from './components/DineroView';
 import { DetalleCajita } from './components/DetalleCajita';
-import { MesView } from './components/MesView';
 import { AjustesView } from './components/AjustesView';
 import { PasswordRecoveryView } from './components/PasswordRecoveryView';
 import { HojaPanel } from './components/HojaPanel';
-import { Captura } from './components/Captura';
 import { BotonAnotar } from './components/BotonAnotar';
 import { DetalleMovimiento } from './components/DetalleMovimiento';
 import { AvisoGuardado } from './components/AvisoGuardado';
@@ -99,6 +93,28 @@ import { TransactionList } from './components/TransactionList';
 import { GuiaApp } from './components/guia/GuiaApp';
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
 import './lukapp.css';
+
+/* Estas vistas no forman parte del Dashboard inicial. Se descargan al abrir
+   análisis, gráficas, captura o reportes, y Tesseract mantiene además su propio
+   import dinámico dentro de useImageOCR. */
+const AnalistaView = lazy(() =>
+  import('./components/AnalistaView').then(({ AnalistaView }) => ({ default: AnalistaView })),
+);
+const AsesorView = lazy(() =>
+  import('./components/AsesorView').then(({ AsesorView }) => ({ default: AsesorView })),
+);
+const Captura = lazy(() =>
+  import('./components/Captura').then(({ Captura }) => ({ default: Captura })),
+);
+const MesView = lazy(() =>
+  import('./components/MesView').then(({ MesView }) => ({ default: MesView })),
+);
+const MultiCapturaModal = lazy(() =>
+  import('./components/MultiCapturaModal').then(({ MultiCapturaModal }) => ({ default: MultiCapturaModal })),
+);
+const ReporteFinancieroModal = lazy(() =>
+  import('./components/ReporteFinancieroModal').then(({ ReporteFinancieroModal }) => ({ default: ReporteFinancieroModal })),
+);
 
 /**
  * Rebuilds the parser's output shape from a stored row so editing can reuse
@@ -639,6 +655,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           />
         }
       >
+        <Suspense fallback={<SkeletonInicio />}>
         {/* Storage that cannot remember has to say so — silently losing a month of
  entries is far worse than an ugly banner. */}
         {!almacen.persistente ? (
@@ -1272,14 +1289,17 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           />
         ) : null}
 
-        <ReporteFinancieroModal
-          abierto={mostrarReporte}
-          onCerrar={() => setMostrarReporte(false)}
-          mes={mesCalendarioActivo}
-          datos={almacen.datos}
-          cajitasBalances={cajitasBalances}
-          emailUsuario={cuenta?.email}
-        />
+        {mostrarReporte ? (
+          <ReporteFinancieroModal
+            abierto
+            onCerrar={() => setMostrarReporte(false)}
+            mes={mesCalendarioActivo}
+            datos={almacen.datos}
+            cajitasBalances={cajitasBalances}
+            emailUsuario={cuenta?.email}
+          />
+        ) : null}
+        </Suspense>
       </LukAppShell>
     </CatalogoProvider>
   );

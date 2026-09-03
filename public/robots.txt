@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /entrar
+Disallow: /superadmin
+Disallow: /estadisticas
+Disallow: /dinero
+Disallow: /mes
+Disallow: /asesor
+Disallow: /ajustes
+Disallow: /ecosistema
+Disallow: /api/
 
-Sitemap: https://juliangonzalez.lat/sitemap.xml
+Sitemap: https://lukapp.app/sitemap.xml

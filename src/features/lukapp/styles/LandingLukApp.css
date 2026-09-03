@@ -118,6 +118,25 @@
   color: var(--lp-bg);
 }
 
+.landing-finanzas .saltar-contenido {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 200;
+  transform: translateY(-180%);
+  border-radius: 0.5rem;
+  background: var(--lp-accent);
+  color: var(--lp-on-accent);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.landing-finanzas .saltar-contenido:focus {
+  transform: translateY(0);
+}
+
 /* NAVBAR */
 .landing-finanzas .nav-bar {
   position: sticky;
@@ -156,6 +175,11 @@
   display: block;
   height: 1.6rem;
   width: auto;
+}
+
+.landing-finanzas .logo-enlace {
+  display: block;
+  line-height: 0;
 }
 
 .landing-finanzas .nav-links {
@@ -235,7 +259,7 @@
   text-wrap: balance;
 }
 
-/* Cada línea del titular es su propio span para poder escalonar la entrada. */
+/* Cada línea conserva una caja estable y es visible desde el primer render. */
 .landing-finanzas .hero-text h1 > span {
   display: block;
 }
@@ -1450,12 +1474,14 @@
   width: clamp(132px, 15vw, 172px);
   display: block;
   margin: 0 auto 0.5rem;
+  background: transparent;
 }
 
 .landing-finanzas .luki-mascota img {
   display: block;
   width: 100%;
   height: auto;
+  background: transparent;
 }
 
 .landing-finanzas .btn-primary-lg {

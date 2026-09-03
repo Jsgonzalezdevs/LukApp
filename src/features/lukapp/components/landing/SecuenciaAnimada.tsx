@@ -63,8 +63,9 @@ export const SecuenciaAnimada: React.FC = () => {
   const gastoActual = GASTOS_DEMO[pasoIdx];
 
   return (
-    <section className="relative w-full overflow-hidden py-16 sm:py-24 bg-[var(--lp-surface)]/30 border-y border-[var(--lp-line)]/50">
+    <section className="relative w-full overflow-hidden py-16 sm:py-24 bg-[var(--lp-surface)]/30 border-y border-[var(--lp-line)]/50" aria-labelledby="beneficios-lukapp">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <h2 id="beneficios-lukapp" className="sr-only">Cómo LukApp te ayuda a controlar tus finanzas</h2>
         <Reveal className="relative grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 items-start">
           {/* Línea horizontal decorativa conectora entre columnas en desktop */}
           <div

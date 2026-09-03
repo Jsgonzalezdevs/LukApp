@@ -47,7 +47,14 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
         <div className="pwa-cabecera">
           {/* El mismo icono que va a quedar en la pantalla de inicio: enseñarlo
               aquí es la mitad de la instrucción. */}
-          <img className="pwa-icono" src="/lukapp-icon-192.png" alt="" aria-hidden />
+          <img
+            className="pwa-icono"
+            src="/lukapp-icon-192.png"
+            width="192"
+            height="192"
+            alt=""
+            aria-hidden
+          />
           <h2>Mejor en app</h2>
           <button
             className="pwa-cerrar"

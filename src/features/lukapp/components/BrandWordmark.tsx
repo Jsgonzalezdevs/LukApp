@@ -13,6 +13,10 @@ export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ className }) => (
   <img
     src="/brand/lukapp-wordmark.png"
     alt="LukApp"
+    width="493"
+    height="233"
+    loading="eager"
+    decoding="async"
     className={className}
     style={{ objectFit: 'contain' }}
     draggable={false}

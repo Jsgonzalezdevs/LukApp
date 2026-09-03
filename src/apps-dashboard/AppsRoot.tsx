@@ -1,18 +1,34 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
 import { useSesion } from '../features/lukapp/data/useSesion';
 import { useTema } from '../features/lukapp/data/useTema';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
-import { LoginPanel } from '../features/lukapp/components/LoginPanel';
-import { LukAppMain } from '../features/lukapp/LukAppApp';
-import { AppLauncher } from './AppLauncher';
-import { SuperadminPanel } from './SuperadminPanel';
-import { EstadisticasPanel } from './EstadisticasPanel';
 import { LandingLukApp } from '../features/lukapp/components/LandingLukApp';
 import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 import { apiUrl } from '../lib/api';
+
+/* La portada es la única ruta pública. Separar las vistas privadas evita que
+   quien apenas llega descargue OCR, analítica y el dashboard antes de decidir
+   crear una cuenta, que es un coste directo para LCP e INP. */
+const LoginPanel = lazy(() => import('../features/lukapp/components/LoginPanel').then(({ LoginPanel }) => ({ default: LoginPanel })));
+const LukAppMain = lazy(() => import('../features/lukapp/LukAppApp').then(({ LukAppMain }) => ({ default: LukAppMain })));
+const AppLauncher = lazy(() => import('./AppLauncher').then(({ AppLauncher }) => ({ default: AppLauncher })));
+const SuperadminPanel = lazy(() => import('./SuperadminPanel').then(({ SuperadminPanel }) => ({ default: SuperadminPanel })));
+const EstadisticasPanel = lazy(() => import('./EstadisticasPanel').then(({ EstadisticasPanel }) => ({ default: EstadisticasPanel })));
+
+const VistaConCarga: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Suspense
+    fallback={(
+      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" />
+      </div>
+    )}
+  >
+    {children}
+  </Suspense>
+);
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
 
@@ -34,7 +50,7 @@ const routeFor = (app: AppId): string => {
 const titleFor = (app: AppId): string => {
   switch (app) {
     case 'finanzas':
-      return 'LukApp — Finanzas Personales Inteligentes';
+      return 'App para Controlar Gastos en Colombia | LukApp';
     case 'superadmin':
       return 'LukApp — Superadmin';
     case 'estadisticas':
@@ -268,6 +284,7 @@ export const AppsRoot: React.FC = () => {
   // Si el usuario llega por enlace de recuperación de contraseña: mostrar formulario de nueva clave
   if (sesion.enRecuperacion) {
     return (
+      <VistaConCarga>
       <LoginPanel
         sesion={sesion}
         tema={tema}
@@ -275,6 +292,7 @@ export const AppsRoot: React.FC = () => {
         modoInicial="actualizar"
         onVolverInicio={() => ir('/')}
       />
+      </VistaConCarga>
     );
   }
 
@@ -287,12 +305,14 @@ export const AppsRoot: React.FC = () => {
       return <LandingLukApp onGetStarted={entrar} onLogin={entrar} sesion={sesion} />;
     }
     return (
+      <VistaConCarga>
       <LoginPanel
         sesion={sesion}
         tema={tema}
         onCambiarTema={setTema}
         onVolverInicio={() => ir('/')}
       />
+      </VistaConCarga>
     );
   }
 
@@ -306,24 +326,29 @@ export const AppsRoot: React.FC = () => {
 
   if (!esAdminOStaff) {
     return (
+      <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <LukAppMain esAdmin={false} />
       </div>
+      </VistaConCarga>
     );
   }
 
   if (activeApp === 'finanzas') {
     return (
+      <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <LukAppMain onBack={() => setActiveApp(null)} esAdmin={true} />
       </div>
+      </VistaConCarga>
     );
   }
 
   if (activeApp === 'superadmin' && esAdminOStaff) {
     return (
+      <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <SuperadminPanel
@@ -335,19 +360,23 @@ export const AppsRoot: React.FC = () => {
           onCambiarTema={setTema}
         />
       </div>
+      </VistaConCarga>
     );
   }
 
   if (activeApp === 'estadisticas' && (rol === 'admin' || permisos.includes('ver_visitantes'))) {
     return (
+      <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <EstadisticasPanel onBack={() => setActiveApp(null)} tema={tema} onCambiarTema={setTema} />
       </div>
+      </VistaConCarga>
     );
   }
 
   return (
+    <VistaConCarga>
     <div className={adminBackup ? 'pt-11' : ''}>
       {bannerAdmin}
       <AppLauncher
@@ -359,5 +388,6 @@ export const AppsRoot: React.FC = () => {
         onSalir={handleSalir}
       />
     </div>
+    </VistaConCarga>
   );
 };

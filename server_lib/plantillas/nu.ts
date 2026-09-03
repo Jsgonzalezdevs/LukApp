@@ -20,18 +20,33 @@ const LINEA_CON_FECHA =
 // with no date of its own on this bank's export.
 const LINEA_SIN_FECHA = /^(.+?) ([+-]\$[\d.]+,\d{2})$/;
 
-const PERIODO = /(\d{2})\s*-\s*(\d{2})\s+([A-Za-zÁÉÍÓÚáéíóú]+)\s+(\d{4})/;
+const PERIODO_MES_CALENDARIO = /(\d{1,2})\s*-\s*(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]+)\s+(\d{4})/;
+const PERIODO_FECHA_CORTE = /(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]+)\s+(\d{4})\s*-\s*(\d{1,2})\s+([A-Za-zÁÉÍÓÚáéíóú]+)(?:\s+(\d{4}))?/;
 
 export const periodoNu = (texto: string): PeriodoExtraido | null => {
-  const m = texto.match(PERIODO);
-  if (!m) return null;
-  const [, dDesde, dHasta, nombreMes, anio] = m;
-  const mes = MESES[nombreMes.slice(0, 3).toLowerCase()];
-  if (!mes) return null;
+  const calendario = texto.match(PERIODO_MES_CALENDARIO);
+  if (calendario) {
+    const [, dDesde, dHasta, nombreMes, anio] = calendario;
+    const mes = MESES[nombreMes.slice(0, 3).toLowerCase()];
+    if (!mes) return null;
+    return {
+      desde: `${anio}-${mes}-${dDesde.padStart(2, '0')}`,
+      hasta: `${anio}-${mes}-${dHasta.padStart(2, '0')}`,
+      etiqueta: `${dDesde}-${dHasta} ${nombreMes} ${anio}`,
+    };
+  }
+
+  const corte = texto.match(PERIODO_FECHA_CORTE);
+  if (!corte) return null;
+  const [, dDesde, mesDesdeNombre, anioDesde, dHasta, mesHastaNombre, anioHastaTexto] = corte;
+  const mesDesde = MESES[mesDesdeNombre.slice(0, 3).toLowerCase()];
+  const mesHasta = MESES[mesHastaNombre.slice(0, 3).toLowerCase()];
+  if (!mesDesde || !mesHasta) return null;
+  const anioHasta = anioHastaTexto ?? (Number(mesHasta) < Number(mesDesde) ? String(Number(anioDesde) + 1) : anioDesde);
   return {
-    desde: `${anio}-${mes}-${dDesde.padStart(2, '0')}`,
-    hasta: `${anio}-${mes}-${dHasta.padStart(2, '0')}`,
-    etiqueta: `${dDesde}-${dHasta} ${nombreMes} ${anio}`,
+    desde: `${anioDesde}-${mesDesde}-${dDesde.padStart(2, '0')}`,
+    hasta: `${anioHasta}-${mesHasta}-${dHasta.padStart(2, '0')}`,
+    etiqueta: `${dDesde} ${mesDesdeNombre} ${anioDesde} - ${dHasta} ${mesHastaNombre}`,
   };
 };
 

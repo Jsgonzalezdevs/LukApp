@@ -21,6 +21,9 @@ export const MascotaLuki: React.FC<MascotaLukiProps> = ({
       src={src}
       width="306"
       height="347"
+      loading="lazy"
+      decoding="async"
+      className="h-full w-full bg-transparent object-contain"
       alt={alt}
     />
   </div>
