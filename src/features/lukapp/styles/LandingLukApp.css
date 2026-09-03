@@ -930,54 +930,36 @@
 .landing-finanzas .demo-ejemplos-lista {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 
 .landing-finanzas .demo-chip {
-  display: flex;
-  align-items: baseline;
-  gap: 0.55rem;
+  display: block;
   min-width: 0;
-  padding: 0.65rem 0.3rem;
+  min-height: 42px;
+  padding: 0.65rem 0.75rem;
   font-family: inherit;
   font-size: 0.72rem;
   line-height: 1.35;
   text-align: left;
   color: color-mix(in srgb, var(--lp-bg) 66%, transparent);
-  background: transparent;
-  border: 0;
-  border-top: 1px solid color-mix(in srgb, var(--lp-bg) 14%, transparent);
-  border-radius: 0;
+  background: color-mix(in srgb, var(--lp-bg) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lp-bg) 11%, transparent);
+  border-radius: 10px;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s, transform 0.2s;
-}
-
-.landing-finanzas .demo-chip:nth-child(odd) {
-  padding-right: 0.8rem;
-}
-
-.landing-finanzas .demo-chip:nth-child(even) {
-  padding-left: 0.8rem;
-}
-
-.landing-finanzas .demo-chip > span {
-  color: color-mix(in srgb, var(--lp-bg) 32%, transparent);
-  font-size: 0.6rem;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.06em;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 
 .landing-finanzas .demo-chip:hover {
   color: var(--lp-bg);
-  border-color: color-mix(in srgb, var(--lp-bg) 34%, transparent);
+  border-color: color-mix(in srgb, var(--lp-bg) 30%, transparent);
+  background: color-mix(in srgb, var(--lp-bg) 10%, transparent);
 }
 
 .landing-finanzas .demo-chip.activo {
   border-color: var(--lp-accent);
   color: var(--lp-bg);
-}
-
-.landing-finanzas .demo-chip.activo > span {
-  color: var(--lp-accent);
+  background: color-mix(in srgb, var(--lp-accent) 22%, transparent);
 }
 
 .landing-finanzas .demo-puente {
@@ -1056,14 +1038,12 @@
   border-radius: 50%;
 }
 
-.landing-finanzas .demo-icono.gasto {
-  color: var(--lp-out);
-  background: color-mix(in srgb, var(--lp-out) 8%, transparent);
-}
-
-.landing-finanzas .demo-icono.ingreso {
-  color: var(--lp-in);
-  background: color-mix(in srgb, var(--lp-in) 8%, transparent);
+.landing-finanzas .demo-emoji {
+  border: 1px solid var(--lp-line);
+  background: var(--lp-surface);
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
 .landing-finanzas .demo-texto {
@@ -1950,7 +1930,7 @@
   .landing-finanzas .demo-chip:nth-child(odd),
   .landing-finanzas .demo-chip:nth-child(even) {
     flex: 0 0 190px;
-    padding: 0.65rem 0.75rem 0.65rem 0;
+    padding: 0.65rem 0.75rem;
   }
 
   /* El monto ya no cabe al lado de la descripción: la fila se parte en dos y el

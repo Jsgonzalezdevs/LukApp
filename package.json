@@ -1,7 +1,7 @@
 {
   "name": "lukapp",
   "private": true,
-  "version": "2.1.9",
+  "version": "2.1.10",
   "type": "module",
   "description": "LukApp — Plataforma de finanzas personales asistida por IA y comandos de voz",
   "scripts": {

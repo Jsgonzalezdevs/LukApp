@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.10',
+    fecha: '2026-09-03',
+    texto: 'La prueba de frases ahora muestra el emoji de la categoría detectada y ordena mejor los ejemplos para que se puedan elegir de un vistazo.',
+  },
+  {
     version: '2.1.9',
     fecha: '2026-09-03',
     texto: 'Quitamos la sección de privacidad de la portada para que el recorrido sea más corto y directo.',

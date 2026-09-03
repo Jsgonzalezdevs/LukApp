@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
-  ArrowDownRight,
   ArrowRight,
-  ArrowUpRight,
   Calendar,
   Check,
   CreditCard,
@@ -11,7 +9,7 @@ import {
   User
 } from 'lucide-react';
 import { parseTransaction } from '../../lib/parseTransaction';
-import { CATALOGO_BASE } from '../../categorias';
+import { CATALOGO_BASE, sugerirEmojiCategoria } from '../../categorias';
 import { formatCop } from '../../lib/formatCop';
 import { Reveal } from './primitivas';
 
@@ -65,6 +63,11 @@ export const DemoParser: React.FC = () => {
     }
     return categoria.nombre;
   }, [leido.description, categoria.nombre]);
+
+  const emojiCategoria = useMemo(
+    () => sugerirEmojiCategoria(leido.description || '') || categoria.emoji,
+    [leido.description, categoria.emoji]
+  );
 
   const insignias = [
     leido.dateOverride && {
@@ -123,7 +126,7 @@ export const DemoParser: React.FC = () => {
           <div className="demo-ejemplos">
             <span className="demo-ejemplos-titulo">O prueba otra forma de decirlo</span>
             <div className="demo-ejemplos-lista">
-              {EJEMPLOS.map((frase, indice) => (
+              {EJEMPLOS.map((frase) => (
                 <button
                   key={frase}
                   type="button"
@@ -131,7 +134,6 @@ export const DemoParser: React.FC = () => {
                   onClick={() => setTexto(frase)}
                   aria-pressed={frase === texto}
                 >
-                  <span>{String(indice + 1).padStart(2, '0')}</span>
                   {frase}
                 </button>
               ))}
@@ -166,10 +168,8 @@ export const DemoParser: React.FC = () => {
             ) : (
               <>
                 <div className="demo-fila">
-                  <span className={`demo-icono ${leido.kind}`} aria-hidden="true">
-                    {leido.kind === 'ingreso'
-                      ? <ArrowUpRight size={22} strokeWidth={2} />
-                      : <ArrowDownRight size={22} strokeWidth={2} />}
+                  <span className="demo-icono demo-emoji" aria-hidden="true">
+                    {emojiCategoria}
                   </span>
 
                   {/* Descripción, categoría y monto se pintan sin transición de
