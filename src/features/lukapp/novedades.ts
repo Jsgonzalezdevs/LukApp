@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.1',
+    fecha: '2026-09-03',
+    texto: 'Rediseñamos la prueba de lenguaje natural para que la frase y el movimiento se lean como una sola transformación, con mejor jerarquía también en pantallas pequeñas.',
+  },
+  {
     version: '2.1.0',
     fecha: '2026-09-03',
     texto: 'Estrenamos un recorrido visual que muestra cómo LukApp acompaña tu plata durante el día y ya puedes entrar o crear tu cuenta con Google.',

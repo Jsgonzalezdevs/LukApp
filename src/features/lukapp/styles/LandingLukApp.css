@@ -738,7 +738,16 @@
 .landing-finanzas .funciones h2,
 .landing-finanzas .gmf h2,
 .landing-finanzas .formas h2,
-.landing-finanzas .privacidad h2,
+.landing-finanzas .privacidad h2 {
+  font-size: clamp(1.7rem, 3.4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+
 /* El personaje del cierre. Alto fijo en `em` del h2 para que crezca con el
    titular en pantallas grandes sin necesidad de otra media query. */
 .landing-finanzas .cta-estrella {
@@ -766,27 +775,122 @@
 /* DEMO DEL PARSER
    La pieza interactiva: lo que se ve aquí lo calcula parseTransaction, el mismo
    de la app. */
+.landing-finanzas .demo-parser .seccion-cabecera {
+  max-width: 760px;
+}
+
+.landing-finanzas .demo-titulo-acento {
+  color: var(--lp-accent);
+}
+
 .landing-finanzas .demo-caja {
-  padding: clamp(1.25rem, 3vw, 2rem);
+  display: grid;
+  grid-template-columns: minmax(0, 0.96fr) 72px minmax(0, 1.04fr);
+  min-height: 440px;
   background: var(--lp-surface);
   border: 1px solid var(--lp-line);
-  border-radius: 24px;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: 0 34px 80px -58px rgba(28, 25, 23, 0.6);
+}
+
+.landing-finanzas .demo-entrada,
+.landing-finanzas .demo-salida {
+  min-width: 0;
+  padding: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.landing-finanzas .demo-entrada {
+  display: flex;
+  flex-direction: column;
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.landing-finanzas .demo-salida {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-finanzas .demo-panel-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.4rem);
+}
+
+.landing-finanzas .demo-paso,
+.landing-finanzas .demo-motor,
+.landing-finanzas .demo-confianza-texto {
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.landing-finanzas .demo-paso {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .demo-entrada .demo-paso {
+  color: color-mix(in srgb, var(--lp-bg) 64%, transparent);
+}
+
+.landing-finanzas .demo-paso b {
+  color: var(--lp-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.landing-finanzas .demo-motor {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: color-mix(in srgb, var(--lp-bg) 72%, transparent);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.landing-finanzas .demo-motor i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lp-accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lp-accent) 18%, transparent);
 }
 
 .landing-finanzas .demo-campo {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.9rem 1.1rem;
-  background: var(--lp-bg);
-  border: 1px solid var(--lp-line);
-  border-radius: 14px;
-  color: var(--lp-ink-faint);
-  transition: border-color 0.2s;
+  display: block;
+  padding: 1.15rem 1.2rem 1.05rem;
+  background: color-mix(in srgb, var(--lp-bg) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lp-bg) 18%, transparent);
+  border-radius: 18px;
+  color: color-mix(in srgb, var(--lp-bg) 65%, transparent);
+  transition: border-color 0.2s, background 0.2s;
 }
 
 .landing-finanzas .demo-campo:focus-within {
-  border-color: var(--lp-ink-faint);
+  border-color: var(--lp-accent);
+  background: color-mix(in srgb, var(--lp-bg) 10%, transparent);
+}
+
+.landing-finanzas .demo-campo-etiqueta {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.67rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-finanzas .demo-campo-linea {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
 }
 
 .landing-finanzas .demo-campo input {
@@ -799,51 +903,131 @@
   /* El mínimo es 1rem y no menos: por debajo de 16px, Safari en iPhone hace
      zoom al enfocar el campo y deja la página descuadrada. Es la misma regla
      que vigila ios.test.ts para los campos de la app. */
-  font-size: clamp(1rem, 1.8vw, 1.1rem);
-  color: var(--lp-ink);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  font-weight: 500;
+  color: var(--lp-bg);
+}
+
+.landing-finanzas .demo-campo input::placeholder {
+  color: color-mix(in srgb, var(--lp-bg) 45%, transparent);
 }
 
 .landing-finanzas .demo-ejemplos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.9rem;
+  margin-top: auto;
+  padding-top: 2rem;
+}
+
+.landing-finanzas .demo-ejemplos-titulo {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: color-mix(in srgb, var(--lp-bg) 55%, transparent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.landing-finanzas .demo-ejemplos-lista {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .landing-finanzas .demo-chip {
-  padding: 0.4rem 0.75rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.65rem 0.3rem;
   font-family: inherit;
-  font-size: 0.78rem;
-  color: var(--lp-ink-soft);
-  background: var(--lp-bg);
-  border: 1px solid var(--lp-line);
-  border-radius: 999px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-align: left;
+  color: color-mix(in srgb, var(--lp-bg) 66%, transparent);
+  background: transparent;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--lp-bg) 14%, transparent);
+  border-radius: 0;
   cursor: pointer;
-  transition: color 0.2s, border-color 0.2s;
+  transition: color 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.landing-finanzas .demo-chip:nth-child(odd) {
+  padding-right: 0.8rem;
+}
+
+.landing-finanzas .demo-chip:nth-child(even) {
+  padding-left: 0.8rem;
+}
+
+.landing-finanzas .demo-chip > span {
+  color: color-mix(in srgb, var(--lp-bg) 32%, transparent);
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
 }
 
 .landing-finanzas .demo-chip:hover {
-  color: var(--lp-ink);
-  border-color: var(--lp-ink-faint);
+  color: var(--lp-bg);
+  border-color: color-mix(in srgb, var(--lp-bg) 34%, transparent);
 }
 
 .landing-finanzas .demo-chip.activo {
-  color: var(--lp-on-accent);
-  background: var(--lp-accent);
   border-color: var(--lp-accent);
+  color: var(--lp-bg);
 }
 
-.landing-finanzas .demo-flecha {
-  display: block;
-  margin: 1.1rem auto 0.9rem;
-  color: var(--lp-ink-faint);
+.landing-finanzas .demo-chip.activo > span {
+  color: var(--lp-accent);
+}
+
+.landing-finanzas .demo-puente {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--lp-ink-soft);
+}
+
+.landing-finanzas .demo-puente-linea {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--lp-line);
+}
+
+.landing-finanzas .demo-puente-icono {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--lp-line);
+  border-radius: 50%;
+  background: var(--lp-bg);
+  color: var(--lp-accent);
+  box-shadow: 0 8px 24px -14px rgba(28, 25, 23, 0.45);
+}
+
+.landing-finanzas .demo-puente-texto {
+  position: absolute;
+  top: calc(50% + 34px);
+  font-size: 0.61rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .landing-finanzas .demo-resultado {
-  padding: 1.1rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
   background: var(--lp-bg);
-  border: 1px solid var(--lp-line);
-  border-radius: 16px;
+  border: 0;
+  border-radius: 0;
 }
 
 .landing-finanzas .demo-vacio {
@@ -856,7 +1040,10 @@
 .landing-finanzas .demo-fila {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 1rem;
+  padding: 1.4rem 0;
+  border-top: 1px solid var(--lp-line);
+  border-bottom: 1px solid var(--lp-line);
 }
 
 .landing-finanzas .demo-icono {
@@ -865,7 +1052,18 @@
   width: 44px;
   height: 44px;
   flex-shrink: 0;
-  border-radius: 13px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+}
+
+.landing-finanzas .demo-icono.gasto {
+  color: var(--lp-out);
+  background: color-mix(in srgb, var(--lp-out) 8%, transparent);
+}
+
+.landing-finanzas .demo-icono.ingreso {
+  color: var(--lp-in);
+  background: color-mix(in srgb, var(--lp-in) 8%, transparent);
 }
 
 .landing-finanzas .demo-texto {
@@ -877,18 +1075,22 @@
 }
 
 .landing-finanzas .demo-desc {
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  font-weight: 650;
+  line-height: 1.25;
   color: var(--lp-ink);
 }
 
 .landing-finanzas .demo-categoria {
-  font-size: 0.78rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   color: var(--lp-ink-soft);
 }
 
 .landing-finanzas .demo-monto {
-  font-size: 1.1rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.45rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
@@ -906,30 +1108,29 @@
 .landing-finanzas .demo-insignias {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-top: 0.9rem;
+  gap: 0.45rem 1rem;
+  margin-top: 1.15rem;
 }
 
 .landing-finanzas .demo-insignia {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.3rem 0.6rem;
+  padding: 0;
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--lp-ink-soft);
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-line);
-  border-radius: 999px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
 }
 
 .landing-finanzas .demo-confianza {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  margin-top: 1rem;
-  padding-top: 0.9rem;
-  border-top: 1px solid var(--lp-line);
+  margin-top: auto;
+  padding-top: 1.5rem;
 }
 
 .landing-finanzas .demo-barra {
@@ -944,14 +1145,23 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--lp-in);
+  background: var(--lp-accent);
 }
 
 .landing-finanzas .demo-confianza-texto {
-  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
   color: var(--lp-ink-soft);
   flex-shrink: 0;
+}
+
+.landing-finanzas .demo-listo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--lp-ink-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* FUNCIONES — un recorrido financiero continuo, no otra cuadrícula de tarjetas. */
@@ -1647,8 +1857,35 @@
      a bajar de él y desborda la pantalla en vez de encogerse. */
   .landing-finanzas .hero,
   .landing-finanzas .funciones-recorrido,
-  .landing-finanzas .gmf-caja {
+  .landing-finanzas .gmf-caja,
+  .landing-finanzas .demo-caja {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-finanzas .demo-caja {
+    min-height: 0;
+  }
+
+  .landing-finanzas .demo-puente {
+    min-height: 72px;
+  }
+
+  .landing-finanzas .demo-puente-linea {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    height: auto;
+  }
+
+  .landing-finanzas .demo-puente-icono svg {
+    transform: rotate(90deg);
+  }
+
+  .landing-finanzas .demo-puente-texto {
+    top: 50%;
+    left: calc(50% + 34px);
+    transform: translateY(-50%);
   }
 
   .landing-finanzas .funciones-recorrido {
@@ -1732,6 +1969,30 @@
   .landing-finanzas .btn-secondary {
     width: 100%;
     justify-content: center;
+  }
+
+  .landing-finanzas .demo-entrada,
+  .landing-finanzas .demo-salida {
+    padding: 1.35rem 1.15rem;
+  }
+
+  .landing-finanzas .demo-ejemplos-lista {
+    display: flex;
+    margin-inline: -1.15rem;
+    padding-inline: 1.15rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .landing-finanzas .demo-ejemplos-lista::-webkit-scrollbar {
+    display: none;
+  }
+
+  .landing-finanzas .demo-chip,
+  .landing-finanzas .demo-chip:nth-child(odd),
+  .landing-finanzas .demo-chip:nth-child(even) {
+    flex: 0 0 190px;
+    padding: 0.65rem 0.75rem 0.65rem 0;
   }
 
   /* El monto ya no cabe al lado de la descripción: la fila se parte en dos y el
