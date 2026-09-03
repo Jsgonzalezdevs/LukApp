@@ -1459,9 +1459,9 @@
   gap: 0.55rem;
 }
 
-/* Cada turno del chat es una fila: la estrella a un lado y la burbuja al otro.
-   `align-items: flex-end` deja al personaje apoyado en la base de la burbuja,
-   como en el asesor de la app. */
+/* Cada turno del chat es una fila: Luki acompaña la respuesta a un lado y la
+   burbuja al otro. `align-items: flex-end` lo deja apoyado en la base, como en
+   el asesor de la app. */
 .landing-finanzas .mk-fila {
   display: flex;
   align-items: flex-end;
@@ -1472,10 +1472,17 @@
   justify-content: flex-end;
 }
 
-.landing-finanzas .mk-estrella {
-  width: 26px;
-  height: 26px;
+.landing-finanzas .mk-luki {
+  width: 42px;
+  height: 42px;
+  margin-bottom: -2px;
   flex: none;
+}
+
+.landing-finanzas .mk-luki img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .landing-finanzas .mk-burbuja {

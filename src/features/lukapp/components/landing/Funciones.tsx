@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Estrella } from '../Estrella';
 import {
   Bot,
   PiggyBank,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react';
 import { formatCop } from '../../lib/formatCop';
 import { Reveal } from './primitivas';
+import { MascotaLuki } from './MascotaLuki';
 
 /* ── Mockups ──────────────────────────────────────────────────────────────
    Cada pestaña dibuja su propia pantalla. Son SVG y CSS, no capturas: pesan
@@ -141,6 +141,11 @@ const CHARLA = [
   { de: 'bot' as const, texto: '$287.400 en 19 pedidos. El promedio te da $15.100 cada uno.' }
 ];
 
+const GESTOS_LUKI = [
+  '/brand/luki-pensando-transparente.png',
+  '/brand/luki-sorprendida-transparente.png'
+];
+
 const MockAnalista: React.FC = () => {
   const quieto = useReducedMotion();
   return (
@@ -154,10 +159,13 @@ const MockAnalista: React.FC = () => {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.4, delay: 0.15 + i * 0.35 }}
         >
-          {/* Quien responde es la Estrella IA, la misma que atiende dentro de
-              la app: la portada enseña la cara que el usuario se va a
-              encontrar, no un icono genérico de robot. */}
-          {m.de === 'bot' && <Estrella className="mk-estrella" />}
+          {m.de === 'bot' && (
+            <MascotaLuki
+              className="mk-luki"
+              src={GESTOS_LUKI[Math.floor(i / 2) % GESTOS_LUKI.length]}
+              alt="Luki pensando sobre tus números"
+            />
+          )}
           <span className={`mk-burbuja ${m.de}`}>{m.texto}</span>
         </motion.div>
       ))}
