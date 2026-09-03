@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
 
 /**
  * La barra de progreso de la nav. Es la única pieza que le dice al visitante
@@ -29,19 +29,20 @@ export const TituloPalabras: React.FC<{
   resaltarUltimas?: number;
 }> = ({ texto, className, resaltarUltimas = 0 }) => {
   const quieto = useReducedMotion();
+  const ref = useRef<HTMLHeadingElement>(null);
+  const enVista = useInView(ref, { once: true, amount: 0.25 });
   const palabras = texto.split(' ');
   const desde = palabras.length - resaltarUltimas;
 
   if (quieto) return <h2 className={className}>{texto}</h2>;
 
   return (
-    <h2 className={className}>
+    <h2 ref={ref} className={className}>
       {palabras.map((palabra, i) => (
         <span className="palabra" key={`${palabra}-${i}`}>
           <motion.span
             initial={{ y: '110%' }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true, amount: 0.6 }}
+            animate={{ y: enVista ? 0 : '110%' }}
             transition={{ duration: 0.65, delay: i * 0.055, ease: [0.16, 1, 0.3, 1] }}
             className={i >= desde ? 'resaltada' : undefined}
           >

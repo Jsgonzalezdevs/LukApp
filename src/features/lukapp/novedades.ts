@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.7',
+    fecha: '2026-09-03',
+    texto: 'Reordenamos el registro y la privacidad para que se lean como un recorrido editorial, con títulos visibles, menos espacio desperdiciado y sin una cuadrícula de cajas.',
+  },
+  {
     version: '2.1.6',
     fecha: '2026-09-03',
     texto: 'La pose secreta de Luki ahora aparece en una de cada cien mil aperturas: un gesto realmente excepcional.',

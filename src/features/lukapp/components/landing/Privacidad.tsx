@@ -32,21 +32,31 @@ const PUNTOS: { Icono: LucideIcon; titulo: string; texto: string }[] = [
 
 export const Privacidad: React.FC = () => (
   <section className="privacidad" id="privacidad">
-    <Reveal as="header" className="seccion-cabecera">
-      <span className="seccion-etiqueta">Tus datos</span>
-      <TituloPalabras texto="Tu plata no es el producto" resaltarUltimas={2} />
-    </Reveal>
+    <div className="privacidad-composicion">
+      <Reveal as="header" className="privacidad-cabecera">
+        <span className="seccion-etiqueta">Tus datos, tus reglas</span>
+        <TituloPalabras texto="Tu plata no es el producto" resaltarUltimas={2} />
+        <p className="seccion-sub">
+          Empieza sin entregar información personal. La nube aparece solo si tú
+          decides que la necesitas.
+        </p>
+        <span className="privacidad-promesa">Sin anuncios. Sin letra pequeña.</span>
+      </Reveal>
 
-    <div className="privacidad-grid">
-      {PUNTOS.map(({ Icono, titulo, texto }, i) => (
-        <Reveal as="article" className="privacidad-item" key={titulo} delay={i * 0.07}>
-          <span className="privacidad-icono">
-            <Icono size={18} strokeWidth={1.5} aria-hidden />
-          </span>
-          <h3>{titulo}</h3>
-          <p>{texto}</p>
-        </Reveal>
-      ))}
+      <div className="privacidad-lista">
+        {PUNTOS.map(({ Icono, titulo, texto }, i) => (
+          <Reveal as="article" className="privacidad-item" key={titulo} delay={i * 0.06}>
+            <span className="privacidad-indice" aria-hidden="true">0{i + 1}</span>
+            <span className="privacidad-icono">
+              <Icono size={19} strokeWidth={1.6} aria-hidden />
+            </span>
+            <div>
+              <h3>{titulo}</h3>
+              <p>{texto}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
     </div>
   </section>
 );
