@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.17',
+    fecha: '2026-09-03',
+    texto: 'Ahora puedes agregar personas desde Ajustes para reconocer sus nombres y apodos al registrar transferencias. Las etiquetas genéricas de BRE-B ya no aparecen como contactos.',
+  },
+  {
+    version: '2.1.16',
+    fecha: '2026-09-03',
+    texto: 'La portada ahora tiene un fondo sutil y armonioso con la paleta de LukApp, para darle más profundidad sin distraer del mensaje ni del teléfono.',
+  },
+  {
     version: '2.1.15',
     fecha: '2026-09-03',
     texto: 'Ajustamos las categorías del registro para que sus etiquetas no se corten y puedan verse completas al deslizar.',

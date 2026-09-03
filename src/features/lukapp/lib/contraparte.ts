@@ -33,6 +33,11 @@ const TITULO = (texto: string): string =>
     .map((p) => (p.length > 2 ? p[0].toUpperCase() + p.slice(1) : p))
     .join(' ');
 
+/* BRE-B puede ocupar el lugar del nombre cuando el banco no informa al
+   destinatario. Esa etiqueta describe el riel, no una persona, así que no
+   debe terminar en Contactos como si fuera un NN. */
+const ETIQUETAS_SIN_PERSONA = /^(?:llave )?otra entidad(?: redeban)?(?: bre-?b)?$/i;
+
 /**
  * The counterparty as a display name, or null when the description names none.
  *
@@ -52,6 +57,7 @@ export const extraerContraparte = (descripcion: string): string | null => {
     const bruto = m[1].replace(COLA, '').trim();
     // A lone word that is not a name (a bank, a product) tells us nothing.
     if (bruto.length < 3) return null;
+    if (ETIQUETAS_SIN_PERSONA.test(bruto)) return null;
     return TITULO(bruto);
   }
 

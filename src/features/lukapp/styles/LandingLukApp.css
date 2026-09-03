@@ -40,6 +40,13 @@
   --lp-sombra-btn: 0 8px 20px -8px rgba(119, 42, 234, 0.35);
   --lp-sombra-tel: 0 40px 80px -32px rgba(28, 25, 23, 0.35);
   --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(119, 42, 234, 0.08), transparent 70%);
+  /* Un lienzo con atmósfera, no una ilustración: las manchas se descubren
+     después de mirar un rato y dejan intacta la jerarquía del contenido. */
+  --lp-lienzo: 
+    radial-gradient(42rem 30rem at 82% 8%, rgba(119, 42, 234, 0.075), transparent 72%),
+    radial-gradient(32rem 26rem at 8% 52%, rgba(16, 185, 129, 0.045), transparent 70%),
+    radial-gradient(28rem 24rem at 90% 78%, rgba(245, 158, 11, 0.035), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(28, 25, 23, 0.045) 1px, transparent 1.2px);
   /* La pila vive en un token porque hay que repetirla dentro del atajo `font`
      de --fin-t-cifra, y ahí no se puede escribir `inherit`: el atajo exige una
      familia de verdad y descarta la declaración entera si no la encuentra. */
@@ -72,6 +79,11 @@
     --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
     --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
     --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 85, 247, 0.1), transparent 70%);
+    --lp-lienzo:
+      radial-gradient(42rem 30rem at 82% 8%, rgba(168, 85, 247, 0.12), transparent 72%),
+      radial-gradient(32rem 26rem at 8% 52%, rgba(74, 222, 128, 0.045), transparent 70%),
+      radial-gradient(28rem 24rem at 90% 78%, rgba(245, 158, 11, 0.04), transparent 70%),
+      radial-gradient(circle at 1px 1px, rgba(245, 243, 240, 0.045) 1px, transparent 1.2px);
   }
 }
 
@@ -92,6 +104,11 @@
   --lp-sombra-btn: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
   --lp-sombra-tel: 0 40px 80px -32px rgba(0, 0, 0, 0.7);
   --lp-halo: radial-gradient(60% 50% at 70% 30%, rgba(168, 85, 247, 0.1), transparent 70%);
+  --lp-lienzo:
+    radial-gradient(42rem 30rem at 82% 8%, rgba(168, 85, 247, 0.12), transparent 72%),
+    radial-gradient(32rem 26rem at 8% 52%, rgba(74, 222, 128, 0.045), transparent 70%),
+    radial-gradient(28rem 24rem at 90% 78%, rgba(245, 158, 11, 0.04), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(245, 243, 240, 0.045) 1px, transparent 1.2px);
 }
 
 .landing-finanzas {
@@ -103,6 +120,9 @@
   /* La landing manda sobre su propio lienzo: sin esto, en móvil el fondo de la
      app se ve por debajo del último bloque. */
   min-height: 100dvh;
+  background-image: var(--lp-lienzo);
+  background-size: auto, auto, auto, 24px 24px;
+  background-attachment: fixed;
 
   /* Los adornos sobresalen a propósito —el resplandor del teléfono se sale un
      16% por cada lado, las burbujas rozan los bordes— y en un celular eso

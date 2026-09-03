@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { Users, Link2Off, Pencil, Check } from 'lucide-react';
+import { Users, Link2Off, Pencil, Check, UserPlus } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Contacto, Duda, ParteVista } from '../lib/contactos';
-import { dudasDeUnion, partesDelLibro } from '../lib/contactos';
+import { dudasDeUnion, normalizarNombre, partesDelLibro } from '../lib/contactos';
 import { dayLabel } from '../lib/localDate';
 import { DudaContacto } from './DudaContacto';
 import { DetalleContacto } from './DetalleContacto';
@@ -75,6 +75,9 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
 }) => {
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState('');
+  const [agregando, setAgregando] = useState(false);
+  const [nombreNuevo, setNombreNuevo] = useState('');
+  const [aliasNuevo, setAliasNuevo] = useState('');
   // Se guarda la CLAVE, no la fila: la fila es un objeto derivado, y al añadir
   // un apodo la hoja abierta seguiría mostrando la versión de antes del cambio.
   const [claveAbierta, setClaveAbierta] = useState<string | null>(null);
@@ -112,8 +115,37 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
             {filas.length}
           </p>
           <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
-            Salen solos de tus movimientos. No hay nada que escribir.
+            Salen solos de tus movimientos. También puedes preparar aquí a quién le transfieres.
           </p>
+
+          <button
+            type="button"
+            onClick={() => setAgregando((abierto) => !abierto)}
+            className="mt-4 inline-flex items-center gap-2 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+          >
+            <UserPlus className="h-4 w-4" aria-hidden="true" />
+            Agregar persona
+          </button>
+
+          {agregando ? (
+            <form
+              className="mt-3 grid gap-2"
+              onSubmit={(evento) => {
+                evento.preventDefault();
+                const nombre = nombreNuevo.trim();
+                const alias = normalizarNombre(aliasNuevo || nombre);
+                if (!nombre || !alias) return;
+                onApodar(alias, nombre, nombre);
+                setNombreNuevo('');
+                setAliasNuevo('');
+                setAgregando(false);
+              }}
+            >
+              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[14px] text-[var(--fin-ink)]" />
+              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[14px] text-[var(--fin-ink)]" />
+              <button type="submit" className="rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]">Guardar persona</button>
+            </form>
+          ) : null}
 
           <DudaContacto
             duda={dudas[0] ?? null}
