@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.22',
+    fecha: '2026-09-03',
+    texto: 'Las personas agregadas manualmente ahora aparecen de inmediato en la lista, incluso antes de tener movimientos.',
+  },
+  {
     version: '2.1.21',
     fecha: '2026-09-03',
     texto: 'La portada ahora equilibra el tamaño y la posición del mensaje con el teléfono, y suma un movimiento ambiental suave tipo lámpara de lava.',

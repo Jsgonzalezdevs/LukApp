@@ -57,6 +57,21 @@ const armarFilas = (partes: readonly ParteVista[], contactos: readonly Contacto[
     });
   }
 
+  // Una persona agregada a mano puede todavía no tener movimientos. Si no la
+  // incluimos aquí, se guarda correctamente pero parece que el botón no hizo
+  // nada hasta que llegue el primer extracto que la mencione.
+  for (const contacto of contactos) {
+    if (contacto.archivedAt !== null || filas.has(contacto.id)) continue;
+    filas.set(contacto.id, {
+      clave: contacto.id,
+      nombre: contacto.nombre,
+      alias: contacto.alias,
+      movimientos: 0,
+      ultimaFecha: '',
+      contacto,
+    });
+  }
+
   return [...filas.values()].sort((a, b) =>
     b.movimientos !== a.movimientos
       ? b.movimientos - a.movimientos
@@ -220,8 +235,9 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                       {fila.nombre}
                     </span>
                     <span className="block text-[13px] text-[var(--fin-ink-faint)]">
-                      {fila.movimientos} movimiento{fila.movimientos === 1 ? '' : 's'} · último{' '}
-                      {dayLabel(fila.ultimaFecha)}
+                      {fila.movimientos === 0
+                        ? 'Sin movimientos todavía'
+                        : `${fila.movimientos} movimiento${fila.movimientos === 1 ? '' : 's'} · último ${dayLabel(fila.ultimaFecha)}`}
                       {fila.alias.length > 1 ? ` · ${fila.alias.length} grafías` : ''}
                     </span>
                   </button>
