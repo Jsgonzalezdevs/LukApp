@@ -16,6 +16,7 @@ const auth = {
   onAuthStateChange:
     vi.fn<(cb: Aviso) => { data: { subscription: { unsubscribe: () => void } } }>(),
   signInWithPassword: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
+  signInWithOAuth: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
   signUp: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
   signOut: vi.fn<() => Promise<{ error: Fallo | null }>>(),
 };
@@ -52,6 +53,7 @@ beforeEach(() => {
     data: { subscription: { unsubscribe: vi.fn() } },
   });
   auth.signInWithPassword.mockResolvedValue({ error: null });
+  auth.signInWithOAuth.mockResolvedValue({ error: null });
   auth.signUp.mockResolvedValue({ error: null });
   auth.signOut.mockResolvedValue({ error: null });
   rpc.mockResolvedValue({ data: null, error: null });
@@ -84,6 +86,34 @@ describe('useSesion — sin backend', () => {
 });
 
 describe('useSesion — entrar', () => {
+  it('inicia Google y vuelve al área privada del mismo origen', async () => {
+    const { result } = await montar();
+
+    await act(async () => {
+      await result.current.entrarConGoogle();
+    });
+
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/app` },
+    });
+  });
+
+  it('muestra en español un fallo al iniciar con Google', async () => {
+    auth.signInWithOAuth.mockResolvedValueOnce({
+      error: { message: 'Unsupported provider: provider is not enabled' },
+    });
+    const { result } = await montar();
+
+    await act(async () => {
+      await result.current.entrarConGoogle();
+    });
+
+    expect(result.current.error).toBe(
+      'El acceso con Google todavía no está habilitado. Inténtalo con tu correo.',
+    );
+  });
+
   it('usa el correo tal cual cuando le dan uno', async () => {
     const { result } = await montar();
 

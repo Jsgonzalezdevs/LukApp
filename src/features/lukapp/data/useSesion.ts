@@ -17,6 +17,7 @@ export interface Sesion {
   enRecuperacion: boolean;
   finalizarRecuperacion: () => void;
   entrar: (email: string, password: string) => Promise<void>;
+  entrarConGoogle: () => Promise<void>;
   registrarse: (email: string, password: string, usuario?: string) => Promise<void>;
   recuperarPassword: (email: string) => Promise<boolean>;
   actualizarPassword: (nuevaPassword: string) => Promise<boolean>;
@@ -119,6 +120,26 @@ export const useSesion = (): Sesion => {
     entrar: useCallback(
       (email, password) =>
         ejecutar(() => cliente!.auth.signInWithPassword({ email: email.trim(), password })),
+      [cliente, ejecutar],
+    ),
+
+    /**
+     * Supabase recibe el callback de Google y devuelve la sesión al área
+     * privada. El origen se calcula en el navegador para que el mismo flujo
+     * funcione en producción, previews y desarrollo local; cada origen debe
+     * estar permitido también en Auth → URL Configuration.
+     */
+    entrarConGoogle: useCallback(
+      () =>
+        ejecutar(() =>
+          cliente!.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo:
+                typeof window !== 'undefined' ? `${window.location.origin}/app` : undefined,
+            },
+          }),
+        ),
       [cliente, ejecutar],
     ),
 
@@ -246,6 +267,9 @@ const traducir = (mensaje: string): string => {
   }
   if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.';
   if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar.';
+  if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
+    return 'El acceso con Google todavía no está habilitado. Inténtalo con tu correo.';
+  }
   if (m.includes('user already registered')) return 'Ese correo ya tiene una cuenta.';
   if (m.includes('password should be at least')) {
     return 'La contraseña debe tener al menos 6 caracteres.';

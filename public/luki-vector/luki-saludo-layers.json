@@ -1,0 +1,223 @@
+{
+ "viewBox": "0 0 512 512",
+ "source": "Luki-saludo.ai (extraccion vectorial exacta, ver NOTAS)",
+ "layers": [
+  {
+   "id": "LUKI_ROOT",
+   "pivot": [
+    256,
+    256
+   ]
+  },
+  {
+   "id": "luki-barriga",
+   "pivot": [
+    312.0,
+    399.6
+   ]
+  },
+  {
+   "id": "luki-boca",
+   "pivot": [
+    282.9,
+    188.2
+   ]
+  },
+  {
+   "id": "luki-brazo-derecha",
+   "pivot": [
+    321.1,
+    378.8
+   ]
+  },
+  {
+   "id": "luki-brazo-izquierda",
+   "pivot": [
+    319.4,
+    294.3
+   ]
+  },
+  {
+   "id": "luki-cabeza",
+   "pivot": [
+    266.9,
+    245.1
+   ]
+  },
+  {
+   "id": "luki-ceja-derecha",
+   "pivot": [
+    309.9,
+    69.7
+   ]
+  },
+  {
+   "id": "luki-ceja-izquierda",
+   "pivot": [
+    207.4,
+    99.8
+   ]
+  },
+  {
+   "id": "luki-cola",
+   "pivot": [
+    140.8,
+    280.3
+   ]
+  },
+  {
+   "id": "luki-cuerpo",
+   "pivot": [
+    259.8,
+    345.6
+   ]
+  },
+  {
+   "id": "luki-hocico",
+   "pivot": [
+    274.0,
+    180.0
+   ]
+  },
+  {
+   "id": "luki-isotipo",
+   "pivot": [
+    315.8,
+    306.8
+   ]
+  },
+  {
+   "id": "luki-lengua",
+   "pivot": [
+    284.9,
+    199.8
+   ]
+  },
+  {
+   "id": "luki-manga-derecha",
+   "pivot": [
+    321.1,
+    234.7
+   ]
+  },
+  {
+   "id": "luki-manga-izquierda",
+   "pivot": [
+    319.4,
+    294.3
+   ]
+  },
+  {
+   "id": "luki-mano-derecha",
+   "pivot": [
+    380.0,
+    237.3
+   ]
+  },
+  {
+   "id": "luki-mano-izquierda",
+   "pivot": [
+    266.0,
+    298.9
+   ]
+  },
+  {
+   "id": "luki-nariz",
+   "pivot": [
+    281.8,
+    155.9
+   ]
+  },
+  {
+   "id": "luki-ojo-derecha",
+   "pivot": [
+    321.8,
+    121.7
+   ]
+  },
+  {
+   "id": "luki-ojo-izquierda",
+   "pivot": [
+    222.4,
+    149.6
+   ]
+  },
+  {
+   "id": "luki-oreja-derecha",
+   "pivot": [
+    363.5,
+    56.6
+   ]
+  },
+  {
+   "id": "luki-oreja-izquierda",
+   "pivot": [
+    143.6,
+    127.1
+   ]
+  },
+  {
+   "id": "luki-pie-derecha",
+   "pivot": [
+    318.6,
+    411.9
+   ]
+  },
+  {
+   "id": "luki-pie-izquierda",
+   "pivot": [
+    261.9,
+    443.8
+   ]
+  },
+  {
+   "id": "luki-pierna-derecha",
+   "pivot": [
+    270.0,
+    360.8
+   ]
+  },
+  {
+   "id": "luki-pierna-izquierda",
+   "pivot": [
+    284.9,
+    341.6
+   ]
+  },
+  {
+   "id": "luki-puno-derecha",
+   "pivot": [
+    401.6,
+    250.3
+   ]
+  },
+  {
+   "id": "luki-puno-izquierda",
+   "pivot": [
+    220.7,
+    300.0
+   ]
+  },
+  {
+   "id": "luki-pupila-derecha",
+   "pivot": [
+    319.1,
+    121.7
+   ]
+  },
+  {
+   "id": "luki-pupila-izquierda",
+   "pivot": [
+    224.5,
+    149.2
+   ]
+  },
+  {
+   "id": "luki-saco",
+   "pivot": [
+    295.9,
+    291.7
+   ]
+  }
+ ]
+}

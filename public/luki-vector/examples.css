@@ -1,0 +1,9 @@
+/* Ejemplos: añadir la clase al elemento SVG o a luki-root. */
+@keyframes luki-breathe { 0%,100% { transform:scale(1,1) translateY(0) } 50% { transform:scale(1.025,1.02) translateY(2px) } }
+@keyframes luki-blink { 0%,92%,100% { transform:scaleY(1) } 95% { transform:scaleY(.08) } }
+@keyframes luki-wave { 0%,100% { transform:rotate(0deg) } 50% { transform:rotate(-18deg) } }
+@keyframes luki-dance { 0%,100% { transform:rotate(-2deg) translateY(0) } 50% { transform:rotate(2deg) translateY(-8px) } }
+#luki-body,#luki-belly { transform-box:fill-box; transform-origin:center bottom; animation:luki-breathe 3.5s ease-in-out infinite }
+#luki-eyelid-left,#luki-eyelid-right { transform-box:fill-box; transform-origin:center; animation:luki-blink 4.7s steps(1,end) infinite }
+#luki-arm-right { transform-box:fill-box; transform-origin:12% 20%; animation:luki-wave 1.2s ease-in-out infinite }
+#luki-root { transform-box:fill-box; transform-origin:center bottom; animation:luki-dance 2.2s ease-in-out infinite }

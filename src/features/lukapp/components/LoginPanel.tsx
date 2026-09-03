@@ -20,6 +20,7 @@ import {
 import type { Sesion } from '../data/useSesion';
 import type { Tema } from '../data/useTema';
 import { BrandMark } from './BrandMark';
+import { GoogleMarca } from './GoogleMarca';
 import { TemaToggle } from './TemaToggle';
 
 interface LoginPanelProps {
@@ -66,6 +67,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   const [recuperadoEnviado, setRecuperadoEnviado] = useState(false);
   const [passwordActualizada, setPasswordActualizada] = useState(false);
   const [apodo, setApodo] = useState<EstadoApodo>('vacio');
+  const [entrandoConGoogle, setEntrandoConGoogle] = useState(false);
 
   useEffect(() => {
     // Detectar si el usuario llega desde un enlace de recuperación de contraseña
@@ -145,6 +147,15 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
     setEnviado(false);
     setRecuperadoEnviado(false);
     setPasswordActualizada(false);
+  };
+
+  const iniciarConGoogle = async () => {
+    setEntrandoConGoogle(true);
+    try {
+      await sesion.entrarConGoogle();
+    } finally {
+      setEntrandoConGoogle(false);
+    }
   };
 
   const campo =
@@ -354,6 +365,31 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                     </button>
                   ))}
                 </div>
+              ) : null}
+
+              {modo === 'entrar' || modo === 'registrarse' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={iniciarConGoogle}
+                    disabled={sesion.ocupado}
+                    className="group flex w-full items-center justify-center gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)]/70 px-5 py-3.5 text-[14px] font-bold text-[var(--fin-ink)] shadow-sm transition-[border-color,background-color,transform,box-shadow] hover:border-[var(--fin-ink-faint)] hover:bg-[var(--fin-card)] hover:shadow-md active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {entrandoConGoogle ? (
+                      <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                    ) : (
+                      <GoogleMarca className="h-5 w-5" />
+                    )}
+                    {entrandoConGoogle ? 'Abriendo Google…' : 'Continuar con Google'}
+                  </button>
+                  <div className="my-5 flex items-center gap-3" aria-hidden>
+                    <span className="h-px flex-1 bg-[var(--fin-line)]/70" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--fin-ink-faint)]">
+                      o con correo
+                    </span>
+                    <span className="h-px flex-1 bg-[var(--fin-line)]/70" />
+                  </div>
+                </>
               ) : null}
 
               {modo === 'recuperar' ? (

@@ -1,0 +1,43 @@
+{
+  "viewBox": "0 0 512 512",
+  "source": "luki.svg",
+  "layers": [
+    {"id":"luki-root","pivot":[256,256]},
+    {"id":"luki-tail-base","pivot":[220,335]},
+    {"id":"luki-tail-tip","pivot":[120,345]},
+    {"id":"luki-leg-left","pivot":[234,368]}, {"id":"luki-foot-left","pivot":[234,422]},
+    {"id":"luki-leg-right","pivot":[276,368]}, {"id":"luki-foot-right","pivot":[278,422]},
+    {"id":"luki-body","pivot":[256,275]}, {"id":"luki-belly","pivot":[256,352]},
+    {"id":"luki-arm-left","pivot":[210,215]}, {"id":"luki-sleeve-left","pivot":[210,215]}, {"id":"luki-cuff-left","pivot":[209,279]}, {"id":"luki-hand-left","pivot":[201,290]},
+    {"id":"luki-arm-right","pivot":[305,213]}, {"id":"luki-sleeve-right","pivot":[305,213]}, {"id":"luki-cuff-right","pivot":[333,153]}, {"id":"luki-hand-right","pivot":[333,148]},
+    {"id":"luki-hoodie","pivot":[256,275]}, {"id":"luki-hood","pivot":[256,185]}, {"id":"luki-waistband","pivot":[256,348]}, {"id":"luki-brand-mark","pivot":[245,237]},
+    {"id":"luki-head","pivot":[256,195]},
+    {"id":"luki-ear-left","pivot":[216,86]}, {"id":"luki-ear-right","pivot":[296,84]},
+    {"id":"luki-muzzle","pivot":[256,167]}, {"id":"luki-nose","pivot":[256,148]}, {"id":"luki-mouth","pivot":[256,172]}, {"id":"luki-tongue","pivot":[256,178]},
+    {"id":"luki-eye-left","pivot":[234,121]}, {"id":"luki-eye-right","pivot":[278,120]},
+    {"id":"luki-pupil-left","pivot":[235,125]}, {"id":"luki-pupil-right","pivot":[277,124]},
+    {"id":"luki-eyelid-left","pivot":[234,108]}, {"id":"luki-eyelid-right","pivot":[278,108]},
+    {"id":"luki-eyebrow-left","pivot":[228,99]}, {"id":"luki-eyebrow-right","pivot":[284,99]},
+    {"id":"luki-whiskers-left","pivot":[213,160]}, {"id":"luki-whiskers-right","pivot":[299,160]}
+  ],
+  "palette": {
+    "outline": "#251533",
+    "furLight": "#C79868",
+    "furDark": "#8F5E42",
+    "furShadow": "#6E4530",
+    "cream": "#F6E7CC",
+    "hoodieLight": "#7355C4",
+    "hoodieDark": "#5B3FA8",
+    "hoodieTrim": "#43297E",
+    "tailTipLight": "#8567D6",
+    "tongue": "#E0416F",
+    "eyeBlack": "#17101F",
+    "isotipoPurple": "#7C33E0",
+    "isotipoLime": "#A9E23E",
+    "isotipoWarm": "#F0A73C"
+  },
+  "eyePupilClamp": {
+    "left": {"cx": 235, "cy": 125, "maxOffsetX": 4, "maxOffsetY": 4},
+    "right": {"cx": 277, "cy": 124, "maxOffsetX": 4, "maxOffsetY": 4}
+  }
+}

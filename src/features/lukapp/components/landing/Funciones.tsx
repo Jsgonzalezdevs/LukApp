@@ -204,6 +204,8 @@ const PESTANAS: {
   clave: string;
   Icono: LucideIcon;
   etiqueta: string;
+  momento: string;
+  relato: string;
   titulo: string;
   texto: string;
   Mockup: React.FC;
@@ -212,6 +214,8 @@ const PESTANAS: {
     clave: 'cajitas',
     Icono: PiggyBank,
     etiqueta: 'Cajitas',
+    momento: 'Antes de gastarla',
+    relato: '7:10 a. m. · Apartas $200.000',
     titulo: 'Aparta plata sin sacarla del banco',
     texto:
       'El viaje, la matrícula, el fondo de emergencia. Cada cajita reserva un pedazo de tu saldo para que no te lo gastes sin darte cuenta.',
@@ -221,6 +225,8 @@ const PESTANAS: {
     clave: 'presupuestos',
     Icono: Target,
     etiqueta: 'Presupuestos',
+    momento: 'Mientras decides',
+    relato: '12:45 p. m. · Vas a pedir almuerzo',
     titulo: 'Un techo por categoría',
     texto:
       'Define cuánto quieres gastar en comida, transporte o rumba. Ves el progreso mientras registras, no a fin de mes cuando ya no hay nada que hacer.',
@@ -230,6 +236,8 @@ const PESTANAS: {
     clave: 'deudas',
     Icono: Wallet,
     etiqueta: 'Deudas',
+    momento: 'Cuando toca pagar',
+    relato: '3:30 p. m. · Abonas a la tarjeta',
     titulo: 'Tarjetas y préstamos, sin perderles el hilo',
     texto:
       'Saldo de cada tarjeta, fecha de corte, y los préstamos entre amigos que siempre se olvidan. También quién te debe a ti.',
@@ -239,6 +247,8 @@ const PESTANAS: {
     clave: 'recurrentes',
     Icono: Repeat,
     etiqueta: 'Recurrentes',
+    momento: 'Antes de que se olvide',
+    relato: 'Día 8 · Llega el cobro de Netflix',
     titulo: 'Lo que se repite, se registra solo',
     texto:
       'Arriendo, suscripciones, gimnasio. Los declaras una vez y aparecen cada mes en su fecha, listos para confirmar.',
@@ -248,6 +258,8 @@ const PESTANAS: {
     clave: 'analista',
     Icono: Bot,
     etiqueta: 'Analista',
+    momento: 'Cuando algo no cuadra',
+    relato: '8:20 p. m. · Preguntas por domicilios',
     titulo: 'Preguntas en español, respuestas con tus datos',
     texto:
       '«¿Cuánto llevo en domicilios?» «¿Gasté más que el mes pasado?» Responde con tus cifras, no con consejos genéricos de internet.',
@@ -257,6 +269,8 @@ const PESTANAS: {
     clave: 'tendencias',
     Icono: TrendingUp,
     etiqueta: 'Tendencias',
+    momento: 'Cuando cierra el mes',
+    relato: '31 de agosto · Miras el patrón',
     titulo: 'El patrón, no el susto de hoy',
     texto:
       'Comparaciones mes a mes, categorías que crecen, gastos hormiga que no se sienten hasta que los sumas.',
@@ -273,58 +287,70 @@ export const Funciones: React.FC = () => {
   return (
     <section className="funciones" id="funciones">
       <Reveal as="header" className="seccion-cabecera">
-        <span className="seccion-etiqueta">Funciones</span>
-        <TituloPalabras texto="Lo que hay adentro" resaltarUltimas={1} />
+        <span className="seccion-etiqueta">Un recorrido, no un catálogo</span>
+        <TituloPalabras texto="La plata se mueve. LukApp también." />
         <p className="seccion-sub">
-          No es una lista de gastos con gráficos encima. Son las piezas que
-          faltan cuando de verdad quieres manejar tu plata.
+          No te vamos a soltar una vitrina de funciones. Mira cómo LukApp
+          acompaña seis decisiones reales, desde que apartas plata hasta que
+          entiendes el mes completo.
         </p>
       </Reveal>
 
-      <Reveal className="funciones-tabs" delay={0.08}>
-        <div className="tabs-riel" role="tablist" aria-label="Funciones de Lukapp">
-          {PESTANAS.map(({ clave, Icono, etiqueta }) => (
+      <Reveal className="funciones-recorrido" delay={0.08}>
+        <div className="funciones-ruta" aria-label="Momentos que LukApp acompaña">
+          <div className="funciones-ruta-presentacion">
+            <span>Tu plata, durante un día</span>
+            <strong>Seis momentos.<br />Un mismo hilo.</strong>
+          </div>
+
+          {PESTANAS.map(({ clave, Icono, etiqueta, relato }, indice) => (
             <button
               key={clave}
-              role="tab"
-              aria-selected={clave === activa}
-              className={`tab ${clave === activa ? 'activa' : ''}`}
+              type="button"
+              aria-pressed={clave === activa}
+              aria-controls="funciones-detalle"
+              className={`funcion-parada ${clave === activa ? 'activa' : ''}`}
               onClick={() => setActiva(clave)}
             >
               {clave === activa && (
                 <motion.span
-                  layoutId="tab-fondo"
-                  className="tab-fondo"
+                  layoutId="funcion-indicador"
+                  className="funcion-indicador"
                   transition={{ duration: quieto ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
                 />
               )}
-              <Icono size={16} strokeWidth={1.75} aria-hidden />
-              <span>{etiqueta}</span>
+              <span className="funcion-numero">{String(indice + 1).padStart(2, '0')}</span>
+              <span className="funcion-parada-texto">
+                <strong><Icono size={16} strokeWidth={1.8} aria-hidden />{etiqueta}</strong>
+                <small>{relato}</small>
+              </span>
             </button>
           ))}
         </div>
-      </Reveal>
 
-      <Reveal className="funciones-panel" delay={0.14}>
-        {/* Sin AnimatePresence: el panel viejo se desmonta de una y el nuevo
-            entra animándose. Con `mode="wait"` el cambio de pestaña quedaba
-            colgado de que terminara la animación de salida, y en un equipo
-            lento o una pestaña en segundo plano —donde el navegador recorta los
-            frames— la pestaña respondía pero el contenido no cambiaba. */}
         <motion.div
           key={actual.clave}
-          className="funciones-contenido"
+          id="funciones-detalle"
+          className="funciones-escena"
           initial={quieto ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          aria-live="polite"
         >
           <div className="funciones-texto">
+            <div className="funciones-escena-meta">
+              <span>{String(PESTANAS.indexOf(actual) + 1).padStart(2, '0')} / {String(PESTANAS.length).padStart(2, '0')}</span>
+              <span>{actual.momento}</span>
+            </div>
             <h3>{actual.titulo}</h3>
             <p>{actual.texto}</p>
           </div>
           <div className="funciones-visual">
             <Mockup />
           </div>
+          <p className="funciones-cierre">
+            Una decisión entra. LukApp conserva el contexto para la siguiente.
+          </p>
         </motion.div>
       </Reveal>
     </section>

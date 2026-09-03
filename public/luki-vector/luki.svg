@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Luki, mascota nutria de LukApp</title>
+  <desc id="desc">Nutria delgada y ágil con saco morado de LukApp.</desc>
+  <defs>
+    <linearGradient id="fur" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#C79868"/><stop offset="1" stop-color="#8F5E42"/>
+    </linearGradient>
+    <linearGradient id="hoodie" x1="0" y1="0" x2=".3" y2="1">
+      <stop offset="0" stop-color="#7355C4"/><stop offset="1" stop-color="#5B3FA8"/>
+    </linearGradient>
+    <linearGradient id="tailtip" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8567D6"/><stop offset="1" stop-color="#5B3FA8"/>
+    </linearGradient>
+  </defs>
+
+  <g id="luki-root" stroke="#251533" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+
+    <g id="luki-tail-base">
+      <path fill="url(#fur)" d="M216 318C175 306 130 312 98 338C72 360 58 392 62 422C64 438 68 448 72 452C96 434 132 402 165 374C178 362 184 354 188 346C200 330 212 322 226 348C222 336 220 326 216 318Z"/>
+    </g>
+    <g id="luki-tail-tip">
+      <path fill="url(#tailtip)" d="M98 338C72 360 58 392 62 422C64 438 68 448 72 452C96 434 132 402 165 374C155 366 145 356 138 348C122 342 108 340 98 338Z"/>
+    </g>
+
+    <g id="luki-leg-left">
+      <path fill="url(#fur)" d="M236 366C227 366 221 372 220 383L221 406C221 414 227 419 235 419C243 419 248 414 248 406L247 385C246 374 244 366 236 366Z"/>
+      <g id="luki-foot-left"><ellipse fill="#6E4530" cx="234" cy="422" rx="16" ry="12"/></g>
+    </g>
+    <g id="luki-leg-right">
+      <path fill="url(#fur)" d="M276 366C268 366 263 373 263 384L263 406C263 414 268 419 276 419C284 419 289 414 288 406L288 385C287 374 284 366 276 366Z"/>
+      <g id="luki-foot-right"><ellipse fill="#6E4530" cx="278" cy="422" rx="16" ry="12"/></g>
+    </g>
+
+    <g id="luki-body">
+      <path fill="url(#fur)" d="M220 206C212 236 214 264 224 288C216 306 218 332 226 358L286 358C294 332 296 306 288 288C298 264 300 236 292 206C282 197 269 191 256 191C243 191 230 197 220 206Z"/>
+      <g id="luki-belly"><path fill="#F6E7CC" stroke="#251533" stroke-width="3.5" d="M232 340C229 350 231 360 239 365C246 369 267 369 274 365C282 360 284 350 281 340C265 346 248 346 232 340Z"/></g>
+    </g>
+
+    <g id="luki-arm-left">
+      <g id="luki-sleeve-left"><path fill="url(#hoodie)" d="M217 212C202 222 194 239 194 260C194 274 198 285 207 287C216 289 221 282 222 271L225 229C223 222 221 217 217 212Z"/></g>
+      <g id="luki-cuff-left"><ellipse fill="#43297E" cx="209" cy="279" rx="12" ry="9" transform="rotate(-15 209 279)"/></g>
+      <g id="luki-hand-left"><path fill="url(#fur)" d="M191 279C183 285 181 296 187 304C191 309 198 309 202 304C204 310 211 311 216 306C221 300 219 291 212 287C215 280 211 274 204 275C199 275 195 276 191 279Z"/><path fill="none" stroke="#6E4530" stroke-width="2" d="M195 291C199 296 205 297 210 293M201 298C204 301 208 302 212 299"/></g>
+    </g>
+    <g id="luki-arm-right">
+      <g id="luki-sleeve-right"><path fill="url(#hoodie)" d="M298 210C295 222 298 232 306 236C314 238 320 233 324 225C334 216 341 202 345 186C348 170 348 154 343 141C340 134 335 132 331 136C325 141 324 151 327 159C322 170 316 182 311 194C304 202 298 206 298 210Z"/></g>
+      <g id="luki-cuff-right"><ellipse fill="#43297E" cx="333" cy="153" rx="12" ry="9" transform="rotate(-60 333 153)"/></g>
+      <g id="luki-hand-right"><path fill="url(#fur)" d="M320 133C312 136 307 145 311 153C313 158 320 160 325 157C324 163 330 168 336 165C342 162 344 154 340 149C347 148 351 141 348 135C345 129 337 128 332 133C331 128 326 130 320 133Z"/><path fill="none" stroke="#6E4530" stroke-width="2" d="M317 144C321 149 328 149 333 145M327 152C331 156 337 156 341 152"/></g>
+    </g>
+
+    <g id="luki-hoodie">
+      <path fill="url(#hoodie)" d="M220 206C212 236 214 264 224 288C216 306 218 332 226 358L286 358C294 332 296 306 288 288C298 264 300 236 292 206C282 197 269 191 256 191C243 191 230 197 220 206Z"/>
+      <g id="luki-hood"><path fill="#43297E" d="M234 196C231 182 241 172 256 172C271 172 281 182 278 196C269 203 243 203 234 196Z"/></g>
+      <path fill="none" stroke="#43297E" stroke-width="4" d="M250 202L248 216"/>
+      <path fill="none" stroke="#43297E" stroke-width="4" d="M262 202L264 216"/>
+      <path fill="none" stroke="#43297E" stroke-width="3" d="M228 268C240 276 272 276 284 268"/>
+      <g id="luki-waistband"><path fill="#43297E" stroke="none" d="M223 340C238 349 274 349 289 340L291 356C273 366 239 366 221 356Z"/></g>
+      <g id="luki-brand-mark" stroke="none" transform="translate(233 226) scale(.16)">
+        <path fill="#7C33E0" d="M0 0L0 70A72 72 0 0 0 144 70L144 0L110 0L110 70A38 38 0 0 1 34 70L34 0Z"/>
+        <path fill="#A9E23E" d="M110 0L144 0L144 75L110 40Z"/>
+        <path fill="#F0A73C" d="M58 106C64 118 80 118 86 106C77 113 67 113 58 106Z"/>
+      </g>
+    </g>
+
+    <g id="luki-head">
+      <g id="luki-ear-left"><ellipse fill="url(#fur)" cx="216" cy="86" rx="10" ry="12" transform="rotate(-25 216 86)"/><ellipse fill="#6E4530" stroke="none" cx="219" cy="89" rx="5" ry="6.5" transform="rotate(-25 219 89)"/></g>
+      <g id="luki-ear-right"><ellipse fill="url(#fur)" cx="296" cy="84" rx="10" ry="12" transform="rotate(25 296 84)"/><ellipse fill="#6E4530" stroke="none" cx="293" cy="87" rx="5" ry="6.5" transform="rotate(25 293 87)"/></g>
+
+      <path fill="url(#fur)" d="M209 124C209 97 230 75 256 75C282 75 303 97 303 124C303 145 293 161 277 170C281 178 279 187 268 189C260 191 252 191 244 189C233 187 231 178 235 170C219 161 209 145 209 124Z"/>
+
+      <g id="luki-eyebrow-left"><path fill="none" d="M212 104C220 96 234 94 244 99" stroke-width="5"/></g>
+      <g id="luki-eyebrow-right"><path fill="none" d="M268 99C278 94 292 96 300 104" stroke-width="5"/></g>
+
+      <g id="luki-eye-left"><ellipse fill="#FFF" cx="234" cy="121" rx="13" ry="15"/><g id="luki-pupil-left"><ellipse fill="#17101F" cx="235" cy="125" rx="10" ry="12"/><circle fill="#FFF" stroke="none" cx="231" cy="118" r="3.2"/></g></g>
+      <g id="luki-eye-right"><ellipse fill="#FFF" cx="278" cy="120" rx="13" ry="15"/><g id="luki-pupil-right"><ellipse fill="#17101F" cx="277" cy="124" rx="10" ry="12"/><circle fill="#FFF" stroke="none" cx="273" cy="117" r="3.2"/></g></g>
+      <g id="luki-eyelid-left" stroke="none"><path fill="url(#fur)" d="M220 110C226 103 242 102 248 108L246 114C240 108 226 109 222 116Z"/></g>
+      <g id="luki-eyelid-right" stroke="none"><path fill="url(#fur)" d="M264 108C270 102 286 103 292 110L288 116C284 109 270 108 266 114Z"/></g>
+
+      <g id="luki-muzzle"><ellipse fill="#F6E7CC" cx="256" cy="167" rx="27" ry="21"/></g>
+
+      <g id="luki-whiskers-left"><path fill="none" stroke-width="2.5" d="M228 158L198 152M228 165L197 167"/></g>
+      <g id="luki-whiskers-right"><path fill="none" stroke-width="2.5" d="M284 158L314 152M284 165L315 167"/></g>
+
+      <g id="luki-nose"><path fill="#17101F" d="M247 148C247 142 251 138 256 138C261 138 265 142 265 148C265 153 261 157 256 157C251 157 247 153 247 148Z"/></g>
+      <g id="luki-mouth"><path fill="none" stroke-width="3.5" d="M244 165C247 174 252 178 256 172C260 178 265 174 268 165"/></g>
+      <g id="luki-tongue"><path fill="#E0416F" stroke="#251533" stroke-width="1.5" d="M250 172C250 179 253 183 256 183C259 183 262 179 262 172C258 176 254 176 250 172Z"/></g>
+    </g>
+  </g>
+</svg>

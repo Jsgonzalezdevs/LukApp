@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-react';
 import type { Sesion } from '../../data/useSesion';
+import { GoogleMarca } from '../GoogleMarca';
 import { Reveal } from './primitivas';
 import { MascotaLuki } from './MascotaLuki';
 
@@ -26,6 +27,7 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
   const [verPassword, setVerPassword] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [apodo, setApodo] = useState<EstadoApodo>('vacio');
+  const [entrandoConGoogle, setEntrandoConGoogle] = useState(false);
 
   /* La comprobación del apodo va con retardo: sin él se dispara una consulta
      por cada tecla, y la respuesta de la penúltima puede llegar después de la
@@ -62,6 +64,15 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
     if (!listo) return;
     await sesion.registrarse(correo, password, usuario);
     setEnviado(true);
+  };
+
+  const iniciarConGoogle = async () => {
+    setEntrandoConGoogle(true);
+    try {
+      await sesion.entrarConGoogle();
+    } finally {
+      setEntrandoConGoogle(false);
+    }
   };
 
   /* Supabase responde igual a un alta correcta que a una con el correo ya
@@ -102,6 +113,26 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
 
       <Reveal className="registro-caja" delay={0.1}>
         <form onSubmit={enviar} noValidate>
+          <button
+            type="button"
+            className="registro-google"
+            onClick={iniciarConGoogle}
+            disabled={sesion.ocupado}
+          >
+            {entrandoConGoogle ? (
+              <Loader2 size={20} className="registro-girando" aria-hidden />
+            ) : (
+              <GoogleMarca className="registro-google-marca" />
+            )}
+            {entrandoConGoogle ? 'Abriendo Google…' : 'Continuar con Google'}
+          </button>
+
+          <div className="registro-separador" aria-hidden>
+            <span />
+            <small>o crea tu cuenta con correo</small>
+            <span />
+          </div>
+
           <label className="registro-campo">
             <span className="registro-etiqueta">Tu correo</span>
             <input

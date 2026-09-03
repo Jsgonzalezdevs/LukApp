@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.75',
+    fecha: '2026-09-03',
+    texto: 'Unificamos las direcciones públicas de la portada para que buscadores y enlaces compartidos siempre lleguen a la URL correcta.',
+  },
+  {
     version: '2.0.74',
     fecha: '2026-09-03',
     texto: 'La portada carga más rápido y mejora la lectura, el contraste y el uso de sus controles táctiles.',
