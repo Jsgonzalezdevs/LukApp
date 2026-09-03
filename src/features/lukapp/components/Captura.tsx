@@ -579,7 +579,7 @@ export const Captura: React.FC<CapturaProps> = ({
           </div>
           <div
             data-no-swipe
-            className="-mx-5 grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="-mx-5 grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto px-5 pb-1 scroll-px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {opciones.map((entrada) => {
               const activa = category === entrada.clave;
@@ -594,7 +594,7 @@ export const Captura: React.FC<CapturaProps> = ({
                     setCategoriaDetectada(null);
                   }}
                   aria-pressed={activa}
-                  className={`flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] px-3.5 py-2 text-[14px] font-semibold transition-all ${
+                  className={`flex min-w-max shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--fin-r-pill)] px-3.5 py-2 text-[14px] font-semibold transition-all ${
                     activa ? 'ring-2 ring-[var(--fin-accent)] shadow-sm' : 'hover:bg-[var(--fin-soft)]'
                   }`}
                   style={{

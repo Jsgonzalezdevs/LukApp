@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.15',
+    fecha: '2026-09-03',
+    texto: 'Ajustamos las categorías del registro para que sus etiquetas no se corten y puedan verse completas al deslizar.',
+  },
+  {
     version: '2.1.14',
     fecha: '2026-09-03',
     texto: 'La confirmación por voz ahora abre el movimiento inmediatamente al terminar la transcripción, incluso si se pulsa aceptar muy rápido.',
