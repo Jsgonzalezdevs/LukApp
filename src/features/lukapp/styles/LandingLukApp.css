@@ -19,7 +19,8 @@
   --lp-line: #ede9e3;
   --lp-ink: #1c1917;
   --lp-ink-soft: #6b6560;
-  --lp-ink-faint: #96908a;
+  /* 4.68:1 sobre blanco: conserva una jerarquía tenue sin sacrificar AA. */
+  --lp-ink-faint: #79736d;
   /* El botón principal y su texto van juntos: en oscuro se invierten los dos,
      y separarlos es como se acaba con un botón claro y letra blanca. */
   --lp-accent: #772aea;
@@ -53,7 +54,7 @@
     --lp-line: #35322f;
     --lp-ink: #f5f3f0;
     --lp-ink-soft: #a8a29e;
-    --lp-ink-faint: #857f7a;
+    --lp-ink-faint: #8a847f;
     /* Menos pastel que el lila anterior (#a879f0): misma familia violeta que
        el acento claro, pero más saturada -- sobre un fondo casi negro, un
        morado desteñido lee apagado/deslavado en vez de premium. */
@@ -81,7 +82,7 @@
   --lp-line: #35322f;
   --lp-ink: #f5f3f0;
   --lp-ink-soft: #a8a29e;
-  --lp-ink-faint: #857f7a;
+  --lp-ink-faint: #8a847f;
   --lp-accent: #a855f7;
   --lp-on-accent: #1a1817;
   --lp-in: #4ade80;
@@ -218,6 +219,9 @@
 
 .landing-finanzas .menu-btn {
   display: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
   background: none;
   border: none;
   cursor: pointer;
@@ -322,7 +326,7 @@
 
 .landing-finanzas .hero-note {
   font-size: 0.85rem;
-  color: var(--lp-ink-faint);
+  color: var(--lp-ink-soft);
   margin: 0;
 }
 
@@ -1510,7 +1514,7 @@
   border-top: 1px solid var(--lp-line);
   padding: 2rem 1.5rem;
   text-align: center;
-  color: var(--lp-ink-faint);
+  color: var(--lp-ink-soft);
   font-size: 0.85rem;
 }
 
@@ -1569,7 +1573,7 @@
   }
 
   .landing-finanzas .menu-btn {
-    display: block;
+    display: grid;
   }
 }
 

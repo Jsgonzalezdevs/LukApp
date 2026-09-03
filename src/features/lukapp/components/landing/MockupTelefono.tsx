@@ -40,6 +40,8 @@ const MS_REINICIANDO = 460;
 
 /** Lo que mide una fila. Se necesita para animarle la altura al entrar. */
 const ALTO_FILA = 75;
+/** Alto estable de una sección que estrena día: cabecera + primera fila. */
+const ALTO_GRUPO = 102;
 
 type Fase = 'tecleando' | 'reconocido' | 'aplicado' | 'reiniciando' | 'reapareciendo';
 
@@ -184,7 +186,10 @@ export const MockupTelefono: React.FC = () => {
       : cont.querySelector('section')?.querySelector('li');
     if (!(nodo instanceof HTMLElement)) return;
 
-    const alto = nacioGrupo ? nodo.offsetHeight : ALTO_FILA;
+    /* No consultamos offsetHeight después de insertar la fila: esa lectura
+       forzaba al navegador a recalcular todo el layout del hero (62 ms en
+       Lighthouse). Ambos tipos de entrada tienen medidas estables. */
+    const alto = nacioGrupo ? ALTO_GRUPO : ALTO_FILA;
     nodo.style.overflow = 'hidden';
 
     const control = animate(

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.74',
+    fecha: '2026-09-03',
+    texto: 'La portada carga más rápido y mejora la lectura, el contraste y el uso de sus controles táctiles.',
+  },
+  {
     version: '2.0.73',
     fecha: '2026-09-03',
     texto: 'La portada ahora aparece completa desde el primer instante, sin mostrar una página provisional diferente mientras termina de cargar.',

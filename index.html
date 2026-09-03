@@ -129,10 +129,12 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/lukapp-icon-192.png" />
     <link rel="manifest" href="/ecosistema.webmanifest" />
 
-    <!-- Google Fonts Preconnect and Optimization -->
+    <!-- La tipografía no bloquea el primer render. Con `optional`, una red
+         lenta conserva la fuente del sistema en vez de provocar un salto. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=optional" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=optional"></noscript>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -164,7 +166,7 @@
           <nav class="nav-bar" aria-label="Navegación principal">
             <div class="nav-content">
               <a class="logo-enlace" href="/" aria-label="Inicio de LukApp">
-                <img class="logo" src="/brand/lukapp-wordmark.png" alt="LukApp" width="493" height="233" />
+                <img class="logo" src="/brand/lukapp-wordmark-160.webp" alt="LukApp" width="160" height="76" />
               </a>
               <div class="nav-links">
                 <a href="#demo">Pruébalo</a>

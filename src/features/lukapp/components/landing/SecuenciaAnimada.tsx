@@ -143,13 +143,12 @@ export const SecuenciaAnimada: React.FC = () => {
                       initial={false}
                       animate={{
                         scale: esElRecienMarcado ? [0.7, 1.25, 1] : 1,
-                        backgroundColor: marcado ? '#dcfce7' : 'rgba(0,0,0,0.02)',
                       }}
                       transition={{
                         duration: 0.25,
                         ease: 'easeOut',
                       }}
-                      className={`h-5 w-5 sm:h-5.5 sm:w-5.5 flex items-center justify-center rounded-[6px] text-[11px] border transition-colors ${
+                      className={`h-5 w-5 sm:h-5.5 sm:w-5.5 flex items-center justify-center rounded-[6px] text-[11px] border ${
                         marcado
                           ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 font-extrabold shadow-xs ring-1 ring-emerald-400/30'
                           : 'border-[var(--lp-line)]/70 text-transparent'

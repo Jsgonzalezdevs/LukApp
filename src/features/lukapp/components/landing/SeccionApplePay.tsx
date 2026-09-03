@@ -34,7 +34,7 @@ export const SeccionApplePay: React.FC = () => {
           <Reveal delay={0.1}>
             <h2 className="mt-5 text-[32px] sm:text-[46px] font-extrabold tracking-tight text-[var(--lp-ink)] max-w-2xl leading-[1.15]">
               Cada pago con Apple Pay,{' '}
-              <span className="text-emerald-600 dark:text-emerald-400">registrado solo</span>
+              <span className="text-[var(--lp-in)]">registrado solo</span>
             </h2>
           </Reveal>
 
@@ -51,7 +51,7 @@ export const SeccionApplePay: React.FC = () => {
               href={URL_ATAJO_ICLOUD}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-7 py-3.5 text-[16px] shadow-lg shadow-emerald-600/25 transition-all hover:scale-102 active:scale-98"
+              className="inline-flex items-center gap-2.5 rounded-full bg-[var(--lp-in)] hover:opacity-90 text-white font-bold px-7 py-3.5 text-[16px] shadow-lg shadow-emerald-600/25 transition-[transform,opacity] hover:scale-102 active:scale-98"
             >
               <Wand2 className="h-5 w-5" />
               <span>Instalar el atajo</span>
@@ -78,7 +78,7 @@ export const SeccionApplePay: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setVersionIos('actual')}
-                className={`rounded-full px-4 py-1.5 text-[13.5px] font-semibold transition-all ${
+                className={`rounded-full px-4 py-1.5 text-[13.5px] font-semibold transition-[color,background-color,box-shadow] ${
                   versionIos === 'actual'
                     ? 'bg-[var(--lp-bg)] text-[var(--lp-ink)] shadow-xs font-bold'
                     : 'text-[var(--lp-ink-soft)] hover:text-[var(--lp-ink)]'
@@ -89,14 +89,14 @@ export const SeccionApplePay: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setVersionIos('beta')}
-                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13.5px] font-semibold transition-all ${
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[13.5px] font-semibold transition-[color,background-color,box-shadow] ${
                   versionIos === 'beta'
                     ? 'bg-[var(--lp-bg)] text-[var(--lp-ink)] shadow-xs font-bold'
                     : 'text-[var(--lp-ink-soft)] hover:text-[var(--lp-ink)]'
                 }`}
               >
                 <span>iOS 27</span>
-                <span className="rounded-full bg-amber-500/15 px-1.5 py-0.2 text-[10px] font-extrabold text-amber-600 dark:text-amber-400">
+                <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-extrabold text-amber-800 dark:text-amber-300">
                   BETA
                 </span>
               </button>
@@ -107,7 +107,7 @@ export const SeccionApplePay: React.FC = () => {
           <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-10 items-center max-w-4xl mx-auto">
             {/* Teléfono vertical interactivo simulado */}
             <div className="md:col-span-5 flex flex-col items-center">
-              <span className="text-[13px] font-semibold text-[var(--lp-ink-faint)] mb-3 flex items-center gap-1.5">
+              <span className="text-[13px] font-semibold text-[var(--lp-ink-soft)] mb-3 flex items-center gap-1.5">
                 <span>Mirá el paso a paso</span>
                 <button
                   type="button"
@@ -144,7 +144,7 @@ export const SeccionApplePay: React.FC = () => {
                         <span className="text-[11.5px] text-[var(--lp-ink-soft)] mt-1">
                           Paso 1: Agregar atajo a tu iPhone
                         </span>
-                        <div className="mt-5 rounded-full bg-emerald-600 px-4 py-1.5 text-[12px] font-bold text-white shadow-xs">
+                        <div className="mt-5 rounded-full bg-[var(--lp-in)] px-4 py-1.5 text-[12px] font-bold text-white shadow-xs">
                           Obtener atajo
                         </div>
                       </motion.div>
@@ -160,7 +160,7 @@ export const SeccionApplePay: React.FC = () => {
                         className="flex flex-col h-full justify-between py-2 text-left"
                       >
                         <div>
-                          <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">
+                          <span className="text-[11px] font-bold text-[var(--lp-in)] uppercase tracking-wider">
                             Automatización
                           </span>
                           <h4 className="text-[13.5px] font-bold text-[var(--lp-ink)] mt-0.5">
@@ -173,7 +173,7 @@ export const SeccionApplePay: React.FC = () => {
                             </div>
                             <div className="flex items-center justify-between">
                               <span className="text-[var(--lp-ink-soft)]">Ejecutar:</span>
-                              <span className="font-bold text-emerald-600">De inmediato</span>
+                              <span className="font-bold text-[var(--lp-in)]">De inmediato</span>
                             </div>
                           </div>
                         </div>
@@ -201,7 +201,7 @@ export const SeccionApplePay: React.FC = () => {
                         <span className="text-[12px] text-[var(--lp-ink-soft)] mt-1">
                           Starbucks · $18.500 COP
                         </span>
-                        <div className="mt-4 flex items-center gap-1.5 text-[11.5px] font-semibold text-emerald-600">
+                        <div className="mt-4 flex items-center gap-1.5 text-[11.5px] font-semibold text-[var(--lp-in)]">
                           <Zap className="h-3.5 w-3.5" />
                           <span>Detectado por Atajos</span>
                         </div>
@@ -234,19 +234,24 @@ export const SeccionApplePay: React.FC = () => {
                   </AnimatePresence>
 
                   {/* Barra de progreso inferior */}
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex">
                     {[0, 1, 2, 3].map((idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => setPasoVisual(idx)}
-                        className={`h-1.5 rounded-full transition-all ${
-                          pasoVisual === idx
-                            ? 'w-5 bg-emerald-600'
-                            : 'w-1.5 bg-[var(--lp-line)]'
-                        }`}
+                        className="grid h-8 w-8 place-items-center rounded-full"
                         aria-label={`Ver paso ${idx + 1}`}
-                      />
+                      >
+                        <span
+                          aria-hidden
+                          className={`h-1.5 rounded-full transition-[width,background-color] ${
+                            pasoVisual === idx
+                              ? 'w-5 bg-[var(--lp-in)]'
+                              : 'w-1.5 bg-[var(--lp-line)]'
+                          }`}
+                        />
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -257,7 +262,7 @@ export const SeccionApplePay: React.FC = () => {
             <div className="md:col-span-7 flex flex-col gap-6">
               {/* Paso 1 */}
               <div className="flex items-start gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-extrabold text-[15px] shadow-sm">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--lp-in)] text-white font-extrabold text-[15px] shadow-sm">
                   1
                 </span>
                 <div>
@@ -271,7 +276,7 @@ export const SeccionApplePay: React.FC = () => {
 
               {/* Paso 2 */}
               <div className="flex items-start gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-extrabold text-[15px] shadow-sm">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--lp-in)] text-white font-extrabold text-[15px] shadow-sm">
                   2
                 </span>
                 <div>
@@ -281,7 +286,7 @@ export const SeccionApplePay: React.FC = () => {
                   <p className="mt-1 text-[14.5px] leading-relaxed text-[var(--lp-ink-soft)]">
                     En <strong className="text-[var(--lp-ink)]">Atajos → Automatización → Nueva automatización</strong>,
                     elegí <strong className="text-[var(--lp-ink)]">Wallet</strong>, agregá las tarjetas que quieras
-                    automatizar y marcá <strong className="text-emerald-600 dark:text-emerald-400">"Ejecutar de inmediato"</strong>.
+                    automatizar y marcá <strong className="text-[var(--lp-in)]">"Ejecutar de inmediato"</strong>.
                     Tocá Siguiente y elegí el atajo que importaste.
                   </p>
                 </div>
@@ -289,7 +294,7 @@ export const SeccionApplePay: React.FC = () => {
 
               {/* Paso 3 */}
               <div className="flex items-start gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white font-extrabold text-[15px] shadow-sm">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--lp-in)] text-white font-extrabold text-[15px] shadow-sm">
                   3
                 </span>
                 <div>
@@ -307,7 +312,7 @@ export const SeccionApplePay: React.FC = () => {
                   href={URL_ATAJO_ICLOUD}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-6 py-3 text-[15px] shadow-md shadow-emerald-600/20 transition-all hover:scale-102 active:scale-98"
+                  className="inline-flex items-center gap-2 rounded-full bg-[var(--lp-in)] hover:opacity-90 text-white font-bold px-6 py-3 text-[15px] shadow-md shadow-emerald-600/20 transition-[transform,opacity] hover:scale-102 active:scale-98"
                 >
                   <Wand2 className="h-4.5 w-4.5" />
                   <span>Instalar el atajo</span>

@@ -11,10 +11,10 @@ interface BrandWordmarkProps {
  */
 export const BrandWordmark: React.FC<BrandWordmarkProps> = ({ className }) => (
   <img
-    src="/brand/lukapp-wordmark.png"
+    src="/brand/lukapp-wordmark-160.webp"
     alt="LukApp"
-    width="493"
-    height="233"
+    width="160"
+    height="76"
     loading="eager"
     decoding="async"
     className={className}
