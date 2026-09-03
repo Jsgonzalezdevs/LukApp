@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.12',
+    fecha: '2026-09-03',
+    texto: 'Corregimos el dictado por voz en iPhone para que una transcripción confirmada abra el movimiento y no reactive la escucha.',
+  },
+  {
+    version: '2.1.11',
+    fecha: '2026-09-03',
+    texto: 'Corregimos el borde extraño del campo de descripción y protegimos el guardado y la edición para que un error de almacenamiento no cierre la app.',
+  },
+  {
     version: '2.1.10',
     fecha: '2026-09-03',
     texto: 'La prueba de frases ahora muestra el emoji de la categoría detectada y ordena mejor los ejemplos para que se puedan elegir de un vistazo.',

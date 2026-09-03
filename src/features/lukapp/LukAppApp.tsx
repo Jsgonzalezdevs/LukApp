@@ -467,9 +467,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     }
   };
 
-  const handleSave = (draft: ConfirmDraft, esPrueba = false) => {
+  const handleSave = async (draft: ConfirmDraft, esPrueba = false) => {
     const id = nuevoId('tx');
-    void almacen.agregarTransaccion({
+    try {
+      await almacen.agregarTransaccion({
       id,
       kind: draft.kind,
       amountCop: draft.amountCop,
@@ -481,7 +482,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       cuotasTotal: draft.cuotasTotal ?? null,
       cuotaCop: draft.cuotaCop ?? null,
       createdAt: new Date().toISOString(),
-    });
+      });
+    } catch (error) {
+      console.error('Error al guardar el movimiento:', error);
+      setGuardado({ id: 'error', texto: 'No se pudo guardar el movimiento', aviso: 'Revisa la conexión e inténtalo de nuevo.' });
+      return;
+    }
     // Jump back to the period the entry landed in, so a save is never invisible
     // because the user was browsing an older period.
     const finalDate = draft.occurredOn || bogotaDate();
@@ -503,12 +509,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     });
   };
 
-  const handleUpdate = (draft: ConfirmDraft) => {
+  const handleUpdate = async (draft: ConfirmDraft) => {
     if (!editando) return;
     // La fecha solo cambia si el selector devolvió una; si no, se respeta la
     // que ya tenía. Nunca se borra por accidente.
     const occurredOn = draft.occurredOn ?? editando.occurredOn;
-    void almacen.actualizarTransaccion({
+    try {
+      await almacen.actualizarTransaccion({
       ...editando,
       kind: draft.kind,
       amountCop: draft.amountCop,
@@ -516,7 +523,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       description: draft.description,
       cuentaId: draft.cuentaId,
       occurredOn,
-    });
+      });
+    } catch (error) {
+      console.error('Error al actualizar el movimiento:', error);
+      setGuardado({ id: 'error', texto: 'No se pudo actualizar el movimiento', aviso: 'Revisa la conexión e inténtalo de nuevo.' });
+      return;
+    }
     // Si el día se movió a otro período, la fila desaparecería del período en
     // pantalla. Saltar al período donde quedó evita que la edición parezca
     // haber borrado el movimiento — el mismo motivo por el que guardar salta

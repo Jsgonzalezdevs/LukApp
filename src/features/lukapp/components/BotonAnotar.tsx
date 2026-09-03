@@ -40,6 +40,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   // los dos toques que un móvil puede entregar antes de que aparezca la fase
   // de procesamiento: solo el primero puede detener la grabación.
   const confirmacionEnCursoRef = useRef(false);
+  // En iOS el cambio a `idle` puede llegar después de la transcripción final.
+  // Esta bandera mantiene la sesión cerrada hasta que el texto haya pasado al
+  // formulario, evitando que una actualización tardía reactive el micrófono.
+  const transcripcionFinalizandoRef = useRef(false);
 
   useEffect(() => {
     const liberarSelectorAlVolver = () => {
@@ -52,10 +56,11 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   }, []);
 
   const manejarTextoFinal = useCallback((texto: string) => {
-    if (descartadoRef.current) {
+    if (descartadoRef.current || transcripcionFinalizandoRef.current) {
       descartadoRef.current = false;
       return;
     }
+    transcripcionFinalizandoRef.current = true;
     setTextoRevelado(texto);
   }, []);
 
@@ -83,7 +88,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
       return;
     }
 
-    if (!escuchando) {
+    if (!escuchando && !transcripcionFinalizandoRef.current) {
       haptic.trigger('heavy');
       audio.play('warning');
       setOverlayAbierto(true);
@@ -93,7 +98,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   }, [autoStartTrigger]);
 
   const alTocarMicrofono = () => {
-    if (procesando) return;
+    if (procesando || transcripcionFinalizandoRef.current) return;
 
     if (!dictation.supported) {
       haptic.trigger('light');
@@ -118,6 +123,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
     haptic.trigger('light');
     audio.play('click');
     descartadoRef.current = true;
+    transcripcionFinalizandoRef.current = false;
     dictation.cancel();
     setTextoRevelado(null);
     setOverlayAbierto(false);
@@ -135,6 +141,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
     const texto = textoRevelado;
     setTextoRevelado(null);
     setOverlayAbierto(false);
+    transcripcionFinalizandoRef.current = false;
     if (texto) onDictado(texto);
   };
 

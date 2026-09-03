@@ -549,7 +549,7 @@ export const Captura: React.FC<CapturaProps> = ({
             onChange={(e) => handleDescriptionChange(e.target.value)}
             onBlur={() => setEditandoTexto(false)}
             aria-label="Descripción"
-            className="mt-3 w-full max-h-32 resize-none bg-transparent text-[20px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+            className="mt-3 w-full max-h-32 resize-none border-0 bg-transparent text-[20px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
             placeholder="¿En qué fue? Ej: Almuerzo, Uber, Mercado..."
             rows={3}
           />
