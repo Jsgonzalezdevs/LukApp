@@ -14,7 +14,7 @@ Código en `src/features/lukapp/`. Entrada: [`FinanzasApp.tsx`](FinanzasApp.tsx)
   - `local` — no hay proyecto Supabase configurado: la app corre completa contra
     IndexedDB de este dispositivo y **no muestra pantalla de login**.
   - `anonimo` — hay backend: se muestra [`LoginPanel`](components/LoginPanel.tsx)
-    (entrar / registrarse con email y contraseña, errores en español).
+    (entrar / registrarse con Google o con email y contraseña, errores en español).
   - `autenticado` — datos en Supabase por usuario.
 - **Aislamiento por cuenta**: el panel se remonta con `key = userId`, así que los
   datos de un usuario nunca quedan en pantalla bajo la sesión de otro.

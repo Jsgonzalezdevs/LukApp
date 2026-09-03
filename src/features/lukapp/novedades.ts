@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.0',
+    fecha: '2026-09-03',
+    texto: 'Estrenamos un recorrido visual que muestra cómo LukApp acompaña tu plata durante el día y ya puedes entrar o crear tu cuenta con Google.',
+  },
+  {
     version: '2.0.75',
     fecha: '2026-09-03',
     texto: 'Unificamos las direcciones públicas de la portada para que buscadores y enlaces compartidos siempre lleguen a la URL correcta.',

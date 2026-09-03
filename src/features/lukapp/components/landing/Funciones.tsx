@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { formatCop } from '../../lib/formatCop';
 import { Reveal } from './primitivas';
-import { TituloPalabras } from './adornos';
 
 /* ── Mockups ──────────────────────────────────────────────────────────────
    Cada pestaña dibuja su propia pantalla. Son SVG y CSS, no capturas: pesan
@@ -198,7 +197,7 @@ const MockTendencias: React.FC = () => {
   );
 };
 
-/* ── Pestañas ─────────────────────────────────────────────────────────── */
+/* ── Recorrido ────────────────────────────────────────────────────────── */
 
 const PESTANAS: {
   clave: string;
@@ -288,7 +287,7 @@ export const Funciones: React.FC = () => {
     <section className="funciones" id="funciones">
       <Reveal as="header" className="seccion-cabecera">
         <span className="seccion-etiqueta">Un recorrido, no un catálogo</span>
-        <TituloPalabras texto="La plata se mueve. LukApp también." />
+        <h2>La plata se mueve. LukApp también.</h2>
         <p className="seccion-sub">
           No te vamos a soltar una vitrina de funciones. Mira cómo LukApp
           acompaña seis decisiones reales, desde que apartas plata hasta que

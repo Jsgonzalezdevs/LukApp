@@ -45,3 +45,25 @@ Las cuatro deben salir con `rowsecurity = true`.
 Por defecto Supabase exige confirmar el correo antes del primer ingreso. Si es
 solo para ti y quieres saltarte ese paso: **Authentication → Providers → Email →
 Confirm email**, desactívalo.
+
+## Acceso con Google
+
+El botón ya vive en LukApp; para que Google acepte el flujo hay que conectar una
+aplicación OAuth al proyecto una sola vez:
+
+1. En **Google Auth Platform → Clients**, crea un cliente de tipo **Web
+   application**. Agrega el origen público de LukApp y, para desarrollo,
+   `http://localhost:5173` en **Authorized JavaScript origins**.
+2. En **Authorized redirect URIs**, agrega la URL de callback que muestra
+   **Supabase → Authentication → Sign In / Providers → Google**. Tiene esta
+   forma: `https://<proyecto>.supabase.co/auth/v1/callback`.
+3. En esa pantalla de Google dentro de Supabase, activa el proveedor y guarda
+   el **Client ID** y el **Client Secret**. El secreto se guarda en Supabase;
+   nunca va en una variable `VITE_` ni en este repositorio.
+4. En **Supabase → Authentication → URL Configuration**, deja como **Site URL**
+   el dominio público y permite tanto `https://<dominio>/app` como
+   `http://localhost:5173/app` entre las Redirect URLs.
+
+LukApp llama `signInWithOAuth({ provider: 'google' })` y vuelve a `/app`. El
+trigger `crear_perfil` admite este alta aunque Google no mande un apodo: crea el
+perfil con su correo y deja el nombre opcional para completarlo luego.

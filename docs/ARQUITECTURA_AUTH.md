@@ -21,6 +21,8 @@ Usuario entra a la app
         ↓
     ¿Usuario autenticado?
         ├─ NO → Mostrar LandingLukApp + LoginPanel
+        │        ├─ Google OAuth → callback en /app
+        │        └─ Correo + contraseña
         └─ SÍ → Cargar rol desde BD
             ↓
         fetch perfiles(user.id)
@@ -288,6 +290,7 @@ Casos a validar:
 3. ✅ Admin impersonado ve datos del usuario, no los suyos
 4. ✅ No se puede quitar el último admin
 5. ✅ Password reset funciona sin estar autenticado
+6. ✅ Google OAuth retorna a `/app` en el mismo origen
 
 Ver `src/apps-dashboard/AppsRoot.tsx` para tests.
 
@@ -327,5 +330,5 @@ Ver `src/apps-dashboard/AppsRoot.tsx` para tests.
 
 ---
 
-**Última actualización:** 25 Aug 2026  
+**Última actualización:** 3 Sep 2026
 **Mantenedor:** Sistema de autenticación centralizado

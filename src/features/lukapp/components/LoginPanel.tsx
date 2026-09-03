@@ -252,8 +252,8 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           </h1>
           <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--fin-ink-soft)]">
             {modo === 'entrar'
-              ? 'Tus finanzas personales, en un solo lugar.'
-              : 'Crea tu cuenta para tomar el control de tu dinero.'}
+              ? 'Tu plata tiene historia. Aquí la entiendes.'
+              : 'Crea tu cuenta y dale contexto a cada peso.'}
           </p>
         </div>
 

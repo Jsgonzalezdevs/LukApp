@@ -954,66 +954,145 @@
   flex-shrink: 0;
 }
 
-/* FUNCIONES */
-.landing-finanzas .tabs-riel {
-  display: flex;
-  gap: 0.3rem;
-  overflow-x: auto;
-  padding-bottom: 0.4rem;
-  margin-bottom: 1.5rem;
-  scrollbar-width: none;
+/* FUNCIONES — un recorrido financiero continuo, no otra cuadrícula de tarjetas. */
+.landing-finanzas .funciones .seccion-cabecera {
+  max-width: 720px;
 }
 
-.landing-finanzas .tabs-riel::-webkit-scrollbar {
-  display: none;
+.landing-finanzas .funciones-recorrido {
+  display: grid;
+  grid-template-columns: minmax(255px, 0.7fr) minmax(0, 1.3fr);
+  min-height: 620px;
+  overflow: hidden;
+  border: 1px solid var(--lp-line);
+  border-radius: 30px;
+  background: var(--lp-surface);
+  box-shadow: 0 34px 80px -52px rgba(28, 25, 23, 0.55);
 }
 
-.landing-finanzas .tab {
+.landing-finanzas .funciones-ruta {
   position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-shrink: 0;
-  padding: 0.6rem 1rem;
+  min-width: 0;
+  padding: 2rem 1.5rem 1.25rem;
+  background: var(--lp-ink);
+  color: var(--lp-bg);
+}
+
+.landing-finanzas .funciones-ruta-presentacion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 126px;
+  padding: 0.25rem 0.4rem 1.5rem;
+}
+
+.landing-finanzas .funciones-ruta-presentacion span {
+  font-size: 0.67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.62;
+}
+
+.landing-finanzas .funciones-ruta-presentacion strong {
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.landing-finanzas .funcion-parada {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.9rem 0.4rem;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--lp-bg) 18%, transparent);
+  background: transparent;
+  color: inherit;
+  text-align: left;
   font-family: inherit;
-  font-size: 0.87rem;
-  font-weight: 600;
-  color: var(--lp-ink-soft);
-  background: none;
-  border: none;
-  border-radius: 999px;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
 }
 
-.landing-finanzas .tab:hover {
-  color: var(--lp-ink);
+.landing-finanzas .funcion-parada:not(.activa) {
+  opacity: 0.58;
 }
 
-.landing-finanzas .tab.activa {
-  color: var(--lp-on-accent);
+.landing-finanzas .funcion-parada:hover,
+.landing-finanzas .funcion-parada.activa {
+  opacity: 1;
 }
 
-/* El fondo es un hermano posicionado detrás, no un background del botón: así
-   framer-motion puede deslizarlo entre pestañas con layoutId. */
-.landing-finanzas .tab-fondo {
+.landing-finanzas .funcion-parada:active {
+  transform: translateX(3px);
+}
+
+.landing-finanzas .funcion-indicador {
   position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 999px;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  left: -1.5rem;
+  width: 4px;
+  border-radius: 0 999px 999px 0;
   background: var(--lp-accent);
 }
 
-.landing-finanzas .tab > svg,
-.landing-finanzas .tab > span {
-  position: relative;
+.landing-finanzas .funcion-numero {
+  padding-top: 0.18rem;
+  font-size: 0.67rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  opacity: 0.52;
 }
 
-.landing-finanzas .funciones-contenido {
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: clamp(1.5rem, 4vw, 3.5rem);
+.landing-finanzas .funcion-parada-texto {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.landing-finanzas .funcion-parada-texto strong {
+  display: flex;
   align-items: center;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.landing-finanzas .funcion-parada-texto small {
+  overflow: hidden;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.66;
+}
+
+.landing-finanzas .funciones-escena {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background:
+    radial-gradient(circle at 84% 12%, color-mix(in srgb, var(--lp-accent) 9%, transparent), transparent 30%),
+    var(--lp-surface);
+}
+
+.landing-finanzas .funciones-escena-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
 }
 
 .landing-finanzas .funciones-texto h3 {
@@ -1032,6 +1111,26 @@
   color: var(--lp-ink-soft);
   margin: 0;
   text-wrap: pretty;
+}
+
+.landing-finanzas .funciones-visual {
+  display: grid;
+  align-items: center;
+  padding: clamp(1.5rem, 4vw, 2.75rem) 0;
+}
+
+.landing-finanzas .funciones-visual .mk {
+  width: min(100%, 520px);
+  margin-left: auto;
+}
+
+.landing-finanzas .funciones-cierre {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--lp-line);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: var(--lp-ink-soft);
 }
 
 /* MOCKUPS DE LAS PESTAÑAS */
@@ -1547,9 +1646,51 @@
      de su contenido más ancho, así que una pista con un mockup dentro se niega
      a bajar de él y desborda la pantalla en vez de encogerse. */
   .landing-finanzas .hero,
-  .landing-finanzas .funciones-contenido,
+  .landing-finanzas .funciones-recorrido,
   .landing-finanzas .gmf-caja {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-finanzas .funciones-recorrido {
+    min-height: 0;
+  }
+
+  .landing-finanzas .funciones-ruta {
+    display: grid;
+    grid-auto-columns: minmax(190px, 1fr);
+    grid-auto-flow: column;
+    overflow-x: auto;
+    padding: 0 1rem;
+    scrollbar-width: none;
+  }
+
+  .landing-finanzas .funciones-ruta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .landing-finanzas .funciones-ruta-presentacion {
+    display: none;
+  }
+
+  .landing-finanzas .funcion-parada {
+    min-height: 92px;
+    padding: 1rem 0.9rem;
+    border-top: 0;
+    border-right: 1px solid color-mix(in srgb, var(--lp-bg) 18%, transparent);
+  }
+
+  .landing-finanzas .funcion-parada:active {
+    transform: translateY(2px);
+  }
+
+  .landing-finanzas .funcion-indicador {
+    top: auto;
+    right: 0.9rem;
+    bottom: 0;
+    left: 0.9rem;
+    width: auto;
+    height: 4px;
+    border-radius: 999px 999px 0 0;
   }
 }
 
@@ -1824,14 +1965,6 @@
   transform: translateY(-1px);
 }
 
-.landing-finanzas .tab {
-  transition: color 0.2s, transform 0.2s;
-}
-
-.landing-finanzas .tab:active {
-  transform: scale(0.96);
-}
-
 /* REGISTRO
    Cierra la página. Sustituye al "¿Listo?" genérico que había antes: pedirle a
    alguien que se registre y ponerle debajo otra llamada a lo mismo es pedir dos
@@ -1879,6 +2012,66 @@
   background: var(--lp-surface);
   border: 1px solid var(--lp-line);
   border-radius: 24px;
+}
+
+.landing-finanzas .registro-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 50px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--lp-line);
+  border-radius: 14px;
+  background: var(--lp-bg);
+  color: var(--lp-ink);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.landing-finanzas .registro-google:hover {
+  transform: translateY(-1px);
+  border-color: var(--lp-ink-faint);
+  box-shadow: 0 10px 22px -18px rgba(28, 25, 23, 0.5);
+}
+
+.landing-finanzas .registro-google:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+  box-shadow: none;
+}
+
+.landing-finanzas .registro-google-marca {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.landing-finanzas .registro-separador {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.25rem 0;
+}
+
+.landing-finanzas .registro-separador span {
+  height: 1px;
+  flex: 1;
+  background: var(--lp-line);
+}
+
+.landing-finanzas .registro-separador small {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--lp-ink-soft);
+  white-space: nowrap;
 }
 
 .landing-finanzas .registro-campo {

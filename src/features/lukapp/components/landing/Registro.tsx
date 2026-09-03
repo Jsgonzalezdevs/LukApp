@@ -104,10 +104,10 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
       <Reveal as="header" className="seccion-cabecera registro-cabecera">
         <MascotaLuki />
         <span className="seccion-etiqueta">Crea tu cuenta</span>
-        <h2>Empieza en menos de un minuto</h2>
+        <h2>Ponle memoria a tu plata</h2>
         <p className="seccion-sub">
-          Sin tarjeta, sin llamadas, sin esperar a que alguien te apruebe.
-          Correo, contraseña y ya estás adentro.
+          Entra con Google en un toque, o usa tu correo. Sin tarjeta, llamadas
+          ni aprobaciones.
         </p>
       </Reveal>
 
