@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.21',
+    fecha: '2026-09-03',
+    texto: 'La portada ahora equilibra el tamaño y la posición del mensaje con el teléfono, y suma un movimiento ambiental suave tipo lámpara de lava.',
+  },
+  {
     version: '2.1.20',
     fecha: '2026-09-03',
     texto: 'El teléfono de la portada ahora se adapta de verdad al alto disponible y el fondo armonioso tiene una presencia más visible sin robar atención.',

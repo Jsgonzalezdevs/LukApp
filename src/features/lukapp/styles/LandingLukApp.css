@@ -120,6 +120,8 @@
   /* La landing manda sobre su propio lienzo: sin esto, en móvil el fondo de la
      app se ve por debajo del último bloque. */
   min-height: 100dvh;
+  position: relative;
+  isolation: isolate;
   background-image: var(--lp-lienzo);
   background-size: auto, auto, auto, 24px 24px;
   background-attachment: fixed;
@@ -132,6 +134,30 @@
      eso rompe el `position: sticky` de la barra de arriba. clip recorta sin
      crear el contenedor. */
   overflow-x: clip;
+}
+
+.landing-finanzas::before {
+  content: '';
+  position: fixed;
+  inset: -18%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(28rem 22rem at 18% 34%, rgba(16, 185, 129, 0.08), transparent 72%),
+    radial-gradient(32rem 26rem at 78% 18%, rgba(119, 42, 234, 0.11), transparent 72%),
+    radial-gradient(24rem 30rem at 72% 82%, rgba(245, 158, 11, 0.055), transparent 72%);
+  filter: blur(16px);
+  animation: lp-lava 24s ease-in-out infinite alternate;
+}
+
+@keyframes lp-lava {
+  0% { transform: translate3d(-2%, -1%, 0) scale(1); }
+  50% { transform: translate3d(2%, 2%, 0) scale(1.04); }
+  100% { transform: translate3d(-1%, 3%, 0) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-finanzas::before { animation: none; }
 }
 
 .landing-finanzas ::selection {
@@ -274,13 +300,17 @@
    sin que rompa el móvil, y el interlineado baja de 1.6 a 1.05 porque a este
    cuerpo el aire sobra dentro y hace falta fuera. */
 .landing-finanzas .hero-text h1 {
-  font-size: clamp(2.4rem, 6.2vw, 4.4rem);
+  font-size: clamp(2.4rem, 5.4vw, 3.8rem);
   font-weight: 700;
   line-height: 1.05;
   letter-spacing: -0.035em;
   margin: 0 0 1.5rem;
   color: var(--lp-ink);
   text-wrap: balance;
+}
+
+@media (min-width: 771px) {
+  .landing-finanzas .hero-text { transform: translateY(2.25rem); }
 }
 
 /* Cada línea conserva una caja estable y es visible desde el primer render. */
