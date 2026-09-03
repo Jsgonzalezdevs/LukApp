@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.0.72',
+    fecha: '2026-09-02',
+    texto: 'Corregimos el acceso público a LukApp para evitar redirecciones repetidas y permitir que buscadores y herramientas de rendimiento abran la portada.',
+  },
+  {
     version: '2.0.71',
     fecha: '2026-09-02',
     texto: 'Aceleramos la portada, protegimos las rutas privadas de buscadores y corregimos enlaces, metadatos y páginas inexistentes.',
