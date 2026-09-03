@@ -394,6 +394,16 @@
   height: calc(var(--alto-tel) * var(--escala));
 }
 
+/* En la primera vista la portada debe presentar el teléfono completo. En
+   portátiles bajos, el alto disponible manda sobre el ancho: reducir el
+   aparato entero conserva la pantalla legible y evita que el borde inferior
+   desaparezca debajo del viewport. */
+@media (min-width: 771px) {
+  .landing-finanzas .telefono-envoltura {
+    --escala: min(1, max(0.72, calc((100dvh - 230px) / 782)));
+  }
+}
+
 .landing-finanzas .telefono-envoltura .telefono-marco {
   transform: scale(var(--escala));
   transform-origin: top left;

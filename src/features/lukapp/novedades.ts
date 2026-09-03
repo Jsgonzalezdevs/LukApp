@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.19',
+    fecha: '2026-09-03',
+    texto: 'Ajustamos la portada para que el teléfono se presente completo desde la primera pantalla, incluso en portátiles con poca altura.',
+  },
+  {
+    version: '2.1.18',
+    fecha: '2026-09-03',
+    texto: 'Las personas agregadas manualmente ahora aparecen de inmediato, aunque todavía no tengan movimientos en tus extractos.',
+  },
+  {
     version: '2.1.17',
     fecha: '2026-09-03',
     texto: 'Ahora puedes agregar personas desde Ajustes para reconocer sus nombres y apodos al registrar transferencias. Las etiquetas genéricas de BRE-B ya no aparecen como contactos.',
