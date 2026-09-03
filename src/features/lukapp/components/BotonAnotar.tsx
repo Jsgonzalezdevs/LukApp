@@ -61,8 +61,14 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
       return;
     }
     transcripcionFinalizandoRef.current = true;
-    setTextoRevelado(texto);
-  }, []);
+    // No esperamos a que termine una animación: en iOS una actualización
+    // tardía del recorder podía dejar el texto en el overlay indefinidamente.
+    // La transcripción definitiva ya está lista, así que el formulario debe
+    // ser el siguiente estado de la sesión.
+    setTextoRevelado(null);
+    setOverlayAbierto(false);
+    onDictado(texto);
+  }, [onDictado]);
 
   const dictation = useDictation(manejarTextoFinal);
   const { scanImage, isScanning, progress: ocrProgress, error: ocrError } = useImageOCR((ocrText) => {
