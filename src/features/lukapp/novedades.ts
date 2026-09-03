@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.13',
+    fecha: '2026-09-03',
+    texto: 'Blindamos el botón de confirmar voz contra toques rápidos para que detener el micrófono sea siempre una operación segura y única.',
+  },
+  {
     version: '2.1.12',
     fecha: '2026-09-03',
     texto: 'Corregimos el dictado por voz en iPhone para que una transcripción confirmada abra el movimiento y no reactive la escucha.',

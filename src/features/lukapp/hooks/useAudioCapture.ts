@@ -227,6 +227,9 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   // Si se cancela mientras se graba (o mientras el permiso todavía se está
   // pidiendo), el audio que ya se capturó se tira en vez de subirse.
   const canceladoRef = useRef(false);
+  // `MediaRecorder.stop()` lanza InvalidStateError si dos toques rápidos lo
+  // invocan antes de que iOS actualice `state` a `inactive`.
+  const detencionSolicitadaRef = useRef(false);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analiserRef = useRef<AnalyserNode | null>(null);
   const medidorRafRef = useRef<number | null>(null);
@@ -388,17 +391,26 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   }, []);
 
   const stop = useCallback(() => {
+    if (detencionSolicitadaRef.current) return;
     quitarTope();
     detenerSegmentos();
     const grabadora = grabadoraRef.current;
-    if (grabadora && grabadora.state !== 'inactive') {
+    if (grabadora && grabadora.state !== 'inactive' && !detencionSolicitadaRef.current) {
+      detencionSolicitadaRef.current = true;
       // Cambiar la interfaz antes de pedirle al navegador que pare evita una
       // ventana en la que un segundo toque parece ignorado. En iOS `onstop`
       // puede llegar varios frames después de `stop()`, sobre todo al volver
       // de segundo plano; el usuario ya confirmó y debe verlo enseguida.
       setStatus('processing');
       // `onstop` hace el resto: cierra el micrófono y sube el audio.
-      grabadora.stop();
+      try {
+        grabadora.stop();
+      } catch (error) {
+        // Algunos WebKit lanzan aunque el estado todavía diga "recording".
+        console.warn('No se pudo detener el micrófono:', error);
+        detencionSolicitadaRef.current = false;
+        setStatus('idle');
+      }
     }
     // El último parcial se queda en pantalla mientras se confirma la versión
     // definitiva -- borrar aquí hacía que el texto desapareciera y volviera a
@@ -411,9 +423,13 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     detenerMedidor();
     detenerSegmentos();
     const grabadora = grabadoraRef.current;
-    if (grabadora && grabadora.state !== 'inactive') {
+    if (grabadora && grabadora.state !== 'inactive' && !detencionSolicitadaRef.current) {
       // `onstop` ve el flag y descarta el audio en vez de subirlo.
-      grabadora.stop();
+      try {
+        grabadora.stop();
+      } catch {
+        setStatus('idle');
+      }
     } else {
       // Todavía no hay grabadora (esperando el permiso). `start` revisa el
       // flag apenas el permiso llega y bota el micrófono sin grabar nada.
@@ -427,6 +443,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     setError(null);
     setInterim('');
     canceladoRef.current = false;
+    detencionSolicitadaRef.current = false;
     const miSesion = ++sesionRef.current;
 
     let stream: MediaStream;
@@ -525,6 +542,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     });
 
     grabadora.onstop = async () => {
+      detencionSolicitadaRef.current = false;
       quitarTope();
       cerrarMicrofono();
       grabadoraRef.current = null;
