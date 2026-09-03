@@ -51,7 +51,7 @@ interface AsesorViewProps {
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-const PROBABILIDAD_LENGUA = 0.0001; // 0,01 %
+const PROBABILIDAD_LENGUA = 0.00001; // 0,001 %
 
 /** Chips para arrancar una conversación vacía — el punto de entrada más usado. */
 const SUGERENCIAS_INICIALES = [

@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.6',
+    fecha: '2026-09-03',
+    texto: 'La pose secreta de Luki ahora aparece en una de cada cien mil aperturas: un gesto realmente excepcional.',
+  },
+  {
     version: '2.1.5',
     fecha: '2026-09-03',
     texto: 'Replanteamos las siete formas de registrar: hablar ocupa el lugar protagonista y las alternativas se leen como un repertorio, no como una cuadrícula de tarjetas.',
