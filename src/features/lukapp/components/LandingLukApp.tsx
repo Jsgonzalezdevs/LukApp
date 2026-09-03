@@ -15,7 +15,6 @@ const DemoParser = lazy(() => import('./landing/DemoParser').then(({ DemoParser 
 const Funciones = lazy(() => import('./landing/Funciones').then(({ Funciones }) => ({ default: Funciones })));
 const Cupo4x1000 = lazy(() => import('./landing/Cupo4x1000').then(({ Cupo4x1000 }) => ({ default: Cupo4x1000 })));
 const FormasDeRegistrar = lazy(() => import('./landing/FormasDeRegistrar').then(({ FormasDeRegistrar }) => ({ default: FormasDeRegistrar })));
-const Privacidad = lazy(() => import('./landing/Privacidad').then(({ Privacidad }) => ({ default: Privacidad })));
 const BandaCifras = lazy(() => import('./landing/BandaCifras').then(({ BandaCifras }) => ({ default: BandaCifras })));
 const Registro = lazy(() => import('./landing/Registro').then(({ Registro }) => ({ default: Registro })));
 const PWAInstall = lazy(() => import('./landing/PWAInstall').then(({ PWAInstall }) => ({ default: PWAInstall })));
@@ -54,7 +53,6 @@ const ENLACES = [
   { href: '#apple-pay', texto: 'Apple Pay' },
   { href: '#funciones', texto: 'Funciones' },
   { href: '#cuatro-por-mil', texto: '4×1000' },
-  { href: '#privacidad', texto: 'Privacidad' },
   { href: '#registro', texto: 'Crear cuenta' }
 ];
 
@@ -158,8 +156,6 @@ export const LandingLukApp: React.FC<LandingProps> = ({
           <Funciones />
           <Cupo4x1000 />
           <FormasDeRegistrar />
-          <Privacidad />
-
           {mostrarPWA && (
             <PWAInstall
               onClose={handlePWAClose}

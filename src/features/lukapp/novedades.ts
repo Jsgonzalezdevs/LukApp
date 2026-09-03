@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.9',
+    fecha: '2026-09-03',
+    texto: 'Quitamos la sección de privacidad de la portada para que el recorrido sea más corto y directo.',
+  },
+  {
     version: '2.1.8',
     fecha: '2026-09-03',
     texto: 'Simplificamos el registro y la privacidad: menos adornos, una lectura más directa y una experiencia más fácil de entender de un vistazo.',
