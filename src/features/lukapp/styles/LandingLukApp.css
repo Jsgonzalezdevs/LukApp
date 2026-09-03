@@ -43,10 +43,10 @@
   /* Un lienzo con atmósfera, no una ilustración: las manchas se descubren
      después de mirar un rato y dejan intacta la jerarquía del contenido. */
   --lp-lienzo: 
-    radial-gradient(42rem 30rem at 82% 8%, rgba(119, 42, 234, 0.075), transparent 72%),
-    radial-gradient(32rem 26rem at 8% 52%, rgba(16, 185, 129, 0.045), transparent 70%),
-    radial-gradient(28rem 24rem at 90% 78%, rgba(245, 158, 11, 0.035), transparent 70%),
-    radial-gradient(circle at 1px 1px, rgba(28, 25, 23, 0.045) 1px, transparent 1.2px);
+    radial-gradient(42rem 30rem at 82% 8%, rgba(119, 42, 234, 0.14), transparent 72%),
+    radial-gradient(32rem 26rem at 8% 52%, rgba(16, 185, 129, 0.08), transparent 70%),
+    radial-gradient(28rem 24rem at 90% 78%, rgba(245, 158, 11, 0.065), transparent 70%),
+    radial-gradient(circle at 1px 1px, rgba(28, 25, 23, 0.075) 1px, transparent 1.2px);
   /* La pila vive en un token porque hay que repetirla dentro del atajo `font`
      de --fin-t-cifra, y ahí no se puede escribir `inherit`: el atajo exige una
      familia de verdad y descarta la declaración entera si no la encuentra. */
@@ -400,8 +400,16 @@
    desaparezca debajo del viewport. */
 @media (min-width: 771px) {
   .landing-finanzas .telefono-envoltura {
-    --escala: min(1, max(0.72, calc((100dvh - 230px) / 782)));
+    --escala: 0.92;
   }
+}
+
+@media (min-width: 771px) and (max-height: 880px) {
+  .landing-finanzas .telefono-envoltura { --escala: 0.78; }
+}
+
+@media (min-width: 771px) and (min-height: 1100px) {
+  .landing-finanzas .telefono-envoltura { --escala: 1; }
 }
 
 .landing-finanzas .telefono-envoltura .telefono-marco {

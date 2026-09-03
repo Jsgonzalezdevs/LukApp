@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.20',
+    fecha: '2026-09-03',
+    texto: 'El teléfono de la portada ahora se adapta de verdad al alto disponible y el fondo armonioso tiene una presencia más visible sin robar atención.',
+  },
+  {
     version: '2.1.19',
     fecha: '2026-09-03',
     texto: 'Ajustamos la portada para que el teléfono se presente completo desde la primera pantalla, incluso en portátiles con poca altura.',
