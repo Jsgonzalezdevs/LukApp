@@ -1804,6 +1804,21 @@
   background: transparent;
 }
 
+/* En el chat Luki es un avatar, no la mascota protagonista del cierre. Esta
+   regla va después del tamaño general de `.luki-mascota` para que la pose no
+   pueda crecer y romper el ritmo de las burbujas. */
+.landing-finanzas .mk-chat .mk-luki {
+  width: 42px;
+  height: 42px;
+  margin-bottom: -2px;
+}
+
+.landing-finanzas .mk-chat .mk-luki img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .landing-finanzas .btn-primary-lg {
   padding: 1rem 2rem;
   background: var(--lp-accent);

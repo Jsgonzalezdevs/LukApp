@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.3',
+    fecha: '2026-09-03',
+    texto: 'Corregimos las poses de Luki en el chat del Analista: ahora se comportan como avatares y no desbordan las respuestas.',
+  },
+  {
     version: '2.1.2',
     fecha: '2026-09-03',
     texto: 'Luki toma el lugar de la Estrella en el recorrido: ahora acompaña las respuestas con gestos y poses de la mascota oficial.',
