@@ -13,15 +13,70 @@
     <link rel="alternate" hreflang="es-CO" href="https://lukapp.app/" />
     <link rel="alternate" hreflang="x-default" href="https://lukapp.app/" />
     <style>
-      .contenido-seo-inicial { box-sizing: border-box; min-height: 100vh; max-width: 72rem; margin: 0 auto; padding: 2rem 1.5rem 4rem; background: #fff; color: #1c1917; font: 400 1rem/1.6 Poppins, Arial, sans-serif; }
-      .contenido-seo-inicial header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 2rem; border-bottom: 1px solid #ede9e3; }
-      .contenido-seo-inicial .marca-seo-inicial { margin: 0; color: #772aea; font-size: 1.3rem; font-weight: 800; }
-      .contenido-seo-inicial nav { display: flex; flex-wrap: wrap; gap: 1rem; }
-      .contenido-seo-inicial a { color: #5b21b6; font-weight: 700; }
-      .contenido-seo-inicial section { max-width: 48rem; padding-top: 3rem; }
-      .contenido-seo-inicial h1 { max-width: 12ch; margin: 0; font-size: clamp(2.2rem, 6vw, 4.2rem); line-height: 1.05; letter-spacing: -0.04em; }
-      .contenido-seo-inicial h2 { margin-bottom: 0.5rem; font-size: 1.5rem; line-height: 1.2; }
-      @media (max-width: 38rem) { .contenido-seo-inicial header { align-items: flex-start; flex-direction: column; } }
+      /* Primer fotograma de la portada. Replica el espacio, color y contenido
+         del hero interactivo para que cargar React no parezca cambiar de web. */
+      .seo-shell {
+        --seo-bg: #fff;
+        --seo-surface: #fbf9f6;
+        --seo-line: #ede9e3;
+        --seo-ink: #1c1917;
+        --seo-soft: #6b6560;
+        --seo-accent: #772aea;
+        --seo-in: #15803d;
+        box-sizing: border-box;
+        min-height: 100vh;
+        width: 100%;
+        overflow: hidden;
+        background: var(--seo-bg);
+        color: var(--seo-ink);
+        font: 400 1rem/1.6 Poppins, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .seo-shell *, .seo-shell *::before, .seo-shell *::after { box-sizing: border-box; }
+      .seo-shell .saltar-contenido { position: fixed; transform: translateY(-180%); }
+      .seo-shell .nav-bar { border-bottom: 1px solid var(--seo-line); background: color-mix(in srgb, var(--seo-bg) 85%, transparent); }
+      .seo-shell .nav-content { display: flex; max-width: 1140px; margin: 0 auto; padding: 1.1rem 1.5rem; align-items: center; justify-content: space-between; }
+      .seo-shell .logo { display: block; width: auto; height: 1.6rem; object-fit: contain; }
+      .seo-shell .nav-links { display: flex; gap: 2rem; align-items: center; }
+      .seo-shell .nav-links a { color: var(--seo-soft); font-size: .9rem; text-decoration: none; }
+      .seo-shell .nav-links .link-btn { border-radius: 999px; padding: .6rem 1.1rem; background: var(--seo-accent); color: #fff; font-weight: 600; }
+      .seo-shell .seo-menu { display: none; width: 1.4rem; color: var(--seo-ink); }
+      .seo-shell .seo-menu span { display: block; height: 2px; margin: 4px 0; border-radius: 2px; background: currentColor; }
+      .seo-shell .hero { display: grid; max-width: 1140px; margin: 0 auto; padding: clamp(3.5rem, 9vw, 7rem) 1.5rem clamp(3rem, 7vw, 5.5rem); grid-template-columns: 1.05fr .95fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+      .seo-shell .hero-text h1 { margin: 0 0 1.5rem; color: var(--seo-ink); font-size: clamp(2.4rem, 6.2vw, 4.4rem); font-weight: 700; line-height: 1.05; letter-spacing: -.035em; text-wrap: balance; }
+      .seo-shell .hero-text h1 span { display: block; }
+      .seo-shell .hero-text h1 em { color: var(--seo-in); font-style: normal; }
+      .seo-shell .hero-sub { max-width: 34ch; margin: 0 0 2.25rem; color: var(--seo-soft); font-size: clamp(1rem, 1.6vw, 1.15rem); line-height: 1.65; }
+      .seo-shell .hero-ctas { display: flex; margin-bottom: 1.25rem; }
+      .seo-shell .btn-primary { display: inline-flex; padding: .85rem 1.5rem; gap: .5rem; align-items: center; border-radius: 999px; background: var(--seo-accent); color: #fff; font-size: .95rem; font-weight: 600; text-decoration: none; }
+      .seo-shell .hero-visual { display: flex; align-items: center; justify-content: center; }
+      .seo-shell .seo-phone { width: min(393px, 78vw); aspect-ratio: 393 / 782; padding: 11px; border-radius: 60px; background: linear-gradient(160deg, #d9d5d0, #8a8480 22%, #5f5a56 50%, #8a8480 78%, #cfcac4); box-shadow: 0 40px 80px -32px rgba(28, 25, 23, .35); }
+      .seo-shell .seo-screen { position: relative; height: 100%; overflow: hidden; padding: 4.4rem 1rem 1rem; border-radius: 49px; background: var(--seo-bg); text-align: center; }
+      .seo-shell .seo-island { position: absolute; top: 11px; left: 50%; width: 30%; height: 34px; border-radius: 999px; background: #000; transform: translateX(-50%); }
+      .seo-shell .seo-month { display: inline-block; border-radius: 999px; padding: .5rem .9rem; background: var(--seo-surface); font-size: .9rem; font-weight: 600; }
+      .seo-shell .seo-balance-label { margin: 1.5rem 0 .25rem; color: var(--seo-soft); font-size: .8rem; }
+      .seo-shell .seo-balance { display: block; font-size: clamp(1.8rem, 4vw, 2.75rem); line-height: 1.1; }
+      .seo-shell .seo-totals { display: inline-flex; margin: 1.15rem 0 2rem; overflow: hidden; border-radius: 999px; background: var(--seo-surface); font-size: .9rem; font-weight: 600; }
+      .seo-shell .seo-totals span { padding: .65rem .8rem; }
+      .seo-shell .seo-totals span + span { border-left: 1px solid var(--seo-line); }
+      .seo-shell .seo-out { color: #d4025a; }
+      .seo-shell .seo-in { color: var(--seo-in); }
+      .seo-shell .seo-row { height: 4rem; margin: .65rem 0; border-radius: 1rem; background: var(--seo-surface); }
+      @media (prefers-color-scheme: dark) {
+        .seo-shell { --seo-bg: #1a1817; --seo-surface: #221f1e; --seo-line: #35322f; --seo-ink: #f5f3f0; --seo-soft: #a8a29e; --seo-accent: #a855f7; --seo-in: #4ade80; }
+        .seo-shell .nav-links .link-btn, .seo-shell .btn-primary { color: #1a1817; }
+      }
+      @media (max-width: 900px) {
+        .seo-shell .hero { grid-template-columns: minmax(0, 1fr); }
+        .seo-shell .hero-sub { max-width: none; }
+      }
+      @media (max-width: 768px) {
+        .seo-shell .nav-links { display: none; }
+        .seo-shell .seo-menu { display: block; }
+      }
+      @media (max-width: 480px) {
+        .seo-shell .hero-ctas, .seo-shell .btn-primary { width: 100%; }
+        .seo-shell .btn-primary { justify-content: center; }
+      }
     </style>
 
     <script type="application/ld+json">
@@ -99,51 +154,64 @@
     <meta name="twitter:image" content="https://lukapp.app/lukapp-og.png" />
   </head>
   <body class="fin-page">
-    <!-- Este contenido permite entender la propuesta de valor aun si el
-         rastreador no ejecuta JavaScript. React lo reemplaza al iniciar con la
-         experiencia interactiva, que contiene el mismo contenido y sus CTA. -->
+    <!-- El primer fotograma comparte el contenido y la geometría del hero real.
+         Sigue siendo útil sin JavaScript, pero ya no parece una página distinta
+         mientras React activa la experiencia completa. -->
     <div id="root">
-      <main id="contenido-principal" class="contenido-seo-inicial">
+      <div class="landing-finanzas seo-shell">
+        <a class="saltar-contenido" href="#contenido-principal">Saltar al contenido principal</a>
         <header>
-          <p class="marca-seo-inicial">LukApp</p>
-          <nav aria-label="Navegación principal">
-            <a href="#funciones">Funciones</a>
-            <a href="#cuatro-por-mil">4×1000</a>
-            <a href="#privacidad">Privacidad</a>
-            <a href="/entrar">Crear cuenta</a>
+          <nav class="nav-bar" aria-label="Navegación principal">
+            <div class="nav-content">
+              <a class="logo-enlace" href="/" aria-label="Inicio de LukApp">
+                <img class="logo" src="/brand/lukapp-wordmark.png" alt="LukApp" width="493" height="233" />
+              </a>
+              <div class="nav-links">
+                <a href="#demo">Pruébalo</a>
+                <a href="#apple-pay">Apple Pay</a>
+                <a href="#funciones">Funciones</a>
+                <a href="#cuatro-por-mil">4×1000</a>
+                <a href="#privacidad">Privacidad</a>
+                <a href="#registro">Crear cuenta</a>
+                <a class="link-btn" href="/entrar">Acceder</a>
+              </div>
+              <span class="seo-menu" aria-hidden="true"><span></span><span></span><span></span></span>
+            </div>
           </nav>
         </header>
-        <section aria-labelledby="titulo-inicial">
-          <h1 id="titulo-inicial">App para controlar gastos y finanzas en Colombia</h1>
-          <p>
-            LukApp te ayuda a registrar gastos por voz, importar extractos bancarios,
-            organizar presupuestos, crear metas de ahorro y entender el 4×1000.
-          </p>
-          <a href="/entrar">Comenzar gratis con LukApp</a>
-        </section>
-        <section id="funciones" aria-labelledby="funciones-inicial">
-          <h2 id="funciones-inicial">Una app para manejar tu dinero sin perder tiempo</h2>
-          <p>
-            Anota un gasto hablando o escribiendo, toma una foto al recibo o importa el
-            PDF de tu banco colombiano. LukApp clasifica los movimientos y te muestra
-            presupuestos, tendencias, deudas, ahorro y un asesor con IA.
-          </p>
-        </section>
-        <section id="cuatro-por-mil" aria-labelledby="gmf-inicial">
-          <h2 id="gmf-inicial">Control del 4×1000 para Colombia</h2>
-          <p>
-            Lleva el cupo exento del GMF entre tus cuentas y estima cuánto cuesta mover
-            tu plata antes de hacerlo.
-          </p>
-        </section>
-        <section id="privacidad" aria-labelledby="privacidad-inicial">
-          <h2 id="privacidad-inicial">Tus datos y tus finanzas son tuyos</h2>
-          <p>
-            Puedes empezar sin cuenta. Tus movimientos se guardan en tu navegador y la
-            sincronización en la nube es opcional.
-          </p>
-        </section>
-      </main>
+        <main id="contenido-principal">
+          <section class="hero" aria-labelledby="titulo-lukapp">
+            <div class="hero-text">
+              <h1 id="titulo-lukapp">
+                <span>Controla tus gastos</span>
+                <span>sin <em>perder tiempo</em>.</span>
+              </h1>
+              <p class="hero-sub">
+                Registra movimientos hablando e importa extractos PDF de bancos colombianos. La IA
+                identifica cada movimiento, comercio, categoría y detalle; LukApp no se conecta directamente a tu banco.
+              </p>
+              <div class="hero-ctas">
+                <a class="btn-primary" href="/entrar">
+                  Comenzar ahora
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </a>
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <div class="seo-phone">
+                <div class="seo-screen">
+                  <span class="seo-island"></span>
+                  <span class="seo-month">septiembre</span>
+                  <p class="seo-balance-label">Tienes en total</p>
+                  <strong class="seo-balance">$3.180.000</strong>
+                  <div class="seo-totals"><span class="seo-out">↓ $1.842.600</span><span class="seo-in">↑ $4.100.000</span></div>
+                  <div class="seo-row"></div><div class="seo-row"></div><div class="seo-row"></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

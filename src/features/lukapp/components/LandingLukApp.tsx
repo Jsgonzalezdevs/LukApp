@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { BrandWordmark } from './BrandWordmark';
 import { Hero } from './landing/Hero';
-import { DemoParser } from './landing/DemoParser';
-import { Funciones } from './landing/Funciones';
-import { Cupo4x1000 } from './landing/Cupo4x1000';
-import { FormasDeRegistrar } from './landing/FormasDeRegistrar';
-import { Privacidad } from './landing/Privacidad';
-import { BandaCifras } from './landing/BandaCifras';
-import { Registro } from './landing/Registro';
 import { MascotaLuki } from './landing/MascotaLuki';
-import { PWAInstall } from './landing/PWAInstall';
-import { SecuenciaAnimada } from './landing/SecuenciaAnimada';
-import { SeccionApplePay } from './landing/SeccionApplePay';
 import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
 import '../styles/LandingLukApp.css';
+
+/* El hero y la navegación forman el primer viewport y llegan con el paquete
+   inicial. Estas secciones viven por debajo: separarlas reduce el JS crítico
+   sin volver a mostrar un fallback distinto antes de la portada. */
+const DemoParser = lazy(() => import('./landing/DemoParser').then(({ DemoParser }) => ({ default: DemoParser })));
+const Funciones = lazy(() => import('./landing/Funciones').then(({ Funciones }) => ({ default: Funciones })));
+const Cupo4x1000 = lazy(() => import('./landing/Cupo4x1000').then(({ Cupo4x1000 }) => ({ default: Cupo4x1000 })));
+const FormasDeRegistrar = lazy(() => import('./landing/FormasDeRegistrar').then(({ FormasDeRegistrar }) => ({ default: FormasDeRegistrar })));
+const Privacidad = lazy(() => import('./landing/Privacidad').then(({ Privacidad }) => ({ default: Privacidad })));
+const BandaCifras = lazy(() => import('./landing/BandaCifras').then(({ BandaCifras }) => ({ default: BandaCifras })));
+const Registro = lazy(() => import('./landing/Registro').then(({ Registro }) => ({ default: Registro })));
+const PWAInstall = lazy(() => import('./landing/PWAInstall').then(({ PWAInstall }) => ({ default: PWAInstall })));
+const SecuenciaAnimada = lazy(() => import('./landing/SecuenciaAnimada').then(({ SecuenciaAnimada }) => ({ default: SecuenciaAnimada })));
+const SeccionApplePay = lazy(() => import('./landing/SeccionApplePay').then(({ SeccionApplePay }) => ({ default: SeccionApplePay })));
 
 /* La cinta que corre bajo el hero. Son frases que la app de verdad entiende
    —las mismas que el visitante puede pegar en el demo de abajo— así que además
@@ -146,38 +150,40 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       <main id="contenido-principal">
         <Hero onGetStarted={handleGetStarted} />
         <Ticker frases={FRASES_TICKER} />
-        <SecuenciaAnimada />
-        <DemoParser />
-        <SeccionApplePay />
-        <BandaCifras />
-        <Funciones />
-        <Cupo4x1000 />
-        <FormasDeRegistrar />
-        <Privacidad />
+        <Suspense fallback={null}>
+          <SecuenciaAnimada />
+          <DemoParser />
+          <SeccionApplePay />
+          <BandaCifras />
+          <Funciones />
+          <Cupo4x1000 />
+          <FormasDeRegistrar />
+          <Privacidad />
 
-        {mostrarPWA && (
-          <PWAInstall
-            onClose={handlePWAClose}
-            onSkip={handlePWASkip}
-            onProceed={handlePWAProceed}
-          />
-        )}
+          {mostrarPWA && (
+            <PWAInstall
+              onClose={handlePWAClose}
+              onSkip={handlePWASkip}
+              onProceed={handlePWAProceed}
+            />
+          )}
 
-        {sesion ? (
-          <Registro sesion={sesion} onIrAEntrar={onLogin} />
-        ) : (
-          <section className="final-cta">
-            <Reveal>
-              <MascotaLuki />
-              <h2>¿Listo?</h2>
-              <p>Toma el control de tu dinero desde hoy.</p>
-              <button className="btn-primary-lg" onClick={handleGetStarted}>
-                Comenzar ahora
-                <ArrowRight size={18} strokeWidth={2} aria-hidden />
-              </button>
-            </Reveal>
-          </section>
-        )}
+          {sesion ? (
+            <Registro sesion={sesion} onIrAEntrar={onLogin} />
+          ) : (
+            <section className="final-cta">
+              <Reveal>
+                <MascotaLuki />
+                <h2>¿Listo?</h2>
+                <p>Toma el control de tu dinero desde hoy.</p>
+                <button className="btn-primary-lg" onClick={handleGetStarted}>
+                  Comenzar ahora
+                  <ArrowRight size={18} strokeWidth={2} aria-hidden />
+                </button>
+              </Reveal>
+            </section>
+          )}
+        </Suspense>
       </main>
 
       <footer className="footer">

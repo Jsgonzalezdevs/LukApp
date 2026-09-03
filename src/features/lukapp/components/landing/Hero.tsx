@@ -85,9 +85,8 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
 
         <Parallax distancia={-48}>
           <motion.div
-            initial={quieto ? false : { opacity: 0, y: 40 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
             <MockupTelefono />
           </motion.div>
