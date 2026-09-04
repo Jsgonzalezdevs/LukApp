@@ -23,6 +23,16 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.36',
+    fecha: '2026-09-04',
+    texto: 'Corregimos el favicon para mostrar siempre el isotipo oficial de LukApp.',
+  },
+  {
+    version: '2.1.35',
+    fecha: '2026-09-04',
+    texto: 'Corregimos el estilo de las páginas del blog para que el contenido sea legible, rápido y cómodo desde el celular.',
+  },
+  {
     version: '2.1.34',
     fecha: '2026-09-03',
     texto: 'Creamos un blog público con guías específicas para organizar tus finanzas personales en Colombia.',

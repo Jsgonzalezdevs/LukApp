@@ -55,6 +55,7 @@ const MetaSeo: React.FC<{ articulo?: ArticuloSeo }> = ({ articulo }) => {
     const titulo = articulo ? `${articulo.titulo} | LukApp` : 'Blog de finanzas personales en Colombia | LukApp';
     const descripcion = articulo?.descripcion ?? 'Consejos prácticos para controlar gastos, ahorrar y organizar tus finanzas personales en Colombia.';
     document.title = titulo;
+    document.body.classList.add('pagina-seo');
     const meta = document.querySelector('meta[name="description"]');
     meta?.setAttribute('content', descripcion);
     const canonical = document.querySelector('link[rel="canonical"]');
@@ -63,7 +64,10 @@ const MetaSeo: React.FC<{ articulo?: ArticuloSeo }> = ({ articulo }) => {
     script.type = 'application/ld+json';
     script.textContent = JSON.stringify(articulo ? { '@context': 'https://schema.org', '@type': 'Article', headline: articulo.titulo, description: articulo.descripcion, author: { '@type': 'Organization', name: 'LukApp' }, publisher: { '@type': 'Organization', name: 'LukApp' }, mainEntityOfPage: `${urlBase}${window.location.pathname}`, inLanguage: 'es-CO', dateModified: '2026-09-03', speakable: { '@type': 'SpeakableSpecification', cssSelector: ['h1', '.seo-resumen'] } } : { '@context': 'https://schema.org', '@type': 'CollectionPage', name: titulo, description: descripcion, url: `${urlBase}${rutaBlog}` });
     document.head.appendChild(script);
-    return () => script.remove();
+    return () => {
+      script.remove();
+      document.body.classList.remove('pagina-seo');
+    };
   }, [articulo]);
   return null;
 };

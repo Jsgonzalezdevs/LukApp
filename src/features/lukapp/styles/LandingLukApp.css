@@ -61,7 +61,7 @@
 .seo-introduccion article a { color: var(--lp-accent); font-weight: 700; }
 .landing-finanzas main > .seccion-diferida { content-visibility: auto; contain-intrinsic-size: 560px; }
 
-.seo-pagina { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 5rem; color: #1c1917; font-family: var(--lp-font, system-ui, sans-serif); line-height: 1.7; }
+.seo-pagina { max-width: 900px; min-height: 100dvh; margin: 0 auto; padding: 2rem 1.25rem 5rem; color: #1c1917; font-family: var(--lp-font, system-ui, sans-serif); line-height: 1.7; }
 .seo-pagina nav { margin-bottom: 3rem; color: #6b6560; font-size: .9rem; }
 .seo-pagina a { color: #6520c7; font-weight: 700; }
 .seo-pagina h1 { max-width: 800px; margin: 0 0 1rem; font-size: clamp(2rem, 5vw, 4rem); line-height: 1.1; letter-spacing: -.03em; }
@@ -74,6 +74,19 @@
 .seo-lista article { padding: 1.25rem; border: 1px solid #ede9e3; border-radius: 1rem; background: #fbf9f6; }
 .seo-lista h2 { margin-top: 0; }
 .seo-cta { display: inline-block; margin-top: 2.5rem; border-radius: 999px; padding: .8rem 1.25rem; background: #772aea; color: white !important; }
+@media (max-width: 640px) {
+  .seo-pagina { padding: 1.25rem 1rem 3rem; }
+  .seo-pagina nav { margin-bottom: 2rem; }
+  .seo-pagina h1 { font-size: clamp(2rem, 11vw, 3rem); }
+  .seo-resumen { font-size: 1.05rem; }
+}
+@media (prefers-color-scheme: dark) {
+  body.pagina-seo { background: #171413; color: #f5f3f0; }
+  .seo-pagina { color: #f5f3f0; }
+  .seo-pagina p { color: #b9b1aa; }
+  .seo-pagina nav { color: #b9b1aa; }
+  .seo-lista article { border-color: #35302c; background: #221f1d; }
+}
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) .landing-finanzas {

@@ -39,6 +39,11 @@ body {
   padding: 0;
 }
 
+body.pagina-seo {
+  background: #f7f5f1;
+  color: #1c1917;
+}
+
 /* Custom styles for animations and details */
 .text-gradient {
   background: linear-gradient(135deg, #b6f246 0%, #735ac2 50%, #772aea 100%);
