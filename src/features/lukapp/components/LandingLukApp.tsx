@@ -74,6 +74,7 @@ interface LandingProps {
 }
 
 const ENLACES = [
+  { href: '#finanzas-personales', texto: 'Aprende', titulo: 'Aprender sobre finanzas personales' },
   { href: '#demo', texto: 'Pruébalo', titulo: 'Probar la app de finanzas' },
   { href: '#apple-pay', texto: 'Apple Pay', titulo: 'Configurar Apple Pay con LukApp' },
   { href: '#funciones', texto: 'Funciones', titulo: 'Conocer las funciones de LukApp' },

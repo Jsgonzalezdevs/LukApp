@@ -56,6 +56,9 @@
 .seo-introduccion { max-width: 900px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
 .seo-introduccion h2 { margin: 2rem 0 .5rem; font-size: 1.5rem; }
 .seo-introduccion p { color: var(--lp-ink-soft); }
+.seo-introduccion article { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--lp-line); border-radius: 1rem; background: var(--lp-surface); }
+.seo-introduccion article h3 { margin: 0 0 .4rem; font-size: 1.1rem; }
+.seo-introduccion article a { color: var(--lp-accent); font-weight: 700; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) .landing-finanzas {
