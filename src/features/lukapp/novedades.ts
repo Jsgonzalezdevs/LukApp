@@ -23,6 +23,26 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.31',
+    fecha: '2026-09-03',
+    texto: 'Ampliamos la portada con contenido útil sobre finanzas personales, funciones reales de LukApp y preguntas frecuentes.',
+  },
+  {
+    version: '2.1.30',
+    fecha: '2026-09-03',
+    texto: 'La portada ahora incluye preguntas frecuentes y contenido claro para que los buscadores entiendan mejor LukApp.',
+  },
+  {
+    version: '2.1.29',
+    fecha: '2026-09-03',
+    texto: 'La portada ahora comunica mejor sus funciones de finanzas personales para los buscadores y las personas que la visitan.',
+  },
+  {
+    version: '2.1.28',
+    fecha: '2026-09-03',
+    texto: 'Mejoramos la información SEO de la portada y retiramos opciones de acceso que no estaban disponibles.',
+  },
+  {
     version: '2.1.27',
     fecha: '2026-09-03',
     texto: 'El acceso ahora usa correo y contraseña para evitar ofrecer proveedores de inicio de sesión que no estén habilitados.',

@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-react';
 import type { Sesion } from '../../data/useSesion';
-import { GoogleMarca } from '../GoogleMarca';
 import { Reveal } from './primitivas';
 import { MascotaLuki } from './MascotaLuki';
 
@@ -27,7 +26,6 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
   const [verPassword, setVerPassword] = useState(false);
   const [enviado, setEnviado] = useState(false);
   const [apodo, setApodo] = useState<EstadoApodo>('vacio');
-  const [entrandoConGoogle, setEntrandoConGoogle] = useState(false);
 
   /* La comprobación del apodo va con retardo: sin él se dispara una consulta
      por cada tecla, y la respuesta de la penúltima puede llegar después de la
@@ -66,15 +64,6 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
     setEnviado(true);
   };
 
-  const iniciarConGoogle = async () => {
-    setEntrandoConGoogle(true);
-    try {
-      await sesion.entrarConGoogle();
-    } finally {
-      setEntrandoConGoogle(false);
-    }
-  };
-
   /* Supabase responde igual a un alta correcta que a una con el correo ya
      registrado, así que "revisa tu correo" solo se enseña si no hubo error. */
   const exito = enviado && !sesion.error && !sesion.ocupado;
@@ -106,33 +95,12 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
         <span className="seccion-etiqueta">Crea tu cuenta</span>
         <h2>Ponle memoria a tu plata</h2>
         <p className="seccion-sub">
-          Entra con Google en un toque, o usa tu correo. Sin tarjeta, llamadas
-          ni aprobaciones.
+          Crea tu cuenta con tu correo. Sin tarjeta, llamadas ni aprobaciones.
         </p>
       </Reveal>
 
       <Reveal className="registro-caja" delay={0.1}>
         <form onSubmit={enviar} noValidate>
-          <button
-            type="button"
-            className="registro-google"
-            onClick={iniciarConGoogle}
-            disabled={sesion.ocupado}
-          >
-            {entrandoConGoogle ? (
-              <Loader2 size={20} className="registro-girando" aria-hidden />
-            ) : (
-              <GoogleMarca className="registro-google-marca" />
-            )}
-            {entrandoConGoogle ? 'Abriendo Google…' : 'Continuar con Google'}
-          </button>
-
-          <div className="registro-separador" aria-hidden>
-            <span />
-            <small>o crea tu cuenta con correo</small>
-            <span />
-          </div>
-
           <label className="registro-campo">
             <span className="registro-etiqueta">Tu correo</span>
             <input

@@ -74,11 +74,11 @@ interface LandingProps {
 }
 
 const ENLACES = [
-  { href: '#demo', texto: 'Pruébalo' },
-  { href: '#apple-pay', texto: 'Apple Pay' },
-  { href: '#funciones', texto: 'Funciones' },
-  { href: '#cuatro-por-mil', texto: '4×1000' },
-  { href: '#registro', texto: 'Crear cuenta' }
+  { href: '#demo', texto: 'Pruébalo', titulo: 'Probar la app de finanzas' },
+  { href: '#apple-pay', texto: 'Apple Pay', titulo: 'Configurar Apple Pay con LukApp' },
+  { href: '#funciones', texto: 'Funciones', titulo: 'Conocer las funciones de LukApp' },
+  { href: '#cuatro-por-mil', texto: '4×1000', titulo: 'Calcular el 4x1000' },
+  { href: '#registro', texto: 'Crear cuenta', titulo: 'Crear una cuenta en LukApp' }
 ];
 
 export const LandingLukApp: React.FC<LandingProps> = ({
@@ -143,8 +143,8 @@ export const LandingLukApp: React.FC<LandingProps> = ({
             </a>
 
             <div className={`nav-links ${menuOpen ? 'open' : ''}`}>
-              {ENLACES.map(({ href, texto }) => (
-                <a href={href} key={href} onClick={() => setMenuOpen(false)}>
+              {ENLACES.map(({ href, texto, titulo }) => (
+                <a href={href} key={href} title={titulo} onClick={() => setMenuOpen(false)}>
                   {texto}
                 </a>
               ))}

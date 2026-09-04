@@ -53,6 +53,10 @@
   --lp-font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
 }
 
+.seo-introduccion { max-width: 900px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+.seo-introduccion h2 { margin: 2rem 0 .5rem; font-size: 1.5rem; }
+.seo-introduccion p { color: var(--lp-ink-soft); }
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) .landing-finanzas {
     --lp-bg: #1a1817;

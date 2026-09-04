@@ -35,7 +35,7 @@ export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
     <section className="hero" aria-labelledby="titulo-lukapp">
       <div className="hero-text">
         <h1 id="titulo-lukapp">
-          <span>Controla tus gastos</span>{' '}
+          <span>App de finanzas para controlar tus gastos</span>{' '}
           <span>
             sin <em>perder tiempo</em>.
           </span>

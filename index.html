@@ -59,6 +59,9 @@
       .seo-shell .seo-out { color: #d4025a; }
       .seo-shell .seo-in { color: var(--seo-in); }
       .seo-shell .seo-row { height: 4rem; margin: .65rem 0; border-radius: 1rem; background: var(--seo-surface); }
+      .seo-shell .seo-introduccion { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 5rem; }
+      .seo-shell .seo-introduccion h2 { margin: 2rem 0 .5rem; color: var(--seo-ink); font-size: 1.5rem; line-height: 1.2; }
+      .seo-shell .seo-introduccion p { margin: 0; color: var(--seo-soft); }
       @media (prefers-color-scheme: dark) {
         .seo-shell { --seo-bg: #1a1817; --seo-surface: #221f1e; --seo-line: #35322f; --seo-ink: #f5f3f0; --seo-soft: #a8a29e; --seo-accent: #a855f7; --seo-in: #4ade80; }
         .seo-shell .nav-links .link-btn, .seo-shell .btn-primary { color: #1a1817; }
@@ -110,6 +113,16 @@
             "isAccessibleForFree": true,
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "COP" },
             "publisher": { "@id": "https://lukapp.app/#organization" }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://lukapp.app/#faq",
+            "mainEntity": [
+              { "@type": "Question", "name": "¿Qué es LukApp?", "acceptedAnswer": { "@type": "Answer", "text": "LukApp es una app de finanzas personales para Colombia que ayuda a registrar gastos, organizar presupuestos y revisar ingresos y egresos." } },
+              { "@type": "Question", "name": "¿Puedo registrar gastos por voz?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Puedes describir una compra o un ingreso con tu voz y LukApp identifica el monto, la categoría y otros detalles del movimiento." } },
+              { "@type": "Question", "name": "¿LukApp se conecta a mi banco?", "acceptedAnswer": { "@type": "Answer", "text": "No. LukApp no se conecta directamente a tu banco. Puedes registrar movimientos e importar extractos PDF de bancos colombianos." } },
+              { "@type": "Question", "name": "¿LukApp es gratis?", "acceptedAnswer": { "@type": "Answer", "text": "Puedes crear una cuenta gratis y comenzar a organizar tus finanzas personales." } }
+            ]
           }
         ]
       }
@@ -124,6 +137,7 @@
     <meta name="apple-mobile-web-app-title" content="LukApp" />
     <link rel="apple-touch-icon" sizes="180x180" href="/lukapp-icon-180.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-isotipo.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="192x192" href="/lukapp-icon-192.png" />
     <link rel="manifest" href="/ecosistema.webmanifest" />
 
@@ -183,7 +197,7 @@
           <section class="hero" aria-labelledby="titulo-lukapp">
             <div class="hero-text">
               <h1 id="titulo-lukapp">
-                <span>Controla tus gastos</span>
+                <span>App de finanzas para controlar tus gastos</span>
                 <span>sin <em>perder tiempo</em>.</span>
               </h1>
               <p class="hero-sub">
@@ -209,6 +223,27 @@
                 </div>
               </div>
             </div>
+          </section>
+          <section class="seo-introduccion" aria-labelledby="seo-finanzas">
+            <h2 id="seo-finanzas">Finanzas personales claras para Colombia</h2>
+            <p>LukApp es una app para registrar gastos, organizar presupuestos y entender mejor tus finanzas personales. Puedes anotar movimientos por voz y consultar tus ingresos y egresos desde cualquier dispositivo.</p>
+            <h2>Registra gastos por voz e importa extractos bancarios</h2>
+            <p>Escribe o habla de tus compras, pagos y transferencias. LukApp identifica el valor, la categoría y el comercio para que lleves el control de tus gastos sin perder tiempo. También puedes importar extractos PDF de bancos colombianos.</p>
+            <h2>Presupuestos, ahorro y 4x1000 en un solo lugar</h2>
+            <p>Define límites de gasto, revisa cuánto puedes ahorrar y calcula el 4x1000 con información útil para tomar mejores decisiones. Tus datos se guardan en tu cuenta y el acceso es gratuito.</p>
+            <h2>Una app para tus finanzas personales</h2>
+            <p>Consulta el saldo de tus cuentas, separa tu dinero en cajitas, crea metas de ahorro y revisa tus movimientos por categoría. LukApp está pensada para personas en Colombia que quieren entender su plata con información sencilla.</p>
+            <h2>Organiza ingresos, egresos y presupuestos</h2>
+            <p>Registra ingresos y gastos, asigna categorías y compara lo que planeaste con lo que realmente gastaste. Así puedes detectar hábitos, controlar tus compras y tomar decisiones antes de terminar el mes.</p>
+            <h2>Tu información financiera bajo tu control</h2>
+            <p>LukApp no se conecta directamente a tu banco. Tú decides qué movimientos registrar o qué extracto PDF importar. Para usar la aplicación debes crear una cuenta o iniciar sesión, de modo que tus datos puedan acompañarte entre dispositivos.</p>
+            <h2>Preguntas frecuentes sobre LukApp</h2>
+            <h3>¿LukApp funciona en Colombia?</h3>
+            <p>Sí. La aplicación usa pesos colombianos, incluye herramientas para el 4x1000 y permite trabajar con extractos PDF de bancos colombianos.</p>
+            <h3>¿Necesito una cuenta?</h3>
+            <p>Sí. Debes crear una cuenta o iniciar sesión para usar la aplicación. Esto permite proteger y sincronizar tu información personal.</p>
+            <h3>¿Puedo usar LukApp desde el celular?</h3>
+            <p>Sí. LukApp funciona desde el navegador del celular y puede instalarse como aplicación web progresiva.</p>
           </section>
         </main>
       </div>
