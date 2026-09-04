@@ -59,6 +59,7 @@
 .seo-introduccion article { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--lp-line); border-radius: 1rem; background: var(--lp-surface); }
 .seo-introduccion article h3 { margin: 0 0 .4rem; font-size: 1.1rem; }
 .seo-introduccion article a { color: var(--lp-accent); font-weight: 700; }
+.landing-finanzas main > .seccion-diferida { content-visibility: auto; contain-intrinsic-size: 560px; }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-tema='claro']) .landing-finanzas {
@@ -155,6 +156,11 @@
     radial-gradient(24rem 30rem at 72% 82%, rgba(245, 158, 11, 0.055), transparent 72%);
   filter: blur(16px);
   animation: lp-lava 24s ease-in-out infinite alternate;
+}
+
+@media (max-width: 768px) {
+  .landing-finanzas { background-attachment: scroll; }
+  .landing-finanzas::before { position: absolute; animation: none; filter: blur(10px); }
 }
 
 @keyframes lp-lava {

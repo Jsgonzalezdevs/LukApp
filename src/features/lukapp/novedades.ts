@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.33',
+    fecha: '2026-09-03',
+    texto: 'Optimizamos la portada para reducir el trabajo del celular y acelerar la primera interacción.',
+  },
+  {
     version: '2.1.32',
     fecha: '2026-09-03',
     texto: 'Añadimos contenido editorial y enlaces internos para responder mejor a búsquedas sobre presupuestos, ahorro, gastos y 4x1000.',
