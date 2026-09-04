@@ -62,7 +62,10 @@ body {
 }
 
 html {
-  scroll-behavior: smooth;
+  /* El scroll suave global anima restauraciones y cambios de vista durante el
+     arranque; en móvil se percibe como si la página entrara desplazada. Las
+     anclas que lo necesitan lo solicitan de forma explícita. */
+  scroll-behavior: auto;
 }
 
 /* Selection styling */

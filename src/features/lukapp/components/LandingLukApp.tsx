@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { BrandWordmark } from './BrandWordmark';
 import { Hero } from './landing/Hero';
@@ -20,6 +20,31 @@ const Registro = lazy(() => import('./landing/Registro').then(({ Registro }) => 
 const PWAInstall = lazy(() => import('./landing/PWAInstall').then(({ PWAInstall }) => ({ default: PWAInstall })));
 const SecuenciaAnimada = lazy(() => import('./landing/SecuenciaAnimada').then(({ SecuenciaAnimada }) => ({ default: SecuenciaAnimada })));
 const SeccionApplePay = lazy(() => import('./landing/SeccionApplePay').then(({ SeccionApplePay }) => ({ default: SeccionApplePay })));
+
+/** Descarga cada sección cuando está cerca de ser visible, no al montar la
+ * portada. Así el primer viewport no compite con el resto de la landing por
+ * CPU, parseo y memoria, algo especialmente caro en teléfonos. */
+const SeccionDiferida: React.FC<{ children: React.ReactNode; altura?: string }> = ({ children, altura = 'min(72vh, 560px)' }) => {
+  const [activa, setActiva] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activa || !ref.current) return;
+    const observador = new IntersectionObserver(
+      ([entrada]) => {
+        if (entrada.isIntersecting) {
+          setActiva(true);
+          observador.disconnect();
+        }
+      },
+      { rootMargin: '800px 0px' },
+    );
+    observador.observe(ref.current);
+    return () => observador.disconnect();
+  }, [activa]);
+
+  return <div ref={ref} style={!activa ? { minHeight: altura } : undefined}>{activa && <Suspense fallback={null}>{children}</Suspense>}</div>;
+};
 
 /* La cinta que corre bajo el hero. Son frases que la app de verdad entiende
    —las mismas que el visitante puede pegar en el demo de abajo— así que además
@@ -148,13 +173,25 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       <main id="contenido-principal">
         <Hero onGetStarted={handleGetStarted} />
         <Ticker frases={FRASES_TICKER} />
-        <Suspense fallback={null}>
+        <SeccionDiferida>
           <SecuenciaAnimada />
+        </SeccionDiferida>
+        <SeccionDiferida>
           <DemoParser />
+        </SeccionDiferida>
+        <SeccionDiferida>
           <SeccionApplePay />
+        </SeccionDiferida>
+        <SeccionDiferida altura="220px">
           <BandaCifras />
+        </SeccionDiferida>
+        <SeccionDiferida>
           <Funciones />
+        </SeccionDiferida>
+        <SeccionDiferida>
           <Cupo4x1000 />
+        </SeccionDiferida>
+        <SeccionDiferida>
           <FormasDeRegistrar />
           {mostrarPWA && (
             <PWAInstall
@@ -179,7 +216,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
               </Reveal>
             </section>
           )}
-        </Suspense>
+        </SeccionDiferida>
       </main>
 
       <footer className="footer">

@@ -23,6 +23,31 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.27',
+    fecha: '2026-09-03',
+    texto: 'El acceso ahora usa correo y contraseña para evitar ofrecer proveedores de inicio de sesión que no estén habilitados.',
+  },
+  {
+    version: '2.1.26',
+    fecha: '2026-09-03',
+    texto: 'Al crear una cuenta, tus datos anteriores guardados en este dispositivo se conservan y pasan a tu cuenta automáticamente.',
+  },
+  {
+    version: '2.1.25',
+    fecha: '2026-09-03',
+    texto: 'Ahora es obligatorio iniciar sesión o crear una cuenta para entrar a la aplicación y proteger tus datos.',
+  },
+  {
+    version: '2.1.24',
+    fecha: '2026-09-03',
+    texto: 'Al cambiar de sección, las vistas principales ahora empiezan correctamente desde arriba sin animar el desplazamiento.',
+  },
+  {
+    version: '2.1.23',
+    fecha: '2026-09-03',
+    texto: 'La carga inicial es más rápida en móviles y las páginas ya no entran con un desplazamiento inesperado.',
+  },
+  {
     version: '2.1.22',
     fecha: '2026-09-03',
     texto: 'Las personas agregadas manualmente ahora aparecen de inmediato en la lista, incluso antes de tener movimientos.',

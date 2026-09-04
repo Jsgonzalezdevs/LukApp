@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { obtenerSupabase, supabaseConfigurado } from './supabase';
+import { obtenerSupabase } from './supabase';
 import { sincronizarDesdeSupabase } from './usePreferencias';
 
 export type EstadoSesion =
-  /** No backend configured. The app runs on local storage and needs no login. */
+  /** Se conserva el estado para compatibilidad, pero ya no se emite: la cuenta es obligatoria. */
   | { modo: 'local' }
   | { modo: 'cargando' }
   | { modo: 'anonimo' }
@@ -33,14 +33,15 @@ const aEstado = (sesion: Session | null): EstadoSesion =>
     : { modo: 'anonimo' };
 
 /**
- * Wraps Supabase Auth, degrading to a login-free local mode when no project is
- * configured. That fallback is what lets the finance tool keep working before
- * (and without) a backend, rather than presenting a login wall it cannot serve.
+ * La autenticación es obligatoria para evitar que los datos queden ligados a un
+ * dispositivo o se mezclen entre personas cuando no hay una sesión válida.
  */
 export const useSesion = (): Sesion => {
   const cliente = obtenerSupabase();
   const [estado, setEstado] = useState<EstadoSesion>(
-    supabaseConfigurado() ? { modo: 'cargando' } : { modo: 'local' },
+    /* Sin Supabase no existe una cuenta que pueda autenticarse; se muestra el
+       mismo muro de acceso para no abrir accidentalmente el modo local. */
+    { modo: 'cargando' },
   );
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -52,7 +53,10 @@ export const useSesion = (): Sesion => {
   });
 
   useEffect(() => {
-    if (!cliente) return;
+    if (!cliente) {
+      setEstado({ modo: 'anonimo' });
+      return;
+    }
 
     let cancelado = false;
     cliente.auth.getSession().then(({ data }) => {

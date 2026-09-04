@@ -21,7 +21,7 @@ import { useSesion } from './data/useSesion';
 import { useTema } from './data/useTema';
 import { obtenerSupabase } from './data/supabase';
 import { RepositorioSupabase } from './data/repositorioSupabase';
-import { RepositorioIndexedDB, soportaIndexedDB } from './data/indexeddb';
+import { migrarLibroLocal, RepositorioIndexedDB, soportaIndexedDB } from './data/indexeddb';
 import { RepositorioConCola } from './data/repositorioConCola';
 import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
@@ -160,9 +160,9 @@ type Capa = 'buscar' | null;
 /**
  * Chooses how the app is reached before it renders anything.
  *
- * Three outcomes, and the local one matters most: with no Supabase project
- * configured the tool must still work exactly as it does today, on device
- * storage and with no login wall it has no way to satisfy.
+ * La aplicación solo se monta con una sesión autenticada. El modo local se
+ * conserva en los tipos y repositorios por compatibilidad, pero no es una vía
+ * de entrada para usuarios.
  */
 export interface LukAppMainProps {
   onBack?: () => void;
@@ -181,21 +181,18 @@ export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
     );
   }
 
-  if (sesion.estado.modo === 'anonimo') {
+  if (sesion.estado.modo === 'anonimo' || sesion.estado.modo === 'local') {
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
   }
 
-  const cuenta =
-    sesion.estado.modo === 'autenticado'
-      ? { email: sesion.estado.email, onSalir: () => void sesion.salir() }
-      : undefined;
+  const cuenta = { email: sesion.estado.email, onSalir: () => void sesion.salir() };
 
   return (
     <LukAppPanel
       // Remounts on account change, so one user's data can never be left on
       // screen under another's session.
-      key={sesion.estado.modo === 'autenticado' ? sesion.estado.userId : 'local'}
-      userId={sesion.estado.modo === 'autenticado' ? sesion.estado.userId : null}
+      key={sesion.estado.userId}
+      userId={sesion.estado.userId}
       cuenta={cuenta}
       tema={tema}
       onCambiarTema={setTema}
@@ -223,6 +220,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   onBack,
   esAdmin,
 }) => {
+  const [migracionLista, setMigracionLista] = useState(false);
   const repositorio = useMemo(() => {
     if (!userId) return undefined;
     const cliente = obtenerSupabase();
@@ -246,7 +244,18 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     return new RepositorioConCola(local, remoto, cola);
   }, [userId]);
 
-  const almacen = useAlmacen(repositorio);
+  useEffect(() => {
+    let cancelado = false;
+    if (!userId || !repositorio) return undefined;
+    void migrarLibroLocal(repositorio)
+      .catch((error) => console.error('No se pudieron migrar los datos locales:', error))
+      .finally(() => {
+        if (!cancelado) setMigracionLista(true);
+      });
+    return () => { cancelado = true; };
+  }, [repositorio, userId]);
+
+  const almacen = useAlmacen(migracionLista ? repositorio : undefined);
 
   // Vuelve a leer cada vez que regresas a la app. Sin esto, la app instalada en
   // la pantalla de inicio se queda con la foto del momento en que se abrió, y
@@ -316,7 +325,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   // están arriba del todo.
   const cerrarCaptura = useCallback(() => {
     setPending(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
   const today = bogotaDate();

@@ -64,13 +64,11 @@ afterEach(() => {
 });
 
 describe('useSesion — sin backend', () => {
-  it('corre en local, sin muro de login', async () => {
-    // El modo local es lo que deja usar la app antes de que exista un proyecto,
-    // en vez de mostrar un login que nadie puede atender.
+  it('muestra el muro de login si no hay backend configurado', async () => {
     configurado = false;
     const { result } = renderHook(() => useSesion());
 
-    expect(result.current.estado.modo).toBe('local');
+    expect(result.current.estado.modo).toBe('anonimo');
   });
 
   it('no intenta autenticar contra un cliente que no existe', async () => {

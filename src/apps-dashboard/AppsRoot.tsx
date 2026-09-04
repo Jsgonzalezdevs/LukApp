@@ -221,6 +221,10 @@ export const AppsRoot: React.FC = () => {
       window.history.pushState(null, '', path);
     }
     document.title = titleFor(activeApp);
+    // Cada vista principal empieza arriba. El navegador puede conservar el
+    // offset anterior al cambiar con history.pushState, y en móvil eso se
+    // ve como una carga incompleta o un salto de scroll.
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [activeApp]);
 
   // Handle browser back/forward buttons

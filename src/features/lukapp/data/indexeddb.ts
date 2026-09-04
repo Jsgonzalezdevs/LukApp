@@ -67,6 +67,29 @@ const completar = (tx: IDBTransaction): Promise<void> =>
 export const soportaIndexedDB = (): boolean =>
   typeof indexedDB !== 'undefined' && indexedDB !== null;
 
+/** Copia el libro sin cuenta al repositorio de la cuenta recién creada.
+ * No borra el origen: así una interrupción nunca deja a la persona sin datos,
+ * y los mismos ids hacen que repetir la operación sea seguro (upsert). */
+export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> => {
+  if (!soportaIndexedDB()) return false;
+  const origen = new RepositorioIndexedDB(DB_NOMBRE_LOCAL);
+  const datos = await origen.cargarTodo();
+  const tieneDatos = Object.values(datos).some((lista) => lista.length > 0);
+  if (!tieneDatos) return false;
+
+  await Promise.all([
+    destino.guardarTransacciones(datos.transacciones),
+    ...datos.cajitas.map((c) => destino.guardarCajita(c)),
+    destino.guardarCajitaMovimientos(datos.cajitaMovimientos),
+    ...datos.metas.map((m) => destino.guardarMeta(m)),
+    ...datos.categorias.map((c) => destino.guardarCategoria(c)),
+    ...datos.contactos.map((c) => destino.guardarContacto(c)),
+    ...datos.presupuestos.map((p) => destino.guardarPresupuesto(p)),
+    ...datos.recurrentes.map((r) => destino.guardarRecurrente(r)),
+  ]);
+  return true;
+};
+
 /**
  * Abre la base de datos indicada, con el mismo esquema siempre.
  *
