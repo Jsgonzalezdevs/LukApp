@@ -23,6 +23,11 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '2.1.34',
+    fecha: '2026-09-03',
+    texto: 'Creamos un blog público con guías específicas para organizar tus finanzas personales en Colombia.',
+  },
+  {
     version: '2.1.33',
     fecha: '2026-09-03',
     texto: 'Optimizamos la portada para reducir el trabajo del celular y acelerar la primera interacción.',

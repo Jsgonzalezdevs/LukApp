@@ -13,7 +13,7 @@
     { "source": "/", "destination": "/index.html" },
     { "source": "/api/:path*", "destination": "/api/:path*" },
     {
-      "source": "/(app|entrar|superadmin|estadisticas|dinero|mes|asesor|ajustes|ecosistema)(/.*)?",
+      "source": "/(app|entrar|superadmin|estadisticas|dinero|mes|asesor|ajustes|ecosistema|blog)(/.*)?",
       "destination": "/index.html"
     }
   ],
