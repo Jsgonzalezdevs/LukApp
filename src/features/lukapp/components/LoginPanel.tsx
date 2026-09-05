@@ -511,13 +511,19 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                   {/* Recuérdame (solo al entrar) */}
                   {modo === 'entrar' ? (
                     <div className="flex items-center justify-between pt-0.5">
-                      <label className="flex items-center gap-2 cursor-pointer select-none text-[13px] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] transition-colors">
+                      <label className="group flex cursor-pointer select-none items-center gap-2 text-[13px] text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]">
                         <input
                           type="checkbox"
                           checked={recordarme}
                           onChange={(e) => setRecordarme(e.target.checked)}
-                          className="h-4 w-4 rounded border-[var(--fin-line)] bg-[var(--fin-bg)] text-amber-500 focus:ring-amber-500/30 accent-amber-500 cursor-pointer"
+                          className="peer sr-only"
                         />
+                        <span
+                          aria-hidden="true"
+                          className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border border-[var(--fin-line)] bg-[var(--fin-bg)] text-transparent shadow-sm transition-[background-color,border-color,color,transform] duration-150 group-hover:border-[var(--fin-accent)] peer-checked:border-[var(--fin-accent)] peer-checked:bg-[var(--fin-accent)] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fin-accent)]/40 peer-active:scale-95"
+                        >
+                          <Check className="h-3 w-3" strokeWidth={3} />
+                        </span>
                         <span>Recuérdame</span>
                       </label>
                     </div>

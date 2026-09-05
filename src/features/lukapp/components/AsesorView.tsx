@@ -43,6 +43,7 @@ interface AsesorViewProps {
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   cajitasBalances: Record<string, number>;
+  disponibleDiarioCop?: number;
   categorias: readonly CategoriaPersonal[];
   lexico: LexicoAprendido;
   promptInicial?: string | null;
@@ -90,6 +91,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   transacciones,
   cajitas,
   cajitasBalances,
+  disponibleDiarioCop,
   categorias,
   lexico,
   promptInicial,
@@ -495,6 +497,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           categorias,
           lexico,
           context,
+          disponibleDiarioCop,
         );
         setContext(newContext);
         const botMsg: Message = {

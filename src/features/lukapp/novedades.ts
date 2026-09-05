@@ -23,6 +23,36 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '3.0.0',
+    fecha: '2026-09-05',
+    texto: 'Iniciamos el motor financiero unificado: las cifras de saldos, compromisos, liquidez, metas, presupuestos y obligaciones empiezan a compartir un mismo contexto verificable.',
+  },
+  {
+    version: '2.2.1',
+    fecha: '2026-09-05',
+    texto: 'Afinamos las decisiones financieras para que el disponible diario no cuente gastos dos veces y las anomalías comparen tus compras contra tu historial real.',
+  },
+  {
+    version: '2.2.0',
+    fecha: '2026-09-05',
+    texto: 'Ahora LukApp convierte tus datos en decisiones: muestra cuánto puedes gastar hoy, simula compras y detecta gastos fuera de lo habitual.',
+  },
+  {
+    version: '2.1.39',
+    fecha: '2026-09-04',
+    texto: 'Mejoramos los controles de selección del acceso para que los botones se vean consistentes y sean fáciles de usar.',
+  },
+  {
+    version: '2.1.38',
+    fecha: '2026-09-04',
+    texto: 'Corregimos la pantalla de acceso para que cargue con todos sus estilos y variables visuales desde el primer momento.',
+  },
+  {
+    version: '2.1.37',
+    fecha: '2026-09-04',
+    texto: 'Corregimos el destello del dashboard al cambiar de página: la vista anterior ya no se mantiene durante la navegación.',
+  },
+  {
     version: '2.1.36',
     fecha: '2026-09-04',
     texto: 'Corregimos el favicon para mostrar siempre el isotipo oficial de LukApp.',

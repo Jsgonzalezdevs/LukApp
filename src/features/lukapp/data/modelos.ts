@@ -72,6 +72,11 @@ export interface Cajita {
   archivedAt: string | null;
   /** Indica si la cuenta es un depósito de bajo monto (tiene exención propia de 65 UVT para el GMF). */
   esBajoMonto?: boolean;
+  /** Configuración opcional de una tarjeta; las tarjetas antiguas no la tienen. */
+  limiteCreditoCop?: number | null;
+  diaCorte?: number | null;
+  diaPago?: number | null;
+  pagoMinimoCop?: number | null;
 }
 
 /**

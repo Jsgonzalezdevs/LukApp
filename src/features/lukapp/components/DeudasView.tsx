@@ -11,7 +11,7 @@ import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { bogotaDate, monthKey } from '../lib/localDate';
-import { pagoPendienteTarjeta } from '../lib/cuotasTarjeta';
+import { resumenTarjeta } from '../lib/tarjetas';
 import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
 
@@ -88,7 +88,7 @@ const DeudaCard: React.FC<{
     .filter((tx) => tx.cuentaId === cajita.id)
     .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
   const pagoDelMes = cajita.tipo === 'tarjeta'
-    ? pagoPendienteTarjeta(transacciones, movimientos, cajita.id, monthKey(bogotaDate()), bogotaDate())
+    ? resumenTarjeta(cajita, saldoCop, transacciones, movimientos, monthKey(bogotaDate()), bogotaDate()).pagoSiguienteCop
     : 0;
   const Icono = iconoDeCajita(cajita.icon);
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
@@ -162,6 +162,14 @@ const DeudaCard: React.FC<{
             Es la suma de tus cuotas vigentes; abónala desde una cuenta cuando la pagues.
           </p>
         </div>
+      ) : null}
+
+      {cajita.tipo === 'tarjeta' && (cajita.limiteCreditoCop !== null && cajita.limiteCreditoCop !== undefined) ? (
+        <p className="mt-2 text-[12px] text-[var(--fin-ink-faint)]">
+          Cupo disponible: {formatCop(Math.max(0, cajita.limiteCreditoCop - Math.max(0, saldoCop)))}
+          {cajita.diaCorte ? ` · corte día ${cajita.diaCorte}` : ''}
+          {cajita.diaPago ? ` · pago día ${cajita.diaPago}` : ''}
+        </p>
       ) : null}
 
       {confirmando ? (

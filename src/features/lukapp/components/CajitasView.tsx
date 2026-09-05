@@ -12,6 +12,11 @@ import { CajitaCard } from './CajitaCard';
 import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
 
+const parseDia = (texto: string): number | null => {
+  const dia = Number.parseInt(texto, 10);
+  return Number.isInteger(dia) && dia >= 1 && dia <= 31 ? dia : null;
+};
+
 interface CajitasViewProps {
   /** Attributed ledger entries, so a balance reflects what was recorded. */
   transacciones: readonly Transaction[];
@@ -30,6 +35,10 @@ interface CajitasViewProps {
     tipo: CajitaTipo;
     metaCop: number | null;
     tasaEaPct: number | null;
+    limiteCreditoCop?: number | null;
+    diaCorte?: number | null;
+    diaPago?: number | null;
+    pagoMinimoCop?: number | null;
     saldoInicialCop: number;
   }) => void;
   onFijarSaldo: (cajitaId: string, saldo: number) => void;
@@ -70,6 +79,10 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [saldoTexto, setSaldoTexto] = useState('');
   const [metaTexto, setMetaTexto] = useState('');
   const [tasaTexto, setTasaTexto] = useState('');
+  const [limiteTexto, setLimiteTexto] = useState('');
+  const [corteTexto, setCorteTexto] = useState('');
+  const [pagoTexto, setPagoTexto] = useState('');
+  const [minimoTexto, setMinimoTexto] = useState('');
 
   const propias = cajitas.filter((c) => c.tipo === tipo);
   const resumenes = resumenDeCajitas(propias, movimientos, transacciones);
@@ -91,6 +104,10 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       tipo,
       metaCop: parseAmountInput(metaTexto),
       tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+      limiteCreditoCop: esTarjeta ? parseAmountInput(limiteTexto) : null,
+      diaCorte: esTarjeta ? parseDia(corteTexto) : null,
+      diaPago: esTarjeta ? parseDia(pagoTexto) : null,
+      pagoMinimoCop: esTarjeta ? parseAmountInput(minimoTexto) : null,
       saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
     });
     setNombre('');
@@ -98,6 +115,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     setSaldoTexto('');
     setMetaTexto('');
     setTasaTexto('');
+    setLimiteTexto(''); setCorteTexto(''); setPagoTexto(''); setMinimoTexto('');
     setCreando(false);
   };
 
@@ -222,6 +240,29 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : COPY.cajitas.saldoInicialHint}
             </p>
+
+            {esTarjeta ? (
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  ['Límite de crédito', limiteTexto, setLimiteTexto, '0'],
+                  ['Pago mínimo', minimoTexto, setMinimoTexto, 'No configurado'],
+                ].map(([label, value, setter, placeholder]) => (
+                  <label key={label as string} className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+                    {label as string}
+                    <input value={value as string} onChange={(e) => (setter as (v: string) => void)(conPuntos(e.target.value))} placeholder={placeholder as string} inputMode="numeric" className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)] focus:outline-none" />
+                  </label>
+                ))}
+                {[
+                  ['Día de corte', corteTexto, setCorteTexto],
+                  ['Día de pago', pagoTexto, setPagoTexto],
+                ].map(([label, value, setter]) => (
+                  <label key={label as string} className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+                    {label as string}
+                    <input value={value as string} onChange={(e) => (setter as (v: string) => void)(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No configurado" inputMode="numeric" className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)] focus:outline-none" />
+                  </label>
+                ))}
+              </div>
+            ) : null}
 
             <fieldset className="mt-4">
               <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">

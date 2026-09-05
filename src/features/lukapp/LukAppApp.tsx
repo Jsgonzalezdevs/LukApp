@@ -91,6 +91,7 @@ import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
 import { GuiaApp } from './components/guia/GuiaApp';
+import { construirContextoFinanciero } from './lib/motorFinanciero';
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
 import './lukapp.css';
 
@@ -633,6 +634,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [cajitas, cajitaMovimientos, transacciones, mostrarAhorro],
   );
 
+  const contextoFinanciero = useMemo(
+    () => construirContextoFinanciero({ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }),
+    [almacen.datos, today, periodoAjustes.periodo],
+  );
+
   const saldoEfectivoCop = useMemo(
     () => saldoEfectivo(cajitas, cajitaMovimientos, transacciones),
     [cajitas, cajitaMovimientos, transacciones],
@@ -732,12 +738,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
  Asesor/Ajustes): el key={section} hace que AnimatePresence trate cada
  cambio de sección como un montaje/desmontaje real, con un pequeño
  slide+fade en vez del corte seco de antes. */}
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence initial={false}>
         <motion.div
           key={section}
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -12 }}
+          /* No hay animación de salida: mantener la vista anterior durante
+             esos milisegundos hacía que el dashboard destellara al navegar. */
           transition={{ duration: 0.18, ease: 'easeOut' }}
         >
         {/* ------------------------------------------------------- 1. Inicio --- */}
@@ -767,6 +774,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             novedad={novedades.hayNovedad ? NOVEDADES[0] : null}
             onCerrarNovedad={() => novedades.marcarVista()}
             onAnotar={() => setPending(movimientoEnBlanco())}
+            liquidez={contextoFinanciero.liquidez}
+            entrada={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
           />
         ) : null}
 
@@ -840,6 +849,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             transacciones={transacciones}
             cajitas={cajitas}
             cajitasBalances={cajitasBalances}
+            disponibleDiarioCop={contextoFinanciero.liquidez.disponibleDiarioCop}
             categorias={categorias}
             lexico={lexico}
             promptInicial={asesorPromptInicial}

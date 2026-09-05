@@ -244,6 +244,7 @@ export function responderAsesor(
   categorias: readonly CategoriaPersonal[],
   lexico: LexicoAprendido,
   context: AsesorContext,
+  disponibleDiarioCop?: number,
 ): AsesorResponse {
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
@@ -270,11 +271,11 @@ export function responderAsesor(
       const r1 = responderAsesor(p1, transacciones, cajitas, cajitasBalances, categorias, lexico, {
         ...context,
         _isRecursive: true,
-      });
+      }, disponibleDiarioCop);
       const r2 = responderAsesor(p2, transacciones, cajitas, cajitasBalances, categorias, lexico, {
         ...r1.newContext,
         _isRecursive: true,
-      });
+      }, disponibleDiarioCop);
 
       // Solo combinamos si ninguna de las dos cayó en el fallback final —
       // comparar las sugerencias es determinista; comparar el texto no lo
@@ -584,10 +585,10 @@ export function responderAsesor(
     const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).getDate();
     const diasRestantes = ultimoDia - hoy.getDate() + 1; // +1 to include today
 
-    const diario = Math.floor(totalCuentas / diasRestantes);
+    const diario = disponibleDiarioCop ?? Math.floor(totalCuentas / diasRestantes);
 
     return {
-      text: `Te quedan **${diasRestantes} días** para que acabe el mes y tienes **$${totalCuentas.toLocaleString('es-CO')}** en tus cuentas. \n\nSi quieres que esa plata te alcance hasta fin de mes, tu presupuesto sugerido es de **$${diario.toLocaleString('es-CO')} diarios**. ¡Intenta no pasarte de ahí!`,
+      text: `Te quedan **${diasRestantes} días** para que acabe el mes y tienes **$${totalCuentas.toLocaleString('es-CO')}** en tus cuentas. \n\nSi quieres que esa plata te alcance hasta fin de mes, tu presupuesto diario calculado por LukApp es de **$${diario.toLocaleString('es-CO')} diarios**.`,
       newContext,
     };
   }

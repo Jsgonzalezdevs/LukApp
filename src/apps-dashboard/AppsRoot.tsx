@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
+import '../features/lukapp/lukapp.css';
 import { useSesion } from '../features/lukapp/data/useSesion';
 import { useTema } from '../features/lukapp/data/useTema';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';

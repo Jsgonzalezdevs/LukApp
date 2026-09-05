@@ -22,6 +22,8 @@ import { RachaModal } from './RachaModal';
 import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';
 import { tint } from '../types';
+import { DecisionFinanciera } from './DecisionFinanciera';
+import type { ContextoFinanciero } from '../lib/motorFinanciero';
 
 interface InicioViewProps {
   etiquetaPeriodo: string;
@@ -48,6 +50,8 @@ interface InicioViewProps {
   novedad?: Novedad | null;
   onCerrarNovedad?: () => void;
   onAnotar?: () => void;
+  liquidez: ContextoFinanciero['liquidez'];
+  entrada: import('../lib/motorFinanciero').EntradaMotorFinanciero;
 }
 
 const formatMontoCompacto = (monto: number): string => {
@@ -87,6 +91,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   novedad,
   onCerrarNovedad,
   onAnotar,
+  liquidez,
+  entrada,
 }) => {
   const catalogo = useCatalogo();
   const { isDismissed, dismiss } = useDismissedInsights();
@@ -377,6 +383,13 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </button>
         </div>
       </div>
+
+      <DecisionFinanciera
+        liquidez={liquidez}
+        entrada={entrada}
+        movimientos={movimientos}
+        privacidad={modoPrivacidad}
+      />
 
       {/* ── 4. Carrusel de Gráficas de Categorías (Gráfico de Barras con Alturas Contrastadas) ─ */}
       <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">

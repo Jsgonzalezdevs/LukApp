@@ -156,8 +156,8 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                 setAgregando(false);
               }}
             >
-              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[14px] text-[var(--fin-ink)]" />
-              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[14px] text-[var(--fin-ink)]" />
+              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />
+              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />
               <button type="submit" className="rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]">Guardar persona</button>
             </form>
           ) : null}

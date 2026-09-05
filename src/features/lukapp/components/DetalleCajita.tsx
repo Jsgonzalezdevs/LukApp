@@ -8,6 +8,11 @@ import { saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
 import { RippleButton } from './RippleButton';
 
+const parseDia = (texto: string): number | null => {
+  const dia = Number.parseInt(texto, 10);
+  return Number.isInteger(dia) && dia >= 1 && dia <= 31 ? dia : null;
+};
+
 interface DetalleCajitaProps {
   cajita: Cajita;
   movimientos: readonly CajitaMovimiento[];
@@ -63,6 +68,10 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
     cajita.tasaEaPct === null ? '' : String(cajita.tasaEaPct),
   );
   const [bajoMonto, setBajoMonto] = useState(cajita.esBajoMonto ?? false);
+  const [limiteTexto, setLimiteTexto] = useState(formatAmountInput(cajita.limiteCreditoCop ?? null));
+  const [corteTexto, setCorteTexto] = useState(cajita.diaCorte ? String(cajita.diaCorte) : '');
+  const [pagoTexto, setPagoTexto] = useState(cajita.diaPago ? String(cajita.diaPago) : '');
+  const [minimoTexto, setMinimoTexto] = useState(formatAmountInput(cajita.pagoMinimoCop ?? null));
 
   const pasivo = ES_PASIVO[cajita.tipo];
 
@@ -78,6 +87,10 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       metaCop: parseAmountInput(metaTexto),
       tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
       esBajoMonto: bajoMonto,
+      limiteCreditoCop: cajita.tipo === 'tarjeta' ? parseAmountInput(limiteTexto) : null,
+      diaCorte: cajita.tipo === 'tarjeta' ? parseDia(corteTexto) : null,
+      diaPago: cajita.tipo === 'tarjeta' ? parseDia(pagoTexto) : null,
+      pagoMinimoCop: cajita.tipo === 'tarjeta' ? parseAmountInput(minimoTexto) : null,
     });
     setEditandoCuenta(false);
   };
@@ -198,6 +211,15 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
+            </div>
+          ) : null}
+
+          {cajita.tipo === 'tarjeta' ? (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Límite<input value={limiteTexto} onChange={(e) => setLimiteTexto(conPuntos(e.target.value))} placeholder="No configurado" inputMode="numeric" className={claseCampo} /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pago mínimo<input value={minimoTexto} onChange={(e) => setMinimoTexto(conPuntos(e.target.value))} placeholder="No configurado" inputMode="numeric" className={claseCampo} /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de corte<input value={corteTexto} onChange={(e) => setCorteTexto(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No configurado" inputMode="numeric" className={claseCampo} /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de pago<input value={pagoTexto} onChange={(e) => setPagoTexto(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No configurado" inputMode="numeric" className={claseCampo} /></label>
             </div>
           ) : null}
 

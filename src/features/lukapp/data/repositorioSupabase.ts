@@ -337,6 +337,10 @@ interface FilaCajita {
   tasa_ea_pct: number | null;
   created_at: string;
   archived_at: string | null;
+  limite_credito_cop?: number | null;
+  dia_corte?: number | null;
+  dia_pago?: number | null;
+  pago_minimo_cop?: number | null;
 }
 
 const aCajita = (fila: FilaCajita): Cajita => ({
@@ -354,6 +358,10 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   tasaEaPct: fila.tasa_ea_pct === null ? null : Number(fila.tasa_ea_pct),
   createdAt: fila.created_at,
   archivedAt: fila.archived_at,
+  limiteCreditoCop: fila.limite_credito_cop === null || fila.limite_credito_cop === undefined ? null : Number(fila.limite_credito_cop),
+  diaCorte: fila.dia_corte ?? null,
+  diaPago: fila.dia_pago ?? null,
+  pagoMinimoCop: fila.pago_minimo_cop === null || fila.pago_minimo_cop === undefined ? null : Number(fila.pago_minimo_cop),
 });
 
 const desdeCajita = (c: Cajita, userId: string) => ({
@@ -367,6 +375,10 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   tasa_ea_pct: c.tasaEaPct,
   created_at: c.createdAt,
   archived_at: c.archivedAt,
+  limite_credito_cop: c.tipo === 'tarjeta' ? (c.limiteCreditoCop ?? null) : null,
+  dia_corte: c.tipo === 'tarjeta' ? (c.diaCorte ?? null) : null,
+  dia_pago: c.tipo === 'tarjeta' ? (c.diaPago ?? null) : null,
+  pago_minimo_cop: c.tipo === 'tarjeta' ? (c.pagoMinimoCop ?? null) : null,
 });
 
 interface FilaMovimiento {

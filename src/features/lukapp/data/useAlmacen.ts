@@ -56,6 +56,10 @@ export interface Almacen {
     claseCuenta?: ClaseCuenta | null;
     metaCop: number | null;
     tasaEaPct: number | null;
+    limiteCreditoCop?: number | null;
+    diaCorte?: number | null;
+    diaPago?: number | null;
+    pagoMinimoCop?: number | null;
     /** What is already in the pocket. Recorded as its opening movement. */
     saldoInicialCop: number;
   }) => Promise<void>;
@@ -486,6 +490,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       claseCuenta,
       metaCop,
       tasaEaPct,
+      limiteCreditoCop,
+      diaCorte,
+      diaPago,
+      pagoMinimoCop,
       saldoInicialCop,
     }: {
       nombre: string;
@@ -494,6 +502,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       claseCuenta?: ClaseCuenta | null;
       metaCop: number | null;
       tasaEaPct: number | null;
+      limiteCreditoCop?: number | null;
+      diaCorte?: number | null;
+      diaPago?: number | null;
+      pagoMinimoCop?: number | null;
       saldoInicialCop: number;
     }) => {
       const baseNombre = nombre.trim();
@@ -520,6 +532,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
             : null,
         metaCop,
         tasaEaPct,
+        limiteCreditoCop: tipo === 'tarjeta' ? (limiteCreditoCop ?? null) : null,
+        diaCorte: tipo === 'tarjeta' ? (diaCorte ?? null) : null,
+        diaPago: tipo === 'tarjeta' ? (diaPago ?? null) : null,
+        pagoMinimoCop: tipo === 'tarjeta' ? (pagoMinimoCop ?? null) : null,
         createdAt: new Date().toISOString(),
         archivedAt: null,
       };
