@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.3.7', fecha: '2026-09-06', texto: 'Preparamos una migración de reparación para completar la estructura de cuentas y tarjetas cuando Supabase todavía no tiene todas las columnas.' },
+  { version: '3.3.6', fecha: '2026-09-06', texto: 'Corregimos una condición de carrera que podía hacer desaparecer de la pantalla un movimiento recién guardado mientras la app terminaba de cargar.' },
+  { version: '3.3.5', fecha: '2026-09-06', texto: 'Actualizamos la documentación para reflejar las funciones, rutas y arquitectura reales de LukApp.' },
   { version: '3.3.4', fecha: '2026-09-06', texto: 'Ahora puedes encontrarnos en Instagram desde el pie de la portada: @Lukapp.app.' },
   { version: '3.3.3', fecha: '2026-09-06', texto: 'Mejoramos las señales SEO de la portada y el blog: URL canónica por página, datos estructurados más completos, enlaces internos y sitemap actualizado.' },
   { version: '3.3.2', fecha: '2026-09-06', texto: 'Optimizamos la entrega de la app para reutilizar mejor las dependencias grandes entre actualizaciones y acelerar cargas posteriores.' },

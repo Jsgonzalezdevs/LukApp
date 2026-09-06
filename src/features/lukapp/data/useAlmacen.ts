@@ -276,8 +276,18 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     let cancelado = false;
     (async () => {
       try {
+        const revisionAlEmpezar = revisionDeDatos.current;
         const cargado = await repo.cargarTodo();
-        if (cancelado) return;
+        // La carga inicial puede durar más que el primer guardado (por ejemplo
+        // al abrir la app con una red lenta). Si aplicáramos esa foto vieja al
+        // terminar, el movimiento recién anotado desaparecería de la pantalla
+        // aunque ya estuviera en IndexedDB o en la cola de sincronización.
+        if (
+          cancelado ||
+          !montado.current ||
+          escrituras.current > 0 ||
+          revisionDeDatos.current !== revisionAlEmpezar
+        ) return;
 
         // La cuenta de Efectivo nació con el id 'efectivo', que es legible pero
         // no es un UUID — y `cajitas.id` en Postgres sí lo es. La cuenta nunca

@@ -654,6 +654,40 @@ describe('useAlmacen', () => {
 });
 
 describe('useAlmacen — recargar', () => {
+  it('no deja que la carga inicial borre un movimiento guardado mientras esperaba', async () => {
+    let soltarLectura: () => void = () => {};
+    const bloqueo = new Promise<void>((res) => {
+      soltarLectura = res;
+    });
+    const base = new RepositorioMemoria();
+    let primeraLectura = true;
+    const repo: Repositorio = {
+      ...base,
+      cargarTodo: async () => {
+        const foto = await base.cargarTodo();
+        if (primeraLectura) {
+          primeraLectura = false;
+          await bloqueo;
+        }
+        return foto;
+      },
+      guardarTransacciones: (transacciones) => base.guardarTransacciones(transacciones),
+    } as Repositorio;
+
+    const montado = renderHook(() => useAlmacen(repo));
+    await Promise.resolve();
+    await act(async () => {
+      await montado.result.current.agregarTransaccion(tx({ id: 'guardada-durante-carga' }));
+    });
+
+    soltarLectura();
+    await waitFor(() => expect(montado.result.current.cargando).toBe(false));
+
+    expect(montado.result.current.datos.transacciones.map((t) => t.id)).toEqual([
+      'guardada-durante-carga',
+    ]);
+  });
+
   it('trae lo que otro dispositivo escribió mientras esta app estaba abierta', async () => {
     const repo = new RepositorioMemoria({ transacciones: [tx({ id: 'vieja' })] });
     const { result } = await montar(repo);
