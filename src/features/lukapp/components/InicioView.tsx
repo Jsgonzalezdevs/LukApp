@@ -28,6 +28,9 @@ import type { ContextoFinanciero } from '../lib/motorFinanciero';
 interface InicioViewProps {
   etiquetaPeriodo: string;
   onCambiarMes: () => void;
+  clavePeriodo?: string;
+  onCambiarPeriodo?: (clave: string) => void;
+  periodoAdyacente?: (clave: string, delta: number) => string;
   onBuscar: () => void;
   onAjustes: () => void;
   patrimonioCop: number;
@@ -70,6 +73,9 @@ const formatMontoCompacto = (monto: number): string => {
 export const InicioView: React.FC<InicioViewProps> = ({
   etiquetaPeriodo,
   onCambiarMes,
+  clavePeriodo,
+  onCambiarPeriodo,
+  periodoAdyacente,
   onBuscar,
   onAjustes,
   patrimonioCop,
@@ -181,19 +187,17 @@ export const InicioView: React.FC<InicioViewProps> = ({
     <div className="flex flex-col pb-6">
       {/* ── 1. Cabecera superior minimalista ─────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onCambiarMes}
+        <label
           className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
         >
           <span className="text-[13px] opacity-80">🗓️</span>
-          <span className="text-[var(--fin-ink)] font-bold">{etiquetaPeriodo}</span>
+          {clavePeriodo && onCambiarPeriodo && periodoAdyacente ? <select value={clavePeriodo} onChange={(e) => onCambiarPeriodo(e.target.value)} aria-label="Cambiar período" className="appearance-none bg-transparent font-bold text-[var(--fin-ink)] outline-none">{Array.from({ length: 13 }, (_, i) => periodoAdyacente(clavePeriodo, -i)).map((clave) => <option key={clave} value={clave}>{clave}</option>)}</select> : <button type="button" onClick={onCambiarMes} className="font-bold text-[var(--fin-ink)]">{etiquetaPeriodo}</button>}
           <ChevronDown
             className="h-3.5 w-3.5 text-[var(--fin-ink-faint)]"
             strokeWidth={2.5}
             aria-hidden="true"
           />
-        </button>
+        </label>
 
         <div className="flex items-center gap-1.5">
           {/* Botón de Racha */}
@@ -397,7 +401,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           ref={carouselRef}
           onScroll={handleScroll}
           data-scroll-horizontal="true"
-          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[175px] pt-3 pb-2 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[195px] pt-3 pb-4 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {todasCategorias.map((cat, idx) => {
             const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
@@ -449,7 +453,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
                   <span className="text-[12px] sm:text-[13px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
                     {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
                   </span>
-                  <span className="mt-0.5 text-[9.5px] sm:text-[10px] font-semibold text-[var(--fin-ink-soft)] truncate max-w-[68px] sm:max-w-[76px] text-center capitalize">
+                  <span className="mt-0.5 text-[9.5px] sm:text-[10px] font-semibold leading-tight text-[var(--fin-ink-soft)] line-clamp-2 max-w-[68px] sm:max-w-[76px] text-center capitalize">
                     {cat.info.nombre}
                   </span>
                 </div>

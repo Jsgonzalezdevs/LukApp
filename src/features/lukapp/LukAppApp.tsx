@@ -89,7 +89,6 @@ import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
 import { VaquitasModal } from './components/VaquitasModal';
 import { TemaToggle } from './components/TemaToggle';
-import { MascotaLuki } from './components/landing/MascotaLuki';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
 import { GuiaApp } from './components/guia/GuiaApp';
@@ -678,14 +677,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         onRefrescar={almacen.recargar}
         habilitarRefresco={ningunModalAbierto}
         accion={
-          section === 'asesor' ? (
-            <div className="pointer-events-none fixed inset-x-0 z-30 flex justify-center" style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.5rem)' }}>
-              <MascotaLuki
-                className="h-16 w-16 object-contain sm:h-20 sm:w-20"
-                alt="Luki, tu asesor financiero"
-              />
-            </div>
-          ) : (
+          section === 'asesor' ? null : (
             <BotonAnotar
               onDictado={handleSubmit}
               onManual={() => setPending(movimientoEnBlanco())}
@@ -764,6 +756,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           <InicioView
             etiquetaPeriodo={etiquetaPeriodoActivo}
             onCambiarMes={() => setSection('mes')}
+            clavePeriodo={month}
+            onCambiarPeriodo={setMonth}
+            periodoAdyacente={(clave, delta) => periodoAdyacente(clave, delta, periodoAjustes.periodo)}
             onBuscar={() => setCapa('buscar')}
             onAjustes={() => setSection('ajustes')}
             patrimonioCop={patrimonioCop}

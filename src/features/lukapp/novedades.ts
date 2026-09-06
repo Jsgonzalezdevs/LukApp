@@ -22,6 +22,22 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.1.14', fecha: '2026-09-06', texto: 'Puedes cambiar el período rápidamente desde el selector del Inicio sin abrir Mes.' },
+  {
+    version: '3.1.13',
+    fecha: '2026-09-06',
+    texto: 'Ajustamos el carrusel de categorías para que los nombres no queden cortados en la parte inferior.',
+  },
+  {
+    version: '3.1.12',
+    fecha: '2026-09-06',
+    texto: 'El Asesor ahora usa a Luki como acompañante de sus respuestas, en lugar de la figura morada.',
+  },
+  {
+    version: '3.1.11',
+    fecha: '2026-09-06',
+    texto: 'Quitamos el Luki flotante inferior del Asesor para dejar la pantalla más limpia.',
+  },
   {
     version: '3.1.10',
     fecha: '2026-09-06',
