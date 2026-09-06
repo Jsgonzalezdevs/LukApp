@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.1.16', fecha: '2026-09-06', texto: 'Ahora puedes tocar el aviso de novedades para leer completo el texto de cada cambio.' },
   { version: '3.1.15', fecha: '2026-09-06', texto: 'El selector rápido muestra los nombres de los períodos para cambiar de mes con claridad.' },
   { version: '3.1.14', fecha: '2026-09-06', texto: 'Puedes cambiar el período rápidamente desde el selector del Inicio sin abrir Mes.' },
   {
