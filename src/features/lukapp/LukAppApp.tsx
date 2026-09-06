@@ -47,6 +47,7 @@ import {
   useModoPrivacidad,
   useMostrarAhorro,
   useMostrarEfectivoSeparado,
+  useMostrarDecisiones,
   useNovedades,
   useOnboarding,
   useRecordatorioRacha,
@@ -279,6 +280,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   useSincronizacion({ activo: true, recargar: almacen.recargar });
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
   const { mostrarEfectivoSeparado, setMostrarEfectivoSeparado } = useMostrarEfectivoSeparado();
+  const { mostrarDecisiones, setMostrarDecisiones } = useMostrarDecisiones();
   const { modoPrivacidad, alternarPrivacidad } = useModoPrivacidad();
   const onboarding = useOnboarding();
   const gmf = useAjustesGmf();
@@ -784,6 +786,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onAnotar={() => setPending(movimientoEnBlanco())}
             liquidez={contextoFinanciero.liquidez}
             entrada={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
+            mostrarDecisiones={mostrarDecisiones}
           />
         ) : null}
 
@@ -884,6 +887,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onMostrarAhorro={setMostrarAhorro}
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
+            mostrarDecisiones={mostrarDecisiones}
+            onMostrarDecisiones={setMostrarDecisiones}
             esAdmin={esAdmin}
             onVolverAVerGuia={
               guiaBasicaAbierta
@@ -1331,7 +1336,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {guiaSeccionAbierta && pasoDeSeccion && !pending && !detalle && !analizando && !editando && !mostrarReporte ? (
           <GuiaApp
             key={section}
-            pasos={[pasoDeSeccion]}
+            pasos={pasoDeSeccion}
             onCerrar={() => guia.marcarSeccion(section)}
           />
         ) : null}

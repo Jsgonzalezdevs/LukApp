@@ -22,6 +22,20 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.1.30', fecha: '2026-09-06', texto: 'Ampliamos las guías contextuales para explicar también Calendario y Más al entrar por primera vez.' },
+  { version: '3.1.29', fecha: '2026-09-06', texto: 'El aviso de novedades ahora entra con un desplazamiento lateral suave y rápido.' },
+  { version: '3.1.28', fecha: '2026-09-06', texto: 'Afinamos las microinteracciones de tarjetas y controles para dar más profundidad sin distraer.' },
+  { version: '3.1.27', fecha: '2026-09-06', texto: 'Añadimos microanimaciones premium para que los controles y superficies respondan con más naturalidad.' },
+  { version: '3.1.26', fecha: '2026-09-06', texto: 'El menú de meses ahora se despliega verticalmente hacia abajo, sin abrirse en diagonal.' },
+  { version: '3.1.25', fecha: '2026-09-06', texto: 'El selector de meses ahora se despliega con un rebote corto inspirado en iPhone y gira su flecha al abrirse.' },
+  { version: '3.1.24', fecha: '2026-09-06', texto: 'Corregimos la apertura y cierre del selector de meses y añadimos una animación ultrarrápida.' },
+  { version: '3.1.23', fecha: '2026-09-06', texto: 'Le dimos más personalidad al menú de meses con profundidad, brillo y un estado activo más claro.' },
+  { version: '3.1.22', fecha: '2026-09-06', texto: 'Hicimos más sólido y elegante el menú de meses para que se sienta como Liquid Glass.' },
+  { version: '3.1.21', fecha: '2026-09-06', texto: 'El selector de meses ahora conserva el calendario y usa un menú visual adaptado al modo oscuro.' },
+  { version: '3.1.20', fecha: '2026-09-06', texto: 'Suavizamos los resaltados de foco para que los controles no parezcan celdas de Excel.' },
+  { version: '3.1.19', fecha: '2026-09-06', texto: 'Ahora puedes mostrar u ocultar los cuadros de decisiones financieras desde la hamburguesa, en Ajustes.' },
+  { version: '3.1.18', fecha: '2026-09-06', texto: 'Refinamos el campo de simulación para que no parezca una celda de Excel al seleccionarlo.' },
+  { version: '3.1.17', fecha: '2026-09-06', texto: 'Ajustamos el campo de simulación para que el resaltado al escribir sea consistente con el estilo de LukApp.' },
   { version: '3.1.16', fecha: '2026-09-06', texto: 'Ahora puedes tocar el aviso de novedades para leer completo el texto de cada cambio.' },
   { version: '3.1.15', fecha: '2026-09-06', texto: 'El selector rápido muestra los nombres de los períodos para cambiar de mes con claridad.' },
   { version: '3.1.14', fecha: '2026-09-06', texto: 'Puedes cambiar el período rápidamente desde el selector del Inicio sin abrir Mes.' },

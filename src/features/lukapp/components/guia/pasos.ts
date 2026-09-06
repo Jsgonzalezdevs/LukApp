@@ -70,29 +70,31 @@ export const PASOS_BASICOS: PasoGuia[] = [
  * cualquier ancla dentro de la pantalla puede no existir todavía. La pestaña
  * está siempre.
  */
-export const PASOS_POR_SECCION: Partial<Record<SectionId, PasoGuia>> = {
-  dinero: {
+export const PASOS_POR_SECCION: Partial<Record<SectionId, PasoGuia[]>> = {
+  dinero: [{
     ancla: 'nav-dinero',
     titulo: 'Dónde está tu plata',
     texto:
       'Cada cuenta, ahorro, deuda y tarjeta con su saldo. Las Cajitas te dejan apartar plata para algo concreto sin sacarla del banco.',
     aire: 4,
     radio: 14,
-  },
-  mes: {
+  }],
+  mes: [{
     ancla: 'nav-mes',
     titulo: 'Lo que se calcula',
     texto:
       'En qué se te fue el mes por categoría, cómo va contra los meses anteriores y si te estás pasando de los topes que te pusiste.',
     aire: 4,
     radio: 14,
-  },
-  asesor: {
+  }],
+  asesor: [{
     ancla: 'nav-asesor',
     titulo: 'Pregúntale a tus números',
     texto:
       'Escríbele como a una persona: «¿en qué gasté más este mes?». Responde con tus movimientos, no con consejos genéricos de internet.',
     aire: 4,
     radio: 14,
-  },
+  }],
+  calendario: [{ ancla: 'nav', titulo: 'Calendario financiero', texto: 'Aquí ves pagos, ingresos y compromisos futuros. La precisión indica si la fecha y el monto son conocidos o estimados.', aire: 6, radio: 18 }],
+  ajustes: [{ ancla: 'nav-ajustes', titulo: 'Configura tu sistema', texto: 'En Más encuentras categorías, topes, metas, pagos fijos, extractos, respaldos y preferencias. Cada cambio alimenta los cálculos de LukApp.', aire: 4, radio: 14 }],
 };
