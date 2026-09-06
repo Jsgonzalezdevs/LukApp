@@ -5,7 +5,6 @@ import { AlertTriangle, CloudOff, X } from 'lucide-react';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forPeriod, monthTotals } from './lib/aggregate';
-import { totalVisible, saldoEfectivo, saldoCuentasSinEfectivo } from './lib/cajitas';
 import { formatCop } from './lib/formatCop';
 import { bogotaDate, monthKey } from './lib/localDate';
 import { claveDePeriodo, etiquetaDePeriodo, periodoAdyacente } from './lib/periodo';
@@ -23,6 +22,7 @@ import { obtenerSupabase } from './data/supabase';
 import { RepositorioSupabase } from './data/repositorioSupabase';
 import { migrarLibroLocal, RepositorioIndexedDB, soportaIndexedDB } from './data/indexeddb';
 import { RepositorioConCola } from './data/repositorioConCola';
+import { crearRepositorio } from './data/crearRepositorio';
 import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
@@ -71,6 +71,7 @@ import { DeudasView } from './components/DeudasView';
 import { MetasView } from './components/MetasView';
 import { LukAppShell } from './components/LukAppShell';
 import { InicioView } from './components/InicioView';
+import { ForecastResumen } from './components/ForecastResumen';
 import { useAiInsights } from './hooks/useAiInsights';
 import type { Insight } from './lib/insights';
 import { DineroView } from './components/DineroView';
@@ -88,10 +89,13 @@ import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
 import { VaquitasModal } from './components/VaquitasModal';
 import { TemaToggle } from './components/TemaToggle';
+import { MascotaLuki } from './components/landing/MascotaLuki';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
 import { GuiaApp } from './components/guia/GuiaApp';
 import { construirContextoFinanciero } from './lib/motorFinanciero';
+import { construirContextoParaAsesor } from './lib/centroInteligenciaFinanciera';
+import { CalendarioFinancieroView } from './components/CalendarioFinancieroView';
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
 import './lukapp.css';
 
@@ -182,7 +186,7 @@ export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
     );
   }
 
-  if (sesion.estado.modo === 'anonimo' || sesion.estado.modo === 'local') {
+  if (sesion.estado.modo === 'anonimo') {
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
   }
 
@@ -224,6 +228,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const [migracionLista, setMigracionLista] = useState(false);
   const repositorio = useMemo(() => {
     if (!userId) return undefined;
+    if (userId === 'usuario-local-pruebas') {
+      return crearRepositorio().repositorio;
+    }
     const cliente = obtenerSupabase();
     if (!cliente) return undefined;
     const remoto = new RepositorioSupabase(cliente, userId);
@@ -247,7 +254,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   useEffect(() => {
     let cancelado = false;
-    if (!userId || !repositorio) return undefined;
+    if (!userId) return undefined;
+    if (!repositorio) {
+      setMigracionLista(true);
+      return undefined;
+    }
     void migrarLibroLocal(repositorio)
       .catch((error) => console.error('No se pudieron migrar los datos locales:', error))
       .finally(() => {
@@ -295,6 +306,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const segmentos = segmentosDe(ruta);
   const section: SectionId = (() => {
     const s = SECTIONS.find((x) => x.id === segmentos[0]);
+    // Calendario es una vista contextual abierta desde Mes, no un destino de
+    // la barra; aun así debe ser una ruta válida para que el botón no rebote a Inicio.
+    if (segmentos[0] === 'calendario') return 'calendario';
     return s ? (s.id as SectionId) : 'inicio';
   })();
   const setSection = useCallback(
@@ -604,6 +618,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [setSection],
   );
 
+  const contextoFinanciero = useMemo(
+    () => construirContextoFinanciero({ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }),
+    [almacen.datos, today, periodoAjustes.periodo],
+  );
+
   const {
     insights: rawInsights,
     cargandoIa,
@@ -611,13 +630,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   } = useAiInsights({
     transacciones,
     presupuestos: almacen.datos.presupuestos,
-    cajitas,
-    cajitaMovimientos,
     mesCalendario: mesCalendarioActivo,
     nombreDe: (categoria) => catalogoActual.de(categoria).nombre,
-    mostrarAhorro,
     configPeriodo: periodoAjustes.periodo,
     umbralAlertaPct: presupuestoAjustes.umbralAlertaPct,
+    contexto: contextoFinanciero,
   });
 
   const paraTi = useMemo(
@@ -629,25 +646,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [rawInsights, handleConsultarTipEnAsesor],
   );
 
-  const patrimonioCop = useMemo(
-    () => totalVisible(cajitas, cajitaMovimientos, transacciones, mostrarAhorro),
-    [cajitas, cajitaMovimientos, transacciones, mostrarAhorro],
-  );
+  const patrimonioCop = contextoFinanciero.saldo.patrimonioCop;
 
-  const contextoFinanciero = useMemo(
-    () => construirContextoFinanciero({ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }),
-    [almacen.datos, today, periodoAjustes.periodo],
-  );
+  const saldoEfectivoCop = contextoFinanciero.saldo.saldoEfectivoCop ?? 0;
 
-  const saldoEfectivoCop = useMemo(
-    () => saldoEfectivo(cajitas, cajitaMovimientos, transacciones),
-    [cajitas, cajitaMovimientos, transacciones],
-  );
-
-  const saldoCuentasSinEfectivoCop = useMemo(
-    () => saldoCuentasSinEfectivo(cajitas, cajitaMovimientos, transacciones),
-    [cajitas, cajitaMovimientos, transacciones],
-  );
+  const saldoCuentasSinEfectivoCop = contextoFinanciero.saldo.saldoBancosCop ?? 0;
 
   if (almacen.cargando) {
     return (
@@ -675,11 +678,20 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         onRefrescar={almacen.recargar}
         habilitarRefresco={ningunModalAbierto}
         accion={
-          <BotonAnotar
-            onDictado={handleSubmit}
-            onManual={() => setPending(movimientoEnBlanco())}
-            onBuscar={() => setCapa('buscar')}
-          />
+          section === 'asesor' ? (
+            <div className="pointer-events-none fixed inset-x-0 z-30 flex justify-center" style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.5rem)' }}>
+              <MascotaLuki
+                className="h-16 w-16 object-contain sm:h-20 sm:w-20"
+                alt="Luki, tu asesor financiero"
+              />
+            </div>
+          ) : (
+            <BotonAnotar
+              onDictado={handleSubmit}
+              onManual={() => setPending(movimientoEnBlanco())}
+              onBuscar={() => setCapa('buscar')}
+            />
+          )
         }
       >
         <Suspense fallback={<SkeletonInicio />}>
@@ -814,6 +826,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             mesCalendario={mesCalendarioActivo}
             hoy={today}
             onCambiarPeriodo={setMonth}
+            onAbrirCalendario={() => setSection('calendario')}
             shift={(clave, pasos) => periodoAdyacente(clave, pasos, periodoAjustes.periodo)}
             totals={totals}
             gastos={gastos}
@@ -843,6 +856,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           />
         ) : null}
 
+        {section === 'calendario' ? <CalendarioFinancieroView contexto={contextoFinanciero} hoy={today} onAñadirPagoFijo={() => setPanelAjustes('recurrentes')} /> : null}
+
         {/* -------------------------------------------------------- 4. Asesor --- */}
         {section === 'asesor' ? (
           <AsesorView
@@ -854,6 +869,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             lexico={lexico}
             promptInicial={asesorPromptInicial}
             onLimpiarPromptInicial={() => setAsesorPromptInicial(null)}
+            entradaFinanciera={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
+            contextoParaAsesor={construirContextoParaAsesor(contextoFinanciero)}
             onCrearTransaccion={(tx) => {
               setSection('inicio');
               setPending(tx);
@@ -972,7 +989,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             titulo={PANELES_AJUSTES.find((p) => p.id === panelAjustes)?.label ?? ''}
             onCerrar={() => setPanelAjustes(null)}
           >
-            {panelAjustes === 'categorias' ? (
+            {panelAjustes === 'forecast' ? (
+              <ForecastResumen forecast={contextoFinanciero.forecast} />
+            ) : panelAjustes === 'categorias' ? (
               <CategoriasEditor
                 categorias={categorias}
                 transacciones={transacciones}
@@ -1007,6 +1026,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 metas={almacen.datos.metas}
                 cajitas={cajitas}
                 movimientos={cajitaMovimientos}
+                metasInteligentes={contextoFinanciero.metasInteligentes}
                 onCrear={(datos) => void almacen.crearMeta(datos)}
                 onActualizar={(meta) => void almacen.actualizarMeta(meta)}
                 onEliminar={(id) => void almacen.borrarMeta(id)}

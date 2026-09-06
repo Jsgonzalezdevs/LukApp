@@ -23,6 +23,66 @@ export interface Novedad {
 
 export const NOVEDADES: readonly Novedad[] = [
   {
+    version: '3.1.10',
+    fecha: '2026-09-06',
+    texto: 'Ahora puedes añadir un pago fijo directamente desde el Calendario financiero.',
+  },
+  {
+    version: '3.1.9',
+    fecha: '2026-09-06',
+    texto: 'Corregimos el acceso al Calendario desde Mes para que abra su pantalla directamente.',
+  },
+  {
+    version: '3.1.8',
+    fecha: '2026-09-06',
+    texto: 'Ajustamos las pruebas de navegación para reflejar que Calendario se abre desde Mes y no ocupa un lugar fijo en la barra.',
+  },
+  {
+    version: '3.1.7',
+    fecha: '2026-09-06',
+    texto: 'El Calendario ahora se abre desde un acceso pequeño dentro de Mes, dejando la navegación principal más limpia.',
+  },
+  {
+    version: '3.1.6',
+    fecha: '2026-09-06',
+    texto: 'La proyección financiera ahora vive en Más para mantener el Inicio enfocado en tu situación actual.',
+  },
+  {
+    version: '3.1.5',
+    fecha: '2026-09-06',
+    texto: 'En el Asesor mostramos a Luki en un tamaño compacto para aprovechar mejor las pantallas pequeñas.',
+  },
+  {
+    version: '3.1.4',
+    fecha: '2026-09-06',
+    texto: 'El botón Comenzar ahora ahora lleva directamente al registro de cuenta.',
+  },
+  {
+    version: '3.1.3',
+    fecha: '2026-09-06',
+    texto: 'Corregimos el enlace de Crear cuenta para que la portada lleve directamente al panel de registro.',
+  },
+  {
+    version: '3.1.2',
+    fecha: '2026-09-06',
+    texto: 'Retiramos el separador rígido de la banda de cifras para que la portada se sienta más limpia y continua.',
+  },
+  {
+    version: '3.1.1',
+    fecha: '2026-09-06',
+    texto: 'Dejamos respirar el lienzo de la portada para que sus degradados acompañen también la sección de Apple Pay.',
+  },
+  {
+    version: '3.1.0',
+    fecha: '2026-09-06',
+    texto: 'En localhost puedes probar LukApp directamente con una sesión local, sin iniciar sesión ni enviar esos datos a tu cuenta.',
+  },
+  {
+    version: '3.0.1',
+    fecha: '2026-09-06',
+    texto: 'Suavizamos la transición entre las secciones de la portada para que el recorrido visual se sienta continuo y cuidado.',
+  },
+  {
     version: '3.0.0',
     fecha: '2026-09-05',
     texto: 'Iniciamos el motor financiero unificado: las cifras de saldos, compromisos, liquidez, metas, presupuestos y obligaciones empiezan a compartir un mismo contexto verificable.',
