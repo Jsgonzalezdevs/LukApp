@@ -102,6 +102,22 @@ export const LandingLukApp: React.FC<LandingProps> = ({
     return () => window.removeEventListener('scroll', alScroll);
   }, []);
 
+  useEffect(() => {
+    if (window.location.hash !== '#registro') return;
+    let intentos = 0;
+    let id: number;
+    const ubicarRegistro = () => {
+      const registro = document.getElementById('registro');
+      if (registro) {
+        registro.scrollIntoView({ block: 'start', behavior: 'auto' });
+        return;
+      }
+      if (intentos++ < 20) id = window.setTimeout(ubicarRegistro, 50);
+    };
+    ubicarRegistro();
+    return () => window.clearTimeout(id);
+  }, []);
+
   const handleGetStarted = () => {
     const ua = navigator.userAgent.toLowerCase();
     const isMobile = /iphone|ipad|ipod|android/.test(ua);
@@ -116,6 +132,11 @@ export const LandingLukApp: React.FC<LandingProps> = ({
 
   const handlePWAClose = () => {
     setMostrarPWA(false);
+  };
+
+  const handleRegistro = () => {
+    window.location.hash = 'registro';
+    document.getElementById('registro')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
 
   const handlePWASkip = () => {
@@ -210,7 +231,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
                 <MascotaLuki />
                 <h2>¿Listo?</h2>
                 <p>Toma el control de tu dinero desde hoy.</p>
-                <button className="btn-primary-lg" onClick={handleGetStarted}>
+                <button className="btn-primary-lg" onClick={handleRegistro}>
                   Comenzar ahora
                   <ArrowRight size={18} strokeWidth={2} aria-hidden />
                 </button>

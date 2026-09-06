@@ -11,11 +11,13 @@ import { SECTIONS, PANELES_AJUSTES, sectionLabel } from './sections';
  * Ahora que la navegación es una sola, eso es lo que se comprueba.
  */
 describe('la navegación', () => {
-  it('tiene cinco destinos, ni uno más', () => {
+  it('tiene cinco destinos principales, ni uno más', () => {
     // El número importa: pasar de cuatro es como empezó la cuesta que llevó a
     // once. Si algún día hay que añadir otro, que sea una decisión que alguien
     // tome a propósito y no algo que se cuele.
     //
+    // Calendario se abre desde Mes como una capa contextual, no como un destino
+    // permanente de la navegación.
     // El quinto —Asesor— se añadió a propósito: era una pestaña dentro de Mes y
     // se sacó a la barra porque se usa a diario, no una vez al mes. Este test
     // hizo su trabajo entonces: el cambio no pasó callado, dejó el número en

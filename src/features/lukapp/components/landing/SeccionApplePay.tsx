@@ -20,7 +20,7 @@ export const SeccionApplePay: React.FC = () => {
   }, [animandoDemo]);
 
   return (
-    <section className="relative w-full overflow-hidden py-20 sm:py-28 bg-[var(--lp-bg)]" id="apple-pay">
+    <section className="relative w-full overflow-hidden py-20 sm:py-28" id="apple-pay">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         {/* ── 1. Hero Apple Pay ────────────────────────────────────────── */}
         <div className="flex flex-col items-center text-center">

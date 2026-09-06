@@ -4,8 +4,7 @@ import { obtenerSupabase } from './supabase';
 import { sincronizarDesdeSupabase } from './usePreferencias';
 
 export type EstadoSesion =
-  /** Se conserva el estado para compatibilidad, pero ya no se emite: la cuenta es obligatoria. */
-  | { modo: 'local' }
+  | { modo: 'local'; userId: string; email: string }
   | { modo: 'cargando' }
   | { modo: 'anonimo' }
   | { modo: 'autenticado'; userId: string; email: string };
@@ -32,16 +31,25 @@ const aEstado = (sesion: Session | null): EstadoSesion =>
     ? { modo: 'autenticado', userId: sesion.user.id, email: sesion.user.email ?? '' }
     : { modo: 'anonimo' };
 
+const esEntornoLocal = (): boolean =>
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+  window.location.port === '5173';
+
+const SESION_LOCAL: EstadoSesion = {
+  modo: 'local',
+  userId: 'usuario-local-pruebas',
+  email: 'pruebas@localhost',
+};
+
 /**
- * La autenticación es obligatoria para evitar que los datos queden ligados a un
- * dispositivo o se mezclen entre personas cuando no hay una sesión válida.
+ * En desarrollo local se usa una identidad fija y el repositorio local. Así se
+ * puede probar la aplicación sin crear cuentas ni enviar datos a Supabase.
  */
 export const useSesion = (): Sesion => {
   const cliente = obtenerSupabase();
   const [estado, setEstado] = useState<EstadoSesion>(
-    /* Sin Supabase no existe una cuenta que pueda autenticarse; se muestra el
-       mismo muro de acceso para no abrir accidentalmente el modo local. */
-    { modo: 'cargando' },
+    esEntornoLocal() ? SESION_LOCAL : { modo: 'cargando' },
   );
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
@@ -53,6 +61,10 @@ export const useSesion = (): Sesion => {
   });
 
   useEffect(() => {
+    if (esEntornoLocal()) {
+      setEstado(SESION_LOCAL);
+      return;
+    }
     if (!cliente) {
       setEstado({ modo: 'anonimo' });
       return;

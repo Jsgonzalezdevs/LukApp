@@ -1,43 +1,39 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import type { Transaction, CategoriaClave } from '../types';
 import type { Presupuesto } from '../lib/presupuestos';
-import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { insightsDelMes, type Insight } from '../lib/insights';
-import { bogotaDate, monthKey } from '../lib/localDate';
+import { bogotaDate } from '../lib/localDate';
 import { PERIODO_POR_DEFECTO, type ConfigPeriodo } from '../lib/periodo';
-import { saldoEfectivo, saldoCuentasSinEfectivo, totalVisible } from '../lib/cajitas';
+import type { ContextoFinanciero } from '../lib/motorFinanciero';
+import { construirContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
 interface UseAiInsightsOptions {
   transacciones: readonly Transaction[];
   presupuestos: readonly Presupuesto[];
-  cajitas: readonly Cajita[];
-  cajitaMovimientos: readonly CajitaMovimiento[];
   /** Mes calendario real ('YYYY-MM') -- los insights que comparan "este mes"
    * contra meses previos se quedan siempre en calendario, sin importar el
    * período que el usuario haya elegido en Ajustes (ver el comentario de
    * `insightsDelMes` en lib/insights.ts). */
   mesCalendario: string;
   nombreDe: (categoria: CategoriaClave) => string;
-  mostrarAhorro?: boolean;
   /** El período real elegido en Ajustes, y su umbral de alerta -- solo los usa
    * el aviso de presupuesto, para que el número que muestra coincida con el
    * que ves en la pantalla de Presupuestos. */
   configPeriodo?: ConfigPeriodo;
   umbralAlertaPct?: number;
+  contexto?: ContextoFinanciero;
 }
 
 export const useAiInsights = ({
   transacciones,
   presupuestos,
-  cajitas,
-  cajitaMovimientos,
   mesCalendario,
   nombreDe,
-  mostrarAhorro = true,
   configPeriodo = PERIODO_POR_DEFECTO,
   umbralAlertaPct = 80,
+  contexto,
 }: UseAiInsightsOptions): {
   insights: Insight[];
   cargandoIa: boolean;
@@ -66,6 +62,10 @@ export const useAiInsights = ({
 
   // Contexto numérico resumido para enviar a Grok/Groq
   const finanzasContext = useMemo(() => {
+    if (contexto) return construirContextoParaAsesor(contexto);
+    return null;
+    /* legacy context removed from the main path; historical insights remain local. */
+    /*
     const txMes = transacciones.filter((t) => monthKey(t.occurredOn) === mesCalendario);
     const gastosMes = txMes
       .filter((t) => t.kind === 'gasto')
@@ -105,17 +105,18 @@ export const useAiInsights = ({
       topCategoriasGasto: topCategorias,
       totalTransaccionesMes: txMes.length,
     };
-  }, [transacciones, cajitas, cajitaMovimientos, mesCalendario, nombreDe, mostrarAhorro]);
+    */
+  }, [contexto]);
 
   const fetchAiInsights = async () => {
     // Si no hay transacciones en el mes, no gastar llamadas al modelo
-    if (finanzasContext.totalTransaccionesMes === 0) {
+    if (!finanzasContext) {
       setAiInsights([]);
       setOrigenIa(false);
       return;
     }
 
-    const currentKey = `${mesCalendario}-${transacciones.length}-${finanzasContext.gastosMesCop}-${finanzasContext.ingresosMesCop}`;
+    const currentKey = `${mesCalendario}-${transacciones.length}-${JSON.stringify(finanzasContext)}`;
     if (currentKey === lastFetchKey.current) return;
     lastFetchKey.current = currentKey;
 

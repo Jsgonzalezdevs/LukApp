@@ -12,11 +12,13 @@ import type { CajitaMovimiento } from '../data/modelos';
 import { formatAmountInput, formatCop, parseAmountInput } from '../lib/formatCop';
 import { bogotaDate } from '../lib/localDate';
 import { RippleButton } from './RippleButton';
+import type { MetaInteligente } from '../lib/metasInteligentes';
 
 interface MetasViewProps {
   metas: readonly Meta[];
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
+  metasInteligentes?: readonly MetaInteligente[];
   onCrear: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => void;
   onActualizar: (meta: Meta) => void;
   onEliminar: (id: string) => void;
@@ -52,6 +54,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
   metas,
   cajitas,
   movimientos,
+  metasInteligentes,
   onCrear,
   onActualizar,
   onEliminar,
@@ -67,7 +70,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
 
   const hoy = bogotaDate();
   const saldos = saldosPorCajita(movimientos);
-  const filas = metasConProgreso(metas, saldos, hoy);
+  const filas = metasInteligentes ?? metasConProgreso(metas, saldos, hoy);
   const vivas = cajitas.filter((c) => c.archivedAt === null);
 
   const crear = (e: React.FormEvent) => {
@@ -263,7 +266,9 @@ export const MetasView: React.FC<MetasViewProps> = ({
 
       {filas.length > 0 ? (
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {filas.map(({ meta, progreso }, idx) => {
+          {filas.map((fila, idx) => {
+            const { meta, progreso } = fila;
+            const inteligente = 'viabilidad' in fila ? fila : null;
             const cajita = meta.cajitaId ? cajitas.find((c) => c.id === meta.cajitaId) : undefined;
 
             return (
@@ -319,6 +324,11 @@ export const MetasView: React.FC<MetasViewProps> = ({
                       <p className="text-[15px] font-semibold text-[var(--fin-ink)]">
                         {COPY.metas.falta} {formatCop(progreso.faltaCop)}
                       </p>
+                      {inteligente ? (
+                        <p className="mt-1 text-[12.5px] text-[var(--fin-ink-faint)]">
+                          Estado: {inteligente.viabilidad === 'en_riesgo' ? 'requiere atención' : inteligente.viabilidad === 'sin_datos' ? 'sin datos suficientes' : 'en camino'} · Fecha estimada: no estimable
+                        </p>
+                      ) : null}
                       {progreso.ritmoMensualCop !== null ? (
                         <div className="mt-2.5 flex flex-col gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)]/80 border border-[var(--fin-line)]/50 p-2.5">
                           <div className="flex items-center justify-between text-[12.5px]">

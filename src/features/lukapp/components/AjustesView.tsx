@@ -12,6 +12,8 @@ interface AjustesViewProps {
   onMostrarAhorro: (valor: boolean) => void;
   mostrarEfectivoSeparado: boolean;
   onMostrarEfectivoSeparado: (valor: boolean) => void;
+  mostrarDecisiones: boolean;
+  onMostrarDecisiones: (valor: boolean) => void;
   /** Ausente mientras la guía ya está visible: no hay nada que volver a abrir. */
   onVolverAVerGuia?: () => void;
   esAdmin?: boolean;
@@ -24,6 +26,7 @@ interface AjustesViewProps {
  * de colores decorativos nuevo (ver el comentario de SECTIONS en
  * sections.ts sobre por qué el color ahí significa solo entrada/salida). */
 const ICONOS: Record<PanelAjustes, string> = {
+  forecast: '📈',
   categorias: '🏷️',
   topes: '🎯',
   periodo: '🗓️',
@@ -45,7 +48,7 @@ const ICONOS: Record<PanelAjustes, string> = {
 /** Los bloques en que se parte la lista. Agrupar por tema hace que no haya
  * que leer las filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
-  { titulo: 'Tu dinero', paneles: ['categorias', 'topes', 'periodo', 'metas', 'recurrentes', 'compartido'] },
+  { titulo: 'Tu dinero', paneles: ['forecast', 'categorias', 'topes', 'periodo', 'metas', 'recurrentes', 'compartido'] },
   { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'vaquitas', 'extractos', 'atajos', 'gmf'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
   { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },
@@ -111,6 +114,8 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   onMostrarAhorro,
   mostrarEfectivoSeparado,
   onMostrarEfectivoSeparado,
+  mostrarDecisiones,
+  onMostrarDecisiones,
   onVolverAVerGuia,
   esAdmin,
 }) => {
@@ -176,6 +181,15 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             onChange={(e) => onMostrarAhorro(e.target.checked)}
             className="h-6 w-6 shrink-0 accent-[var(--fin-in)]"
           />
+        </label>
+
+        <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none" aria-hidden="true">📊</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Mostrar decisiones financieras</span>
+            <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">Ver cuánto puedes gastar y simular compras</span>
+          </span>
+          <input type="checkbox" checked={mostrarDecisiones} onChange={(e) => onMostrarDecisiones(e.target.checked)} className="h-6 w-6 shrink-0 accent-[var(--fin-in)]" />
         </label>
 
         <label

@@ -2,13 +2,16 @@ import type { Instantanea } from '../data/repositorio';
 import type { ConfigPeriodo } from './periodo';
 import { claveDePeriodo, diasDelPeriodo, diasTranscurridosEnPeriodo, finDePeriodo } from './periodo';
 import { idsPasivos, patrimonio, saldosPorCajita, totalPorTipo } from './cajitas';
+import { claseDeCuenta } from '../data/modelos';
 import { metasConProgreso, type MetaConProgreso } from './metas';
 import { estadoDeTodos, type EstadoPresupuesto } from './presupuestos';
 import { resumenTarjeta } from './tarjetas';
 import { construirObligacionesFuturas, type ObligacionFutura } from './obligacionesFuturas';
 import type { Transaction } from '../types';
-import { proyectarFinanzas } from './proyeccionFinanciera';
+import { construirForecast, proyectarFinanzas } from './proyeccionFinanciera';
 import { construirEntradasFuturas } from './entradasFuturas';
+import { construirSenalesFinancieras } from './senalesFinancieras';
+import { evaluarMetas, type MetaInteligente } from './metasInteligentes';
 
 export interface EntradaMotorFinanciero extends Instantanea {
   hoy: string;
@@ -47,6 +50,8 @@ export interface ContextoFinanciero {
     saldoAhorrosCop: number;
     saldoTarjetasCop: number;
     saldoDeudasCop: number;
+    saldoEfectivoCop?: number;
+    saldoBancosCop?: number;
   };
   compromisos: {
     reservasCop: number;
@@ -76,10 +81,14 @@ export interface ContextoFinanciero {
   proyeccionCompleta: ReturnType<typeof proyectarFinanzas>;
   entradasFuturas: ReturnType<typeof construirEntradasFuturas>;
   metas: readonly MetaConProgreso[];
+  /** Opcional al consumir snapshots legacy construidos antes de Fase 8. */
+  metasInteligentes?: readonly MetaInteligente[];
   presupuestos: readonly EstadoPresupuesto[];
   obligaciones: readonly ObligacionFutura[];
   anomalias: readonly SenalFinanciera[];
   tarjetas: readonly import('./tarjetas').ResumenTarjeta[];
+  /** Opcional para snapshots de pruebas/consumidores legacy. */
+  forecast?: import('./proyeccionFinanciera').ForecastFinanciero;
 }
 
 const gastoMes = (transacciones: readonly Transaction[], mes: string) =>
@@ -118,13 +127,19 @@ export const construirContextoFinanciero = (entrada: EntradaMotorFinanciero): Co
   const serie: PuntoProyectado[] = [{ fecha: entrada.hoy, saldoCop: p.netoCop, entradasCop: 0, salidasCop: gastos, comprometidoCop: obligacionesCop, certeza: 'real' }];
   const datosIncompletos = entrada.recurrentes.length === 0 || entrada.metas.length === 0;
   const pagosTarjetaCop = obligacionesConImporte.filter((o) => o.origen === 'tarjeta').reduce((s, o) => s + o.montoCop, 0);
-  return {
-    saldo: { totalActivosCop: p.totalCop, totalPasivosCop: p.deudasCop, patrimonioCop: p.netoCop, saldoCuentasCop: p.cuentasCop, saldoAhorrosCop: p.cajitasCop, saldoTarjetasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'tarjeta', entrada.transacciones)), saldoDeudasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'deuda', entrada.transacciones)) },
+  const saldoEfectivoCop = entrada.cajitas.filter((c) => c.tipo === 'cuenta' && c.archivedAt === null && claseDeCuenta(c) === 'efectivo').reduce((s, c) => s + (saldos.get(c.id) ?? 0), 0);
+  const saldoBancosCop = p.cuentasCop - saldoEfectivoCop;
+  const proyeccionCompleta = proyectarFinanzas({ ...entrada, obligaciones, entradasFuturas: construirEntradasFuturas(entrada, 90) }, { dias: 90 });
+  const minimoLiquidez = proyeccionCompleta.length > 0 ? proyeccionCompleta.reduce((min, punto) => punto.saldoLiquidoCop < min.saldoLiquidoCop ? punto : min).saldoLiquidoCop : null;
+  const contextoBase: ContextoFinanciero = {
+    saldo: { totalActivosCop: p.totalCop, totalPasivosCop: p.deudasCop, patrimonioCop: p.netoCop, saldoCuentasCop: p.cuentasCop, saldoAhorrosCop: p.cajitasCop, saldoTarjetasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'tarjeta', entrada.transacciones)), saldoDeudasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'deuda', entrada.transacciones)), saldoEfectivoCop, saldoBancosCop },
     compromisos: { reservasCop, ahorroComprometidoCop, obligacionesCop: obligacionesDelPeriodoCop, cuotasCop: pagosTarjetaCop, pagosTarjetaCop, totalCop: reservasCop + ahorroComprometidoCop + obligacionesDelPeriodoCop, datosIncompletos },
-    liquidez: { saldoLiquidoCop: p.cuentasCop, dineroLibreBrutoCop, dineroLibreCop, obligacionesPendientesCop: obligacionesDelPeriodoCop, cuotasPendientesCop: pagosTarjetaCop, compromisosMetasCop: ahorroComprometidoCop, diasRestantesPeriodo: dias, disponibleDiarioCop: Math.max(0, disponibleDiarioBrutoCop), disponibleDiarioBrutoCop, liquidezMinimaCop: null, nivel: dineroLibreBrutoCop <= 0 ? 'riesgo' : datosIncompletos ? 'incompleto' : 'bien', confianza: datosIncompletos ? 'baja' : obligaciones.some((o) => o.certeza === 'estimada') ? 'media' : 'alta', factores: compromisosDelPeriodo.map((o) => ({ concepto: o.concepto, montoCop: o.montoCop, certeza: o.certeza })), },
+    liquidez: { saldoLiquidoCop: p.cuentasCop, dineroLibreBrutoCop, dineroLibreCop, obligacionesPendientesCop: obligacionesDelPeriodoCop, cuotasPendientesCop: pagosTarjetaCop, compromisosMetasCop: ahorroComprometidoCop, diasRestantesPeriodo: dias, disponibleDiarioCop: Math.max(0, disponibleDiarioBrutoCop), disponibleDiarioBrutoCop, liquidezMinimaCop: minimoLiquidez, nivel: dineroLibreBrutoCop <= 0 ? 'riesgo' : datosIncompletos ? 'incompleto' : 'bien', confianza: datosIncompletos ? 'baja' : obligaciones.some((o) => o.certeza === 'estimada') ? 'media' : 'alta', factores: compromisosDelPeriodo.map((o) => ({ concepto: o.concepto, montoCop: o.montoCop, certeza: o.certeza })), },
     proyeccion: { supuestos: ['El saldo actual se toma como punto de partida.', 'Solo se proyectan obligaciones conocidas.'], limitada: entrada.transacciones.length < 10, saldoFinalEstimadoCop: p.netoCop - obligacionesCop, serie },
     entradasFuturas: construirEntradasFuturas(entrada, 90),
-    proyeccionCompleta: proyectarFinanzas({ ...entrada, obligaciones, entradasFuturas: construirEntradasFuturas(entrada, 90) }, { dias: 90 }),
-    metas, presupuestos, obligaciones, anomalias: [], tarjetas,
+    proyeccionCompleta,
+    metas, metasInteligentes: [], presupuestos, obligaciones, anomalias: [], tarjetas,
   };
+  const anomalias = construirSenalesFinancieras(contextoBase, entrada.hoy);
+  return { ...contextoBase, metasInteligentes: evaluarMetas(contextoBase), anomalias, forecast: construirForecast(contextoBase.proyeccionCompleta, contextoBase.liquidez.confianza) };
 };

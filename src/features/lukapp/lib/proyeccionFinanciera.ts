@@ -22,6 +22,30 @@ export interface PuntoProyeccionCompleta {
   evidencia: readonly string[];
 }
 
+export type ConfianzaForecast = 'alta' | 'media' | 'baja' | 'desconocida';
+export interface EscenarioForecast {
+  nombre: 'base' | 'conservador' | 'favorable';
+  disponibleDiarioCop: number | null;
+  liquidezCop: number | null;
+  flujoNetoCop: number | null;
+  confianza: ConfianzaForecast;
+  evidencia: readonly string[];
+}
+export interface ForecastFinanciero {
+  horizontes: readonly { dias: 7 | 30 | 90; base: EscenarioForecast; conservador: EscenarioForecast; favorable: EscenarioForecast }[];
+}
+
+/** Resume la proyección existente; no vuelve a calcular movimientos ni obligaciones. */
+export const construirForecast = (serie: readonly PuntoProyeccionCompleta[], confianza: ConfianzaForecast): ForecastFinanciero => {
+  const horizontes = ([7, 30, 90] as const).map((dias) => {
+    const punto = serie[Math.min(dias, serie.length - 1)];
+    const base: EscenarioForecast = punto ? { nombre: 'base', disponibleDiarioCop: punto.disponibleDiarioCop, liquidezCop: punto.saldoLiquidoCop, flujoNetoCop: punto.entradasCop - punto.salidasCop, confianza, evidencia: punto.evidencia } : { nombre: 'base', disponibleDiarioCop: null, liquidezCop: null, flujoNetoCop: null, confianza: 'desconocida', evidencia: ['No existe proyección suficiente para este horizonte.'] };
+    const noDisponible = (nombre: 'conservador' | 'favorable'): EscenarioForecast => ({ nombre, disponibleDiarioCop: null, liquidezCop: null, flujoNetoCop: null, confianza: 'desconocida', evidencia: ['No hay hipótesis respaldada para construir este escenario.'] });
+    return { dias, base, conservador: noDisponible('conservador'), favorable: noDisponible('favorable') };
+  });
+  return { horizontes };
+};
+
 export const proyectarFinanzas = (entrada: Instantanea & { hoy: string; obligaciones: readonly ObligacionFutura[]; entradasFuturas: readonly EntradaFutura[] }, horizonte: HorizonteProyeccion): PuntoProyeccionCompleta[] => {
   const obligaciones = entrada.obligaciones;
   const saldoInicial = totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'cuenta', entrada.transacciones);

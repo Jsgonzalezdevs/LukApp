@@ -56,6 +56,7 @@ interface InicioViewProps {
   onAnotar?: () => void;
   liquidez: ContextoFinanciero['liquidez'];
   entrada: import('../lib/motorFinanciero').EntradaMotorFinanciero;
+  mostrarDecisiones?: boolean;
 }
 
 const formatMontoCompacto = (monto: number): string => {
@@ -101,6 +102,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   onAnotar,
   liquidez,
   entrada,
+  mostrarDecisiones,
 }) => {
   const [novedadExpandida, setNovedadExpandida] = useState(false);
   const catalogo = useCatalogo();
@@ -108,6 +110,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   const [indiceRotacion, setIndiceRotacion] = useState(0);
   const [mostrarRachaModal, setMostrarRachaModal] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState<string | null>(null);
+  const [periodoAbierto, setPeriodoAbierto] = useState(false);
 
   const carouselRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -190,17 +193,34 @@ export const InicioView: React.FC<InicioViewProps> = ({
     <div className="flex flex-col pb-6">
       {/* ── 1. Cabecera superior minimalista ─────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <label
-          className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
-        >
+        <div onClick={() => clavePeriodo && onCambiarPeriodo && setPeriodoAbierto((abierto) => !abierto)} className="relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs">
           <span className="text-[13px] opacity-80">🗓️</span>
-          {clavePeriodo && onCambiarPeriodo && periodoAdyacente && etiquetaPeriodoDeClave ? <select value={clavePeriodo} onChange={(e) => onCambiarPeriodo(e.target.value)} aria-label="Cambiar período" className="appearance-none bg-transparent font-bold text-[var(--fin-ink)] outline-none">{Array.from({ length: 13 }, (_, i) => periodoAdyacente(clavePeriodo, -i)).map((clave) => <option key={clave} value={clave}>{etiquetaPeriodoDeClave(clave)}</option>)}</select> : <button type="button" onClick={onCambiarMes} className="font-bold text-[var(--fin-ink)]">{etiquetaPeriodo}</button>}
+          {clavePeriodo && onCambiarPeriodo && periodoAdyacente && etiquetaPeriodoDeClave ? (
+            <>
+              <button type="button" onClick={(e) => { e.stopPropagation(); setPeriodoAbierto((abierto) => !abierto); }} aria-expanded={periodoAbierto} aria-label="Cambiar período" className="font-bold text-[var(--fin-ink)]">
+                {etiquetaPeriodoDeClave(clavePeriodo)}
+              </button>
+              <AnimatePresence>
+              {periodoAbierto ? (
+                <motion.div initial={{ opacity: 0, scaleY: 0.72, y: -5 }} animate={{ opacity: 1, scaleY: 1, y: 0 }} exit={{ opacity: 0, scaleY: 0.72, y: -5 }} transition={{ type: 'spring', stiffness: 720, damping: 32, mass: 0.42 }} style={{ transformOrigin: 'top center' }} className="absolute left-0 top-full z-40 mt-2 min-w-[190px] overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-[var(--fin-soft)] via-[var(--fin-card)] to-[var(--fin-bg)] p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
+                  {Array.from({ length: 13 }, (_, i) => periodoAdyacente(clavePeriodo, -i)).map((clave) => (
+                    <button key={clave} type="button" onClick={() => { onCambiarPeriodo(clave); setPeriodoAbierto(false); }} className={`block w-full rounded-[14px] px-3 py-2.5 text-left text-[13px] font-semibold capitalize transition-all ${clave === clavePeriodo ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-[0_5px_14px_rgba(168,85,247,0.28)]' : 'text-[var(--fin-ink)] hover:bg-white/10'}`}>
+                      {etiquetaPeriodoDeClave(clave)}
+                    </button>
+                  ))}
+                </motion.div>
+              ) : null}
+              </AnimatePresence>
+            </>
+          ) : <button type="button" onClick={onCambiarMes} className="font-bold text-[var(--fin-ink)]">{etiquetaPeriodo}</button>}
+          <motion.div animate={{ rotate: periodoAbierto ? 180 : 0 }} transition={{ duration: 0.16, ease: 'easeOut' }}>
           <ChevronDown
             className="h-3.5 w-3.5 text-[var(--fin-ink-faint)]"
             strokeWidth={2.5}
             aria-hidden="true"
           />
-        </label>
+          </motion.div>
+        </div>
 
         <div className="flex items-center gap-1.5">
           {/* Botón de Racha */}
@@ -263,9 +283,10 @@ export const InicioView: React.FC<InicioViewProps> = ({
       <AnimatePresence>
         {novedad && (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
+            initial={{ opacity: 0, x: -18, y: -3 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: -12, y: -3 }}
+            transition={{ type: 'spring', stiffness: 620, damping: 34, mass: 0.45 }}
             onClick={() => setNovedadExpandida((actual) => !actual)}
             role="button"
             tabIndex={0}
@@ -401,12 +422,14 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       </div>
 
-      <DecisionFinanciera
-        liquidez={liquidez}
-        entrada={entrada}
-        movimientos={movimientos}
-        privacidad={modoPrivacidad}
-      />
+      {mostrarDecisiones !== false ? (
+        <DecisionFinanciera
+          liquidez={liquidez}
+          entrada={entrada}
+          movimientos={movimientos}
+          privacidad={modoPrivacidad}
+        />
+      ) : null}
 
       {/* ── 4. Carrusel de Gráficas de Categorías (Gráfico de Barras con Alturas Contrastadas) ─ */}
       <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">

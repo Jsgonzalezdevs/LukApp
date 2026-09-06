@@ -16,7 +16,9 @@ import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
-import { Estrella } from './Estrella';
+import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
+import { simularPregunta } from '../lib/simulacionConversacional';
+import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
 
@@ -49,6 +51,8 @@ interface AsesorViewProps {
   promptInicial?: string | null;
   onLimpiarPromptInicial?: () => void;
   onCrearTransaccion?: (tx: ParsedTransaction) => void;
+  entradaFinanciera?: EntradaMotorFinanciero;
+  contextoParaAsesor?: ContextoParaAsesor;
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -97,6 +101,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   promptInicial,
   onLimpiarPromptInicial,
   onCrearTransaccion,
+  entradaFinanciera,
+  contextoParaAsesor,
 }) => {
   const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
   const [imagenLuki] = useState(() => {
@@ -161,7 +167,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [pensando, setPensando] = useState(false);
   /* Cuál es la respuesta más reciente del asesor: solo esa lleva el rebote de
      la Estrella al aparecer. */
-  const ultimoDelAsesor = [...messages].reverse().find((m) => m.role !== 'user')?.id;
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
@@ -376,6 +381,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     setPensando(true);
 
     try {
+      const simulacion = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
+      if (simulacion) {
+        setConexion('local');
+        setMessages((prev) => [...prev, { id: nuevoId(), role: 'bot', text: simulacion.respuesta }]);
+        return;
+      }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
       const cliente = obtenerSupabase();
       const session = cliente ? (await cliente.auth.getSession()).data.session : null;
@@ -389,7 +400,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         .filter((t) => t.kind === 'ingreso')
         .reduce((acc, t) => acc + t.amountCop, 0);
 
-      const finanzasContext = {
+      const legacyFinanzasContext = {
         mes: mesActual,
         gastosEsteMesCop: gastosMes,
         ingresosEsteMesCop: ingresosMes,
@@ -421,6 +432,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           .map(([cat, total]) => ({ categoria: cat, totalCop: total })),
       };
 
+      const finanzasContext = contextoParaAsesor ?? legacyFinanzasContext;
       let respondidoPorLLM = false;
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -633,20 +645,16 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 key={msg.id}
                 className={`flex items-end gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                {/* La pastilla gris es el avatar del usuario. La Estrella va
-                    suelta: es un personaje, y encerrarlo en un círculo lo
-                    convierte otra vez en un icono. */}
+                {/* La pastilla gris identifica al usuario; Luki acompaña las
+                    respuestas del asesor como en el dashboard. */}
                 {msg.role === 'user' ? (
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
                     <User className="h-4 w-4" strokeWidth={2.5} />
                   </div>
                 ) : (
-                  <Estrella
-                    className="h-8 w-8 shrink-0"
-                    /* Solo la última respuesta rebota al llegar. Las de más
-                       arriba ya se celebraron en su momento; repetirles el
-                       brinco en cada render sería un tic. */
-                    estado={msg.id === ultimoDelAsesor ? 'contenta' : 'quieta'}
+                  <MascotaLuki
+                    className="h-10 w-10 shrink-0 object-contain"
+                    alt="Luki, mascota del asesor"
                   />
                 )}
                 <div
@@ -804,7 +812,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             ))}
             {pensando && (
               <div className="flex items-end gap-3">
-                <Estrella className="h-8 w-8 shrink-0" estado="pensando" />
+                <MascotaLuki
+                  className="h-10 w-10 shrink-0 object-contain"
+                  alt="Luki, pensando"
+                />
                 <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] rounded-bl-sm bg-[var(--fin-card)] px-4 py-3 text-[13px] text-[var(--fin-ink-soft)]">
                   <span className="flex gap-1">
                     <span

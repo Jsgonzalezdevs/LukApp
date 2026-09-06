@@ -16,6 +16,7 @@ import { obtenerSupabase } from './supabase';
  */
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
 const CLAVE_EFECTIVO_SEPARADO = 'finanzas:resumen:efectivo-separado';
+const CLAVE_DECISIONES = 'finanzas:resumen:decisiones';
 const CLAVE_MODO_PRIVACIDAD = 'finanzas:modo-privacidad';
 const CLAVE_RECORDATORIO_ACTIVO = 'finanzas:recordatorio-racha:activo';
 const CLAVE_RECORDATORIO_HORA = 'finanzas:recordatorio-racha:hora';
@@ -169,6 +170,15 @@ export const useMostrarEfectivoSeparado = () => {
   }, []);
 
   return { mostrarEfectivoSeparado, setMostrarEfectivoSeparado };
+};
+
+export const useMostrarDecisiones = () => {
+  const [mostrarDecisiones, setEstado] = useState(() => leerBooleano(CLAVE_DECISIONES, true));
+  const setMostrarDecisiones = useCallback((valor: boolean) => {
+    setEstado(valor);
+    guardarBooleano(CLAVE_DECISIONES, valor);
+  }, []);
+  return { mostrarDecisiones, setMostrarDecisiones };
 };
 
 /**

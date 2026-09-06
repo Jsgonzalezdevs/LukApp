@@ -9,7 +9,7 @@ import type { Presupuesto } from '../lib/presupuestos';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
 import { comoTransaccion } from '../lib/recurrentes';
 import { normalizarNombre } from '../lib/contactos';
-import { saldoDeCajita, ajusteHacia } from '../lib/cajitas';
+import { saldoDeCajita, ajusteHacia, idsPasivos } from '../lib/cajitas';
 import type {
   Cajita,
   CajitaMovimiento,
@@ -73,6 +73,11 @@ export interface Almacen {
     occurredOn?: string;
     nota?: string;
     categoria?: Category | null;
+    descripcion?: string;
+    cuotasTotal?: number | null;
+    cuotaCop?: number | null;
+    interesPct?: number | null;
+    cuotaManejoCop?: number | null;
   }) => Promise<void>;
   /**
    * Pays down a debt with money from a real account.
@@ -607,6 +612,11 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       occurredOn,
       nota,
       categoria,
+      descripcion,
+      cuotasTotal,
+      cuotaCop,
+      interesPct,
+      cuotaManejoCop,
     }: {
       cajitaId: string;
       kind: CajitaMovKind;
@@ -614,6 +624,11 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       occurredOn?: string;
       nota?: string;
       categoria?: Category | null;
+      descripcion?: string;
+      cuotasTotal?: number | null;
+      cuotaCop?: number | null;
+      interesPct?: number | null;
+      cuotaManejoCop?: number | null;
     }) => {
       const movimiento: CajitaMovimiento = {
         id: nuevoId('mov'),
@@ -624,10 +639,21 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         nota: nota ?? '',
         categoria: categoria ?? null,
         createdAt: new Date().toISOString(),
+        cuotasTotal: cuotasTotal ?? null,
+        cuotaCop: cuotaCop ?? null,
+        interesPct: interesPct ?? null,
+        cuotaManejoCop: cuotaManejoCop ?? null,
       };
-      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, movimiento] }, () =>
-        repo.guardarCajitaMovimientos([movimiento]),
-      );
+      const compra = kind === 'compra' ? {
+        id: nuevoId('tx'), kind: 'gasto' as const, amountCop: Math.abs(deltaCop),
+        category: categoria ?? 'otros', description: descripcion ?? nota ?? 'Compra con tarjeta',
+        occurredOn: movimiento.occurredOn, cuentaId: cajitaId, rawTranscript: '',
+        cuotasTotal: cuotasTotal ?? 1, cuotaCop: cuotaCop ?? Math.abs(deltaCop), createdAt: movimiento.createdAt,
+      } : null;
+      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, movimiento], transacciones: compra ? [compra, ...datos.transacciones] : datos.transacciones }, async () => {
+        await repo.guardarCajitaMovimientos([movimiento]);
+        if (compra) await repo.guardarTransacciones([compra]);
+      });
     },
     [aplicar, datos, repo],
   );
@@ -753,7 +779,12 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // Measured against the EFFECTIVE balance — pocket movements plus anything
       // attributed to it. Against the raw sum, the adjustment would fight every
       // recorded transaction and the correction would never land where asked.
-      const actual = saldoDeCajita(datos.cajitaMovimientos, cajitaId, datos.transacciones);
+      const actual = saldoDeCajita(
+        datos.cajitaMovimientos,
+        cajitaId,
+        datos.transacciones,
+        idsPasivos(datos.cajitas),
+      );
       const delta = ajusteHacia(actual, saldoObjetivo);
       // Nothing changed: recording a zero-delta row would clutter the history
       // with movements that say nothing happened.

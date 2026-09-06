@@ -119,3 +119,11 @@ revoke all on function public.aceptar_invitacion_compartida(uuid, text, text) fr
 grant execute on function public.crear_espacio_compartido(text, text, text) to authenticated;
 grant execute on function public.crear_invitacion_compartida(uuid) to authenticated;
 grant execute on function public.aceptar_invitacion_compartida(uuid, text, text) to authenticated;
+
+-- Permite que las dos sesiones abiertas reciban los gastos nuevos o eliminados
+-- sin tener que recargar la pantalla.
+do $$
+begin
+  alter publication supabase_realtime add table public.gastos_compartidos;
+exception when duplicate_object then null;
+end $$;

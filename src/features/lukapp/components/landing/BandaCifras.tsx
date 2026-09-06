@@ -1,6 +1,5 @@
 import React from 'react';
 import { Reveal, Contador } from './primitivas';
-import { LineaQueSeDibuja } from './adornos';
 import { TOPE_EXENTO_UVT } from '../../lib/gmf';
 
 /**
@@ -20,7 +19,6 @@ const CIFRAS: { hasta: number; sufijo?: string; etiqueta: string }[] = [
 
 export const BandaCifras: React.FC = () => (
   <section className="banda-cifras">
-    <LineaQueSeDibuja />
     <div className="banda-grid">
       {CIFRAS.map(({ hasta, sufijo, etiqueta }, i) => (
         <Reveal className="banda-item" key={etiqueta} delay={i * 0.09}>
@@ -32,6 +30,5 @@ export const BandaCifras: React.FC = () => (
         </Reveal>
       ))}
     </div>
-    <LineaQueSeDibuja />
   </section>
 );

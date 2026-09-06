@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, Lock, Sparkles } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Download, Lock, Sparkles } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { CategorySlice, MonthTotals } from '../lib/aggregate';
 import { formatCop } from '../lib/formatCop';
@@ -28,6 +28,7 @@ interface MesViewProps {
   mesCalendario: string;
   hoy: string;
   onCambiarPeriodo: (clave: string) => void;
+  onAbrirCalendario: () => void;
   shift: (clave: string, pasos: number) => string;
   totals: MonthTotals;
   gastos: readonly CategorySlice[];
@@ -59,6 +60,7 @@ export const MesView: React.FC<MesViewProps> = ({
   mesCalendario,
   hoy,
   onCambiarPeriodo,
+  onAbrirCalendario,
   shift,
   totals,
   gastos,
@@ -105,12 +107,22 @@ export const MesView: React.FC<MesViewProps> = ({
         >
           <ChevronLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
         </button>
-        <h1
-          className="capitalize text-[var(--fin-ink)]"
-          style={{ font: 'var(--fin-t-titulo)', letterSpacing: 'var(--fin-track-titulo)' }}
-        >
-          {etiquetaPeriodo}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1
+            className="capitalize text-[var(--fin-ink)]"
+            style={{ font: 'var(--fin-t-titulo)', letterSpacing: 'var(--fin-track-titulo)' }}
+          >
+            {etiquetaPeriodo}
+          </h1>
+          <button
+            type="button"
+            onClick={onAbrirCalendario}
+            aria-label="Abrir calendario financiero"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
+          >
+            <CalendarDays className="h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => haySiguiente && onCambiarPeriodo(siguiente)}

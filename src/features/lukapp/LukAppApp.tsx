@@ -952,8 +952,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 transacciones={transacciones}
                 onCrear={(datos) => void almacen.crearCajita(datos)}
                 onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
-                onMovimiento={(cajitaId, kind, deltaCop, categoria) =>
-                  void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria })
+                onMovimiento={(cajitaId, kind, deltaCop, categoria, detalles) =>
+                  void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria, ...detalles })
                 }
                 onEliminar={(id) => void almacen.borrarCajita(id)}
                 cuentas={cuentasParaElegir}

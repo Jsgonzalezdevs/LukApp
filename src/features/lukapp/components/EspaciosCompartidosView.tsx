@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Check,
@@ -39,6 +39,8 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
     agregarGasto,
     borrarGasto,
     saldarCuentas,
+    crearInvitacion,
+    aceptarInvitacion,
   } = useEspaciosCompartidos(userId);
 
   const [espacioIdActivo, setEspacioIdActivo] = useState<string>(
@@ -78,6 +80,22 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   // Si pagué más de la mitad, me deben; si pagué menos, debo
   const balanceYo = pagadoPorYo - mitadTeorica;
   const nombreOtro = integrantes.find((i) => i.id !== 'yo')?.nombre || 'Tu pareja';
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('invitacion');
+    if (!token || !userId) return;
+    void aceptarInvitacion(token).then((ok) => {
+      if (ok) { window.history.replaceState({}, '', window.location.pathname); window.alert('La cuenta quedó vinculada al espacio compartido.'); }
+    });
+  }, [userId, aceptarInvitacion]);
+
+  const invitarPareja = async () => {
+    if (!espacioActivo) return;
+    const enlace = await crearInvitacion(espacioActivo.id);
+    if (!enlace) return;
+    await navigator.clipboard?.writeText(enlace);
+    window.alert('Enlace de invitación copiado. Tu pareja debe abrirlo con su propia cuenta de LukApp.');
+  };
 
   const handleCrearEspacio = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,6 +301,15 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                   <Plus className="h-4 w-4" />
                   <span>Anotar gasto compartido</span>
                 </RippleButton>
+
+                <button
+                  type="button"
+                  onClick={invitarPareja}
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-[13.5px] font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-soft)] active:scale-95 transition-all"
+                >
+                  <Share2 className="h-4 w-4" />
+                  <span>Vincular pareja</span>
+                </button>
 
                 <button
                   type="button"

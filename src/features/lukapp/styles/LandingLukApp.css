@@ -2188,9 +2188,23 @@
 
 /* LA BANDA DE CIFRAS */
 .landing-finanzas .banda-cifras {
+  position: relative;
   max-width: 1140px;
   margin: 0 auto;
   padding: clamp(2rem, 5vw, 3.5rem) 1.5rem;
+}
+
+/* Apple Pay termina sobre un plano sólido; esta veladura hace que el lienzo
+   atmosférico de la banda aparezca gradualmente, sin una costura horizontal. */
+.landing-finanzas .banda-cifras::before {
+  position: absolute;
+  top: -4.5rem;
+  right: 0;
+  left: 0;
+  height: 4.5rem;
+  pointer-events: none;
+  content: '';
+  background: linear-gradient(to bottom, var(--lp-bg), transparent);
 }
 
 .landing-finanzas .linea-dibujada {

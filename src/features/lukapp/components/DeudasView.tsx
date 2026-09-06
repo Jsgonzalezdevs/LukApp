@@ -36,6 +36,7 @@ interface DeudasViewProps {
     kind: CajitaMovKind,
     deltaCop: number,
     categoria?: Category | null,
+    detalles?: { cuotasTotal: number; cuotaCop: number; interesPct: number | null; cuotaManejoCop: number },
   ) => void;
   onEliminar: (cajitaId: string) => void;
   /** Live asset balances a payment can come out of. Never debts or cards. */
@@ -82,6 +83,10 @@ const DeudaCard: React.FC<{
   // whole flow is meant to stop.
   const [cuentaId, setCuentaId] = useState<string>(cuentas[0]?.id ?? '');
   const [confirmando, setConfirmando] = useState(false);
+  const [cuotas, setCuotas] = useState('1');
+  const [cuotaMensual, setCuotaMensual] = useState('');
+  const [interes, setInteres] = useState('');
+  const [cuotaManejo, setCuotaManejo] = useState('');
 
   const historial = historialDeCajita(movimientos, cajita.id);
   const comprasRegistradas = transacciones
@@ -101,7 +106,7 @@ const DeudaCard: React.FC<{
     if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
     // A purchase adds to what you owe; a payment takes away from it — and comes
     // out of a real account, which is why it goes through its own action.
-    else if (accion === 'compra') onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
+    else if (accion === 'compra') onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, { cuotasTotal: Math.max(1, Number(cuotas) || 1), cuotaCop: parseAmountInput(cuotaMensual) ?? Math.abs(valor), interesPct: interes === '' ? null : Number(interes.replace(',', '.')), cuotaManejoCop: parseAmountInput(cuotaManejo) ?? 0 });
     else {
       if (cuentaId === '') return;
       onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });
@@ -237,6 +242,15 @@ const DeudaCard: React.FC<{
               className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
             />
           </div>
+
+          {accion === 'compra' ? (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuotas<input value={cuotas} onChange={(e) => setCuotas(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuota mensual<input value={cuotaMensual} onChange={(e) => setCuotaMensual(conPuntos(e.target.value))} inputMode="numeric" placeholder="Se calcula" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Interés mensual (%)<input value={interes} onChange={(e) => setInteres(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuota de manejo<input value={cuotaManejo} onChange={(e) => setCuotaManejo(conPuntos(e.target.value))} inputMode="numeric" placeholder="0" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+            </div>
+          ) : null}
 
           {/* Only purchases get a category: an payment against the balance is not
  spending on anything, it is settling what was already spent. */}

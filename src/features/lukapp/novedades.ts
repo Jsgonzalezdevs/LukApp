@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.3.0', fecha: '2026-09-06', texto: 'Las compras manuales con tarjeta ahora permiten registrar cuotas, cuota mensual, interés y cuota de manejo para personalizar el pago proyectado.' },
+  { version: '3.2.1', fecha: '2026-09-06', texto: 'Corregimos la actualización del saldo de tarjetas para que las compras históricas no se interpreten al revés ni inflen la deuda.' },
+  { version: '3.2.0', fecha: '2026-09-06', texto: 'Finanzas en Pareja ahora vincula dos cuentas independientes mediante una invitación segura: ambos pueden anotar, consultar y actualizar los gastos compartidos en tiempo real.' },
   { version: '3.1.30', fecha: '2026-09-06', texto: 'Ampliamos las guías contextuales para explicar también Calendario y Más al entrar por primera vez.' },
   { version: '3.1.29', fecha: '2026-09-06', texto: 'El aviso de novedades ahora entra con un desplazamiento lateral suave y rápido.' },
   { version: '3.1.28', fecha: '2026-09-06', texto: 'Afinamos las microinteracciones de tarjetas y controles para dar más profundidad sin distraer.' },

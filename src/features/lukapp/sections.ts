@@ -31,7 +31,7 @@ export const SECTIONS = [
   { id: 'ajustes', icon: Menu, label: 'Más' },
 ] as const;
 
-export type SectionId = (typeof SECTIONS)[number]['id'];
+export type SectionId = (typeof SECTIONS)[number]['id'] | 'calendario';
 
 export const sectionLabel = (section: SectionId): string =>
   SECTIONS.find((s) => s.id === section)?.label ?? '';
@@ -47,6 +47,7 @@ export const sectionLabel = (section: SectionId): string =>
  * El orden no es alfabético, es por frecuencia: lo que más se toca, arriba.
  */
 export const PANELES_AJUSTES = [
+  { id: 'forecast', label: 'Proyección financiera', ayuda: 'Mira cómo podría verse tu liquidez' },
   { id: 'categorias', label: 'Categorías', ayuda: 'Crea las tuyas o cambia las que hay' },
   { id: 'topes', label: 'Topes de gasto', ayuda: 'Te avisa antes de que te pases' },
   { id: 'periodo', label: 'Período', ayuda: 'Cada cuánto se reinicia lo que ves' },

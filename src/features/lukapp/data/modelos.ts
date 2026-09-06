@@ -113,6 +113,10 @@ export interface CajitaMovimiento {
   occurredOn: string;
   nota: string;
   createdAt: string;
+  cuotasTotal?: number | null;
+  cuotaCop?: number | null;
+  interesPct?: number | null;
+  cuotaManejoCop?: number | null;
 }
 
 export const CAJITA_MOV_LABELS: Record<CajitaMovKind, string> = {
