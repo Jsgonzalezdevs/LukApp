@@ -18,6 +18,18 @@ export default defineConfig({
     minify: 'esbuild',
     target: 'es2020',
     cssMinify: true,
+    rollupOptions: {
+      output: {
+        // Mantiene las dependencias pesadas estables entre despliegues: un
+        // cambio en la interfaz no obliga a descargarlas otra vez.
+        manualChunks(id) {
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) return 'react';
+          if (id.includes('node_modules/@supabase')) return 'supabase';
+          if (id.includes('node_modules/framer-motion')) return 'motion';
+          if (id.includes('node_modules/tesseract.js')) return 'ocr';
+        },
+      },
+    },
   },
   server: {
     proxy: {

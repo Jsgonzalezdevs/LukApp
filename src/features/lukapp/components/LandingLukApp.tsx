@@ -243,6 +243,10 @@ export const LandingLukApp: React.FC<LandingProps> = ({
 
       <footer className="footer">
         <p>© 2026 LukApp — Tu dinero, bajo control</p>
+        <a className="footer-social" href="https://www.instagram.com/lukapp.app/" target="_blank" rel="noopener noreferrer" aria-label="LukApp en Instagram">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".75" fill="currentColor" stroke="none" /></svg>
+          <span>@Lukapp.app</span>
+        </a>
       </footer>
     </div>
   );

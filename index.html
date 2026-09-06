@@ -9,7 +9,9 @@
     <meta name="googlebot" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="keywords" content="LukApp, finanzas personales Colombia, controlar gastos, app para registrar gastos, presupuesto personal, 4x1000, gastos por voz, extractos bancarios, ahorro" />
     <meta name="author" content="LukApp" />
-    <link rel="canonical" href="https://lukapp.app/" />
+    <!-- La aplicación sirve la portada como shell para varias rutas. El
+         canonical se crea por ruta al renderizar para no declarar / como
+         canonical de todos los artículos del blog. -->
     <style>
       /* Primer fotograma de la portada. Replica el espacio, color y contenido
          del hero interactivo para que cargar React no parezca cambiar de web. */
@@ -134,6 +136,18 @@
           }
         ]
       }
+    </script>
+    <script>
+      // Google permite construir el canonical con JavaScript cuando no se
+      // puede variar el HTML de entrada por ruta; así /blog no hereda la URL de
+      // la portada.
+      (function () {
+        var ruta = window.location.pathname.replace(/\/+$/, '') || '/';
+        var enlace = document.createElement('link');
+        enlace.rel = 'canonical';
+        enlace.href = 'https://lukapp.app' + ruta;
+        document.head.appendChild(enlace);
+      }());
     </script>
 
     <!-- PWA & Mobile Web App Meta -->
@@ -271,6 +285,10 @@
             </article>
           </section>
         </main>
+        <footer class="seo-footer">
+          <p>© 2026 LukApp — Tu dinero, bajo control</p>
+          <a href="https://www.instagram.com/lukapp.app/" target="_blank" rel="noopener noreferrer">Instagram: @Lukapp.app</a>
+        </footer>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

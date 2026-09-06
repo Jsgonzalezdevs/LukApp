@@ -59,10 +59,16 @@ const MetaSeo: React.FC<{ articulo?: ArticuloSeo }> = ({ articulo }) => {
     const meta = document.querySelector('meta[name="description"]');
     meta?.setAttribute('content', descripcion);
     const canonical = document.querySelector('link[rel="canonical"]');
-    canonical?.setAttribute('href', `${urlBase}${window.location.pathname}`);
+    canonical?.setAttribute('href', `${urlBase}${window.location.pathname.replace(/\/+$/, '') || '/'}`);
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    ogUrl?.setAttribute('content', `${urlBase}${window.location.pathname}`);
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    ogTitle?.setAttribute('content', titulo);
+    const ogDescription = document.querySelector('meta[property="og:description"]');
+    ogDescription?.setAttribute('content', descripcion);
     const script = document.createElement('script');
     script.type = 'application/ld+json';
-    script.textContent = JSON.stringify(articulo ? { '@context': 'https://schema.org', '@type': 'Article', headline: articulo.titulo, description: articulo.descripcion, author: { '@type': 'Organization', name: 'LukApp' }, publisher: { '@type': 'Organization', name: 'LukApp' }, mainEntityOfPage: `${urlBase}${window.location.pathname}`, inLanguage: 'es-CO', dateModified: '2026-09-03', speakable: { '@type': 'SpeakableSpecification', cssSelector: ['h1', '.seo-resumen'] } } : { '@context': 'https://schema.org', '@type': 'CollectionPage', name: titulo, description: descripcion, url: `${urlBase}${rutaBlog}` });
+    script.textContent = JSON.stringify(articulo ? { '@context': 'https://schema.org', '@type': 'Article', headline: articulo.titulo, description: articulo.descripcion, author: { '@type': 'Organization', name: 'LukApp', url: urlBase }, publisher: { '@type': 'Organization', name: 'LukApp', url: urlBase }, mainEntityOfPage: `${urlBase}${window.location.pathname}`, inLanguage: 'es-CO', datePublished: '2026-09-06', dateModified: '2026-09-06', image: `${urlBase}/lukapp-og.png`, isPartOf: { '@type': 'WebSite', '@id': `${urlBase}/#website` }, breadcrumb: { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Inicio', item: `${urlBase}/` }, { '@type': 'ListItem', position: 2, name: 'Blog', item: `${urlBase}${rutaBlog}` }, { '@type': 'ListItem', position: 3, name: articulo.titulo, item: `${urlBase}${window.location.pathname}` }] } } : { '@context': 'https://schema.org', '@type': 'CollectionPage', name: titulo, description: descripcion, url: `${urlBase}${rutaBlog}`, isPartOf: { '@type': 'WebSite', '@id': `${urlBase}/#website` } });
     document.head.appendChild(script);
     return () => {
       script.remove();
@@ -73,5 +79,14 @@ const MetaSeo: React.FC<{ articulo?: ArticuloSeo }> = ({ articulo }) => {
 };
 
 export const SeoContenido: React.FC<{ articulo?: ArticuloSeo }> = ({ articulo }) => (
-  <><MetaSeo articulo={articulo} /><main className="seo-pagina"><nav aria-label="Migas de pan"><a href="/">LukApp</a> / <a href="/blog">Blog</a>{articulo ? ` / ${articulo.titulo}` : ''}</nav>{articulo ? <article><p className="seo-etiqueta">Finanzas personales · Colombia</p><h1>{articulo.titulo}</h1><p className="seo-resumen">{articulo.resumen}</p>{articulo.secciones.map((s) => <section key={s.titulo}><h2>{s.titulo}</h2><p>{s.texto}</p></section>)}<section><h2>Preguntas frecuentes</h2>{articulo.faq.map((f) => <div key={f.pregunta}><h3>{f.pregunta}</h3><p>{f.respuesta}</p></div>)}</section><a className="seo-cta" href="/entrar">Crear cuenta gratis en LukApp</a></article> : <><h1>Blog de finanzas personales en Colombia</h1><p className="seo-resumen">Guías claras para controlar gastos, crear presupuestos, ahorrar y entender tus movimientos financieros.</p><section className="seo-lista">{ARTICULOS_SEO.map((a) => <article key={a.slug}><p className="seo-etiqueta">Guía práctica</p><h2><a href={`/blog/${a.slug}`}>{a.titulo}</a></h2><p>{a.descripcion}</p><a href={`/blog/${a.slug}`}>Leer la guía</a></article>)}</section></>}</main></>
+  <><MetaSeo articulo={articulo} /><main className="seo-pagina"><nav aria-label="Migas de pan"><a href="/">LukApp</a> / <a href="/blog">Blog</a>{articulo ? ` / ${articulo.titulo}` : ''}</nav>{articulo ? <article><p className="seo-etiqueta">Finanzas personales · Colombia</p><h1>{articulo.titulo}</h1><p className="seo-resumen">{articulo.resumen}</p>{articulo.secciones.map((s) => <section key={s.titulo}><h2>{s.titulo}</h2><p>{s.texto}</p></section>)}<section><h2>Preguntas frecuentes</h2>{articulo.faq.map((f) => <div key={f.pregunta}><h3>{f.pregunta}</h3><p>{f.respuesta}</p></div>)}</section><nav aria-label="Más guías"><h2>Continúa aprendiendo</h2>{ARTICULOS_SEO.filter((a) => a.slug !== articulo.slug).slice(0, 3).map((a) => <a key={a.slug} href={`/blog/${a.slug}`}>{a.titulo}</a>)}</nav><a className="seo-cta" href="/entrar">Crear cuenta gratis en LukApp</a></article> : <><h1>Blog de finanzas personales en Colombia</h1><p className="seo-resumen">Guías claras para controlar gastos, crear presupuestos, ahorrar y entender tus movimientos financieros.</p><section className="seo-lista">{ARTICULOS_SEO.map((a) => <article key={a.slug}><p className="seo-etiqueta">Guía práctica</p><h2><a href={`/blog/${a.slug}`}>{a.titulo}</a></h2><p>{a.descripcion}</p><a href={`/blog/${a.slug}`}>Leer la guía</a></article>)}</section></>}</main></>
 );
+
+/** Resuelve la ruta solo cuando el usuario entra al blog, manteniendo el blog fuera del arranque de la app. */
+const SeoRuta: React.FC = () => {
+  const ruta = window.location.pathname.replace(/\/+$/, '') || '/blog';
+  const articulo = ARTICULOS_SEO.find((item) => `/blog/${item.slug}` === ruta);
+  return <SeoContenido articulo={articulo} />;
+};
+
+export default SeoRuta;

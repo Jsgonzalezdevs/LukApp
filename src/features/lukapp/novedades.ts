@@ -22,6 +22,10 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.3.4', fecha: '2026-09-06', texto: 'Ahora puedes encontrarnos en Instagram desde el pie de la portada: @Lukapp.app.' },
+  { version: '3.3.3', fecha: '2026-09-06', texto: 'Mejoramos las señales SEO de la portada y el blog: URL canónica por página, datos estructurados más completos, enlaces internos y sitemap actualizado.' },
+  { version: '3.3.2', fecha: '2026-09-06', texto: 'Optimizamos la entrega de la app para reutilizar mejor las dependencias grandes entre actualizaciones y acelerar cargas posteriores.' },
+  { version: '3.3.1', fecha: '2026-09-06', texto: 'Aceleramos la carga inicial separando el blog y sus contenidos del panel financiero hasta que realmente los necesites.' },
   { version: '3.3.0', fecha: '2026-09-06', texto: 'Las compras manuales con tarjeta ahora permiten registrar cuotas, cuota mensual, interés y cuota de manejo para personalizar el pago proyectado.' },
   { version: '3.2.1', fecha: '2026-09-06', texto: 'Corregimos la actualización del saldo de tarjetas para que las compras históricas no se interpreten al revés ni inflen la deuda.' },
   { version: '3.2.0', fecha: '2026-09-06', texto: 'Finanzas en Pareja ahora vincula dos cuentas independientes mediante una invitación segura: ambos pueden anotar, consultar y actualizar los gastos compartidos en tiempo real.' },
