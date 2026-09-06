@@ -759,6 +759,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             clavePeriodo={month}
             onCambiarPeriodo={setMonth}
             periodoAdyacente={(clave, delta) => periodoAdyacente(clave, delta, periodoAjustes.periodo)}
+            etiquetaPeriodoDeClave={(clave) => etiquetaDePeriodo(clave, periodoAjustes.periodo)}
             onBuscar={() => setCapa('buscar')}
             onAjustes={() => setSection('ajustes')}
             patrimonioCop={patrimonioCop}

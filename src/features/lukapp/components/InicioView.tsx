@@ -31,6 +31,7 @@ interface InicioViewProps {
   clavePeriodo?: string;
   onCambiarPeriodo?: (clave: string) => void;
   periodoAdyacente?: (clave: string, delta: number) => string;
+  etiquetaPeriodoDeClave?: (clave: string) => string;
   onBuscar: () => void;
   onAjustes: () => void;
   patrimonioCop: number;
@@ -76,6 +77,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   clavePeriodo,
   onCambiarPeriodo,
   periodoAdyacente,
+  etiquetaPeriodoDeClave,
   onBuscar,
   onAjustes,
   patrimonioCop,
@@ -100,6 +102,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   liquidez,
   entrada,
 }) => {
+  const [novedadExpandida, setNovedadExpandida] = useState(false);
   const catalogo = useCatalogo();
   const { isDismissed, dismiss } = useDismissedInsights();
   const [indiceRotacion, setIndiceRotacion] = useState(0);
@@ -191,7 +194,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs"
         >
           <span className="text-[13px] opacity-80">🗓️</span>
-          {clavePeriodo && onCambiarPeriodo && periodoAdyacente ? <select value={clavePeriodo} onChange={(e) => onCambiarPeriodo(e.target.value)} aria-label="Cambiar período" className="appearance-none bg-transparent font-bold text-[var(--fin-ink)] outline-none">{Array.from({ length: 13 }, (_, i) => periodoAdyacente(clavePeriodo, -i)).map((clave) => <option key={clave} value={clave}>{clave}</option>)}</select> : <button type="button" onClick={onCambiarMes} className="font-bold text-[var(--fin-ink)]">{etiquetaPeriodo}</button>}
+          {clavePeriodo && onCambiarPeriodo && periodoAdyacente && etiquetaPeriodoDeClave ? <select value={clavePeriodo} onChange={(e) => onCambiarPeriodo(e.target.value)} aria-label="Cambiar período" className="appearance-none bg-transparent font-bold text-[var(--fin-ink)] outline-none">{Array.from({ length: 13 }, (_, i) => periodoAdyacente(clavePeriodo, -i)).map((clave) => <option key={clave} value={clave}>{etiquetaPeriodoDeClave(clave)}</option>)}</select> : <button type="button" onClick={onCambiarMes} className="font-bold text-[var(--fin-ink)]">{etiquetaPeriodo}</button>}
           <ChevronDown
             className="h-3.5 w-3.5 text-[var(--fin-ink-faint)]"
             strokeWidth={2.5}
@@ -263,9 +266,19 @@ export const InicioView: React.FC<InicioViewProps> = ({
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="mt-3 flex items-center justify-between rounded-2xl bg-amber-500/10 border border-amber-500/25 px-3.5 py-2 text-[12.5px] text-amber-800 dark:text-amber-200"
+            onClick={() => setNovedadExpandida((actual) => !actual)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={novedadExpandida}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setNovedadExpandida((actual) => !actual);
+              }
+            }}
+            className="mt-3 flex cursor-pointer items-start justify-between rounded-2xl bg-amber-500/10 border border-amber-500/25 px-3.5 py-2 text-[12.5px] text-amber-800 dark:text-amber-200"
           >
-            <span className="truncate mr-2">
+            <span className={novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}>
               ✨ <strong>v{novedad.version}:</strong> {novedad.texto}
             </span>
             {onCerrarNovedad && (
