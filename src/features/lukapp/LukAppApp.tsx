@@ -647,7 +647,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [rawInsights, handleConsultarTipEnAsesor],
   );
 
-  const patrimonioCop = contextoFinanciero.saldo.patrimonioCop;
+  // El encabezado dice "Dinero disponible", no patrimonio. El patrimonio
+  // incluye ahorros y todavía no descuenta reservas u obligaciones; para esta
+  // cifra debe usarse la liquidez libre calculada por el motor financiero.
+  const patrimonioCop = contextoFinanciero.liquidez.dineroLibreCop;
 
   const saldoEfectivoCop = contextoFinanciero.saldo.saldoEfectivoCop ?? 0;
 

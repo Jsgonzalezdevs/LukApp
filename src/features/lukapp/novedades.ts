@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.3.10', fecha: '2026-09-07', texto: 'Corregimos la suma de Dinero disponible para descontar correctamente ahorros reservados y obligaciones.' },
   { version: '3.3.9', fecha: '2026-09-07', texto: 'Eliminamos el efecto blur del dashboard para que saldos, movimientos y controles se vean nítidos.' },
   { version: '3.3.8', fecha: '2026-09-07', texto: 'Corregimos el saldo de las tarjetas para que una compra registrada no se cuente dos veces.' },
   { version: '3.3.7', fecha: '2026-09-06', texto: 'Preparamos una migración de reparación para completar la estructura de cuentas y tarjetas cuando Supabase todavía no tiene todas las columnas.' },
