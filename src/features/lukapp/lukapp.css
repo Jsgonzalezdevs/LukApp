@@ -304,6 +304,13 @@
   -webkit-backdrop-filter: none !important;
 }
 
+/* La navegación inferior no debe ser translúcida: al quedar sobre una fila
+   de movimientos, su fondo semitransparente todavía daba la sensación de
+   desenfoque aunque el filtro ya estuviera apagado. */
+.fin-page nav[aria-label="Secciones"] {
+  background-color: var(--fin-bg) !important;
+}
+
 .fin-page {
   background-color: var(--fin-bg);
   color: var(--fin-ink);

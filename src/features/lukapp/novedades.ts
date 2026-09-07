@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.3.11', fecha: '2026-09-07', texto: 'Quitamos el último efecto translúcido de la navegación inferior para que el dashboard se vea completamente nítido.' },
   { version: '3.3.10', fecha: '2026-09-07', texto: 'Corregimos la suma de Dinero disponible para descontar correctamente ahorros reservados y obligaciones.' },
   { version: '3.3.9', fecha: '2026-09-07', texto: 'Eliminamos el efecto blur del dashboard para que saldos, movimientos y controles se vean nítidos.' },
   { version: '3.3.8', fecha: '2026-09-07', texto: 'Corregimos el saldo de las tarjetas para que una compra registrada no se cuente dos veces.' },
