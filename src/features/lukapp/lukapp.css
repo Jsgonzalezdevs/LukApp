@@ -287,11 +287,21 @@
    lo que FLOTA por encima del contenido — la barra de abajo, las hojas, los
    modales — no para las 57 tarjetas que estaban planas sobre la página. */
 .fin-page .fin-glass {
-  backdrop-filter: var(--fin-glass-filter);
-  -webkit-backdrop-filter: var(--fin-glass-filter);
+  /* El dashboard debe verse nítido; el desenfoque hacía que el contenido
+     pareciera lavado y dificultaba leer los saldos. */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   box-shadow:
     inset 0 1px 0 0 var(--fin-glass-highlight),
     var(--fin-glass-shadow);
+}
+
+/* Desactiva también los desenfoques declarados como utilidades o estilos
+   inline dentro del dashboard, incluidos overlays y hojas. */
+.fin-page [class*="backdrop-blur"],
+.fin-page [style*="backdrop-filter"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .fin-page {
