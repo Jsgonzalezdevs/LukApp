@@ -488,3 +488,13 @@ describe('saldoEfectivo con cuentas de efectivo creadas a mano', () => {
     expect(saldoEfectivo([archivada, nequi], movimientos)).toBe(0);
   });
 });
+
+describe('compras de tarjeta y saldo', () => {
+  it('no cuenta dos veces la compra que también alimenta cuotas', () => {
+    const tarjeta = caj({ id: 'tarjeta', tipo: 'tarjeta' });
+    const compra = mov({ id: 'compra', cajitaId: tarjeta.id, kind: 'compra', deltaCop: 899259, occurredOn: '2026-09-07' });
+    const registro = tx({ id: 'registro', cuentaId: tarjeta.id, amountCop: 899259, occurredOn: '2026-09-07' });
+
+    expect(saldoDeCajita([compra], tarjeta.id, [registro], idsPasivos([tarjeta]))).toBe(899259);
+  });
+});

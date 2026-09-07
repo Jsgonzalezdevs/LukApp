@@ -4,7 +4,7 @@ import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import { CAJITA_ICONS, ES_PASIVO, etiquetaTipoCajita } from '../data/modelos';
 import type { Transaction } from '../types';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
-import { saldoDeCajita } from '../lib/cajitas';
+import { idsPasivos, saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
 import { RippleButton } from './RippleButton';
 
@@ -95,7 +95,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
     setEditandoCuenta(false);
   };
 
-  const saldo = saldoDeCajita(movimientos, cajita.id, transacciones);
+  const saldo = saldoDeCajita(movimientos, cajita.id, transacciones, idsPasivos([cajita]));
   const Icono = iconoDeCajita(cajita.icon);
   const propios = movimientos.filter((m) => m.cajitaId === cajita.id);
   // Transferirse a sí misma no es una operación, es un no-op con dos apuntes.

@@ -39,6 +39,11 @@ export const saldosPorCajita = (
   pasivos: ReadonlySet<string> = new Set(),
 ): Map<string, number> => {
   const saldos = new Map<string, number>();
+  // Una compra con tarjeta deja dos rastros intencionales: el movimiento
+  // actualiza la deuda y la transacción alimenta cuotas/reportes. Consumir aquí
+  // cada movimiento de compra una sola vez evita convertir esos dos rastros en
+  // una deuda duplicada, incluso si hay dos compras iguales el mismo día.
+  const comprasConsumidas = new Set<string>();
   for (const mov of movimientos) {
     saldos.set(mov.cajitaId, (saldos.get(mov.cajitaId) ?? 0) + mov.deltaCop);
   }
@@ -46,6 +51,20 @@ export const saldosPorCajita = (
   // This is what stops a balance going stale the moment something is recorded.
   for (const tx of transacciones) {
     if (!tx.cuentaId) continue;
+    if (tx.kind === 'gasto' && pasivos.has(tx.cuentaId)) {
+      const indice = movimientos.findIndex(
+        (mov, i) =>
+          mov.kind === 'compra' &&
+          mov.cajitaId === tx.cuentaId &&
+          mov.occurredOn === tx.occurredOn &&
+          mov.deltaCop === tx.amountCop &&
+          !comprasConsumidas.has(String(i)),
+      );
+      if (indice !== -1) {
+        comprasConsumidas.add(String(indice));
+        continue;
+      }
+    }
     saldos.set(tx.cuentaId, (saldos.get(tx.cuentaId) ?? 0) + deltaAtribuido(tx, pasivos));
   }
   return saldos;
@@ -57,14 +76,7 @@ export const saldoDeCajita = (
   transacciones: readonly Transaction[] = [],
   pasivos: ReadonlySet<string> = new Set(),
 ): number =>
-  movimientos.reduce(
-    (total, mov) => (mov.cajitaId === cajitaId ? total + mov.deltaCop : total),
-    0,
-  ) +
-  transacciones.reduce(
-    (total, tx) => (tx.cuentaId === cajitaId ? total + deltaAtribuido(tx, pasivos) : total),
-    0,
-  );
+  saldosPorCajita(movimientos, transacciones, pasivos).get(cajitaId) ?? 0;
 
 /** The delta that turns `saldoActual` into `saldoObjetivo`. */
 export const ajusteHacia = (saldoActual: number, saldoObjetivo: number): number =>
