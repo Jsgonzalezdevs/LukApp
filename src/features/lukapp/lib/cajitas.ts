@@ -205,10 +205,13 @@ export const patrimonio = (
   // El signo del saldo crudo de una deuda/tarjeta depende de cómo se fijó (a
   // mano o por movimientos atribuidos), así que no se puede asumir uno solo.
   // Lo único que importa para "lo que debes" es la magnitud.
-  const deudasCop = Math.abs(
-    totalPorTipo(cajitas, movimientos, 'deuda', transacciones) +
-      totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones),
-  );
+  // Cada pasivo puede tener un signo interno distinto según si nació de un
+  // ajuste manual o de un movimiento. Hay que normalizar cada saldo antes de
+  // sumarlo; aplicar abs() al total permitía que una tarjeta y una deuda se
+  // cancelaran entre sí y ocultaran una obligación real.
+  const deudasCop =
+    Math.abs(totalPorTipo(cajitas, movimientos, 'deuda', transacciones)) +
+    Math.abs(totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones));
   const totalCop = cuentasCop + cajitasCop;
 
   return { cuentasCop, cajitasCop, deudasCop, totalCop, netoCop: totalCop - deudasCop };

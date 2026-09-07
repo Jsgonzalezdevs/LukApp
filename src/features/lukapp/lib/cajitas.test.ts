@@ -497,4 +497,15 @@ describe('compras de tarjeta y saldo', () => {
 
     expect(saldoDeCajita([compra], tarjeta.id, [registro], idsPasivos([tarjeta]))).toBe(899259);
   });
+
+  it('suma deudas y tarjetas aunque sus signos internos sean opuestos', () => {
+    const tarjeta = caj({ id: 'tarjeta-2', tipo: 'tarjeta' });
+    const deuda = caj({ id: 'deuda-2', tipo: 'deuda' });
+    const movimientos = [
+      mov({ id: 'tarjeta-mov', cajitaId: tarjeta.id, deltaCop: 500000 }),
+      mov({ id: 'deuda-mov', cajitaId: deuda.id, deltaCop: -300000 }),
+    ];
+
+    expect(patrimonio([tarjeta, deuda], movimientos).deudasCop).toBe(800000);
+  });
 });
