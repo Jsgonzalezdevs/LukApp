@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.4.1', fecha: '2026-09-08', texto: 'El asesor espera el arranque del servidor y distingue conexión, sesión y disponibilidad de la IA. Ahora explica por qué responde el modo local.' },
   { version: '3.4.0', fecha: '2026-09-08', texto: 'El asesor recuerda los datos de tu consulta de deudas y compara pagos con tus ahorros y la reserva que necesitas conservar. Mejoramos las respuestas de la IA y la recuperación cuando tarda en responder.' },
   { version: '3.3.14', fecha: '2026-09-08', texto: 'El asesor distingue consultas y planes de gastos realizados. En modo local pide los datos necesarios al consultar sobre deudas, sin ofrecer registrar los montos de la pregunta.' },
   { version: '3.3.12', fecha: '2026-09-07', texto: 'Revisamos las sumas de deudas y tarjetas para evitar cancelaciones incorrectas cuando sus saldos tienen signos distintos.' },

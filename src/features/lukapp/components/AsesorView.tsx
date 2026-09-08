@@ -178,6 +178,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
+  const [detalleConexion, setDetalleConexion] = useState<string | null>(null);
+  const revisionConexion = useRef(0);
   const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -352,17 +354,28 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // servicio, así que para cuando escribas el primer mensaje suele estar listo.
   useEffect(() => {
     let vigente = true;
-    fetch(apiUrl('/api/salud'))
+    const revision = revisionConexion.current;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000);
+    fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (vigente) setConexion(d?.ia ? 'en-linea' : 'local');
+        if (vigente && revision === revisionConexion.current) {
+          setConexion(d?.ia ? 'configurada' : 'local');
+          setDetalleConexion(d?.ia ? null : 'El servidor no confirmó una IA configurada.');
+        }
       })
       .catch(() => {
         // Sin servidor no hay IA, pero el motor local sigue respondiendo.
-        if (vigente) setConexion('local');
-      });
+        if (vigente && revision === revisionConexion.current) {
+          setConexion('local');
+          setDetalleConexion('No se pudo conectar con el servidor. Puedes volver a intentarlo.');
+        }
+      }).finally(() => clearTimeout(timeout));
     return () => {
       vigente = false;
+      controller.abort();
+      clearTimeout(timeout);
     };
   }, []);
 
@@ -381,6 +394,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setPensando(true);
+    revisionConexion.current += 1;
+    setDetalleConexion(null);
 
     try {
       const simulacion = entradaFinanciera && !context.conversacionDeuda && !esConsultaDeuda(textoUsuario)
@@ -392,7 +407,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
       const cliente = obtenerSupabase();
-      const session = cliente ? (await cliente.auth.getSession()).data.session : null;
+      const session = cliente ? await cliente.auth.getSession().then(r => r.data.session).catch(() => null) : null;
 
       const mesActual = bogotaDate().slice(0, 7);
       const txMes = transacciones.filter((t) => t.occurredOn.startsWith(mesActual));
@@ -449,7 +464,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
         try {
         const res = await fetch(apiUrl('/api/asesor-ia'), {
           method: 'POST',
@@ -501,12 +516,23 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               setMessages((prev) => [...prev, botMsg]);
               respondidoPorLLM = true;
               setConexion('en-linea');
+              setDetalleConexion(null);
             }
+            else {
+              setDetalleConexion('El servidor respondió, pero ningún proveedor de IA pudo completar la consulta. Revisa las claves, la cuota y los registros del backend.');
+            }
+          } else {
+            setDetalleConexion(res.status === 401 || res.status === 403
+              ? 'La IA no pudo validar tu sesión. Vuelve a iniciar sesión e intenta de nuevo.'
+              : res.status === 429
+                ? 'La IA alcanzó su límite de solicitudes. Intenta de nuevo más tarde.'
+                : `El servidor devolvió un error (${res.status}). Responde el modo local.`);
           }
         } finally {
           clearTimeout(timeoutId);
         }
         } catch {
+          setDetalleConexion('La IA no respondió en el tiempo disponible o hubo un problema de conexión. Puedes volver a intentarlo.');
           // Si falla la red, el fallback offline toma el control
         }
 
@@ -590,26 +616,35 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               onClick={async () => {
                 if (intentandoDespertar) return;
                 setIntentandoDespertar(true);
+                revisionConexion.current += 1;
+                setDetalleConexion('Conectando con el servidor; puede tardar hasta un minuto.');
 
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+                const revision = revisionConexion.current;
 
                 try {
-                  const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal });
+                  const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' });
                   clearTimeout(timeoutId);
+                  if (revision !== revisionConexion.current) return;
 
                   if (!res.ok) {
                     console.log('[asesor] Servidor retornó:', res.status);
                     setConexion('local');
+                    setDetalleConexion(`No se pudo despertar el servidor (HTTP ${res.status}).`);
                     return;
                   }
 
                   const data = await res.json();
+                  if (revision !== revisionConexion.current) return;
                   console.log('[asesor] Servidor disponible, IA:', data?.ia);
-                  setConexion(data?.ia ? 'en-linea' : 'local');
+                  setConexion(data?.ia ? 'configurada' : 'local');
+                  setDetalleConexion(data?.ia ? 'El servidor está despierto. Envía una consulta para comprobar la IA.' : 'El servidor está despierto, pero no tiene un proveedor de IA configurado.');
                 } catch (error) {
+                  if (revision !== revisionConexion.current) return;
                   console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
                   setConexion('local');
+                  setDetalleConexion('El servidor no respondió en un minuto o hubo un error de red. Intenta de nuevo.');
                 } finally {
                   clearTimeout(timeoutId);
                   setIntentandoDespertar(false);
@@ -625,6 +660,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       </div>
 
       {/* Messages */}
+      {detalleConexion && <p role="status" className="px-5 pb-3 text-sm text-[var(--fin-ink-soft)]">{detalleConexion}</p>}
       <div className="flex-1 overflow-y-auto p-5">
         {/* Antes de que exista una conversación real (solo el saludo inicial),
  un único globo de chat flotando en una pantalla ancha se ve como un
