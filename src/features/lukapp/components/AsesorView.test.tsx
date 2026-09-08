@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AsesorView } from './AsesorView';
 import { etiquetaConexion } from '../lib/localDate';
 import { LEXICO_VACIO } from '../lib/aprendizaje';
@@ -172,8 +172,28 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     vi.stubGlobal('fetch', responder({ offline: true, ia: false }));
   });
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+  });
+  it('sale de una validación de sesión bloqueada sin enviar una consulta anónima', async () => {
+    vi.useFakeTimers();
+    vi.mocked(supabaseData.obtenerSupabase).mockReturnValue({
+      auth: { getSession: () => new Promise(() => {}) },
+    } as any);
+    const peticiones = responder({ ia: true });
+    vi.stubGlobal('fetch', peticiones);
+    render(<AsesorView {...props} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(screen.getByText('Validando tu sesión…')).toBeTruthy();
+    await act(async () => { await vi.advanceTimersByTimeAsync(8000); });
+    expect(screen.queryByText('Validando tu sesión…')).toBeNull();
+    expect(screen.getByText(/No pudimos validar tu sesión/)).toBeTruthy();
+    expect(screen.getByText(/no has registrado movimientos/)).toBeTruthy();
+    expect(peticiones.mock.calls.some(([url]) => String(url).includes('/api/asesor-ia'))).toBe(false);
+    expect(input).not.toBeDisabled();
   });
   it.each([401, 403, 429, 500])('explica el error HTTP %s sin anunciar IA en línea', async (status) => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => Promise.resolve(

@@ -19,6 +19,7 @@ import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
 import { esConsultaDeuda } from '../lib/conversacionDeuda';
+import { esperarConLimite } from '../lib/esperarConLimite';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
@@ -167,6 +168,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   ]);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
+  const [etapaConsulta, setEtapaConsulta] = useState('Validando tu sesión…');
   /* Cuál es la respuesta más reciente del asesor: solo esa lleva el rebote de
      la Estrella al aparecer. */
   const haptic = useHapticFeedback();
@@ -394,6 +396,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setPensando(true);
+    setEtapaConsulta('Validando tu sesión…');
     revisionConexion.current += 1;
     setDetalleConexion(null);
 
@@ -407,7 +410,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
       const cliente = obtenerSupabase();
-      const session = cliente ? await cliente.auth.getSession().then(r => r.data.session).catch(() => null) : null;
+      const session = cliente
+        ? await esperarConLimite(cliente.auth.getSession(), 8000).then(r => r.data.session).catch(() => null)
+        : null;
 
       const mesActual = bogotaDate().slice(0, 7);
       const txMes = transacciones.filter((t) => t.occurredOn.startsWith(mesActual));
@@ -463,6 +468,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       }
 
       try {
+        if (cliente && !session) {
+          setDetalleConexion('No pudimos validar tu sesión. Vuelve a iniciar sesión para usar la IA; mientras tanto responde el modo local.');
+        } else {
+        setEtapaConsulta('Esperando respuesta de la IA… puede tardar hasta un minuto.');
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 60000);
         try {
@@ -530,6 +539,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           }
         } finally {
           clearTimeout(timeoutId);
+        }
         }
         } catch {
           setDetalleConexion('La IA no respondió en el tiempo disponible o hubo un problema de conexión. Puedes volver a intentarlo.');
@@ -888,7 +898,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       style={{ animationDelay: '300ms' }}
                     />
                   </span>
-                  <span>Analizando tus finanzas...</span>
+                  <span role="status">{etapaConsulta}</span>
                 </div>
               </div>
             )}
