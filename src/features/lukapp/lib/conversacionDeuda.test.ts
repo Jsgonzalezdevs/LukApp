@@ -4,6 +4,25 @@ import { responderAsesor, detectarMovimiento, type AsesorContext } from './aseso
 import { LEXICO_VACIO } from './aprendizaje';
 
 describe('conversación guiada de deuda', () => {
+  it.each(['El saldo total es 900000', 'Mi deuda es 900 mil pesos.', 'El saldo pendiente es $900.000', 'Son 900000', 'En total son 900 mil'])('acepta una respuesta natural: %s', texto => {
+    const r = continuarDeuda(texto, { pendiente: 'deuda', ingresosInciertos: true });
+    expect(r.estado?.deuda).toBe(900000);
+    expect(r.estado?.pendiente).toBe('ahorros');
+    expect(r.respuesta).not.toContain('Cuál es el saldo total');
+    expect(r.respuesta).not.toContain('situación laboral');
+  });
+  it('avanza con ahorros y reserva expresados en frases', () => {
+    const ahorro = continuarDeuda('Tengo ahorrado 1,5 millones', { deuda: 900000, pendiente: 'ahorros' });
+    expect(ahorro.estado?.ahorros).toBe(1500000);
+    const reserva = continuarDeuda('Necesito conservar 500 mil pesos.', ahorro.estado);
+    expect(reserva.estado?.reserva).toBe(500000);
+    expect(reserva.estado?.pendiente).toBeUndefined();
+  });
+  it.each(['La cuota es 70000', 'No sé, entre 500000 y 900000', 'La tasa es 2%', 'No debo 900000'])('no sustituye el saldo con datos ambiguos: %s', texto => {
+    const r = continuarDeuda(texto, { pendiente: 'deuda' });
+    expect(r.estado?.deuda).toBeUndefined();
+    expect(r.respuesta).toContain('No pude identificar');
+  });
   it.each([['70000', 70000], ['$700.000', 700000], ['1,5 millones', 1500000], ['70 mil', 70000], ['0', 0]])('interpreta %s', (texto, esperado) => {
     expect(leerMontoConversacion(String(texto))).toBe(esperado);
   });

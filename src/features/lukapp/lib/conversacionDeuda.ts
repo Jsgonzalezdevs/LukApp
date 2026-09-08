@@ -55,25 +55,39 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
 
   let recibidos = 0;
   for (const campo of ['deuda', 'ahorros', 'reserva'] as const) {
-    const etiqueta = { deuda: '(?:deuda|debo|saldo pendiente)', ahorros: '(?:ahorros|tengo ahorrados?)', reserva: '(?:reserva|necesito conservar)' }[campo];
+    const etiqueta = {
+      deuda: '(?:(?:el |mi |la )?(?:deuda|saldo(?: total)?(?: pendiente)?)|debo)',
+      ahorros: '(?:(?:mis |los )?ahorros|tengo ahorrados?|he ahorrado)',
+      reserva: '(?:(?:mi |la )?reserva|necesito conservar|quiero conservar|necesito guardar)',
+    }[campo];
     const valor = normalizarImportes(texto).match(new RegExp(`(?:^|[,;\\n]\\s*)${etiqueta}\\s*(?:es|son|de|:)?\\s*(.+?)(?=[,;]\\s*[a-z]|$)`))?.[1];
-    const monto = valor === undefined ? null : leerMontoConversacion(valor);
+    const monto = valor === undefined ? null : leerMontoConversacion(valor.replace(/[.!]$/, '').trim());
     if (monto !== null && (campo !== 'deuda' || monto > 0)) {
       estado[campo] = monto;
       recibidos++;
     }
   }
-  const monto = leerMontoConversacion(texto);
+  // Solo quitar envolturas inequívocas de respuesta. No extraer el primer
+  // número de cualquier frase: podría ser una cuota, una fecha o un interés.
+  const respuestaBreve = normalizarImportes(texto)
+    .replace(/^(?:son|es|serian|seria|en total son|en total es)\s+/, '')
+    .replace(/[.!]$/, '').trim();
+  const monto = leerMontoConversacion(respuestaBreve);
   if (recibidos === 0 && anterior?.pendiente && monto !== null && (anterior.pendiente !== 'deuda' || monto > 0)) {
     estado[anterior.pendiente] = monto;
+    recibidos++;
   }
   const pendiente = (['deuda', 'ahorros', 'reserva'] as const).find((campo) => estado[campo] === undefined);
   estado.pendiente = pendiente;
   const cop = (valor: number) => `$${valor.toLocaleString('es-CO')}`;
   const resumen = [estado.deuda === undefined ? '' : `Deuda: **${cop(estado.deuda)}**.`, estado.ahorros === undefined ? '' : `Ahorros: **${cop(estado.ahorros)}**.`, estado.reserva === undefined ? '' : `Reserva: **${cop(estado.reserva)}**.`].filter(Boolean).join(' ');
-  const contexto = estado.ingresosInciertos ? ' Como mencionaste tu contrato o una situación laboral que puede afectar tus ingresos, incluiremos el dinero que necesitas conservar.' : '';
+  const contexto = estado.ingresosInciertos && !anterior ? ' Como mencionaste tu contrato o una situación laboral que puede afectar tus ingresos, incluiremos el dinero que necesitas conservar.' : '';
   if (pendiente) {
-    return { estado, respuesta: `${anterior ? 'Sigamos con la comparación.' : 'Podemos comparar pagar la deuda con tus ahorros y conservar dinero para tus compromisos.'}${contexto}\n\n${resumen ? resumen + '\n\n' : ''}${PREGUNTAS[pendiente]}\n\nPuedes escribir «cancelar» para salir de esta consulta.` };
+    const inicio = !anterior
+      ? 'Podemos comparar pagar la deuda con tus ahorros y conservar dinero para tus compromisos.'
+      : recibidos > 0 ? 'Gracias, ya tengo ese dato.'
+        : 'No pude identificar con seguridad ese monto. Puedes responder, por ejemplo, «900 mil» o «el saldo total es 900000».';
+    return { estado, respuesta: `${inicio}${contexto}\n\n${resumen ? resumen + '\n\n' : ''}${PREGUNTAS[pendiente]}${anterior ? '' : '\n\nPuedes escribir «cancelar» para salir de esta consulta.'}` };
   }
   const deuda = estado.deuda!;
   const ahorros = estado.ahorros!;
