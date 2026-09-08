@@ -2,8 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { continuarDeuda, leerMontoConversacion } from './conversacionDeuda';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from './asesorBot';
 import { LEXICO_VACIO } from './aprendizaje';
+import type { Cajita } from '../data/modelos';
 
 describe('conversación guiada de deuda', () => {
+  const cajita: Cajita = { id: 'mac', nombre: 'MacBook Air M5', tipo: 'cajita', icon: 'Wallet', metaCop: 5000000, tasaEaPct: null, archivedAt: null, createdAt: '' };
+  it('usa el saldo de la cajita indicada sin confundir M5 con un monto', () => {
+    const r = responderAsesor('Lo que tengo de ahorro en la cajita de la MacBook Air M5', [], [cajita], { mac: 1500000 }, [], LEXICO_VACIO, {
+      ultimoAsunto: null, ultimaFecha: null, conversacionDeuda: { deuda: 900000, pendiente: 'ahorros' },
+    });
+    expect(r.newContext.conversacionDeuda).toMatchObject({ ahorros: 1500000, pendiente: 'reserva' });
+    expect(r.text).toContain('MacBook Air M5');
+    expect(r.action).toBeUndefined();
+  });
+  it('distingue saldo cero, saldo ausente y nombres duplicados', () => {
+    const estado = { deuda: 900000, pendiente: 'ahorros' as const };
+    const pregunta = 'Mi ahorro en la cajita MacBook Air M5';
+    expect(continuarDeuda(pregunta, estado, [cajita], { mac: 0 }).estado?.ahorros).toBe(0);
+    expect(continuarDeuda(pregunta, estado, [cajita], {}).estado?.ahorros).toBeUndefined();
+    expect(continuarDeuda(pregunta, estado, [cajita, { ...cajita, id: 'otra' }], { mac: 500 }).respuesta).toContain('varias cajitas');
+    expect(continuarDeuda(pregunta, estado, [{ ...cajita, archivedAt: '2026-01-01' }], { mac: 500 }).estado?.ahorros).toBeUndefined();
+  });
   it.each(['No perdón, eran 900.000', 'Perdón, son 900 mil', 'Eran 900000', 'Corrijo: 900000', 'Me equivoqué, eran 900000'])('corrige el dato anterior sin responder la pregunta siguiente: %s', texto => {
     const inicial = continuarDeuda('90000', { pendiente: 'deuda' });
     const r = continuarDeuda(texto, inicial.estado);

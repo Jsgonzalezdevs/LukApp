@@ -1,4 +1,5 @@
 import { normalizarNombre } from './contactos';
+import type { Cajita } from '../data/modelos';
 
 type CampoDeuda = 'deuda' | 'ahorros' | 'reserva';
 export interface ConversacionDeuda {
@@ -42,7 +43,7 @@ export function esConsultaDeuda(texto: string): boolean {
     !esRegistroExplicito(texto) && !/\b(cuanto gaste|cuanto he gastado|resumen|saldo de mis cuentas)\b/.test(norm);
 }
 
-export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
+export function continuarDeuda(texto: string, anterior?: ConversacionDeuda, cajitas: readonly Cajita[] = [], balances: Record<string, number> = {}): {
   estado?: ConversacionDeuda;
   respuesta: string | null;
 } {
@@ -55,6 +56,26 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
   if (/\b(contrato|desempleo|sin trabajo)\b/.test(norm)) estado.ingresosInciertos = true;
 
   let recibidos = 0;
+  let fuente = '';
+  if (anterior?.pendiente === 'ahorros' && /\b(cajita|ahorro|ahorros|cuenta)\b/.test(norm)) {
+    const coincidencias = cajitas.filter(c => c.archivedAt === null &&
+      ['cuenta', 'cajita'].includes(c.tipo) &&
+      (` ${norm} `).includes(` ${normalizarNombre(c.nombre)} `));
+    if (coincidencias.length > 1) {
+      return { estado, respuesta: `Encontré varias cajitas: ${coincidencias.map(c => c.nombre).join(', ')}. ¿Cuál quieres usar para esta comparación?` };
+    }
+    const cajita = coincidencias[0];
+    if (cajita) {
+      const saldo = balances[cajita.id];
+      if (!Number.isFinite(saldo) || saldo < 0) {
+        return { estado, respuesta: `Encontré «${cajita.nombre}», pero no tengo un saldo válido para esta comparación. Revisa su saldo o dime cuánto quieres considerar.` };
+      }
+      estado.ahorros = saldo;
+      estado.ultimoCampo = 'ahorros';
+      recibidos++;
+      fuente = `Tomé **$${saldo.toLocaleString('es-CO')}** del saldo registrado en «${cajita.nombre}». Solo lo uso para comparar; no moví dinero.\n\n`;
+    }
+  }
   const correccion = normalizarImportes(texto).match(/^(?:no\s*[,;]?\s*)?(?:perdon\s*[,;]?\s*(?:eran?|son)?|eran?|corrijo|me equivoque\s*[,;]?\s*(?:eran?|son)?)\s*:?\s*(.+)$/);
   if (correccion) {
     const montoCorregido = leerMontoConversacion(correccion[1].replace(/[.!]$/, '').trim());
@@ -98,7 +119,7 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
       ? 'Podemos comparar pagar la deuda con tus ahorros y conservar dinero para tus compromisos.'
       : recibidos > 0 ? (correccion ? 'Listo, corregí el dato anterior.' : 'Gracias, ya tengo ese dato.')
         : 'No pude identificar con seguridad ese monto. Puedes responder, por ejemplo, «900 mil» o «el saldo total es 900000».';
-    return { estado, respuesta: `${inicio}${contexto}\n\n${resumen ? resumen + '\n\n' : ''}${PREGUNTAS[pendiente]}${anterior ? '' : '\n\nPuedes escribir «cancelar» para salir de esta consulta.'}` };
+    return { estado, respuesta: `${inicio}${contexto}\n\n${fuente}${resumen ? resumen + '\n\n' : ''}${PREGUNTAS[pendiente]}${anterior ? '' : '\n\nPuedes escribir «cancelar» para salir de esta consulta.'}` };
   }
   const deuda = estado.deuda!;
   const ahorros = estado.ahorros!;

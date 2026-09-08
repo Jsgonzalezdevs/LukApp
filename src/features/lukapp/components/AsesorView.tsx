@@ -470,7 +470,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       };
 
       const finanzasContext = {
-        ...(contextoParaAsesor ?? legacyFinanzasContext),
+        ...legacyFinanzasContext,
+        ...contextoParaAsesor,
+        cajitas: cajitas.filter(c => c.archivedAt === null).map(c => ({
+          nombre: c.nombre, tipo: c.tipo, saldoCop: cajitasBalances[c.id] ?? null,
+          metaCop: c.metaCop, tasaEaPct: c.tasaEaPct,
+        })),
         consultaDeuda: context.conversacionDeuda,
       };
       let respondidoPorLLM = false;

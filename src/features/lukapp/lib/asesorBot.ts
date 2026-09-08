@@ -261,7 +261,7 @@ export function responderAsesor(
 ): AsesorResponse {
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
-  const consulta = continuarDeuda(texto, context.conversacionDeuda);
+  const consulta = continuarDeuda(texto, context.conversacionDeuda, cajitas, cajitasBalances);
   newContext.conversacionDeuda = consulta.estado;
   if (consulta.respuesta) {
     return { text: consulta.respuesta, newContext, suggestions: ['Cancelar'] };

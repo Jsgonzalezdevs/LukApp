@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.5.0', fecha: '2026-09-08', texto: 'El asesor puede usar el saldo de la cajita que mencionas para comparar pagos de deudas. La IA recibe tus cajitas junto con el contexto financiero de tus cuentas, metas y compromisos.' },
   { version: '3.4.5', fecha: '2026-09-08', texto: 'El asesor entiende correcciones como «no perdón, eran 900.000» y actualiza el último dato sin confundirlo con la siguiente pregunta.' },
   { version: '3.4.4', fecha: '2026-09-08', texto: 'El asesor entiende respuestas como «el saldo total es 900000» y avanza sin repetir la pregunta. También reconoce ahorros y reservas expresados en frases.' },
   { version: '3.4.3', fecha: '2026-09-08', texto: 'Reforzamos la conexión del asesor: límites de espera en los proveedores de IA, protección ante respuestas vacías y envíos simultáneos, y recuperación del chat ante errores.' },
