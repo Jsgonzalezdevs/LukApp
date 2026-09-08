@@ -176,6 +176,51 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
+  it.each([null, { text: '   ' }, { text: '<think>oculto</think>' }, { text: 123 }])('rechaza respuestas inutilizables: %j', async cuerpo => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => Promise.resolve({
+      ok: true, json: async () => String(url).includes('/api/salud') ? { ia: true } : cuerpo,
+    })));
+    render(<AsesorView {...props} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await screen.findByText(/no has registrado movimientos/);
+    expect(screen.queryByText('En línea')).toBeNull();
+  });
+  it('evita consultas simultáneas y cancela la petición al salir', async () => {
+    let signal: AbortSignal | undefined;
+    const peticiones = vi.fn().mockImplementation((url: string, init) => {
+      if (String(url).includes('/api/salud')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
+      signal = init.signal;
+      return new Promise((_resolve, reject) => init.signal.addEventListener('abort', () => reject(new Error('abort'))));
+    });
+    vi.stubGlobal('fetch', peticiones);
+    const vista = render(<AsesorView {...props} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    act(() => {
+      fireEvent.keyDown(input, { key: 'Enter' });
+      fireEvent.keyDown(input, { key: 'Enter' });
+    });
+    await waitFor(() => expect(signal).toBeDefined());
+    expect(peticiones.mock.calls.filter(([url]) => String(url).includes('/api/asesor-ia'))).toHaveLength(1);
+    vista.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+  it.each(['cabeceras', 'cuerpo'])('libera el chat si la IA no termina de enviar %s', async etapa => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/api/salud')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
+      return etapa === 'cabeceras' ? new Promise(() => {}) : Promise.resolve({ ok: true, json: () => new Promise(() => {}) });
+    }));
+    render(<AsesorView {...props} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
+    expect(screen.getByText(/no has registrado movimientos/)).toBeTruthy();
+    expect(screen.queryByText(/Esperando respuesta de la IA/)).toBeNull();
+  });
   it('sale de una validación de sesión bloqueada sin enviar una consulta anónima', async () => {
     vi.useFakeTimers();
     vi.mocked(supabaseData.obtenerSupabase).mockReturnValue({

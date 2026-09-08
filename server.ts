@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { fetchConLimite } from './src/lib/fetchConLimite.ts';
+import { esperarConLimite } from './src/features/lukapp/lib/esperarConLimite.ts';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -1092,7 +1094,7 @@ app.post('/api/analizar-extracto', async (req, res) => {
 app.get('/api/salud', (_req, res) => {
   const hayIA = Boolean(
     process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY ||
-    process.env.ANTHROPIC_API_KEY || process.env.DEEPSEEK_API_KEY,
+    process.env.ANTHROPIC_API_KEY || process.env.DEEPSEEK_API_KEY || process.env.GROK_API_KEY || process.env.XAI_API_KEY,
   );
   return res.status(200).json({ ok: true, ia: hayIA });
 });
@@ -1263,6 +1265,7 @@ app.post('/api/atajo/movimiento', async (req, res) => {
 // ASESOR E INSIGHTS FINANCIEROS CON IA (Groq / Grok / DeepSeek / Gemini / Claude / OpenAI)
 // ----------------------------------------------------------------------
 interface ConsultaIAParams {
+  limiteMs?: number;
   systemPrompt: string;
   userPrompt: string;
   history?: Array<{ role?: string; content?: string; text?: string }>;
@@ -1410,6 +1413,14 @@ async function validarExtractoConIA(
 }
 
 async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIAResult> {
+  // Compartir el plazo entre proveedores evita encadenar esperas ilimitadas.
+  const fin = Date.now() + (params.limiteMs ?? 45000);
+  const fetch = (url: string, init: RequestInit) => {
+    if (params.limiteMs === undefined) return globalThis.fetch(url, init);
+    const restante = fin - Date.now();
+    if (restante <= 0) return Promise.reject(new Error('tiempo-agotado'));
+    return fetchConLimite(url, init, Math.min(12000, restante));
+  };
   const {
     systemPrompt,
     userPrompt,
@@ -1680,7 +1691,8 @@ app.post('/api/asesor-ia', async (req, res) => {
   const cliente = clienteAdmin();
   if (cliente) {
     if (!token) return res.status(401).json({ error: 'No authorization header' });
-    const quienLlama = await exigirUsuario(cliente, token);
+    const quienLlama = await esperarConLimite(exigirUsuario(cliente, token), 8000)
+      .catch(() => ({ status: 503, error: 'No se pudo verificar la sesión a tiempo' }));
     if ('status' in quienLlama) {
       return res.status(quienLlama.status).json({ error: quienLlama.error });
     }
@@ -1720,6 +1732,7 @@ Reglas clave:
     const { texto, proveedor, modelo, fallos } = await consultarModeloIA({
       systemPrompt,
       userPrompt: prompt,
+      limiteMs: 45000,
       history: Array.isArray(history) ? history : [],
       maxTokens: 500,
       temperature: 0.6,

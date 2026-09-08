@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.4.3', fecha: '2026-09-08', texto: 'Reforzamos la conexión del asesor: límites de espera en los proveedores de IA, protección ante respuestas vacías y envíos simultáneos, y recuperación del chat ante errores.' },
   { version: '3.4.2', fecha: '2026-09-08', texto: 'Evitamos que el asesor quede esperando indefinidamente al validar la sesión. Ahora muestra si espera la sesión o la respuesta de la IA.' },
   { version: '3.4.1', fecha: '2026-09-08', texto: 'El asesor espera el arranque del servidor y distingue conexión, sesión y disponibilidad de la IA. Ahora explica por qué responde el modo local.' },
   { version: '3.4.0', fecha: '2026-09-08', texto: 'El asesor recuerda los datos de tu consulta de deudas y compara pagos con tus ahorros y la reserva que necesitas conservar. Mejoramos las respuestas de la IA y la recuperación cuando tarda en responder.' },

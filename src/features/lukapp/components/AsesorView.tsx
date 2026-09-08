@@ -182,6 +182,17 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
   const [detalleConexion, setDetalleConexion] = useState<string | null>(null);
   const revisionConexion = useRef(0);
+  const consultaOcupada = useRef(false);
+  const consultaAbort = useRef<AbortController | null>(null);
+  const montado = useRef(true);
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+      revisionConexion.current += 1;
+      consultaAbort.current?.abort();
+    };
+  }, []);
   const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -358,9 +369,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     let vigente = true;
     const revision = revisionConexion.current;
     const controller = new AbortController();
+    const fin = Date.now() + 60000;
     const timeout = setTimeout(() => controller.abort(), 60000);
-    fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
+    esperarConLimite(fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' }), 60000)
+      .then((r) => (r.ok ? esperarConLimite(r.json(), Math.max(0, fin - Date.now())) : null))
       .then((d) => {
         if (vigente && revision === revisionConexion.current) {
           setConexion(d?.ia ? 'configurada' : 'local');
@@ -390,7 +402,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // directo no depende de ningún tiempo de espera.
   const handleSend = async (textoDirecto?: string) => {
     const textoUsuario = (textoDirecto ?? input).trim();
-    if (!textoUsuario || pensando) return;
+    if (!textoUsuario || consultaOcupada.current) return;
+    consultaOcupada.current = true;
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     setMessages((prev) => [...prev, userMsg]);
@@ -413,6 +426,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       const session = cliente
         ? await esperarConLimite(cliente.auth.getSession(), 8000).then(r => r.data.session).catch(() => null)
         : null;
+      if (!montado.current) return;
 
       const mesActual = bogotaDate().slice(0, 7);
       const txMes = transacciones.filter((t) => t.occurredOn.startsWith(mesActual));
@@ -473,9 +487,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         } else {
         setEtapaConsulta('Esperando respuesta de la IA… puede tardar hasta un minuto.');
         const controller = new AbortController();
+        const fin = Date.now() + 60000;
+        consultaAbort.current = controller;
         const timeoutId = setTimeout(() => controller.abort(), 60000);
         try {
-        const res = await fetch(apiUrl('/api/asesor-ia'), {
+        const res = await esperarConLimite(fetch(apiUrl('/api/asesor-ia'), {
           method: 'POST',
           headers,
           signal: controller.signal,
@@ -484,11 +500,14 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               history: messages.slice(-12).map(({ role, text }) => ({ role, text })),
               finanzasContext,
             }),
-          });
+          }), 60000);
 
+          if (!montado.current) return;
           if (res.ok) {
-            const data = await res.json();
-            if (!data.offline && data.text) {
+            const data = await esperarConLimite(res.json(), Math.max(0, fin - Date.now()));
+            if (!montado.current) return;
+            const textoLimpio = typeof data?.text === 'string' ? limpiarTextoChat(data.text) : '';
+            if (!data?.offline && textoLimpio) {
               // El modelo redacta la respuesta, pero nunca decide qué se
               // guarda: se le pasa lo que la persona dictó por la MISMA
               // puerta que usa el motor local (detectarMovimiento), que corre
@@ -517,7 +536,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               const botMsg: Message = {
                 id: nuevoId(),
                 role: 'bot',
-                text: limpiarTextoChat(data.text),
+                text: textoLimpio,
                 provider: data.provider,
                 action: deteccion.propuesta?.action,
                 actions: deteccion.propuesta?.actions,
@@ -539,9 +558,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           }
         } finally {
           clearTimeout(timeoutId);
+          consultaAbort.current = null;
         }
         }
         } catch {
+          if (!montado.current) return;
           setDetalleConexion('La IA no respondió en el tiempo disponible o hubo un problema de conexión. Puedes volver a intentarlo.');
           // Si falla la red, el fallback offline toma el control
         }
@@ -579,8 +600,15 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         };
         setMessages((prev) => [...prev, botMsg]);
       }
+    } catch {
+      if (montado.current) {
+        setConexion('local');
+        setDetalleConexion('No pudimos completar esta consulta. Puedes volver a intentarlo.');
+        setMessages(prev => [...prev, { id: nuevoId(), role: 'bot', text: 'No pude procesar tu mensaje. Intenta enviarlo de nuevo.' }]);
+      }
     } finally {
-      setPensando(false);
+      consultaOcupada.current = false;
+      if (montado.current) setPensando(false);
     }
   };
   handleSendRef.current = handleSend;
@@ -630,12 +658,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 setDetalleConexion('Conectando con el servidor; puede tardar hasta un minuto.');
 
                 const controller = new AbortController();
+                const fin = Date.now() + 60000;
                 const timeoutId = setTimeout(() => controller.abort(), 60000);
                 const revision = revisionConexion.current;
 
                 try {
-                  const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' });
-                  clearTimeout(timeoutId);
+                  const res = await esperarConLimite(fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' }), 60000);
                   if (revision !== revisionConexion.current) return;
 
                   if (!res.ok) {
@@ -645,7 +673,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                     return;
                   }
 
-                  const data = await res.json();
+                  const data = await esperarConLimite(res.json(), Math.max(0, fin - Date.now()));
                   if (revision !== revisionConexion.current) return;
                   console.log('[asesor] Servidor disponible, IA:', data?.ia);
                   setConexion(data?.ia ? 'configurada' : 'local');
