@@ -15,10 +15,10 @@ import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
-import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
+import { detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
-import { esConsultaDeuda } from '../lib/conversacionDeuda';
+
 import { esperarConLimite } from '../lib/esperarConLimite';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
@@ -181,6 +181,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
   const [detalleConexion, setDetalleConexion] = useState<string | null>(null);
+  const [reintentar, setReintentar] = useState<string | null>(null);
   const revisionConexion = useRef(0);
   const consultaOcupada = useRef(false);
   const consultaAbort = useRef<AbortController | null>(null);
@@ -400,27 +401,23 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // `setTimeout` adivinando cuánto tardaba React en re-renderizar, que es
   // frágil (¿400ms? ¿y si el dispositivo es más lento?). Pasar el texto
   // directo no depende de ningún tiempo de espera.
-  const handleSend = async (textoDirecto?: string) => {
+  const handleSend = async (textoDirecto?: string, esReintento = false) => {
     const textoUsuario = (textoDirecto ?? input).trim();
     if (!textoUsuario || consultaOcupada.current) return;
     consultaOcupada.current = true;
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
-    setMessages((prev) => [...prev, userMsg]);
+    if (!esReintento) setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setPensando(true);
     setEtapaConsulta('Validando tu sesión…');
     revisionConexion.current += 1;
     setDetalleConexion(null);
+    setReintentar(null);
 
     try {
-      const simulacion = entradaFinanciera && !context.conversacionDeuda && !esConsultaDeuda(textoUsuario)
+      const simulacion = entradaFinanciera
         ? simularPregunta(textoUsuario, entradaFinanciera) : null;
-      if (simulacion) {
-        setConexion('local');
-        setMessages((prev) => [...prev, { id: nuevoId(), role: 'bot', text: simulacion.respuesta }]);
-        return;
-      }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
       const cliente = obtenerSupabase();
       const session = cliente
@@ -470,6 +467,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       };
 
       const finanzasContext = {
+        disponibleDiarioCop,
+        simulacionSolicitada: simulacion?.resultado,
         ...legacyFinanzasContext,
         ...contextoParaAsesor,
         cajitas: cajitas.filter(c => c.archivedAt === null).map(c => ({
@@ -488,7 +487,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       try {
         if (cliente && !session) {
-          setDetalleConexion('No pudimos validar tu sesión. Vuelve a iniciar sesión para usar la IA; mientras tanto responde el modo local.');
+          setDetalleConexion('No pudimos validar tu sesión. Vuelve a iniciar sesión para usar la IA; tu mensaje queda pendiente.');
         } else {
         setEtapaConsulta('Esperando respuesta de la IA… puede tardar hasta un minuto.');
         const controller = new AbortController();
@@ -502,7 +501,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           signal: controller.signal,
             body: JSON.stringify({
               prompt: textoUsuario,
-              history: messages.slice(-12).map(({ role, text }) => ({ role, text })),
+              history: (esReintento ? messages.slice(0, -1) : messages).slice(-12).map(({ role, text }) => ({ role, text })),
               finanzasContext,
             }),
           }), 60000);
@@ -552,14 +551,21 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               setDetalleConexion(null);
             }
             else {
-              setDetalleConexion('El servidor respondió, pero ningún proveedor de IA pudo completar la consulta. Revisa las claves, la cuota y los registros del backend.');
+              const motivo = typeof data?.motivo === 'string' ? data.motivo : '';
+              setDetalleConexion(motivo === 'sin-llave-configurada'
+                ? 'El servidor no tiene una clave de IA configurada.'
+                : /:429\b/.test(motivo)
+                  ? 'El proveedor de IA reportó un límite de uso o cuota. Tu mensaje queda pendiente.'
+                  : /:(401|403)\b/.test(motivo)
+                    ? 'El proveedor de IA rechazó el acceso del servidor. Es necesario revisar su configuración.'
+                    : 'El servidor respondió, pero ningún proveedor de IA pudo completar la consulta. Puedes reintentar.');
             }
           } else {
             setDetalleConexion(res.status === 401 || res.status === 403
               ? 'La IA no pudo validar tu sesión. Vuelve a iniciar sesión e intenta de nuevo.'
               : res.status === 429
                 ? 'La IA alcanzó su límite de solicitudes. Intenta de nuevo más tarde.'
-                : `El servidor devolvió un error (${res.status}). Responde el modo local.`);
+                : `El servidor devolvió un error (${res.status}). No se obtuvo una respuesta de IA.`);
           }
         } finally {
           clearTimeout(timeoutId);
@@ -569,47 +575,18 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         } catch {
           if (!montado.current) return;
           setDetalleConexion('La IA no respondió en el tiempo disponible o hubo un problema de conexión. Puedes volver a intentarlo.');
-          // Si falla la red, el fallback offline toma el control
+          // El error se muestra fuera de las respuestas del modelo.
         }
 
-      // 2. Si no hay LLM configurado o falló, usar el motor offline local.
-      // El indicador baja a 'local' para que el encabezado diga la verdad: si
-      // estas respuestas las da el motor de reglas, no puede seguir anunciando
-      // que hay una IA en línea.
       if (!respondidoPorLLM) {
         setConexion('local');
-        const {
-          text: respuesta,
-          newContext,
-          action,
-          actions,
-          suggestions,
-        } = responderAsesor(
-          textoUsuario,
-          transacciones,
-          cajitas,
-          cajitasBalances,
-          categorias,
-          lexico,
-          context,
-          disponibleDiarioCop,
-        );
-        setContext(newContext);
-        const botMsg: Message = {
-          id: nuevoId(),
-          role: 'bot',
-          text: respuesta,
-          action,
-          actions,
-          suggestions,
-        };
-        setMessages((prev) => [...prev, botMsg]);
+        setReintentar(textoUsuario);
       }
     } catch {
       if (montado.current) {
         setConexion('local');
         setDetalleConexion('No pudimos completar esta consulta. Puedes volver a intentarlo.');
-        setMessages(prev => [...prev, { id: nuevoId(), role: 'bot', text: 'No pude procesar tu mensaje. Intenta enviarlo de nuevo.' }]);
+        setReintentar(textoUsuario);
       }
     } finally {
       consultaOcupada.current = false;
@@ -704,6 +681,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       {/* Messages */}
       {detalleConexion && <p role="status" className="px-5 pb-3 text-sm text-[var(--fin-ink-soft)]">{detalleConexion}</p>}
+      {reintentar && <button type="button" disabled={pensando} onClick={() => void handleSend(reintentar, true)} className="mx-5 mb-3 rounded-lg bg-[var(--fin-accent)] px-4 py-2 text-[var(--fin-on-accent)]">Reintentar con IA</button>}
       <div className="flex-1 overflow-y-auto p-5">
         {/* Antes de que exista una conversación real (solo el saludo inicial),
  un único globo de chat flotando en una pantalla ancha se ve como un

@@ -50,7 +50,7 @@ describe('AsesorView — estado de conexión', () => {
   it('dice "modo local" cuando el servidor responde que no hay IA', async () => {
     vi.stubGlobal('fetch', responder({ ok: true, ia: false }));
     render(<AsesorView {...props} />);
-    await waitFor(() => expect(screen.getByText(/modo local/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/IA no disponible/)).toBeTruthy());
   });
 
   it('dice "modo local" si el servidor no responde en absoluto', async () => {
@@ -58,13 +58,13 @@ describe('AsesorView — estado de conexión', () => {
     // encabezado tiene que reflejar eso en vez de quedarse en "Conectando…".
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('sin red')));
     render(<AsesorView {...props} />);
-    await waitFor(() => expect(screen.getByText(/modo local/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/IA no disponible/)).toBeTruthy());
   });
 
   it('nunca anuncia "En línea" si el servidor dice que no hay IA', async () => {
     vi.stubGlobal('fetch', responder({ ok: true, ia: false }));
     render(<AsesorView {...props} />);
-    await waitFor(() => expect(screen.getByText(/modo local/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/IA no disponible/)).toBeTruthy());
     expect(screen.queryByText('En línea')).toBeNull();
   });
 });
@@ -166,6 +166,22 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
 });
 
 describe('AsesorView — conversación de deuda en modo local', () => {
+  it('no responde con reglas y reintenta sin duplicar el mensaje del usuario', async () => {
+    let intentos = 0;
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => Promise.resolve({ ok: true, json: async () => {
+      if (String(url).includes('/api/salud')) return { ia: true };
+      return ++intentos === 1 ? { offline: true } : { text: 'Respuesta real del proveedor', offline: false };
+    } })));
+    render(<AsesorView {...props} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Reintentar con IA' }));
+    await screen.findByText('Respuesta real del proveedor');
+    expect(screen.getAllByText('Dime mi resumen')).toHaveLength(1);
+    expect(screen.queryByText(/no has registrado movimientos/)).toBeNull();
+    expect(screen.getByText('En línea')).toBeTruthy();
+  });
   beforeEach(() => {
     Element.prototype.scrollIntoView = vi.fn();
     vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(null);
@@ -184,7 +200,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    await screen.findByText(/no has registrado movimientos/);
+    await screen.findByText(/Reintentar con IA/);
     expect(screen.queryByText('En línea')).toBeNull();
   });
   it('evita consultas simultáneas y cancela la petición al salir', async () => {
@@ -218,7 +234,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
-    expect(screen.getByText(/no has registrado movimientos/)).toBeTruthy();
+    expect(screen.getByText(/Reintentar con IA/)).toBeTruthy();
     expect(screen.queryByText(/Esperando respuesta de la IA/)).toBeNull();
   });
   it('sale de una validación de sesión bloqueada sin enviar una consulta anónima', async () => {
@@ -236,7 +252,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(8000); });
     expect(screen.queryByText('Validando tu sesión…')).toBeNull();
     expect(screen.getByText(/No pudimos validar tu sesión/)).toBeTruthy();
-    expect(screen.getByText(/no has registrado movimientos/)).toBeTruthy();
+    expect(screen.getByText(/Reintentar con IA/)).toBeTruthy();
     expect(peticiones.mock.calls.some(([url]) => String(url).includes('/api/asesor-ia'))).toBe(false);
     expect(input).not.toBeDisabled();
   });
@@ -267,45 +283,26 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     await screen.findByText(/ningún proveedor de IA/);
     completarSalud({ ok: true, json: async () => ({ ia: true }) });
-    await waitFor(() => expect(screen.getByText(/modo local/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/IA no disponible/)).toBeTruthy());
     expect(screen.queryByText('En línea')).toBeNull();
-  });
-  it('recoge respuestas breves sin ofrecer registrar y permite terminar', async () => {
-    render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
-    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    const enviar = (texto: string) => {
-      fireEvent.change(input, { target: { value: texto } });
-      fireEvent.keyDown(input, { key: 'Enter' });
-    };
-    enviar('Quiero pagar mi deuda con ahorros');
-    await screen.findByText(/Cuál es el saldo total pendiente/);
-    enviar('700 mil');
-    await screen.findByText(/Cuánto tienes ahorrado en total/);
-    enviar('1 millón');
-    await screen.findByText(/Cuánto de esos ahorros necesitas conservar/);
-    enviar('500 mil');
-    await screen.findByText(/Esta comparación usa los montos/);
-    expect(screen.queryByText(/Sí, registrar gasto/)).toBeNull();
-    enviar('Cancelar');
-    await screen.findByText(/Cerramos la consulta/);
   });
 });
 
 describe('etiquetaConexion — horario de servicio', () => {
   it('de día sin IA dice que no hay conexión', () => {
-    expect(etiquetaConexion('local', enHorario)).toMatch(/Sin conexión/);
+    expect(etiquetaConexion('local', enHorario)).toMatch(/IA no disponible/);
   });
 
   it('de madrugada dice que descansa, no que está caído', () => {
     // La diferencia importa: a esa hora no está roto, el ping no corre a propósito.
     const texto = etiquetaConexion('local', deMadrugada);
-    expect(texto).toMatch(/Descansando/);
-    expect(texto).not.toMatch(/Sin conexión/);
+    expect(texto).toMatch(/IA no disponible/);
+    expect(texto).not.toMatch(/modo local/);
   });
 
   it('siempre aclara que el motor local sigue respondiendo', () => {
-    expect(etiquetaConexion('local', enHorario)).toMatch(/modo local/);
-    expect(etiquetaConexion('local', deMadrugada)).toMatch(/modo local/);
+    expect(etiquetaConexion('local', enHorario)).toMatch(/IA no disponible/);
+    expect(etiquetaConexion('local', deMadrugada)).toMatch(/IA no disponible/);
   });
 
   it('avisa que puede tardar si despierta fuera de horario', () => {

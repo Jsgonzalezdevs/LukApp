@@ -59,9 +59,7 @@ export const etiquetaConexion = (estado: EstadoConexion, ahora: Date = new Date(
   if (estado === 'despertando') {
     return enHorario ? 'Conectando…' : 'Despertando… puede tardar un momento';
   }
-  return enHorario
-    ? 'Sin conexión · responde el modo local'
-    : `Descansando hasta las ${ASESOR_DESDE} a. m. · responde el modo local`;
+  return 'IA no disponible';
 };
 
 const MONTHS_SHORT = [
