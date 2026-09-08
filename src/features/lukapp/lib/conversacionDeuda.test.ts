@@ -4,6 +4,26 @@ import { responderAsesor, detectarMovimiento, type AsesorContext } from './aseso
 import { LEXICO_VACIO } from './aprendizaje';
 
 describe('conversación guiada de deuda', () => {
+  it.each(['No perdón, eran 900.000', 'Perdón, son 900 mil', 'Eran 900000', 'Corrijo: 900000', 'Me equivoqué, eran 900000'])('corrige el dato anterior sin responder la pregunta siguiente: %s', texto => {
+    const inicial = continuarDeuda('90000', { pendiente: 'deuda' });
+    const r = continuarDeuda(texto, inicial.estado);
+    expect(r.estado?.deuda).toBe(900000);
+    expect(r.estado?.ahorros).toBeUndefined();
+    expect(r.estado?.pendiente).toBe('ahorros');
+    expect(r.respuesta).toContain('corregí');
+  });
+  it('corrige ahorros y reserva, pero un monto simple responde la pregunta pendiente', () => {
+    const deuda = continuarDeuda('900000', { pendiente: 'deuda' });
+    const ahorros = continuarDeuda('1000000', deuda.estado);
+    const corregido = continuarDeuda('No perdón, eran 2000000', ahorros.estado);
+    expect(corregido.estado).toMatchObject({ deuda: 900000, ahorros: 2000000, pendiente: 'reserva' });
+    const reserva = continuarDeuda('500000', corregido.estado);
+    expect(continuarDeuda('Eran 700000', reserva.estado).estado?.reserva).toBe(700000);
+  });
+  it('no adivina qué corregir cuando no hay un dato anterior', () => {
+    const r = continuarDeuda('No perdón, eran 900000', { pendiente: 'deuda' });
+    expect(r.estado?.deuda).toBeUndefined();
+  });
   it.each(['El saldo total es 900000', 'Mi deuda es 900 mil pesos.', 'El saldo pendiente es $900.000', 'Son 900000', 'En total son 900 mil'])('acepta una respuesta natural: %s', texto => {
     const r = continuarDeuda(texto, { pendiente: 'deuda', ingresosInciertos: true });
     expect(r.estado?.deuda).toBe(900000);

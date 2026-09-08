@@ -6,6 +6,7 @@ export interface ConversacionDeuda {
   ahorros?: number;
   reserva?: number;
   pendiente?: CampoDeuda;
+  ultimoCampo?: CampoDeuda;
   ingresosInciertos?: boolean;
 }
 
@@ -54,6 +55,14 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
   if (/\b(contrato|desempleo|sin trabajo)\b/.test(norm)) estado.ingresosInciertos = true;
 
   let recibidos = 0;
+  const correccion = normalizarImportes(texto).match(/^(?:no\s*[,;]?\s*)?(?:perdon\s*[,;]?\s*(?:eran?|son)?|eran?|corrijo|me equivoque\s*[,;]?\s*(?:eran?|son)?)\s*:?\s*(.+)$/);
+  if (correccion) {
+    const montoCorregido = leerMontoConversacion(correccion[1].replace(/[.!]$/, '').trim());
+    if (estado.ultimoCampo && montoCorregido !== null && (estado.ultimoCampo !== 'deuda' || montoCorregido > 0)) {
+      estado[estado.ultimoCampo] = montoCorregido;
+      recibidos++;
+    }
+  }
   for (const campo of ['deuda', 'ahorros', 'reserva'] as const) {
     const etiqueta = {
       deuda: '(?:(?:el |mi |la )?(?:deuda|saldo(?: total)?(?: pendiente)?)|debo)',
@@ -64,6 +73,7 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
     const monto = valor === undefined ? null : leerMontoConversacion(valor.replace(/[.!]$/, '').trim());
     if (monto !== null && (campo !== 'deuda' || monto > 0)) {
       estado[campo] = monto;
+      estado.ultimoCampo = campo;
       recibidos++;
     }
   }
@@ -75,6 +85,7 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
   const monto = leerMontoConversacion(respuestaBreve);
   if (recibidos === 0 && anterior?.pendiente && monto !== null && (anterior.pendiente !== 'deuda' || monto > 0)) {
     estado[anterior.pendiente] = monto;
+    estado.ultimoCampo = anterior.pendiente;
     recibidos++;
   }
   const pendiente = (['deuda', 'ahorros', 'reserva'] as const).find((campo) => estado[campo] === undefined);
@@ -85,7 +96,7 @@ export function continuarDeuda(texto: string, anterior?: ConversacionDeuda): {
   if (pendiente) {
     const inicio = !anterior
       ? 'Podemos comparar pagar la deuda con tus ahorros y conservar dinero para tus compromisos.'
-      : recibidos > 0 ? 'Gracias, ya tengo ese dato.'
+      : recibidos > 0 ? (correccion ? 'Listo, corregí el dato anterior.' : 'Gracias, ya tengo ese dato.')
         : 'No pude identificar con seguridad ese monto. Puedes responder, por ejemplo, «900 mil» o «el saldo total es 900000».';
     return { estado, respuesta: `${inicio}${contexto}\n\n${resumen ? resumen + '\n\n' : ''}${PREGUNTAS[pendiente]}${anterior ? '' : '\n\nPuedes escribir «cancelar» para salir de esta consulta.'}` };
   }
