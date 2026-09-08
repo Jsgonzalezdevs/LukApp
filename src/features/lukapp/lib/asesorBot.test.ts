@@ -40,9 +40,8 @@ describe('consultas con montos no son movimientos', () => {
   it('pide los datos de la deuda y considera el fin del contrato', () => {
     const respuesta = preguntar(consulta);
     expect(respuesta.text).toContain('saldo total');
-    expect(respuesta.text).toContain('tasa de interés');
-    expect(respuesta.text).toContain('gastos básicos');
-    expect(respuesta.text).toContain('termina tu contrato');
+    expect(respuesta.text).toContain('contrato');
+    expect(respuesta.newContext.conversacionDeuda?.pendiente).toBe('deuda');
   });
 
   it('sigue proponiendo gastos realizados', () => {

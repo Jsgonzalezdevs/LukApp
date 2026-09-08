@@ -1,4 +1,5 @@
 import type { EntradaMotorFinanciero } from './motorFinanciero';
+import { leerMontoConversacion } from './conversacionDeuda';
 import { simularDecisiones, type ModificadorSimulacion, type ResultadoSimulacion } from './simuladorFinanciero';
 
 export interface SolicitudSimulacion {
@@ -10,16 +11,17 @@ export interface SolicitudSimulacion {
 }
 
 const montoDe = (texto: string): number | null => {
-  const coincidencia = texto.replace(/\./g, '').match(/\$?\s*(\d+(?:,\d+)?)/);
-  if (!coincidencia) return null;
-  const monto = Number(coincidencia[1].replace(',', '.'));
-  return Number.isFinite(monto) && monto > 0 ? Math.round(monto) : null;
+  const coincidencias = texto.match(/\$?\s*\d+(?:[.,]\d+)*\s*(?:millones|millón|millon|mil)?/gi);
+  if (coincidencias?.length !== 1) return null;
+  const monto = leerMontoConversacion(coincidencias[0]);
+  return monto !== null && monto > 0 ? monto : null;
 };
 
 /** Detecta intención y delega toda matemática al simulador determinista. */
 export const simularPregunta = (pregunta: string, entrada: EntradaMotorFinanciero): SolicitudSimulacion | null => {
   const texto = pregunta.toLowerCase();
   if (!/(qué pasa|que pasa|si gasto|si ahorro|si pago|afecta mi disponible|representa)/.test(texto)) return null;
+  if (/(recomiend|conviene|o si|mejor|contrato)/.test(texto)) return null;
   const monto = montoDe(pregunta);
   if (monto === null) return null;
   let escenario: ModificadorSimulacion;

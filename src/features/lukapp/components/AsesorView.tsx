@@ -18,6 +18,7 @@ import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
+import { esConsultaDeuda } from '../lib/conversacionDeuda';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
@@ -61,6 +62,7 @@ const PROBABILIDAD_LENGUA = 0.00001; // 0,001 %
 /** Chips para arrancar una conversación vacía — el punto de entrada más usado. */
 const SUGERENCIAS_INICIALES = [
   'Dime mi resumen',
+  'Quiero comparar cómo pagar mi deuda',
   '¿Cuánto puedo gastar?',
   '¿Debo declarar renta?',
   '¿Pagaré 4x1000 este mes?',
@@ -381,7 +383,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     setPensando(true);
 
     try {
-      const simulacion = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
+      const simulacion = entradaFinanciera && !context.conversacionDeuda && !esConsultaDeuda(textoUsuario)
+        ? simularPregunta(textoUsuario, entradaFinanciera) : null;
       if (simulacion) {
         setConexion('local');
         setMessages((prev) => [...prev, { id: nuevoId(), role: 'bot', text: simulacion.respuesta }]);
@@ -432,7 +435,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           .map(([cat, total]) => ({ categoria: cat, totalCop: total })),
       };
 
-      const finanzasContext = contextoParaAsesor ?? legacyFinanzasContext;
+      const finanzasContext = {
+        ...(contextoParaAsesor ?? legacyFinanzasContext),
+        consultaDeuda: context.conversacionDeuda,
+      };
       let respondidoPorLLM = false;
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -442,12 +448,16 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       }
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        try {
         const res = await fetch(apiUrl('/api/asesor-ia'), {
           method: 'POST',
           headers,
+          signal: controller.signal,
             body: JSON.stringify({
               prompt: textoUsuario,
-              history: messages.slice(-5),
+              history: messages.slice(-12).map(({ role, text }) => ({ role, text })),
               finanzasContext,
             }),
           });
@@ -470,7 +480,15 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 lexico,
                 context,
               );
-              setContext(deteccion.newContext);
+              // El modelo puede preguntar algo distinto al paso del modo local.
+              // Conservamos datos, pero no asignamos su próxima respuesta breve
+              // a una pregunta que el usuario no llegó a ver.
+              setContext({
+                ...deteccion.newContext,
+                conversacionDeuda: deteccion.newContext.conversacionDeuda
+                  ? { ...deteccion.newContext.conversacionDeuda, pendiente: undefined }
+                  : undefined,
+              });
 
               const botMsg: Message = {
                 id: nuevoId(),
@@ -485,6 +503,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               setConexion('en-linea');
             }
           }
+        } finally {
+          clearTimeout(timeoutId);
+        }
         } catch {
           // Si falla la red, el fallback offline toma el control
         }

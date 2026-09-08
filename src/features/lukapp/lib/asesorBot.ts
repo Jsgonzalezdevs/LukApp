@@ -6,12 +6,14 @@ import type { LexicoAprendido } from './aprendizaje';
 import type { CategoriaPersonal } from '../categorias';
 import { analizarTopesRenta } from './tributarioColombia';
 import { UVT_POR_DEFECTO } from './gmf';
+import { continuarDeuda, type ConversacionDeuda } from './conversacionDeuda';
 
 export interface AsesorContext {
   ultimoAsunto: string | null;
   ultimaFecha: string | null;
   _isRecursive?: boolean;
   lastInsightIdx?: number;
+  conversacionDeuda?: ConversacionDeuda;
 }
 
 export interface AsesorResponse {
@@ -66,7 +68,7 @@ const SUGERENCIAS_FALLBACK = ['¿Cuánto he gastado?', 'Dame un resumen'];
 // Las consultas dictadas suelen llegar sin signos de interrogación. Un monto
 // dentro de una decisión o un plan no demuestra que haya ocurrido un movimiento.
 function esConsultaOPlan(norm: string): boolean {
-  return /\b(recomiendas?|recomendacion|aconsejas|consejo|conviene|deberia|debo|quiero saber|no se si|que hago|que haria|es mejor|mejor pago|si pago|si compro|voy a|pienso|planeo|quisiera|quiero comprar|quiero pagar|tengo una deuda|tengo ahorrad|debo pagar)\b/.test(norm);
+  return /\b(recomiendas?|recomendacion|aconsejas|consejo|conviene|deberia|debo|quiero saber|no se si|que hago|que haria|es mejor|mejor pago|si pago|si compro|si gasto|si ahorro|voy a|pienso|planeo|quisiera|quiero comprar|quiero pagar|tengo una deuda|tengo ahorrados?|no registres|no anotes)\b/.test(norm);
 }
 
 export interface DeteccionMovimiento {
@@ -110,12 +112,16 @@ export const detectarMovimiento = (
 ): DeteccionMovimiento => {
   const norm = normalizarNombre(texto);
   const newContext = { ...context };
+  const consulta = continuarDeuda(texto, context.conversacionDeuda);
+  newContext.conversacionDeuda = consulta.estado;
 
   const cuentasParaElegir = cajitas
     .filter((c) => c.archivedAt === null && c.tipo === 'cuenta')
     .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: false }));
 
   const isQuestion =
+    consulta.respuesta !== null ||
+    /\b(no gaste|no pague|no compre|mi sueldo|gano)\b/.test(norm) ||
     esConsultaOPlan(norm) ||
     norm.includes('cuanto') ||
     norm.includes('cual') ||
@@ -255,19 +261,23 @@ export function responderAsesor(
 ): AsesorResponse {
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
+  const consulta = continuarDeuda(texto, context.conversacionDeuda);
+  newContext.conversacionDeuda = consulta.estado;
+  if (consulta.respuesta) {
+    return { text: consulta.respuesta, newContext, suggestions: ['Cancelar'] };
+  }
+  if (/^(cancelar|salir|otro tema)[.!?]*$/.test(norm)) {
+    return { text: 'Cerramos la consulta. Puedes preguntarme por tus cuentas o registrar un movimiento.', newContext, suggestions: SUGERENCIAS_FALLBACK };
+  }
+  // Mantener la decisión completa: dividirla puede convertir una alternativa
+  // de pago en un gasto y perder la negación que aparecía antes del monto.
+  const consultaSinMovimiento = esConsultaOPlan(norm) || /\b(no gaste|no pague|no compre|tengo ahorrados?|mi sueldo|gano)\b/.test(norm);
 
   // Resolver la consulta completa antes de separar por "y": sus montos pueden
   // ser alternativas de pago, no transacciones independientes.
-  if (esConsultaOPlan(norm) && /\d|\b(deuda|tarjeta|credito|prestamo)\b/.test(norm)) {
-    const sobreDeuda = /\b(deuda|tarjeta|credito|prestamo)\b/.test(norm);
+  if (consultaSinMovimiento && /\d/.test(norm)) {
     return {
-      text: sobreDeuda
-        ? 'Entiendo que estás evaluando cómo pagar tu deuda. Para comparar usar tus ahorros con seguir pagando cuotas, necesito el saldo total pendiente, la tasa de interés (y si es mensual o anual), el pago mínimo y cuánto tienes ahorrado. También tus ingresos netos y gastos básicos mensuales. Si mencionas una cuota, aclárame si es el mínimo o un abono que estás considerando.' +
-          (/\b(contrato|enero|desempleo|sin trabajo)\b/.test(norm)
-            ? '\n\nTambién mencionas un posible cambio en tus ingresos: ¿en qué fecha termina tu contrato y con qué ingresos contarías después? Ese dato hace falta para evaluar cuánto dinero necesitarías conservar.'
-            : '') +
-          '\n\nEstoy respondiendo en modo local y todavía no tengo datos suficientes para recomendarte un monto de pago. Puedes conectar la IA con «Despertarlo» para analizar tu caso en conversación.'
-        : 'Entiendo que estás evaluando una decisión. En modo local puedo consultar tus saldos y movimientos, pero no comparar de forma personalizada ese escenario. Puedes conectar la IA con «Despertarlo» y explicarle tu objetivo, los montos y el plazo.',
+      text: 'Veo que esos montos forman parte de una consulta o de tu situación financiera. Para simular un cambio puedes escribir «Qué pasa si gasto 100 mil». Si quieres registrar algo que ya ocurrió, escribe por ejemplo «Pagué 70 mil en comida».',
       newContext,
     };
   }
@@ -275,6 +285,7 @@ export function responderAsesor(
   // 0. Multi-Query NLP Router (ej. "cuanto tengo en cuentas y cuanto gaste en rappi")
   if (
     !context._isRecursive &&
+    !consultaSinMovimiento &&
     norm.includes(' y ') &&
     !norm.startsWith('y ') &&
     !norm.includes('ayer') &&

@@ -165,6 +165,37 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
   });
 });
 
+describe('AsesorView — conversación de deuda en modo local', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(null);
+    vi.stubGlobal('fetch', responder({ offline: true, ia: false }));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+  it('recoge respuestas breves sin ofrecer registrar y permite terminar', async () => {
+    render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    const enviar = (texto: string) => {
+      fireEvent.change(input, { target: { value: texto } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+    };
+    enviar('Quiero pagar mi deuda con ahorros');
+    await screen.findByText(/Cuál es el saldo total pendiente/);
+    enviar('700 mil');
+    await screen.findByText(/Cuánto tienes ahorrado en total/);
+    enviar('1 millón');
+    await screen.findByText(/Cuánto de esos ahorros necesitas conservar/);
+    enviar('500 mil');
+    await screen.findByText(/Esta comparación usa los montos/);
+    expect(screen.queryByText(/Sí, registrar gasto/)).toBeNull();
+    enviar('Cancelar');
+    await screen.findByText(/Cerramos la consulta/);
+  });
+});
+
 describe('etiquetaConexion — horario de servicio', () => {
   it('de día sin IA dice que no hay conexión', () => {
     expect(etiquetaConexion('local', enHorario)).toMatch(/Sin conexión/);
