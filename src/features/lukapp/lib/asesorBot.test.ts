@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { responderAsesor, type AsesorContext } from './asesorBot';
+import { detectarMovimiento, responderAsesor, type AsesorContext } from './asesorBot';
 import { LEXICO_VACIO } from './aprendizaje';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
@@ -21,6 +21,34 @@ afterEach(() => {
 });
 
 const CTX_VACIO: AsesorContext = { ultimoAsunto: null, ultimaFecha: null };
+
+describe('consultas con montos no son movimientos', () => {
+  const consulta = 'Mira que tengo una Deuda de mi tarjeta de credito, actualmente trabajo, gano un minimo, quiero saber si me recomiendas pagar la tarjeta con lo que tengo de ahorros para una macbook o si mejor pago como 70000 que es mensualmente (Pero mi contrato termina en enero)';
+
+  it.each([
+    consulta,
+    'Me conviene pagar 70000 de tarjeta y ahorrar 200000',
+    'Si compro un computador de 3000000 me quedo sin ahorros',
+    'Voy a pagar 70000 en comida y 20000 en transporte',
+  ])('no ofrece botones en modo local ni en línea: %s', (texto) => {
+    expect(detectarMovimiento(texto, [], [], [], LEXICO_VACIO, CTX_VACIO).propuesta).toBeNull();
+    const respuesta = preguntar(texto);
+    expect(respuesta.action).toBeUndefined();
+    expect(respuesta.actions).toBeUndefined();
+  });
+
+  it('pide los datos de la deuda y considera el fin del contrato', () => {
+    const respuesta = preguntar(consulta);
+    expect(respuesta.text).toContain('saldo total');
+    expect(respuesta.text).toContain('tasa de interés');
+    expect(respuesta.text).toContain('gastos básicos');
+    expect(respuesta.text).toContain('termina tu contrato');
+  });
+
+  it('sigue proponiendo gastos realizados', () => {
+    expect(preguntar('Pagué 70000 en comida').action?.amount).toBe(70000);
+  });
+});
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
   id: `t-${Math.random()}`,

@@ -63,6 +63,12 @@ function getRandom(arr: string[]) {
  */
 const SUGERENCIAS_FALLBACK = ['¿Cuánto he gastado?', 'Dame un resumen'];
 
+// Las consultas dictadas suelen llegar sin signos de interrogación. Un monto
+// dentro de una decisión o un plan no demuestra que haya ocurrido un movimiento.
+function esConsultaOPlan(norm: string): boolean {
+  return /\b(recomiendas?|recomendacion|aconsejas|consejo|conviene|deberia|debo|quiero saber|no se si|que hago|que haria|es mejor|mejor pago|si pago|si compro|voy a|pienso|planeo|quisiera|quiero comprar|quiero pagar|tengo una deuda|tengo ahorrad|debo pagar)\b/.test(norm);
+}
+
 export interface DeteccionMovimiento {
   /**
    * Lo que el parser entendió de la frase completa, se haya podido proponer o
@@ -110,6 +116,7 @@ export const detectarMovimiento = (
     .map((c) => ({ id: c.id, nombre: c.nombre, esBajoMonto: false }));
 
   const isQuestion =
+    esConsultaOPlan(norm) ||
     norm.includes('cuanto') ||
     norm.includes('cual') ||
     norm.includes('?') ||
@@ -248,6 +255,22 @@ export function responderAsesor(
 ): AsesorResponse {
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
+
+  // Resolver la consulta completa antes de separar por "y": sus montos pueden
+  // ser alternativas de pago, no transacciones independientes.
+  if (esConsultaOPlan(norm) && /\d|\b(deuda|tarjeta|credito|prestamo)\b/.test(norm)) {
+    const sobreDeuda = /\b(deuda|tarjeta|credito|prestamo)\b/.test(norm);
+    return {
+      text: sobreDeuda
+        ? 'Entiendo que estás evaluando cómo pagar tu deuda. Para comparar usar tus ahorros con seguir pagando cuotas, necesito el saldo total pendiente, la tasa de interés (y si es mensual o anual), el pago mínimo y cuánto tienes ahorrado. También tus ingresos netos y gastos básicos mensuales. Si mencionas una cuota, aclárame si es el mínimo o un abono que estás considerando.' +
+          (/\b(contrato|enero|desempleo|sin trabajo)\b/.test(norm)
+            ? '\n\nTambién mencionas un posible cambio en tus ingresos: ¿en qué fecha termina tu contrato y con qué ingresos contarías después? Ese dato hace falta para evaluar cuánto dinero necesitarías conservar.'
+            : '') +
+          '\n\nEstoy respondiendo en modo local y todavía no tengo datos suficientes para recomendarte un monto de pago. Puedes conectar la IA con «Despertarlo» para analizar tu caso en conversación.'
+        : 'Entiendo que estás evaluando una decisión. En modo local puedo consultar tus saldos y movimientos, pero no comparar de forma personalizada ese escenario. Puedes conectar la IA con «Despertarlo» y explicarle tu objetivo, los montos y el plazo.',
+      newContext,
+    };
+  }
 
   // 0. Multi-Query NLP Router (ej. "cuanto tengo en cuentas y cuanto gaste en rappi")
   if (
