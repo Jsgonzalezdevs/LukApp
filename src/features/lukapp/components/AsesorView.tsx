@@ -15,11 +15,9 @@ import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
-import { detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
+import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
-
-import { esperarConLimite } from '../lib/esperarConLimite';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
@@ -43,6 +41,13 @@ interface Message {
   suggestions?: string[];
 }
 
+interface MemoriaIA {
+  id: string;
+  clave: string;
+  valor: string;
+  fuente: 'usuario' | 'inferida';
+}
+
 interface AsesorViewProps {
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
@@ -63,7 +68,6 @@ const PROBABILIDAD_LENGUA = 0.00001; // 0,001 %
 /** Chips para arrancar una conversación vacía — el punto de entrada más usado. */
 const SUGERENCIAS_INICIALES = [
   'Dime mi resumen',
-  'Quiero comparar cómo pagar mi deuda',
   '¿Cuánto puedo gastar?',
   '¿Debo declarar renta?',
   '¿Pagaré 4x1000 este mes?',
@@ -166,9 +170,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       text: '¡Hola! Soy tu asesor financiero personal. Puedo ayudarte a consultar tus gastos, revisar tu balance, o darte consejos sobre cómo vas este mes. ¿En qué te ayudo hoy?',
     },
   ]);
+  const [conversacionId, setConversacionId] = useState<string | null>(null);
+  const [memoria, setMemoria] = useState<MemoriaIA[]>([]);
+  const [recordar, setRecordar] = useState(true);
   const [input, setInput] = useState('');
   const [pensando, setPensando] = useState(false);
-  const [etapaConsulta, setEtapaConsulta] = useState('Validando tu sesión…');
   /* Cuál es la respuesta más reciente del asesor: solo esa lleva el rebote de
      la Estrella al aparecer. */
   const haptic = useHapticFeedback();
@@ -180,22 +186,61 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [feedback, setFeedback] = useState<Map<string, 'like' | 'dislike'>>(new Map());
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
-  const [detalleConexion, setDetalleConexion] = useState<string | null>(null);
-  const [reintentar, setReintentar] = useState<string | null>(null);
-  const revisionConexion = useRef(0);
-  const consultaOcupada = useRef(false);
-  const consultaAbort = useRef<AbortController | null>(null);
-  const montado = useRef(true);
-  useEffect(() => {
-    montado.current = true;
-    return () => {
-      montado.current = false;
-      revisionConexion.current += 1;
-      consultaAbort.current?.abort();
-    };
-  }, []);
   const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+
+  const cabecerasIA = async (): Promise<Record<string, string>> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const cliente = obtenerSupabase();
+    const session = cliente ? (await cliente.auth.getSession()).data.session : null;
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+    return headers;
+  };
+
+  useEffect(() => {
+    let activo = true;
+    const cargarPersistencia = async () => {
+      try {
+        const headers = await cabecerasIA();
+        const [memoriaRes, conversacionesRes] = await Promise.all([
+          fetch(apiUrl('/api/asesor/memoria'), { headers }),
+          fetch(apiUrl('/api/asesor/conversaciones'), { headers }),
+        ]);
+        if (!activo) return;
+        if (memoriaRes.ok) setMemoria((await memoriaRes.json()).memoria ?? []);
+        if (conversacionesRes.ok) {
+          const conversaciones = (await conversacionesRes.json()).conversaciones ?? [];
+          const ultima = conversaciones[0];
+          if (ultima?.id) {
+            setConversacionId(ultima.id);
+            setRecordar(ultima.recordar !== false);
+          }
+        }
+      } catch {
+        // El asesor conserva su funcionamiento local aunque no haya sesión o API.
+      }
+    };
+    void cargarPersistencia();
+    return () => { activo = false; };
+  }, []);
+
+  const guardarMensaje = async (mensaje: Message) => {
+    if (!recordar || !obtenerSupabase()) return;
+    try {
+      const headers = await cabecerasIA();
+      let id = conversacionId;
+      if (!id) {
+        const nueva = await fetch(apiUrl('/api/asesor/conversaciones'), { method: 'POST', headers, body: JSON.stringify({ titulo: mensaje.text.slice(0, 70) }) });
+        if (!nueva.ok) return;
+        id = (await nueva.json()).conversacion?.id ?? null;
+        if (id) setConversacionId(id);
+      }
+      if (!id) return;
+      await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: mensaje.text, proveedor: mensaje.provider }) });
+    } catch {
+      // La persistencia nunca debe bloquear una consulta.
+    }
+  };
 
   const mostrarToast = (mensaje: string) => {
     setToast(mensaje);
@@ -368,29 +413,17 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // servicio, así que para cuando escribas el primer mensaje suele estar listo.
   useEffect(() => {
     let vigente = true;
-    const revision = revisionConexion.current;
-    const controller = new AbortController();
-    const fin = Date.now() + 60000;
-    const timeout = setTimeout(() => controller.abort(), 60000);
-    esperarConLimite(fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' }), 60000)
-      .then((r) => (r.ok ? esperarConLimite(r.json(), Math.max(0, fin - Date.now())) : null))
+    fetch(apiUrl('/api/salud'))
+      .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (vigente && revision === revisionConexion.current) {
-          setConexion(d?.ia ? 'configurada' : 'local');
-          setDetalleConexion(d?.ia ? null : 'El servidor no confirmó una IA configurada.');
-        }
+        if (vigente) setConexion(d?.ia ? 'en-linea' : 'local');
       })
       .catch(() => {
         // Sin servidor no hay IA, pero el motor local sigue respondiendo.
-        if (vigente && revision === revisionConexion.current) {
-          setConexion('local');
-          setDetalleConexion('No se pudo conectar con el servidor. Puedes volver a intentarlo.');
-        }
-      }).finally(() => clearTimeout(timeout));
+        if (vigente) setConexion('local');
+      });
     return () => {
       vigente = false;
-      controller.abort();
-      clearTimeout(timeout);
     };
   }, []);
 
@@ -401,29 +434,28 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // `setTimeout` adivinando cuánto tardaba React en re-renderizar, que es
   // frágil (¿400ms? ¿y si el dispositivo es más lento?). Pasar el texto
   // directo no depende de ningún tiempo de espera.
-  const handleSend = async (textoDirecto?: string, esReintento = false) => {
+  const handleSend = async (textoDirecto?: string) => {
     const textoUsuario = (textoDirecto ?? input).trim();
-    if (!textoUsuario || consultaOcupada.current) return;
-    consultaOcupada.current = true;
+    if (!textoUsuario || pensando) return;
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
-    if (!esReintento) setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
+    void guardarMensaje(userMsg);
     setInput('');
     setPensando(true);
-    setEtapaConsulta('Validando tu sesión…');
-    revisionConexion.current += 1;
-    setDetalleConexion(null);
-    setReintentar(null);
 
     try {
-      const simulacion = entradaFinanciera
-        ? simularPregunta(textoUsuario, entradaFinanciera) : null;
+      const simulacion = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
+      if (simulacion) {
+        setConexion('local');
+        const simulacionMsg: Message = { id: nuevoId(), role: 'bot', text: simulacion.respuesta };
+        setMessages((prev) => [...prev, simulacionMsg]);
+        void guardarMensaje(simulacionMsg);
+        return;
+      }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
       const cliente = obtenerSupabase();
-      const session = cliente
-        ? await esperarConLimite(cliente.auth.getSession(), 8000).then(r => r.data.session).catch(() => null)
-        : null;
-      if (!montado.current) return;
+      const session = cliente ? (await cliente.auth.getSession()).data.session : null;
 
       const mesActual = bogotaDate().slice(0, 7);
       const txMes = transacciones.filter((t) => t.occurredOn.startsWith(mesActual));
@@ -466,17 +498,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           .map(([cat, total]) => ({ categoria: cat, totalCop: total })),
       };
 
-      const finanzasContext = {
-        disponibleDiarioCop,
-        simulacionSolicitada: simulacion?.resultado,
-        ...legacyFinanzasContext,
-        ...contextoParaAsesor,
-        cajitas: cajitas.filter(c => c.archivedAt === null).map(c => ({
-          nombre: c.nombre, tipo: c.tipo, saldoCop: cajitasBalances[c.id] ?? null,
-          metaCop: c.metaCop, tasaEaPct: c.tasaEaPct,
-        })),
-        consultaDeuda: context.conversacionDeuda,
-      };
+      const finanzasContext = contextoParaAsesor ?? legacyFinanzasContext;
       let respondidoPorLLM = false;
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -486,32 +508,20 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       }
 
       try {
-        if (cliente && !session) {
-          setDetalleConexion('No pudimos validar tu sesión. Vuelve a iniciar sesión para usar la IA; tu mensaje queda pendiente.');
-        } else {
-        setEtapaConsulta('Esperando respuesta de la IA… puede tardar hasta un minuto.');
-        const controller = new AbortController();
-        const fin = Date.now() + 60000;
-        consultaAbort.current = controller;
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-        try {
-        const res = await esperarConLimite(fetch(apiUrl('/api/asesor-ia'), {
+        const res = await fetch(apiUrl('/api/asesor-ia'), {
           method: 'POST',
           headers,
-          signal: controller.signal,
             body: JSON.stringify({
               prompt: textoUsuario,
-              history: (esReintento ? messages.slice(0, -1) : messages).slice(-12).map(({ role, text }) => ({ role, text })),
+              history: messages.slice(-5),
               finanzasContext,
+              memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
             }),
-          }), 60000);
+          });
 
-          if (!montado.current) return;
           if (res.ok) {
-            const data = await esperarConLimite(res.json(), Math.max(0, fin - Date.now()));
-            if (!montado.current) return;
-            const textoLimpio = typeof data?.text === 'string' ? limpiarTextoChat(data.text) : '';
-            if (!data?.offline && textoLimpio) {
+            const data = await res.json();
+            if (!data.offline && data.text) {
               // El modelo redacta la respuesta, pero nunca decide qué se
               // guarda: se le pasa lo que la persona dictó por la MISMA
               // puerta que usa el motor local (detectarMovimiento), que corre
@@ -527,70 +537,62 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 lexico,
                 context,
               );
-              // El modelo puede preguntar algo distinto al paso del modo local.
-              // Conservamos datos, pero no asignamos su próxima respuesta breve
-              // a una pregunta que el usuario no llegó a ver.
-              setContext({
-                ...deteccion.newContext,
-                conversacionDeuda: deteccion.newContext.conversacionDeuda
-                  ? { ...deteccion.newContext.conversacionDeuda, pendiente: undefined }
-                  : undefined,
-              });
+              setContext(deteccion.newContext);
 
               const botMsg: Message = {
                 id: nuevoId(),
                 role: 'bot',
-                text: textoLimpio,
+                text: limpiarTextoChat(data.text),
                 provider: data.provider,
                 action: deteccion.propuesta?.action,
                 actions: deteccion.propuesta?.actions,
               };
               setMessages((prev) => [...prev, botMsg]);
+              void guardarMensaje(botMsg);
               respondidoPorLLM = true;
               setConexion('en-linea');
-              setDetalleConexion(null);
             }
-            else {
-              const motivo = typeof data?.motivo === 'string' ? data.motivo : '';
-              setDetalleConexion(motivo === 'sin-llave-configurada'
-                ? 'El servidor no tiene una clave de IA configurada.'
-                : /:429\b/.test(motivo)
-                  ? 'El proveedor de IA reportó un límite de uso o cuota. Tu mensaje queda pendiente.'
-                  : /:(401|403)\b/.test(motivo)
-                    ? 'El proveedor de IA rechazó el acceso del servidor. Es necesario revisar su configuración.'
-                    : 'El servidor respondió, pero ningún proveedor de IA pudo completar la consulta. Puedes reintentar.');
-            }
-          } else {
-            setDetalleConexion(res.status === 401 || res.status === 403
-              ? 'La IA no pudo validar tu sesión. Vuelve a iniciar sesión e intenta de nuevo.'
-              : res.status === 429
-                ? 'La IA alcanzó su límite de solicitudes. Intenta de nuevo más tarde.'
-                : `El servidor devolvió un error (${res.status}). No se obtuvo una respuesta de IA.`);
           }
-        } finally {
-          clearTimeout(timeoutId);
-          consultaAbort.current = null;
-        }
-        }
         } catch {
-          if (!montado.current) return;
-          setDetalleConexion('La IA no respondió en el tiempo disponible o hubo un problema de conexión. Puedes volver a intentarlo.');
-          // El error se muestra fuera de las respuestas del modelo.
+          // Si falla la red, el fallback offline toma el control
         }
 
+      // 2. Si no hay LLM configurado o falló, usar el motor offline local.
+      // El indicador baja a 'local' para que el encabezado diga la verdad: si
+      // estas respuestas las da el motor de reglas, no puede seguir anunciando
+      // que hay una IA en línea.
       if (!respondidoPorLLM) {
         setConexion('local');
-        setReintentar(textoUsuario);
-      }
-    } catch {
-      if (montado.current) {
-        setConexion('local');
-        setDetalleConexion('No pudimos completar esta consulta. Puedes volver a intentarlo.');
-        setReintentar(textoUsuario);
+        const {
+          text: respuesta,
+          newContext,
+          action,
+          actions,
+          suggestions,
+        } = responderAsesor(
+          textoUsuario,
+          transacciones,
+          cajitas,
+          cajitasBalances,
+          categorias,
+          lexico,
+          context,
+          disponibleDiarioCop,
+        );
+        setContext(newContext);
+        const botMsg: Message = {
+          id: nuevoId(),
+          role: 'bot',
+          text: respuesta,
+          action,
+          actions,
+          suggestions,
+        };
+        setMessages((prev) => [...prev, botMsg]);
+        void guardarMensaje(botMsg);
       }
     } finally {
-      consultaOcupada.current = false;
-      if (montado.current) setPensando(false);
+      setPensando(false);
     }
   };
   handleSendRef.current = handleSend;
@@ -631,40 +633,39 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <span className="truncate">{etiquetaConexion(conexion)}</span>
         </p>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setRecordar((actual) => !actual)}
+            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--fin-ink-soft)]"
+            title="Controla si el asesor guarda esta conversación"
+          >
+            {recordar ? 'Memoria activa' : 'Memoria apagada'}
+          </button>
           {conexion === 'local' && (
             <button
               onClick={async () => {
                 if (intentandoDespertar) return;
                 setIntentandoDespertar(true);
-                revisionConexion.current += 1;
-                setDetalleConexion('Conectando con el servidor; puede tardar hasta un minuto.');
 
                 const controller = new AbortController();
-                const fin = Date.now() + 60000;
-                const timeoutId = setTimeout(() => controller.abort(), 60000);
-                const revision = revisionConexion.current;
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
 
                 try {
-                  const res = await esperarConLimite(fetch(apiUrl('/api/salud'), { signal: controller.signal, cache: 'no-store' }), 60000);
-                  if (revision !== revisionConexion.current) return;
+                  const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal });
+                  clearTimeout(timeoutId);
 
                   if (!res.ok) {
                     console.log('[asesor] Servidor retornó:', res.status);
                     setConexion('local');
-                    setDetalleConexion(`No se pudo despertar el servidor (HTTP ${res.status}).`);
                     return;
                   }
 
-                  const data = await esperarConLimite(res.json(), Math.max(0, fin - Date.now()));
-                  if (revision !== revisionConexion.current) return;
+                  const data = await res.json();
                   console.log('[asesor] Servidor disponible, IA:', data?.ia);
-                  setConexion(data?.ia ? 'configurada' : 'local');
-                  setDetalleConexion(data?.ia ? 'El servidor está despierto. Envía una consulta para comprobar la IA.' : 'El servidor está despierto, pero no tiene un proveedor de IA configurado.');
+                  setConexion(data?.ia ? 'en-linea' : 'local');
                 } catch (error) {
-                  if (revision !== revisionConexion.current) return;
                   console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
                   setConexion('local');
-                  setDetalleConexion('El servidor no respondió en un minuto o hubo un error de red. Intenta de nuevo.');
                 } finally {
                   clearTimeout(timeoutId);
                   setIntentandoDespertar(false);
@@ -680,8 +681,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       </div>
 
       {/* Messages */}
-      {detalleConexion && <p role="status" className="px-5 pb-3 text-sm text-[var(--fin-ink-soft)]">{detalleConexion}</p>}
-      {reintentar && <button type="button" disabled={pensando} onClick={() => void handleSend(reintentar, true)} className="mx-5 mb-3 rounded-lg bg-[var(--fin-accent)] px-4 py-2 text-[var(--fin-on-accent)]">Reintentar con IA</button>}
       <div className="flex-1 overflow-y-auto p-5">
         {/* Antes de que exista una conversación real (solo el saludo inicial),
  un único globo de chat flotando en una pantalla ancha se ve como un
@@ -909,7 +908,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       style={{ animationDelay: '300ms' }}
                     />
                   </span>
-                  <span role="status">{etapaConsulta}</span>
+                  <span>Analizando tus finanzas...</span>
                 </div>
               </div>
             )}

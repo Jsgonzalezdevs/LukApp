@@ -22,15 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
-  { version: '3.6.0', fecha: '2026-09-08', texto: 'El asesor responde exclusivamente con IA. Si no está disponible, muestra el error y permite reintentar sin sustituir la respuesta por el modo local.' },
-  { version: '3.5.0', fecha: '2026-09-08', texto: 'El asesor puede usar el saldo de la cajita que mencionas para comparar pagos de deudas. La IA recibe tus cajitas junto con el contexto financiero de tus cuentas, metas y compromisos.' },
-  { version: '3.4.5', fecha: '2026-09-08', texto: 'El asesor entiende correcciones como «no perdón, eran 900.000» y actualiza el último dato sin confundirlo con la siguiente pregunta.' },
-  { version: '3.4.4', fecha: '2026-09-08', texto: 'El asesor entiende respuestas como «el saldo total es 900000» y avanza sin repetir la pregunta. También reconoce ahorros y reservas expresados en frases.' },
-  { version: '3.4.3', fecha: '2026-09-08', texto: 'Reforzamos la conexión del asesor: límites de espera en los proveedores de IA, protección ante respuestas vacías y envíos simultáneos, y recuperación del chat ante errores.' },
-  { version: '3.4.2', fecha: '2026-09-08', texto: 'Evitamos que el asesor quede esperando indefinidamente al validar la sesión. Ahora muestra si espera la sesión o la respuesta de la IA.' },
-  { version: '3.4.1', fecha: '2026-09-08', texto: 'El asesor espera el arranque del servidor y distingue conexión, sesión y disponibilidad de la IA. Ahora explica por qué responde el modo local.' },
-  { version: '3.4.0', fecha: '2026-09-08', texto: 'El asesor recuerda los datos de tu consulta de deudas y compara pagos con tus ahorros y la reserva que necesitas conservar. Mejoramos las respuestas de la IA y la recuperación cuando tarda en responder.' },
-  { version: '3.3.14', fecha: '2026-09-08', texto: 'El asesor distingue consultas y planes de gastos realizados. En modo local pide los datos necesarios al consultar sobre deudas, sin ofrecer registrar los montos de la pregunta.' },
+  { version: '3.6.0', fecha: '2026-09-09', texto: 'El Asesor ahora puede guardar conversaciones, activar o apagar su memoria y usar recuerdos autorizados para personalizar cada respuesta.' },
+  { version: '3.5.0', fecha: '2026-09-09', texto: 'El Asesor queda preparado para conversaciones persistentes y memoria personal controlada por cada usuario, con opción de olvidar datos.' },
+  { version: '3.4.0', fecha: '2026-09-09', texto: 'El asesor IA ahora evita bloqueos por proveedores lentos y el panel muestra qué servicios están configurados para diagnosticar el modo local.' },
   { version: '3.3.12', fecha: '2026-09-07', texto: 'Revisamos las sumas de deudas y tarjetas para evitar cancelaciones incorrectas cuando sus saldos tienen signos distintos.' },
   { version: '3.3.11', fecha: '2026-09-07', texto: 'Quitamos el último efecto translúcido de la navegación inferior para que el dashboard se vea completamente nítido.' },
   { version: '3.3.10', fecha: '2026-09-07', texto: 'Corregimos la suma de Dinero disponible para descontar correctamente ahorros reservados y obligaciones.' },
