@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send,
   User,
@@ -14,9 +14,13 @@ import {
   Plus,
   X,
   MessageSquareText,
+  Mic,
+  Square,
+  Loader2,
 } from 'lucide-react';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
+import { useDictation } from '../hooks/useDictation';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
@@ -200,6 +204,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
      la Estrella al aparecer. */
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
+  const manejarDictadoFinal = useCallback((texto: string) => {
+    const transcripcion = texto.trim();
+    if (!transcripcion) return;
+    setInput((actual) => [actual.trim(), transcripcion].filter(Boolean).join(' '));
+  }, []);
+  const dictado = useDictation(manejarDictadoFinal);
   const [copiadoId, setCopiadoId] = useState<string | null>(null);
   const [compartidoId, setCompartidoId] = useState<string | null>(null);
   const [hablandoId, setHablandoId] = useState<string | null>(null);
@@ -326,6 +336,18 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     setTimeout(() => {
       setToast((prev) => (prev === mensaje ? null : prev));
     }, 3000);
+  };
+
+  const alternarDictado = () => {
+    if (dictado.status === 'processing') return;
+    if (!dictado.supported) {
+      mostrarToast('El micrófono no está disponible en este dispositivo.');
+      return;
+    }
+    haptic.trigger(dictado.status === 'listening' ? 'light' : 'heavy');
+    audio.play(dictado.status === 'listening' ? 'click' : 'warning');
+    if (dictado.status === 'listening') dictado.stop();
+    else dictado.start();
   };
 
   // Detener voz si el componente se desmonta o cambia de pestaña
@@ -1075,20 +1097,76 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       {/* Input */}
       <div className="sticky bottom-0 bg-[var(--fin-bg)] pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+        {(dictado.status === 'listening' || dictado.status === 'processing' || dictado.error) && (
+          <p
+            className={`mx-auto mb-2 max-w-2xl px-3 text-center text-[12px] font-medium ${
+              dictado.error ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink-soft)]'
+            }`}
+            aria-live="polite"
+          >
+            {dictado.error
+              ? dictado.error
+              : dictado.status === 'processing'
+                ? 'Transcribiendo tu pregunta…'
+                : dictado.interim || 'Te escucho… toca el botón para terminar'}
+          </p>
+        )}
         <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-1.5">
           <input
             type="text"
             className="min-w-0 flex-1 bg-transparent px-3 py-2 text-[17px] text-[var(--fin-ink)] border-none shadow-none !outline-none focus:!border-transparent focus:!outline-none focus:!ring-0 focus-visible:!outline-none placeholder:text-[var(--fin-ink-faint)]"
-            placeholder="Pregúntale a tu asesor..."
-            value={input}
+            placeholder={dictado.status === 'listening' ? 'Te escucho…' : 'Pregúntale a tu asesor...'}
+            value={
+              (dictado.status === 'listening' || dictado.status === 'processing') && dictado.interim
+                ? dictado.interim
+                : input
+            }
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={dictado.status === 'listening' || dictado.status === 'processing'}
             autoFocus
           />
           <button
             type="button"
+            onClick={alternarDictado}
+            disabled={dictado.status === 'processing'}
+            aria-pressed={dictado.status === 'listening'}
+            aria-label={
+              dictado.status === 'processing'
+                ? 'Transcribiendo'
+                : dictado.status === 'listening'
+                  ? 'Dejar de escuchar'
+                  : 'Dictar una pregunta'
+            }
+            title={dictado.status === 'listening' ? 'Terminar dictado' : 'Dictar una pregunta'}
+            className={`relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-[var(--fin-r-pill)] transition-all disabled:opacity-50 ${
+              dictado.status === 'listening'
+                ? 'bg-[var(--fin-out)] text-white'
+                : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
+            }`}
+          >
+            {dictado.status === 'listening' && (
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 -z-10 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] opacity-25"
+                style={{ transform: `scale(${1.15 + dictado.level * 0.35})` }}
+              />
+            )}
+            {dictado.status === 'processing' ? (
+              <Loader2 className="h-4.5 w-4.5 animate-spin" strokeWidth={2.5} />
+            ) : dictado.status === 'listening' ? (
+              <Square className="h-4 w-4" fill="currentColor" strokeWidth={2.5} />
+            ) : (
+              <Mic className="h-5 w-5" strokeWidth={2.5} />
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => handleSend()}
-            disabled={!input.trim()}
+            disabled={
+              !input.trim() || dictado.status === 'listening' || dictado.status === 'processing'
+            }
+            aria-label="Enviar pregunta"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-30"
           >
             <Send className="mr-0.5 h-4 w-4" strokeWidth={2.5} />
