@@ -1763,10 +1763,15 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
     if (token) {
       const quienLlama = await exigirUsuario(cliente, token);
       if ('status' in quienLlama) {
-        return res.status(quienLlama.status).json({ error: quienLlama.error });
+        // El asesor también funciona para quienes usan LukApp localmente. Un
+        // JWT vencido o emitido por otro entorno no debe bloquear Groq: esta
+        // ruta ya tiene un límite propio por IP y en ese caso no persiste
+        // identidad ni memoria del usuario.
+        console.warn('[asesor] Sesión no válida; continuando como usuario local.');
+      } else {
+        usuarioEmail = quienLlama.email || 'usuario';
+        userId = quienLlama.userId;
       }
-      usuarioEmail = quienLlama.email || 'usuario';
-      userId = quienLlama.userId;
     }
   }
 

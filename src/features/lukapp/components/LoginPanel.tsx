@@ -520,9 +520,13 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                         />
                         <span
                           aria-hidden="true"
-                          className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border border-[var(--fin-line)] bg-[var(--fin-bg)] text-transparent shadow-sm transition-[background-color,border-color,color,transform] duration-150 group-hover:border-[var(--fin-accent)] peer-checked:border-[var(--fin-accent)] peer-checked:bg-[var(--fin-accent)] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fin-accent)]/40 peer-active:scale-95"
+                          className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border shadow-sm transition-[background-color,border-color,color,transform] duration-150 group-hover:border-[var(--fin-accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fin-accent)]/40 peer-active:scale-95 ${
+                            recordarme
+                              ? 'border-[var(--fin-accent)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
+                              : 'border-[var(--fin-line)] bg-transparent text-transparent'
+                          }`}
                         >
-                          <Check className="h-3 w-3" strokeWidth={3} />
+                          {recordarme ? <Check className="h-3.5 w-3.5" strokeWidth={3.5} /> : null}
                         </span>
                         <span>Recuérdame</span>
                       </label>
