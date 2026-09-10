@@ -454,9 +454,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         return;
       }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
-      const cliente = obtenerSupabase();
-      const session = cliente ? (await cliente.auth.getSession()).data.session : null;
-
       const mesActual = bogotaDate().slice(0, 7);
       const txMes = transacciones.filter((t) => t.occurredOn.startsWith(mesActual));
       const gastosMes = txMes
@@ -503,9 +500,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
 
       try {
         const res = await fetch(apiUrl('/api/asesor-ia'), {

@@ -35,13 +35,11 @@ app.use(express.raw({ type: 'audio/*', limit: '10mb' }));
 // ----------------------------------------------------------------------
 // SEGURIDAD: Rate Limiter en Memoria para APIs
 // ----------------------------------------------------------------------
-const peticionesPorIp = new Map<string, { count: number; resetTime: number }>();
-
-const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => (
-  req: express.Request,
-  res: express.Response,
-  next: express.NextFunction,
-) => {
+const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => {
+  // Cada middleware conserva su propio contador. Compartir el mapa hacía que
+  // salud, memoria y el límite específico del asesor se sumaran entre sí.
+  const peticionesPorIp = new Map<string, { count: number; resetTime: number }>();
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
   const ahora = Date.now();
   const registro = peticionesPorIp.get(ip);
@@ -57,6 +55,7 @@ const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => (
   }
 
   return next();
+  };
 };
 
 app.use('/api', rateLimiter(120, 60000));

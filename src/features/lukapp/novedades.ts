@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.6.4', fecha: '2026-09-10', texto: 'Rehicimos la conexión del Asesor para que una sesión vencida o las llamadas de memoria no puedan bloquear la respuesta de la IA.' },
   { version: '3.6.3', fecha: '2026-09-10', texto: 'El control Recuérdame muestra ahora un check visible con el color de acento cuando está activado.' },
   { version: '3.6.2', fecha: '2026-09-10', texto: 'El Asesor ya puede usar la IA en cuentas que trabajan localmente, con protección de cuota y diagnósticos claros cuando la API rechaza una consulta.' },
   { version: '3.6.1', fecha: '2026-09-10', texto: 'El Asesor conecta automáticamente con la API de producción aunque Vercel no inyecte la variable de entorno, evitando quedarse silenciosamente en modo local.' },
