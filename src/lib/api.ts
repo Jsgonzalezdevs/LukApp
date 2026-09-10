@@ -11,7 +11,9 @@
  * returns 404. Setting VITE_API_URL to the Render origin points the calls at the
  * right host; `cors()` is already enabled server-side for that case.
  */
-const BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, '') ?? '';
+const URL_API_PRODUCCION = 'https://focus-62nt.onrender.com';
+const BASE = ((import.meta.env.VITE_API_URL as string | undefined) ||
+  (import.meta.env.PROD ? URL_API_PRODUCCION : '')).replace(/\/+$/, '');
 
 /** `apiUrl('/api/x')` -> '/api/x' locally, 'https://host/api/x' when configured. */
 export const apiUrl = (ruta: string): string => `${BASE}${ruta}`;
