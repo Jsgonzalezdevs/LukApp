@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.7.0', fecha: '2026-09-10', texto: 'Ahora puedes abrir tus conversaciones anteriores con el Asesor, continuar cualquier chat guardado o empezar uno nuevo desde el historial.' },
   { version: '3.6.5', fecha: '2026-09-10', texto: 'El Asesor resume inteligentemente los datos financieros extensos antes de consultar la IA, evitando rechazos por tamaño sin perder las cifras importantes.' },
   { version: '3.6.4', fecha: '2026-09-10', texto: 'Rehicimos la conexión del Asesor para que una sesión vencida o las llamadas de memoria no puedan bloquear la respuesta de la IA.' },
   { version: '3.6.3', fecha: '2026-09-10', texto: 'El control Recuérdame muestra ahora un check visible con el color de acento cuando está activado.' },

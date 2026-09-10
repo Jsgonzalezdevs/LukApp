@@ -10,6 +10,10 @@ import {
   Volume2,
   VolumeX,
   Share2,
+  History,
+  Plus,
+  X,
+  MessageSquareText,
 } from 'lucide-react';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
@@ -48,6 +52,21 @@ interface MemoriaIA {
   fuente: 'usuario' | 'inferida';
 }
 
+interface ConversacionIA {
+  id: string;
+  titulo: string;
+  recordar: boolean;
+  creado_en: string;
+  actualizado_en: string;
+}
+
+interface MensajePersistido {
+  id: string;
+  rol: 'user' | 'assistant';
+  texto: string;
+  proveedor?: string | null;
+}
+
 interface AsesorViewProps {
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
@@ -64,6 +83,11 @@ interface AsesorViewProps {
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 const PROBABILIDAD_LENGUA = 0.00001; // 0,001 %
+const MENSAJE_INICIAL: Message = {
+  id: 'init',
+  role: 'bot',
+  text: '¡Hola! Soy tu asesor financiero personal. Puedo ayudarte a consultar tus gastos, revisar tu balance, o darte consejos sobre cómo vas este mes. ¿En qué te ayudo hoy?',
+};
 
 /** Chips para arrancar una conversación vacía — el punto de entrada más usado. */
 const SUGERENCIAS_INICIALES = [
@@ -163,14 +187,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     // sorpresas ocasionales; la lengua queda como easter egg auténtico.
     return imagenes[indice];
   });
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'init',
-      role: 'bot',
-      text: '¡Hola! Soy tu asesor financiero personal. Puedo ayudarte a consultar tus gastos, revisar tu balance, o darte consejos sobre cómo vas este mes. ¿En qué te ayudo hoy?',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([MENSAJE_INICIAL]);
   const [conversacionId, setConversacionId] = useState<string | null>(null);
+  const [conversaciones, setConversaciones] = useState<ConversacionIA[]>([]);
+  const [historialAbierto, setHistorialAbierto] = useState(false);
+  const [cargandoConversacion, setCargandoConversacion] = useState(false);
   const [memoria, setMemoria] = useState<MemoriaIA[]>([]);
   const [recordar, setRecordar] = useState(true);
   const [input, setInput] = useState('');
@@ -188,6 +209,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
   const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const conversacionIdRef = useRef<string | null>(null);
+  const creandoConversacionRef = useRef<Promise<string | null> | null>(null);
 
   const cabecerasIA = async (): Promise<Record<string, string>> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -195,6 +218,42 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     const session = cliente ? (await cliente.auth.getSession()).data.session : null;
     if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
     return headers;
+  };
+
+  const cargarConversacion = async (conversacion: ConversacionIA, cerrarHistorial = true) => {
+    setCargandoConversacion(true);
+    try {
+      const headers = await cabecerasIA();
+      const respuesta = await fetch(apiUrl(`/api/asesor/conversaciones/${conversacion.id}/mensajes`), { headers });
+      if (!respuesta.ok) throw new Error('No se pudo abrir la conversación.');
+      const guardados = ((await respuesta.json()).mensajes ?? []) as MensajePersistido[];
+      const recuperados: Message[] = guardados.map((mensaje) => ({
+        id: mensaje.id,
+        role: mensaje.rol === 'assistant' ? 'bot' : 'user',
+        text: mensaje.texto,
+        provider: mensaje.proveedor ?? undefined,
+      }));
+      setMessages(recuperados.length > 0 ? recuperados : [MENSAJE_INICIAL]);
+      conversacionIdRef.current = conversacion.id;
+      setConversacionId(conversacion.id);
+      setRecordar(conversacion.recordar !== false);
+      setContext({ ultimoAsunto: null, ultimaFecha: null });
+      if (cerrarHistorial) setHistorialAbierto(false);
+    } catch {
+      mostrarToast('No pudimos abrir esa conversación.');
+    } finally {
+      setCargandoConversacion(false);
+    }
+  };
+
+  const nuevaConversacion = () => {
+    conversacionIdRef.current = null;
+    creandoConversacionRef.current = null;
+    setConversacionId(null);
+    setMessages([MENSAJE_INICIAL]);
+    setContext({ ultimoAsunto: null, ultimaFecha: null });
+    setInput('');
+    setHistorialAbierto(false);
   };
 
   useEffect(() => {
@@ -209,11 +268,14 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         if (!activo) return;
         if (memoriaRes.ok) setMemoria((await memoriaRes.json()).memoria ?? []);
         if (conversacionesRes.ok) {
-          const conversaciones = (await conversacionesRes.json()).conversaciones ?? [];
-          const ultima = conversaciones[0];
+          const conversacionesCargadas = ((await conversacionesRes.json()).conversaciones ?? []) as ConversacionIA[];
+          setConversaciones(conversacionesCargadas);
+          const ultima = conversacionesCargadas[0];
           if (ultima?.id) {
+            conversacionIdRef.current = ultima.id;
             setConversacionId(ultima.id);
             setRecordar(ultima.recordar !== false);
+            await cargarConversacion(ultima, false);
           }
         }
       } catch {
@@ -228,15 +290,32 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     if (!recordar || !obtenerSupabase()) return;
     try {
       const headers = await cabecerasIA();
-      let id = conversacionId;
+      let id = conversacionIdRef.current;
       if (!id) {
-        const nueva = await fetch(apiUrl('/api/asesor/conversaciones'), { method: 'POST', headers, body: JSON.stringify({ titulo: mensaje.text.slice(0, 70) }) });
-        if (!nueva.ok) return;
-        id = (await nueva.json()).conversacion?.id ?? null;
-        if (id) setConversacionId(id);
+        if (!creandoConversacionRef.current) {
+          creandoConversacionRef.current = (async () => {
+            const nueva = await fetch(apiUrl('/api/asesor/conversaciones'), { method: 'POST', headers, body: JSON.stringify({ titulo: mensaje.text.slice(0, 70) }) });
+            if (!nueva.ok) return null;
+            const creada = (await nueva.json()).conversacion as ConversacionIA | undefined;
+            if (!creada?.id) return null;
+            conversacionIdRef.current = creada.id;
+            setConversacionId(creada.id);
+            setConversaciones((actuales) => [creada, ...actuales.filter((item) => item.id !== creada.id)]);
+            return creada.id;
+          })().finally(() => {
+            creandoConversacionRef.current = null;
+          });
+        }
+        id = await creandoConversacionRef.current;
       }
       if (!id) return;
-      await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: mensaje.text, proveedor: mensaje.provider }) });
+      const guardado = await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: mensaje.text, proveedor: mensaje.provider }) });
+      if (guardado.ok) {
+        const ahora = new Date().toISOString();
+        setConversaciones((actuales) => actuales
+          .map((item) => item.id === id ? { ...item, actualizado_en: ahora } : item)
+          .sort((a, b) => b.actualizado_en.localeCompare(a.actualizado_en)));
+      }
     } catch {
       // La persistencia nunca debe bloquear una consulta.
     }
@@ -612,7 +691,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         : 'var(--fin-ink-faint)';
 
   return (
-    <div className="flex min-h-[60vh] flex-col">
+    <div className="relative flex min-h-[60vh] flex-col">
       {/* Sin cabecera propia: esta vista se abre dentro de una hoja que ya pone
           el título "Preguntar" arriba. Antes ponía otra encima que decía "Tu
           Asesor Financiero", así que se veían dos títulos seguidos diciendo casi
@@ -630,6 +709,24 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <span className="truncate">{etiquetaConexion(conexion)}</span>
         </p>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setHistorialAbierto(true)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]"
+            title="Ver conversaciones anteriores"
+            aria-label="Ver conversaciones anteriores"
+          >
+            <History className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={nuevaConversacion}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]"
+            title="Nueva conversación"
+            aria-label="Nueva conversación"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
           <button
             type="button"
             onClick={() => setRecordar((actual) => !actual)}
@@ -676,6 +773,68 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           )}
         </div>
       </div>
+
+      {historialAbierto && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/45" role="dialog" aria-modal="true" aria-label="Conversaciones anteriores">
+          <button
+            type="button"
+            className="min-w-0 flex-1 cursor-default"
+            onClick={() => setHistorialAbierto(false)}
+            aria-label="Cerrar historial"
+          />
+          <section className="flex h-full w-[min(88vw,22rem)] flex-col border-l border-[var(--fin-line)] bg-[var(--fin-bg)] shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-4 py-4">
+              <div>
+                <h2 className="text-[16px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
+                <p className="mt-0.5 text-[11px] text-[var(--fin-ink-faint)]">Tus chats guardados con el asesor</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistorialAbierto(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-3">
+              <button
+                type="button"
+                onClick={nuevaConversacion}
+                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+              >
+                <Plus className="h-4 w-4" />
+                Nueva conversación
+              </button>
+            </div>
+            <div className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+              {conversaciones.length === 0 ? (
+                <div className="flex flex-col items-center px-5 py-12 text-center text-[var(--fin-ink-faint)]">
+                  <MessageSquareText className="mb-3 h-8 w-8" />
+                  <p className="text-[13px]">Todavía no tienes conversaciones guardadas.</p>
+                </div>
+              ) : conversaciones.map((conversacion) => (
+                <button
+                  type="button"
+                  key={conversacion.id}
+                  onClick={() => void cargarConversacion(conversacion)}
+                  disabled={cargandoConversacion}
+                  className={`w-full rounded-[var(--fin-r-control)] px-3 py-3 text-left transition-colors disabled:opacity-60 ${
+                    conversacion.id === conversacionId
+                      ? 'bg-[var(--fin-soft)] text-[var(--fin-ink)]'
+                      : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+                  }`}
+                >
+                  <span className="block truncate text-[13px] font-semibold">{conversacion.titulo || 'Conversación sin título'}</span>
+                  <span className="mt-1 block text-[11px] text-[var(--fin-ink-faint)]">
+                    {new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(conversacion.actualizado_en))}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-5">

@@ -1714,6 +1714,33 @@ app.post('/api/asesor/conversaciones', async (req, res) => {
   return res.status(201).json({ conversacion: data });
 });
 
+app.get('/api/asesor/conversaciones/:id/mensajes', async (req, res) => {
+  const cliente = clienteAdmin();
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!cliente || !token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+  const quien = await exigirUsuario(cliente, token);
+  if ('status' in quien) return res.status(quien.status).json({ error: quien.error });
+
+  const { data: conversacion, error: errorConversacion } = await cliente
+    .from('ia_conversaciones')
+    .select('id')
+    .eq('id', req.params.id)
+    .eq('usuario_id', quien.userId)
+    .maybeSingle();
+  if (errorConversacion) return res.status(500).json({ error: 'No se pudo validar la conversación.' });
+  if (!conversacion) return res.status(404).json({ error: 'Conversación no encontrada.' });
+
+  const { data, error } = await cliente
+    .from('ia_mensajes')
+    .select('id,rol,texto,proveedor,creado_en')
+    .eq('conversacion_id', conversacion.id)
+    .eq('usuario_id', quien.userId)
+    .order('creado_en', { ascending: true })
+    .limit(300);
+  if (error) return res.status(500).json({ error: 'No se pudieron cargar los mensajes.' });
+  return res.json({ mensajes: data ?? [] });
+});
+
 app.post('/api/asesor/mensajes', async (req, res) => {
   const cliente = clienteAdmin();
   const token = req.headers.authorization?.replace('Bearer ', '');

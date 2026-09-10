@@ -165,6 +165,78 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
   });
 });
 
+describe('AsesorView — conversaciones guardadas', () => {
+  const sesionFalsa = {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok-historial' } } }),
+    },
+  };
+
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(sesionFalsa as any);
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
+      const ruta = String(url);
+      if (ruta.includes('/api/asesor/memoria')) {
+        return Promise.resolve({ ok: true, json: async () => ({ memoria: [] }) });
+      }
+      if (ruta.includes('/api/asesor/conversaciones/chat-1/mensajes')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            mensajes: [
+              { id: 'mensaje-1', rol: 'user', texto: '¿Cómo iba mi presupuesto?' },
+              { id: 'mensaje-2', rol: 'assistant', texto: 'Ibas dentro de tu presupuesto.', proveedor: 'Groq' },
+            ],
+          }),
+        });
+      }
+      if (ruta.includes('/api/asesor/conversaciones')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            conversaciones: [{
+              id: 'chat-1',
+              titulo: 'Mi presupuesto de septiembre',
+              recordar: true,
+              creado_en: '2026-09-09T15:00:00.000Z',
+              actualizado_en: '2026-09-09T16:00:00.000Z',
+            }],
+          }),
+        });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({ ok: true, ia: true }) });
+    }));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('restaura el último chat y permite verlo dentro del historial', async () => {
+    render(<AsesorView {...props} />);
+
+    await screen.findByText('¿Cómo iba mi presupuesto?');
+    expect(screen.getByText('Ibas dentro de tu presupuesto.')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
+    expect(screen.getByText('Mi presupuesto de septiembre')).toBeTruthy();
+  });
+
+  it('permite empezar un chat nuevo sin borrar el anterior', async () => {
+    render(<AsesorView {...props} />);
+    await screen.findByText('¿Cómo iba mi presupuesto?');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nueva conversación' }));
+    expect(screen.queryByText('¿Cómo iba mi presupuesto?')).toBeNull();
+    expect(screen.getByText(/Soy tu asesor financiero personal/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
+    expect(screen.getByText('Mi presupuesto de septiembre')).toBeTruthy();
+  });
+});
+
 describe('AsesorView — conversación de deuda en modo local', () => {
   it('no responde con reglas y reintenta sin duplicar el mensaje del usuario', async () => {
     let intentos = 0;
