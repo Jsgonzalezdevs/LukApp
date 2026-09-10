@@ -1779,12 +1779,38 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
   }
 
+  /** El motor financiero contiene series y evidencias extensas. Mandarlas
+   * completas hacía que Groq rechazara la petición con HTTP 413. Conservamos
+   * muestras de inicio y fin, cifras y estructura, que es lo útil al asesor. */
+  const compactar = (valor: unknown, profundidad = 0): unknown => {
+    if (profundidad > 5) return '[detalle omitido]';
+    if (typeof valor === 'string') return valor.slice(0, 500);
+    if (Array.isArray(valor)) {
+      const muestra = valor.length > 16 ? [...valor.slice(0, 8), ...valor.slice(-8)] : valor;
+      return muestra.map((item) => compactar(item, profundidad + 1));
+    }
+    if (valor && typeof valor === 'object') {
+      return Object.fromEntries(
+        Object.entries(valor as Record<string, unknown>)
+          .slice(0, 60)
+          .map(([clave, item]) => [clave, compactar(item, profundidad + 1)]),
+      );
+    }
+    return valor;
+  };
+  const contextoCompleto = finanzasContext
+    ? JSON.stringify(compactar(finanzasContext), null, 2)
+    : 'No hay datos financieros registrados aún.';
+  const contextoParaModelo = contextoCompleto.length > 30000
+    ? `${contextoCompleto.slice(0, 30000)}\n[Contexto adicional omitido por tamaño]`
+    : contextoCompleto;
+
   const systemPrompt = `Eres un asesor financiero personal experto para Colombia dentro de la aplicación Finanzas.
 Tu tono es empático, profesional, claro y directo.
 IDIOMA OBLIGATORIO: Responde SIEMPRE 100% en ESPAÑOL (español de Colombia / latinoamericano). NUNCA respondas ni pienses en inglés.
 ESTILO DIRECTO: NO incluyas etiquetas <think>, monólogos internos, introducciones ni explicaciones de tu proceso de pensamiento. Ve directo a la respuesta en español.
 Tienes acceso al resumen financiero real del usuario:
-${finanzasContext ? JSON.stringify(finanzasContext, null, 2) : 'No hay datos financieros registrados aún.'}
+${contextoParaModelo}
 ${Array.isArray(memoriaUsuario) && memoriaUsuario.length > 0 ? `
 Memoria autorizada por el usuario (úsala solo para personalizar, nunca inventes datos):
 ${memoriaUsuario.slice(0, 20).map((dato: unknown) => `- ${String(dato).slice(0, 300)}`).join('\n')}` : ''}
