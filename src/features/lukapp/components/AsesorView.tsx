@@ -519,8 +519,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             }),
           });
 
+          const data = await res.json().catch(() => null);
           if (res.ok) {
-            const data = await res.json();
             if (!data.offline && data.text) {
               // El modelo redacta la respuesta, pero nunca decide qué se
               // guarda: se le pasa lo que la persona dictó por la MISMA
@@ -552,8 +552,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               respondidoPorLLM = true;
               setConexion('en-linea');
             }
+          } else {
+            console.warn('[asesor] La API rechazó la consulta:', res.status, data?.error ?? 'sin detalle');
           }
-        } catch {
+        } catch (error) {
+          console.warn('[asesor] No se pudo conectar con la API:', error);
           // Si falla la red, el fallback offline toma el control
         }
 

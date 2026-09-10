@@ -1753,20 +1753,21 @@ app.delete('/api/asesor/memoria/:id', async (req, res) => {
   return res.json({ ok: true });
 });
 
-app.post('/api/asesor-ia', async (req, res) => {
+app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   let usuarioEmail = 'usuario_local';
   let userId = 'local_user';
 
   const cliente = clienteAdmin();
   if (cliente) {
-    if (!token) return res.status(401).json({ error: 'No authorization header' });
-    const quienLlama = await exigirUsuario(cliente, token);
-    if ('status' in quienLlama) {
-      return res.status(quienLlama.status).json({ error: quienLlama.error });
+    if (token) {
+      const quienLlama = await exigirUsuario(cliente, token);
+      if ('status' in quienLlama) {
+        return res.status(quienLlama.status).json({ error: quienLlama.error });
+      }
+      usuarioEmail = quienLlama.email || 'usuario';
+      userId = quienLlama.userId;
     }
-    usuarioEmail = quienLlama.email || 'usuario';
-    userId = quienLlama.userId;
   }
 
   const { prompt, history, finanzasContext, memoriaUsuario } = req.body ?? {};

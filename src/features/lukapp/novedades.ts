@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.6.2', fecha: '2026-09-10', texto: 'El Asesor ya puede usar la IA en cuentas que trabajan localmente, con protección de cuota y diagnósticos claros cuando la API rechaza una consulta.' },
   { version: '3.6.1', fecha: '2026-09-10', texto: 'El Asesor conecta automáticamente con la API de producción aunque Vercel no inyecte la variable de entorno, evitando quedarse silenciosamente en modo local.' },
   { version: '3.6.0', fecha: '2026-09-09', texto: 'El Asesor ahora puede guardar conversaciones, activar o apagar su memoria y usar recuerdos autorizados para personalizar cada respuesta.' },
   { version: '3.5.0', fecha: '2026-09-09', texto: 'El Asesor queda preparado para conversaciones persistentes y memoria personal controlada por cada usuario, con opción de olvidar datos.' },
