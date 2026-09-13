@@ -156,6 +156,10 @@ export const AppsRoot: React.FC = () => {
       ultimoAccesoRegistrado.current = null;
       return;
     }
+    // SuperadminPanel cambia la sesión directamente para asesorar; la marca
+    // persistida existe antes del evento de Auth y es la fuente confiable aquí.
+    // Esa entrada es soporte administrativo, no actividad del cliente.
+    if (localStorage.getItem(ADMIN_BACKUP_KEY)) return;
     const userId = sesion.estado.userId;
     if (ultimoAccesoRegistrado.current === userId) return;
 

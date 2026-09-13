@@ -2057,6 +2057,26 @@ Reglas clave:
     return res.status(200).json({ offline: true, motivo });
   } catch (error: any) {
     console.error('Error en asesor IA:', error);
+    // Un fallo inesperado del proveedor también es una consulta al Asesor. Si
+    // no se registra aquí, el chat cae al respaldo local pero el monitor queda
+    // congelado en una entrada antigua.
+    if (cliente) {
+      const duracionMs = Date.now() - inicio;
+      const promptTokens = Math.ceil(((prompt?.length || 0) + JSON.stringify(finanzasContext || {}).length) / 3.8);
+      await registrarUsoIA({
+        usuarioEmail,
+        proveedor: 'Ninguno',
+        modelo: 'local',
+        promptTokens,
+        completionTokens: 0,
+        totalTokens: promptTokens,
+        duracionMs,
+        exito: false,
+        motivo: error?.message || 'fallo-inesperado',
+        promptText: prompt,
+        respuestaTexto: '[Consulta atendida por el motor local tras un fallo del servicio IA]',
+      }, cliente, userId);
+    }
     return res.status(200).json({ offline: true, error: error.message });
   }
 });
