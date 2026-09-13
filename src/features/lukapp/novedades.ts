@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.28.2', fecha: '2026-09-13', texto: 'El Superadmin sigue disponible mientras termina de aplicarse la mejora de último acceso, sin dejar vacía la lista de usuarios.' },
   { version: '3.28.1', fecha: '2026-09-13', texto: 'El último acceso del Superadmin ahora registra cada apertura real de LukApp, incluso cuando la sesión sigue guardada.' },
   { version: '3.28.0', fecha: '2026-09-13', texto: 'El Superadmin ahora muestra cuándo cada persona ingresó por última vez a LukApp.' },
   { version: '3.27.4', fecha: '2026-09-13', texto: 'Las novedades ahora se ven más limpias y legibles en modo claro, con una presentación informativa en lugar de una alerta amarilla.' },

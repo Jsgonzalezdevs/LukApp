@@ -279,10 +279,21 @@ app.get('/api/superadmin/usuarios', async (req, res) => {
     const acceso = await exigirGestionUsuarios(cliente, token);
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
 
-    const { data: perfiles, error: errorPerfiles } = await cliente
+    let { data: perfiles, error: errorPerfiles } = await cliente
       .from('perfiles')
       .select('id, email, usuario, rol, rol_personalizado_id, created_at, ultimo_acceso_app_at')
       .order('created_at', { ascending: false });
+    // Durante un despliegue la app puede llegar antes que la migración. No
+    // ocultamos a todos los usuarios: volvemos temporalmente al dato de Auth.
+    const migracionPendiente = errorPerfiles?.code === '42703';
+    if (migracionPendiente) {
+      const respaldo = await cliente
+        .from('perfiles')
+        .select('id, email, usuario, rol, rol_personalizado_id, created_at')
+        .order('created_at', { ascending: false });
+      perfiles = respaldo.data as typeof perfiles;
+      errorPerfiles = respaldo.error;
+    }
     if (errorPerfiles) throw errorPerfiles;
 
     // `listUsers` es paginado. Acortar a la primera página haría que el
@@ -303,7 +314,7 @@ app.get('/api/superadmin/usuarios', async (req, res) => {
         ...perfil,
         // Las cuentas existentes conservan el último inicio de Auth hasta que
         // vuelvan a abrir LukApp y quede registrado su acceso real.
-        ultimo_acceso_at: perfil.ultimo_acceso_app_at ?? ultimoAccesoPorId.get(perfil.id) ?? null,
+        ultimo_acceso_at: (!migracionPendiente ? perfil.ultimo_acceso_app_at : null) ?? ultimoAccesoPorId.get(perfil.id) ?? null,
       })),
     });
   } catch (error: any) {
@@ -332,6 +343,9 @@ app.post('/api/registrar-ultimo-acceso', async (req, res) => {
       .from('perfiles')
       .update({ ultimo_acceso_app_at: new Date().toISOString() })
       .eq('id', acceso.userId);
+    // Si la migración todavía no llegó a producción no devolvemos 500: la
+    // apertura de finanzas sigue funcionando y el panel usa Auth como respaldo.
+    if (error?.code === '42703') return res.status(204).end();
     if (error) throw error;
     return res.status(204).end();
   } catch (error: any) {
