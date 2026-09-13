@@ -101,6 +101,7 @@ interface MetricasIAResponse {
   latenciaPromedioMs: number;
   costoEstimadoCop: number;
   peticionesRecientes: PeticionIA[];
+  usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }>;
 }
 
 type TabSuperadmin = 'usuarios' | 'roles' | 'ia-tokens' | 'visitantes' | 'auditoria';
@@ -478,6 +479,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
           latenciaPromedioMs:     Number(data.latenciaPromedioMs)     || 0,
           costoEstimadoCop:       Number(data.costoEstimadoCop)       || 0,
           peticionesRecientes:    Array.isArray(data.peticionesRecientes) ? data.peticionesRecientes : [],
+          usuariosMasActivos:     Array.isArray(data.usuariosMasActivos) ? data.usuariosMasActivos : [],
         };
         setMetricasIA(sano);
       }
@@ -586,8 +588,17 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
   useEffect(() => {
     if (tabActiva !== 'ia-tokens') return;
-    const interval = setInterval(fetchMetricasIA, 30000);
-    return () => clearInterval(interval);
+    const actualizarAlVolver = () => {
+      if (document.visibilityState === 'visible') void fetchMetricasIA();
+    };
+    const interval = setInterval(fetchMetricasIA, 5000);
+    window.addEventListener('focus', actualizarAlVolver);
+    document.addEventListener('visibilitychange', actualizarAlVolver);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', actualizarAlVolver);
+      document.removeEventListener('visibilitychange', actualizarAlVolver);
+    };
   }, [tabActiva]);
 
   const abrirCrear = () => {
@@ -1356,6 +1367,32 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                       </p>
                     </div>
                   </div>
+
+                  {metricasIA.usuariosMasActivos.length > 0 && (
+                    <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">
+                      <div className="mb-4">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                          Usuarios que más usan el Asesor hoy
+                        </h3>
+                        <p className="mt-0.5 text-[10px] text-[var(--fin-ink-faint)]">
+                          Ordenados por número de consultas, con los más activos primero.
+                        </p>
+                      </div>
+                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+                        {metricasIA.usuariosMasActivos.map((usuario, indice) => (
+                          <div key={usuario.usuarioEmail} className="rounded-2xl bg-[var(--fin-soft)]/60 px-3 py-3">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate text-xs font-bold text-[var(--fin-ink)]" title={usuario.usuarioEmail}>{usuario.usuarioEmail}</span>
+                              <span className="text-sm font-extrabold text-purple-600 dark:text-purple-400">#{indice + 1}</span>
+                            </div>
+                            <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
+                              {usuario.consultas} {usuario.consultas === 1 ? 'consulta' : 'consultas'} · {safeNum(usuario.tokens)} tokens
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                     {/* Tabla de Peticiones Recientes */}
                     <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">

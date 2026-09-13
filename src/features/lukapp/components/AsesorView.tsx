@@ -279,14 +279,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         if (memoriaRes.ok) setMemoria((await memoriaRes.json()).memoria ?? []);
         if (conversacionesRes.ok) {
           const conversacionesCargadas = ((await conversacionesRes.json()).conversaciones ?? []) as ConversacionIA[];
+          // El historial se precarga para que el panel lateral abra sin espera,
+          // pero entrar al Asesor siempre empieza una conversación nueva.
           setConversaciones(conversacionesCargadas);
-          const ultima = conversacionesCargadas[0];
-          if (ultima?.id) {
-            conversacionIdRef.current = ultima.id;
-            setConversacionId(ultima.id);
-            setRecordar(ultima.recordar !== false);
-            await cargarConversacion(ultima, false);
-          }
         }
       } catch {
         // El asesor conserva su funcionamiento local aunque no haya sesión o API.
@@ -719,7 +714,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           Asesor Financiero", así que se veían dos títulos seguidos diciendo casi
           lo mismo. Aquí solo queda la línea de estado, que sí aporta algo que el
           título no puede decir. */}
-      <div className="flex items-center justify-between gap-2 pb-4">
+      <div className="sticky top-0 z-20 -mx-1 flex items-center justify-between gap-2 border-b border-[var(--fin-line)] bg-[var(--fin-bg)] px-1 pb-4 pt-1">
         <p className="flex items-center gap-2 text-[13px] text-[var(--fin-ink-soft)]">
           <span
             aria-hidden="true"

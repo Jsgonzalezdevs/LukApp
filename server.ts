@@ -301,7 +301,7 @@ const asegurarDiaActualMetricas = () => {
   }
 };
 
-const registrarUsoIA = (
+const registrarUsoIA = async (
   peticion: Omit<PeticionIA, 'id' | 'timestamp'>,
   cliente?: ClienteAdmin | null,
   userId?: string,
@@ -334,7 +334,7 @@ const registrarUsoIA = (
        compilador era un acceso a un método inexistente, y era el único punto
        del servidor donde un fallo de red al guardar telemetría podía acabar en
        un rechazo sin capturar. */
-    void Promise.resolve(
+    await Promise.resolve(
       cliente
       .from('telemetria_ia')
       .insert({
@@ -737,6 +737,7 @@ app.get('/api/metricas-ia', async (req, res) => {
   let llamadasFallbackHoy = metricasIA.llamadasFallbackHoy;
   let latenciasMs = metricasIA.latenciasMs;
   let peticionesRecientes = metricasIA.peticionesRecientes;
+  let usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }> = [];
 
   // Cargar datos persistentes de Supabase si existen
   try {
@@ -769,6 +770,18 @@ app.get('/api/metricas-ia', async (req, res) => {
         promptText: f.prompt_texto || undefined,
         respuestaTexto: f.respuesta_texto || undefined,
       }));
+      const porUsuario = new Map<string, { consultas: number; tokens: number }>();
+      filasHoy.forEach((f) => {
+        const usuario = f.usuario_email || 'usuario_local';
+        const actual = porUsuario.get(usuario) || { consultas: 0, tokens: 0 };
+        actual.consultas += 1;
+        actual.tokens += Number(f.total_tokens) || 0;
+        porUsuario.set(usuario, actual);
+      });
+      usuariosMasActivos = Array.from(porUsuario.entries())
+        .map(([usuarioEmail, datos]) => ({ usuarioEmail, ...datos }))
+        .sort((a, b) => b.consultas - a.consultas || b.tokens - a.tokens || a.usuarioEmail.localeCompare(b.usuarioEmail))
+        .slice(0, 5);
     } else if (!errHoy && filasHoy && filasHoy.length === 0) {
       // Si hoy aún no hay consultas, traer las más recientes para mantener el historial visible
       const { data: ultimas, error: errUltimas } = await cliente
@@ -827,6 +840,7 @@ app.get('/api/metricas-ia', async (req, res) => {
     latenciaPromedioMs: latenciaPromedio,
     costoEstimadoCop: 0,
     peticionesRecientes,
+    usuariosMasActivos,
   });
 });
 
@@ -1869,7 +1883,7 @@ Reglas clave:
 
     if (texto) {
       if (cliente) {
-        registrarUsoIA(
+        await registrarUsoIA(
           {
             usuarioEmail,
             proveedor,
@@ -1897,7 +1911,7 @@ Reglas clave:
 
     const motivo = fallos.length > 0 ? fallos.join(',') : 'sin-llave-configurada';
     if (cliente) {
-      registrarUsoIA(
+      await registrarUsoIA(
         {
           usuarioEmail,
           proveedor: proveedor || 'Ninguno',

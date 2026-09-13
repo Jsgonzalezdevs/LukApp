@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.11.2', fecha: '2026-09-13', texto: 'La barra superior del Asesor ahora permanece visible mientras revisas el chat, para que siempre tengas a mano el historial, el chat nuevo y la memoria.' },
+  { version: '3.11.1', fecha: '2026-09-13', texto: 'El Asesor abre más rápido y siempre empieza un chat nuevo; tus conversaciones anteriores quedan disponibles en el historial.' },
+  { version: '3.11.0', fecha: '2026-09-13', texto: 'El superadmin actualiza las consultas del Asesor casi al instante y muestra primero a los usuarios que más lo están utilizando.' },
   { version: '3.10.0', fecha: '2026-09-13', texto: 'Rediseñamos la guía de instalación: ahora te acompaña con una sola instrucción por pantalla, menos texto y un fondo más claro.' },
   { version: '3.9.0', fecha: '2026-09-13', texto: 'La guía para instalar LukApp ahora aparece al entrar por primera vez a tu cuenta, se adapta a tu dispositivo y puedes dejarla para después sin que interrumpa tu registro.' },
   { version: '3.8.0', fecha: '2026-09-10', texto: 'Ya puedes dictarle preguntas al Asesor: escucha tu voz, muestra la transcripción y te deja revisarla antes de enviarla a la IA.' },
