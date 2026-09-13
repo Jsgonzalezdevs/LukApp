@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.29.0', fecha: '2026-09-13', texto: 'La analítica de tráfico ahora identifica fuente, medio y campaña de tus enlaces UTM, además del dominio que envía cada visita.' },
   { version: '3.28.6', fecha: '2026-09-13', texto: 'Cada pregunta enviada al Asesor queda registrada incluso si termina en respaldo local, y el panel avisa claramente si Supabase necesita revisión.' },
   { version: '3.28.5', fecha: '2026-09-13', texto: 'El monitor del Asesor ahora calcula correctamente las consultas y tokens de hoy, y muestra fecha y hora en cada registro.' },
   { version: '3.28.4', fecha: '2026-09-13', texto: 'El monitor del Asesor ahora también registra las consultas que terminan en respuesta local por un fallo inesperado de la IA.' },

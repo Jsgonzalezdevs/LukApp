@@ -9,6 +9,10 @@ const visita = (over: Partial<Visita> = {}): Visita => ({
   dispositivo: 'escritorio',
   visitante: 'aaa',
   creado_en: '2026-08-13T15:00:00Z',
+  utm_source: null,
+  utm_medium: null,
+  utm_campaign: null,
+  utm_content: null,
   ...over,
 });
 
@@ -129,6 +133,17 @@ describe('resumir', () => {
 
     expect(r.fuentes.length).toBe(3);
     expect(r.porHora.length).toBe(24);
+  });
+
+  it('separa fuente, medio y campaña de los enlaces UTM', () => {
+    const r = resumir([
+      visita({ utm_source: 'instagram', utm_medium: 'social', utm_campaign: 'lanzamiento' }),
+      visita({ utm_source: 'instagram', utm_medium: 'social', utm_campaign: 'lanzamiento' }),
+      visita({ utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'busqueda' }),
+    ], DIAS);
+
+    expect(r.atribuciones).toContainEqual({ clave: 'instagram / social', n: 2 });
+    expect(r.campanas[0]).toEqual({ clave: 'lanzamiento · instagram / social', n: 2 });
   });
 });
 

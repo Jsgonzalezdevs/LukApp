@@ -545,7 +545,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     const desde = `${dias[0]}T00:00:00-05:00`;
     const { data, error } = await cliente
       .from('visitas')
-      .select('ruta,referente,pais,dispositivo,visitante,creado_en')
+      .select('ruta,referente,pais,dispositivo,visitante,creado_en,utm_source,utm_medium,utm_campaign,utm_content')
       .gte('creado_en', desde)
       .order('creado_en', { ascending: false });
 
@@ -1764,6 +1764,54 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                             </li>
                           );
                         })}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5 lg:grid-cols-3">
+                    <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
+                      <h3 className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                        <Link2 className="h-3.5 w-3.5" /> Fuente / medio UTM
+                      </h3>
+                      <p className="mb-4 text-[10px] text-[var(--fin-ink-faint)]">Atribución declarada en tus enlaces de campaña.</p>
+                      {resumenVisitas.atribuciones.length === 0 ? (
+                        <p className="py-4 text-xs text-[var(--fin-ink-faint)]">Aún no hay enlaces con UTM.</p>
+                      ) : <ul className="flex flex-col gap-2.5">
+                        {resumenVisitas.atribuciones.slice(0, 6).map((dato) => (
+                          <li key={dato.clave} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs">
+                            <span className="truncate font-medium">{dato.clave}</span><span className="font-bold tabular-nums">{dato.n}</span>
+                          </li>
+                        ))}
+                      </ul>}
+                    </div>
+
+                    <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
+                      <h3 className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                        <BarChart3 className="h-3.5 w-3.5" /> Campañas UTM
+                      </h3>
+                      <p className="mb-4 text-[10px] text-[var(--fin-ink-faint)]">Qué campaña está generando visitas.</p>
+                      {resumenVisitas.campanas.length === 0 ? (
+                        <p className="py-4 text-xs text-[var(--fin-ink-faint)]">Agrega <code>utm_campaign</code> a tus enlaces.</p>
+                      ) : <ul className="flex flex-col gap-2.5">
+                        {resumenVisitas.campanas.slice(0, 6).map((dato) => (
+                          <li key={dato.clave} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs">
+                            <span className="truncate font-medium">{dato.clave}</span><span className="font-bold tabular-nums">{dato.n}</span>
+                          </li>
+                        ))}
+                      </ul>}
+                    </div>
+
+                    <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
+                      <h3 className="mb-1 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                        <Globe className="h-3.5 w-3.5" /> Referentes exactos
+                      </h3>
+                      <p className="mb-4 text-[10px] text-[var(--fin-ink-faint)]">Dominio que envió la visita; no guardamos URL privada.</p>
+                      <ul className="flex flex-col gap-2.5">
+                        {resumenVisitas.referentes.slice(0, 6).map((dato) => (
+                          <li key={dato.clave} className="flex items-center justify-between gap-2 rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs">
+                            <span className="truncate font-medium">{dato.clave}</span><span className="font-bold tabular-nums">{dato.n}</span>
+                          </li>
+                        ))}
                       </ul>
                     </div>
                   </div>

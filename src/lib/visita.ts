@@ -8,6 +8,39 @@
  */
 
 const RUTA = '/api/visita';
+const CLAVE_ATRIBUCION = 'lukapp_atribucion_marketing';
+
+type Atribucion = {
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+};
+
+/** Solo aceptamos etiquetas de campañas propias, no query arbitrario. */
+const leerAtribucion = (): Atribucion => {
+  const params = new URLSearchParams(window.location.search);
+  const limpiar = (clave: string, largo: number): string | undefined => {
+    const valor = params.get(clave)?.trim().toLowerCase();
+    return valor && /^[a-z0-9._-]+$/.test(valor) ? valor.slice(0, largo) : undefined;
+  };
+  const actual = {
+    utm_source: limpiar('utm_source', 80),
+    utm_medium: limpiar('utm_medium', 80),
+    utm_campaign: limpiar('utm_campaign', 120),
+    utm_content: limpiar('utm_content', 120),
+  };
+  if (Object.values(actual).some(Boolean)) {
+    try { sessionStorage.setItem(CLAVE_ATRIBUCION, JSON.stringify(actual)); } catch { /* opcional */ }
+    return actual;
+  }
+  try {
+    const guardada = JSON.parse(sessionStorage.getItem(CLAVE_ATRIBUCION) ?? '{}') as Atribucion;
+    return guardada;
+  } catch {
+    return {};
+  }
+};
 
 /**
  * Si esta visita se cuenta o no.
@@ -33,6 +66,7 @@ export const registrarVisita = (): void => {
   const cuerpo = JSON.stringify({
     ruta: window.location.pathname,
     referente: document.referrer,
+    ...leerAtribucion(),
   });
 
   try {

@@ -54,7 +54,10 @@ export default async function handler(req: Request): Promise<Response> {
   // no cuenta.
   if (!sal || !url || !clave) return LISTO;
 
-  let cuerpo: { ruta?: unknown; referente?: unknown };
+  let cuerpo: {
+    ruta?: unknown; referente?: unknown; utm_source?: unknown; utm_medium?: unknown;
+    utm_campaign?: unknown; utm_content?: unknown;
+  };
   try {
     cuerpo = (await req.json()) as { ruta?: unknown; referente?: unknown };
   } catch {
@@ -65,6 +68,11 @@ export default async function handler(req: Request): Promise<Response> {
   // y no se manda a ninguna parte.
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '';
   const visitante = await huellaDelDia(ip, ua, fechaBogota(new Date()), sal);
+  const etiqueta = (valor: unknown, largo: number): string | null => {
+    if (typeof valor !== 'string') return null;
+    const limpia = valor.trim().toLowerCase();
+    return limpia && /^[a-z0-9._-]+$/.test(limpia) ? limpia.slice(0, largo) : null;
+  };
 
   const fila = {
     ruta: rutaLimpia(typeof cuerpo.ruta === 'string' ? cuerpo.ruta : '/'),
@@ -75,6 +83,10 @@ export default async function handler(req: Request): Promise<Response> {
     pais: paisValido(req.headers.get('x-vercel-ip-country')),
     dispositivo: dispositivoDeUA(ua),
     visitante,
+    utm_source: etiqueta(cuerpo.utm_source, 80),
+    utm_medium: etiqueta(cuerpo.utm_medium, 80),
+    utm_campaign: etiqueta(cuerpo.utm_campaign, 120),
+    utm_content: etiqueta(cuerpo.utm_content, 120),
   };
 
   try {
