@@ -10,6 +10,7 @@ export interface Perfil {
   rol: 'admin' | 'usuario';
   rol_personalizado_id: string | null;
   created_at: string;
+  ultimo_acceso_at: string | null;
 }
 
 export interface AuditLog {

@@ -297,16 +297,25 @@ export const InicioView: React.FC<InicioViewProps> = ({
                 setNovedadExpandida((actual) => !actual);
               }
             }}
-            className="mt-3 flex cursor-pointer items-start justify-between rounded-2xl bg-amber-500/10 border border-amber-500/25 px-3.5 py-2 text-[12.5px] text-amber-800 dark:text-amber-200"
+            className="novedad-banner mt-3 flex cursor-pointer items-start justify-between rounded-[var(--fin-r-card)] px-3.5 py-3 text-[13px]"
           >
-            <span className={novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}>
-              ✨ <strong>v{novedad.version}:</strong> {novedad.texto}
+            <span className={`flex min-w-0 items-start gap-2.5 ${novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}`}>
+              <span className="novedad-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]">
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden="true" />
+              </span>
+              <span className={novedadExpandida ? 'pt-0.5' : 'truncate pt-0.5'}>
+                <strong className="novedad-version">v{novedad.version}</strong> {novedad.texto}
+              </span>
             </span>
             {onCerrarNovedad && (
               <button
                 type="button"
-                onClick={onCerrarNovedad}
-                className="p-1 hover:opacity-75 shrink-0"
+                onClick={(evento) => {
+                  evento.stopPropagation();
+                  onCerrarNovedad();
+                }}
+                aria-label="Cerrar novedades"
+                className="novedad-close flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]"
               >
                 <X className="h-3.5 w-3.5" />
               </button>

@@ -231,6 +231,85 @@ const exigirPermiso = async (
   return { status: 403, error: 'No tienes permiso para esta acción.' };
 };
 
+/** Comprueba cualquiera de los permisos que permiten administrar usuarios.
+ * La lista se lee desde Auth con service-role, así que nunca se entrega el
+ * historial de acceso a alguien que solo pueda ver otra pestaña del panel. */
+const exigirGestionUsuarios = async (
+  cliente: ClienteAdmin,
+  token: string,
+): Promise<{ userId: string; email: string } | { status: number; error: string }> => {
+  const { data: llamador, error } = await cliente.auth.getUser(token);
+  if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
+
+  const { data: perfil } = await cliente
+    .from('perfiles')
+    .select('rol, rol_personalizado_id')
+    .eq('id', llamador.user.id)
+    .single();
+
+  if (perfil?.rol === 'admin') return { userId: llamador.user.id, email: llamador.user.email ?? '' };
+  if (!perfil?.rol_personalizado_id) return { status: 403, error: 'No tienes permiso para esta acción.' };
+
+  const { data: concedido } = await cliente
+    .from('permisos_por_rol')
+    .select('permiso')
+    .eq('rol_id', perfil.rol_personalizado_id)
+    .in('permiso', ['crear_usuario', 'editar_usuario', 'eliminar_usuario', 'impersonar_usuario'])
+    .limit(1)
+    .maybeSingle();
+
+  return concedido
+    ? { userId: llamador.user.id, email: llamador.user.email ?? '' }
+    : { status: 403, error: 'No tienes permiso para esta acción.' };
+};
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Usuarios del Superadmin
+// `last_sign_in_at` pertenece a Auth, no a perfiles. Se mezcla aquí con el
+// cliente de service-role para mantener esa información fuera del navegador.
+// ----------------------------------------------------------------------
+app.get('/api/superadmin/usuarios', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+
+  try {
+    const acceso = await exigirGestionUsuarios(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const { data: perfiles, error: errorPerfiles } = await cliente
+      .from('perfiles')
+      .select('id, email, usuario, rol, rol_personalizado_id, created_at')
+      .order('created_at', { ascending: false });
+    if (errorPerfiles) throw errorPerfiles;
+
+    // `listUsers` es paginado. Acortar a la primera página haría que el
+    // último acceso desapareciera justamente cuando el proyecto crezca.
+    const usuariosAuth = [] as Array<{ id: string; last_sign_in_at?: string | null }>;
+    for (let pagina = 1; ; pagina += 1) {
+      const resultado = await cliente.auth.admin.listUsers({ page: pagina, perPage: 1000 });
+      if (resultado.error) throw resultado.error;
+      usuariosAuth.push(...resultado.data.users);
+      if (resultado.data.users.length < 1000) break;
+    }
+
+    const ultimoAccesoPorId = new Map(
+      usuariosAuth.map((usuario) => [usuario.id, usuario.last_sign_in_at ?? null]),
+    );
+    return res.status(200).json({
+      usuarios: (perfiles ?? []).map((perfil) => ({
+        ...perfil,
+        ultimo_acceso_at: ultimoAccesoPorId.get(perfil.id) ?? null,
+      })),
+    });
+  } catch (error: any) {
+    console.error('Error cargando usuarios del superadmin:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
 // ----------------------------------------------------------------------
 // TELEMETRÍA: Consumo de Tokens y Métricas de IA
 // ----------------------------------------------------------------------

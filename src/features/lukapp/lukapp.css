@@ -339,6 +339,36 @@
   background: linear-gradient(to bottom, transparent, var(--fin-bg));
 }
 
+/* Novedades informa; no debe parecer una advertencia amarilla. El contraste
+   cálido del estado anterior se perdía sobre el fondo claro y robaba atención
+   al saldo. */
+.novedad-banner {
+  background: color-mix(in srgb, var(--fin-accent) 6%, var(--fin-surface));
+  border: 1px solid color-mix(in srgb, var(--fin-accent) 15%, var(--fin-line));
+  color: var(--fin-ink-soft);
+  box-shadow: 0 5px 14px rgb(28 25 23 / 0.045);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.novedad-banner:hover {
+  background: color-mix(in srgb, var(--fin-accent) 9%, var(--fin-surface));
+  border-color: color-mix(in srgb, var(--fin-accent) 24%, var(--fin-line));
+  box-shadow: 0 8px 18px rgb(28 25 23 / 0.07);
+}
+
+.novedad-icon { background: color-mix(in srgb, var(--fin-accent) 13%, var(--fin-surface)); color: var(--fin-accent); }
+.novedad-version { color: var(--fin-ink); font-weight: 700; }
+.novedad-close { color: var(--fin-ink-faint); transition: color 160ms ease, background 160ms ease; }
+.novedad-close:hover { background: color-mix(in srgb, var(--fin-accent) 10%, var(--fin-surface)); color: var(--fin-ink); }
+
+.fin-html[data-tema='oscuro'] .novedad-banner { background: color-mix(in srgb, var(--fin-accent) 8%, var(--fin-bg)); border-color: color-mix(in srgb, var(--fin-accent) 18%, var(--fin-line)); }
+.fin-html[data-tema='oscuro'] .novedad-icon { background: color-mix(in srgb, var(--fin-accent) 14%, var(--fin-bg)); }
+
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']) .novedad-banner { background: color-mix(in srgb, var(--fin-accent) 8%, var(--fin-bg)); border-color: color-mix(in srgb, var(--fin-accent) 18%, var(--fin-line)); }
+  .fin-html:not([data-tema='claro']) .novedad-icon { background: color-mix(in srgb, var(--fin-accent) 14%, var(--fin-bg)); }
+}
+
 .fin-page {
   background-color: var(--fin-bg);
   color: var(--fin-ink);

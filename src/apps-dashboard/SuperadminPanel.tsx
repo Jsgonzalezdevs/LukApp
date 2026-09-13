@@ -56,6 +56,7 @@ interface Perfil {
   rol: 'admin' | 'usuario';
   rol_personalizado_id: string | null;
   created_at: string;
+  ultimo_acceso_at: string | null;
 }
 
 interface AuditLog {
@@ -144,6 +145,15 @@ const formatearFechaCorta = (iso: string): string => {
   const dia = parseInt(parts[2], 10);
   const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
   return `${dia} ${meses[mes] || parts[1]}`;
+};
+
+const formatearUltimoAcceso = (iso: string | null): string => {
+  if (!iso) return 'Aún no ha ingresado';
+  return new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'America/Bogota',
+  }).format(new Date(iso));
 };
 
 const safeNum = (val: number | null | undefined): string => {
@@ -417,18 +427,20 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   // 1. Cargar Usuarios
   const fetchUsuarios = async () => {
     setLoadingUsuarios(true);
-    const cliente = obtenerSupabase();
-    if (!cliente) return;
-
-    const { data, error } = await cliente
-      .from('perfiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data && !error) {
-      setUsuarios(data as Perfil[]);
+    try {
+      const token = await tokenSesion();
+      const respuesta = await fetch(apiUrl('/api/superadmin/usuarios'), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await respuesta.json();
+      if (!respuesta.ok) throw new Error(data.error || 'No se pudieron cargar los usuarios.');
+      setUsuarios(data.usuarios as Perfil[]);
+    } catch (error) {
+      console.error('Error cargando usuarios del superadmin:', error);
+      setUsuarios([]);
+    } finally {
+      setLoadingUsuarios(false);
     }
-    setLoadingUsuarios(false);
   };
 
   // 2. Cargar Auditoría
@@ -1079,7 +1091,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         <tr>
                           <th className="px-6 py-3.5">Usuario</th>
                           <th className="px-6 py-3.5">Rol</th>
-                          <th className="px-6 py-3.5">Fecha de Registro</th>
+                          <th className="px-6 py-3.5">Registro</th>
+                          <th className="px-6 py-3.5">Último acceso</th>
                           <th className="px-6 py-3.5 text-right">Acciones</th>
                         </tr>
                       </thead>
@@ -1116,6 +1129,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                             </td>
                             <td className="px-6 py-4 text-[var(--fin-ink-soft)]">
                               {new Date(u.created_at).toLocaleDateString('es-CO')}
+                            </td>
+                            <td className="px-6 py-4 text-[var(--fin-ink-soft)] whitespace-nowrap">
+                              {formatearUltimoAcceso(u.ultimo_acceso_at)}
                             </td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">

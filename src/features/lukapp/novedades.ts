@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.28.0', fecha: '2026-09-13', texto: 'El Superadmin ahora muestra cuándo cada persona ingresó por última vez a LukApp.' },
+  { version: '3.27.4', fecha: '2026-09-13', texto: 'Las novedades ahora se ven más limpias y legibles en modo claro, con una presentación informativa en lugar de una alerta amarilla.' },
   { version: '3.27.3', fecha: '2026-09-13', texto: 'La navegación inferior ahora se integra suavemente con el contenido, sin la línea rígida que la separaba.' },
   { version: '3.27.2', fecha: '2026-09-13', texto: 'Unificamos los estilos base para evitar que sombras, superficies y temas se contradigan según el orden de carga.' },
   { version: '3.27.1', fecha: '2026-09-13', texto: 'Refinamos la pantalla para dividir cuenta y propina: ahora tiene una jerarquía más limpia, controles más elegantes y una cuota por persona que se destaca mejor.' },
