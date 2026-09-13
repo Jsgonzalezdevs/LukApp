@@ -101,6 +101,8 @@ interface MetricasIAResponse {
   porcentajeLlamadas: number;
   latenciaPromedioMs: number;
   costoEstimadoCop: number;
+  origenMetricas: 'supabase' | 'memoria';
+  diagnosticoTelemetria: string | null;
   peticionesRecientes: PeticionIA[];
   usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }>;
 }
@@ -497,6 +499,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
           porcentajeLlamadas:     Number(data.porcentajeLlamadas)     || 0,
           latenciaPromedioMs:     Number(data.latenciaPromedioMs)     || 0,
           costoEstimadoCop:       Number(data.costoEstimadoCop)       || 0,
+          origenMetricas:         data.origenMetricas === 'supabase' ? 'supabase' : 'memoria',
+          diagnosticoTelemetria:  typeof data.diagnosticoTelemetria === 'string' ? data.diagnosticoTelemetria : null,
           peticionesRecientes:    Array.isArray(data.peticionesRecientes) ? data.peticionesRecientes : [],
           usuariosMasActivos:     Array.isArray(data.usuariosMasActivos) ? data.usuariosMasActivos : [],
         };
@@ -1293,6 +1297,15 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 </div>
               ) : metricasIA ? (
                 <>
+                  {metricasIA.diagnosticoTelemetria ? (
+                    <div className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">
+                      <strong>Telemetría pendiente de revisión.</strong> {metricasIA.diagnosticoTelemetria}
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-[var(--fin-ink-faint)]">
+                      Métricas de hoy leídas desde {metricasIA.origenMetricas === 'supabase' ? 'Supabase' : 'la memoria temporal del servidor'} · hora Colombia.
+                    </p>
+                  )}
                   {/* Tarjetas Hero de Métricas */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">

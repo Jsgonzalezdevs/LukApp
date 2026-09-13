@@ -596,8 +596,26 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     const controlador = new AbortController();
     peticionIARef.current = controlador;
     cancelacionIARef.current = null;
+    // Una misma pregunta conserva su identidad aunque la respuesta remota se
+    // pierda. Eso permite que el respaldo local quede auditado sin duplicarla
+    // si Render termina la petición unos segundos después.
+    const idConsulta = `asesor-${Date.now()}-${globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)}`;
+    let encabezadosTelemetria: Record<string, string> = { 'Content-Type': 'application/json' };
 
     const usarRespaldoLocal = (mensajeError: string) => {
+      // No esperamos esta señal ni dejamos que su fallo afecte el chat: el
+      // propósito es conservar evidencia del respaldo local cuando la petición
+      // original venció, fue bloqueada o perdió conectividad.
+      void fetch(apiUrl('/api/asesor-ia/respaldo-local'), {
+        method: 'POST',
+        headers: encabezadosTelemetria,
+        keepalive: true,
+        body: JSON.stringify({
+          idConsulta,
+          prompt: textoUsuario,
+          motivo: mensajeError,
+        }),
+      }).catch((error) => console.warn('[asesor] No se pudo enviar la telemetría del respaldo local:', error));
       setConexion('local');
       setErrorIA(mensajeError);
       setTextoParaReintentar(textoUsuario);
@@ -683,6 +701,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           if (sesion.data.session?.access_token) headers.Authorization = `Bearer ${sesion.data.session.access_token}`;
           setValidandoSesion(false);
         }
+        encabezadosTelemetria = headers;
 
         const res = await esperarConsulta(fetch(apiUrl('/api/asesor-ia'), {
           method: 'POST',
@@ -693,6 +712,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             history: messages.slice(-5),
             finanzasContext,
             memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
+            idConsulta,
           }),
         }));
         const data = typeof res.json === 'function' ? await esperarConsulta(res.json()).catch(() => null) : null;

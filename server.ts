@@ -431,10 +431,13 @@ const registrarUsoIA = async (
   peticion: Omit<PeticionIA, 'id' | 'timestamp'>,
   cliente?: ClienteAdmin | null,
   userId?: string,
+  idConsulta?: string,
 ) => {
   asegurarDiaActualMetricas();
   const registro: PeticionIA = {
-    id: `req-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    // El cliente conserva este id cuando termina en respaldo local. Así una
+    // caída de red no duplica la misma pregunta al llegar tarde al servidor.
+    id: idConsulta || `req-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
     timestamp: new Date().toISOString(),
     ...peticion,
   };
@@ -463,7 +466,7 @@ const registrarUsoIA = async (
     await Promise.resolve(
       cliente
       .from('telemetria_ia')
-      .insert({
+      .upsert({
         id: registro.id,
         usuario_id: userId || null,
         usuario_email: registro.usuarioEmail,
@@ -478,16 +481,23 @@ const registrarUsoIA = async (
         prompt_texto: registro.promptText || null,
         respuesta_texto: registro.respuestaTexto || null,
         creado_en: registro.timestamp,
-      }),
+      }, { onConflict: 'id', ignoreDuplicates: true }),
     )
       .then(({ error }) => {
         if (error) {
           // Si la tabla aún no se ha creado en Supabase, no rompe nada (continúa con memoria local)
-          console.warn('[telemetria_ia] Aviso al persistir en Supabase:', error.message);
+          console.error('[telemetria_ia] No se pudo persistir la consulta del Asesor:', {
+            codigo: error.code,
+            mensaje: error.message,
+            idConsulta: registro.id,
+          });
         }
       })
       .catch((err) => {
-        console.warn('[telemetria_ia] Error de red al persistir en Supabase:', err);
+        console.error('[telemetria_ia] Error de red al persistir la consulta del Asesor:', {
+          idConsulta: registro.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
   }
 };
@@ -864,6 +874,8 @@ app.get('/api/metricas-ia', async (req, res) => {
   let latenciasMs = metricasIA.latenciasMs;
   let peticionesRecientes = metricasIA.peticionesRecientes;
   let usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }> = [];
+  let origenMetricas: 'supabase' | 'memoria' = 'memoria';
+  let diagnosticoTelemetria: string | null = null;
 
   // Cargar datos persistentes de Supabase si existen
   try {
@@ -875,7 +887,11 @@ app.get('/api/metricas-ia', async (req, res) => {
       .order('creado_en', { ascending: false })
       .limit(200);
 
-    if (!errHoy && filasHoy && filasHoy.length > 0) {
+    if (errHoy) {
+      diagnosticoTelemetria = `Supabase no pudo leer telemetria_ia (${errHoy.code || 'sin código'}). Revisa la migración 0013 y la service role en Render.`;
+      console.error('[metricas-ia] Error leyendo telemetria_ia:', { codigo: errHoy.code, mensaje: errHoy.message });
+    } else if (filasHoy && filasHoy.length > 0) {
+      origenMetricas = 'supabase';
       llamadasHoy = filasHoy.length;
       llamadasExitosasHoy = filasHoy.filter((f) => f.exito).length;
       llamadasFallbackHoy = filasHoy.filter((f) => !f.exito).length;
@@ -908,7 +924,8 @@ app.get('/api/metricas-ia', async (req, res) => {
         .map(([usuarioEmail, datos]) => ({ usuarioEmail, ...datos }))
         .sort((a, b) => b.consultas - a.consultas || b.tokens - a.tokens || a.usuarioEmail.localeCompare(b.usuarioEmail))
         .slice(0, 5);
-    } else if (!errHoy && filasHoy && filasHoy.length === 0) {
+    } else if (filasHoy && filasHoy.length === 0) {
+      origenMetricas = 'supabase';
       // Si hoy aún no hay consultas, traer las más recientes para mantener el historial visible
       const { data: ultimas, error: errUltimas } = await cliente
         .from('telemetria_ia')
@@ -935,7 +952,8 @@ app.get('/api/metricas-ia', async (req, res) => {
       }
     }
   } catch (err) {
-    console.warn('[metricas-ia] Usando memoria local por error de consulta:', err);
+    diagnosticoTelemetria = 'No se pudo conectar con Supabase para leer telemetria_ia. Revisa los logs de Render.';
+    console.error('[metricas-ia] Usando memoria local por error de consulta:', err);
   }
 
   const latenciaPromedio = latenciasMs.length > 0
@@ -965,6 +983,8 @@ app.get('/api/metricas-ia', async (req, res) => {
     porcentajeLlamadas,
     latenciaPromedioMs: latenciaPromedio,
     costoEstimadoCop: 0,
+    origenMetricas,
+    diagnosticoTelemetria,
     peticionesRecientes,
     usuariosMasActivos,
   });
@@ -1251,6 +1271,12 @@ app.get('/api/salud', (_req, res) => {
     ok: true,
     ia: Object.values(proveedores).some(Boolean),
     proveedores,
+    // Diagnóstico seguro: confirma que Render puede escribir telemetría, sin
+    // revelar URL, llaves ni ningún dato de Supabase.
+    telemetriaPersistenteConfigurada: Boolean(
+      (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
+      && process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ),
     version: process.env.npm_package_version || 'desconocida',
   });
 });
@@ -1941,9 +1967,18 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
     }
   }
 
-  const { prompt, history, finanzasContext, memoriaUsuario } = req.body ?? {};
+  const { prompt, history, finanzasContext, memoriaUsuario, idConsulta } = req.body ?? {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
+  }
+  const identificadorConsulta = typeof idConsulta === 'string' && /^[a-zA-Z0-9_-]{8,120}$/.test(idConsulta)
+    ? idConsulta
+    : undefined;
+
+  if (!cliente) {
+    // Este aviso es deliberadamente explícito: el chat sigue funcionando, pero
+    // el operador sabe por qué el panel no puede tener datos persistentes.
+    console.error('[telemetria_ia] No hay SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY; la consulta del Asesor no podrá persistirse.');
   }
 
   /** El motor financiero contiene series y evidencias extensas. Mandarlas
@@ -2024,6 +2059,7 @@ Reglas clave:
           },
           cliente,
           userId,
+          identificadorConsulta,
         );
       }
 
@@ -2053,6 +2089,7 @@ Reglas clave:
         },
         cliente,
         userId,
+        identificadorConsulta,
       );
     }
 
@@ -2078,20 +2115,33 @@ Reglas clave:
         motivo: error?.message || 'fallo-inesperado',
         promptText: prompt,
         respuestaTexto: '[Consulta atendida por el motor local tras un fallo del servicio IA]',
-      }, cliente, userId);
+      }, cliente, userId, identificadorConsulta);
     }
     return res.status(200).json({ offline: true, error: error.message });
   }
 });
 
-// Endpoint para generar Tips e Insights dinámicos y no repetitivos con Grok / Groq
-app.post('/api/finanzas-insights-ia', async (req, res) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  let usuarioEmail = 'usuario_local';
-  let userId = 'local_user';
+// El navegador usa esta ruta únicamente si la pregunta ya enviada acabó en el
+// motor local por timeout o un error de red. Es intencionalmente una ruta del
+// Asesor (no de visitas ni de impersonación), y comparte idConsulta con la
+// petición principal para que la telemetría sea idempotente.
+app.post('/api/asesor-ia/respaldo-local', rateLimiter(12, 60000), async (req, res) => {
+  const { idConsulta, prompt, motivo } = req.body ?? {};
+  if (typeof idConsulta !== 'string' || !/^[a-zA-Z0-9_-]{8,120}$/.test(idConsulta)
+    || typeof prompt !== 'string' || !prompt.trim()) {
+    return res.status(400).json({ error: 'Respaldo local inválido.' });
+  }
 
   const cliente = clienteAdmin();
-  if (cliente && token) {
+  if (!cliente) {
+    console.error('[telemetria_ia] No se pudo registrar respaldo local: falta configuración de Supabase.');
+    return res.status(202).json({ persistida: false });
+  }
+
+  let usuarioEmail = 'usuario_local';
+  let userId = 'local_user';
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (token) {
     const quienLlama = await exigirUsuario(cliente, token);
     if (!('status' in quienLlama)) {
       usuarioEmail = quienLlama.email || 'usuario';
@@ -2099,6 +2149,24 @@ app.post('/api/finanzas-insights-ia', async (req, res) => {
     }
   }
 
+  await registrarUsoIA({
+    usuarioEmail,
+    proveedor: 'Respaldo local',
+    modelo: 'Motor de Reglas Heurístico',
+    promptTokens: Math.ceil(prompt.length / 3.8),
+    completionTokens: 0,
+    totalTokens: Math.ceil(prompt.length / 3.8),
+    duracionMs: 0,
+    exito: false,
+    motivo: typeof motivo === 'string' ? motivo.slice(0, 300) : 'error-cliente',
+    promptText: prompt.slice(0, 12000),
+    respuestaTexto: '[Consulta atendida por el motor local en el cliente]',
+  }, cliente, userId, idConsulta);
+  return res.status(202).json({ persistida: true });
+});
+
+// Endpoint para generar Tips e Insights dinámicos y no repetitivos con Grok / Groq
+app.post('/api/finanzas-insights-ia', async (req, res) => {
   const { finanzasContext } = req.body ?? {};
   if (!finanzasContext) {
     return res.status(400).json({ error: 'Falta finanzasContext' });
@@ -2128,7 +2196,6 @@ Reglas obligatorias:
 
   const userPrompt = `Datos financieros reales del usuario:\n${JSON.stringify(finanzasContext, null, 2)}\n\nGenera los insights en formato JSON.`;
 
-  const inicio = Date.now();
   try {
     const { texto, proveedor, modelo, fallos } = await consultarModeloIA({
       systemPrompt,
@@ -2152,26 +2219,6 @@ Reglas obligatorias:
       }
 
       if (parsedInsights.length > 0) {
-        const duracionMs = Date.now() - inicio;
-        if (cliente) {
-          registrarUsoIA(
-            {
-              usuarioEmail,
-              proveedor,
-              modelo,
-              promptTokens: Math.ceil(userPrompt.length / 3.8),
-              completionTokens: Math.ceil(texto.length / 3.8),
-              totalTokens: Math.ceil((userPrompt.length + texto.length) / 3.8),
-              duracionMs,
-              exito: true,
-              promptText: 'Generación de insights IA',
-              respuestaTexto: texto,
-            },
-            cliente,
-            userId,
-          );
-        }
-
         return res.status(200).json({
           success: true,
           insights: parsedInsights.map((i, idx) => ({
