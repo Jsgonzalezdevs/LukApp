@@ -3168,7 +3168,7 @@
 .pwa-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.72);
   pointer-events: auto;
   backdrop-filter: blur(2px);
 }
@@ -3179,7 +3179,7 @@
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
-  background: var(--lp-bg);
+  background: #19171b;
   border-radius: 24px 24px 0 0;
   padding: 32px 24px;
   pointer-events: auto;
@@ -3189,6 +3189,12 @@
   flex-direction: column;
   gap: 20px;
 }
+
+.pwa-progreso { display: flex; gap: 6px; margin: -4px 0 2px; }
+.pwa-progreso span { height: 4px; flex: 1; border-radius: 99px; background: #403b43; }
+.pwa-progreso span.activo { background: #b8ed45; }
+.pwa-paso-activo { min-height: 92px; padding: 14px; border-radius: 16px; background: #252127; }
+.pwa-contenido small { display: block; margin-top: 7px; font-size: .78rem; color: #aaa3ae; line-height: 1.4; }
 
 @media (min-width: 768px) {
   .pwa-modal {

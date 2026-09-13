@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.10.0', fecha: '2026-09-13', texto: 'Rediseñamos la guía de instalación: ahora te acompaña con una sola instrucción por pantalla, menos texto y un fondo más claro.' },
   { version: '3.9.0', fecha: '2026-09-13', texto: 'La guía para instalar LukApp ahora aparece al entrar por primera vez a tu cuenta, se adapta a tu dispositivo y puedes dejarla para después sin que interrumpa tu registro.' },
   { version: '3.8.0', fecha: '2026-09-10', texto: 'Ya puedes dictarle preguntas al Asesor: escucha tu voz, muestra la transcripción y te deja revisarla antes de enviarla a la IA.' },
   { version: '3.7.0', fecha: '2026-09-10', texto: 'Ahora puedes abrir tus conversaciones anteriores con el Asesor, continuar cualquier chat guardado o empezar uno nuevo desde el historial.' },

@@ -24,6 +24,7 @@ interface PWAInstallProps {
 
 export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProceed }) => {
   const [platform, setPlatform] = useState<Platform>(null);
+  const [paso, setPaso] = useState(0);
 
   useEffect(() => {
     setPlatform(detectPlatform());
@@ -32,6 +33,24 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
   if (!platform) return null;
 
   const isIos = platform === 'ios';
+  const pasos = isIos
+    ? [
+        ['Abre Compartir', 'Toca el botón de compartir en Safari.', 'Es el cuadrado con una flecha hacia arriba.'],
+        ['Añade LukApp', 'Elige “Agregar a pantalla de inicio”.', 'Si no lo ves, desliza el menú hacia arriba.'],
+        ['Confirma', 'Toca “Agregar” y busca el ícono de LukApp.', 'Desde ahí podrás abrirla como una app.'],
+      ]
+    : platform === 'android'
+      ? [
+          ['Abre el menú', 'Toca los tres puntos de Chrome.', 'Están arriba a la derecha.'],
+          ['Instala LukApp', 'Toca “Instalar aplicación”.', 'Luego confirma la instalación.'],
+          ['Ya está lista', 'Busca LukApp entre tus aplicaciones.', 'Ábrela desde su nuevo ícono.'],
+        ]
+      : [
+          ['Busca instalar', 'Mira el ícono de instalación en la barra de dirección.', 'También puede estar dentro del menú del navegador.'],
+          ['Instala LukApp', 'Elige “Instalar LukApp”.', 'Confirma cuando el navegador lo pregunte.'],
+          ['Ábrela cuando quieras', 'LukApp quedará en tu escritorio.', 'Tendrás acceso directo a tus finanzas.'],
+        ];
+  const [titulo, instruccion, detalle] = pasos[paso];
 
   return (
     <section className="pwa-install">
@@ -65,71 +84,15 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
           </button>
         </div>
 
-        <p className="pwa-descripcion">
-          LukApp queda a mano, abre más rápido y puede funcionar aunque tengas poca conexión.
-          Te acompaño paso a paso; no se descarga nada desde una tienda.
-        </p>
+        <p className="pwa-descripcion">Te acompaño en menos de un minuto. Solo sigue este paso:</p>
 
-        <div className="pwa-pasos">
-          {isIos ? (
-            <>
-              <div className="pwa-paso">
-                <div className="pwa-numero">1</div>
-                <div className="pwa-contenido">
-                  <h3>Abre el navegador</h3>
-                  <p>Asegúrate de estar usando Safari</p>
-                </div>
-              </div>
+        <div className="pwa-progreso" aria-label={`Paso ${paso + 1} de ${pasos.length}`}>
+          {pasos.map((_, indice) => <span key={indice} className={indice === paso ? 'activo' : ''} />)}
+        </div>
 
-              <div className="pwa-paso">
-                <div className="pwa-numero">2</div>
-                <div className="pwa-contenido">
-                  <h3>Toca el ícono de compartir</h3>
-                  <p>Es el cuadrado con la flecha hacia arriba</p>
-                </div>
-              </div>
-
-              <div className="pwa-paso">
-                <div className="pwa-numero">3</div>
-                <div className="pwa-contenido">
-                  <h3>Selecciona "Agregar a Inicio"</h3>
-                  <p>La app aparecerá en tu pantalla de inicio</p>
-                </div>
-              </div>
-            </>
-          ) : platform === 'android' ? (
-            <>
-              <div className="pwa-paso">
-                <div className="pwa-numero">1</div>
-                <div className="pwa-contenido">
-                  <h3>En Chrome, abre el menú</h3>
-                  <p>Los tres puntos en la esquina superior</p>
-                </div>
-              </div>
-
-              <div className="pwa-paso">
-                <div className="pwa-numero">2</div>
-                <div className="pwa-contenido">
-                  <h3>Busca "Instalar aplicación"</h3>
-                  <p>Esa opción aparecerá en el menú</p>
-                </div>
-              </div>
-
-              <div className="pwa-paso">
-                <div className="pwa-numero">3</div>
-                <div className="pwa-contenido">
-                  <h3>Confirma la instalación</h3>
-                  <p>Listo. Ya tendrás la app en tu pantalla</p>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="pwa-paso"><div className="pwa-numero">1</div><div className="pwa-contenido"><h3>Busca el botón de instalar</h3><p>En Chrome puede aparecer en la barra de dirección o en el menú de los tres puntos.</p></div></div>
-              <div className="pwa-paso"><div className="pwa-numero">2</div><div className="pwa-contenido"><h3>Elige “Instalar LukApp”</h3><p>Confirma cuando el navegador te lo pregunte.</p></div></div>
-              <div className="pwa-paso"><div className="pwa-numero">3</div><div className="pwa-contenido"><h3>Ábrela desde tu escritorio</h3><p>Así tendrás LukApp como una aplicación independiente.</p></div></div>
-            </>
-          )}
+        <div className="pwa-paso pwa-paso-activo">
+          <div className="pwa-numero">{paso + 1}</div>
+          <div className="pwa-contenido"><h3>{titulo}</h3><p>{instruccion}</p><small>{detalle}</small></div>
         </div>
 
         <div className="pwa-beneficios">
@@ -148,8 +111,8 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
         </div>
 
         <div className="pwa-acciones">
-          <button className="btn-primary-lg pwa-continuar" onClick={onProceed}>
-            Entendido, continuar
+          <button className="btn-primary-lg pwa-continuar" onClick={() => paso < pasos.length - 1 ? setPaso(paso + 1) : onProceed?.()}>
+            {paso < pasos.length - 1 ? 'Siguiente' : 'Listo, continuar'}
           </button>
           <button className="btn-secondary pwa-despues" onClick={onSkip}>
             Hacerlo después
