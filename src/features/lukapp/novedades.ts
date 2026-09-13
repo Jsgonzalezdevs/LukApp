@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.28.5', fecha: '2026-09-13', texto: 'El monitor del Asesor ahora calcula correctamente las consultas y tokens de hoy, y muestra fecha y hora en cada registro.' },
   { version: '3.28.4', fecha: '2026-09-13', texto: 'El monitor del Asesor ahora también registra las consultas que terminan en respuesta local por un fallo inesperado de la IA.' },
   { version: '3.28.3', fecha: '2026-09-13', texto: 'Entrar en modo Asesorar ya no modifica el último acceso de la persona atendida.' },
   { version: '3.28.2', fecha: '2026-09-13', texto: 'El Superadmin sigue disponible mientras termina de aplicarse la mejora de último acceso, sin dejar vacía la lista de usuarios.' },

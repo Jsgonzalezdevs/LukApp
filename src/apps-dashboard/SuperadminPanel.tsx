@@ -156,6 +156,13 @@ const formatearUltimoAcceso = (iso: string | null): string => {
   }).format(new Date(iso));
 };
 
+const formatearFechaHoraConsulta = (iso: string): string =>
+  new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'short',
+    timeStyle: 'medium',
+    timeZone: 'America/Bogota',
+  }).format(new Date(iso));
+
 const safeNum = (val: number | null | undefined): string => {
   if (val === null || val === undefined || isNaN(Number(val))) return '0';
   return Number(val).toLocaleString('es-CO');
@@ -1435,7 +1442,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                           <table className="w-full text-left text-xs">
                             <thead className="bg-[var(--fin-soft)]/50 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
                               <tr>
-                                <th className="px-4 py-3">Hora</th>
+                                <th className="px-4 py-3">Fecha y hora</th>
                                 <th className="px-4 py-3">Usuario</th>
                                 <th className="px-4 py-3">Proveedor / Modelo</th>
                                 <th className="px-4 py-3">Tokens</th>
@@ -1451,7 +1458,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                                   className="group cursor-pointer transition-colors hover:bg-purple-500/10"
                                 >
                                   <td className="px-4 py-3 text-[var(--fin-ink-soft)] tabular-nums">
-                                    {new Date(p.timestamp).toLocaleTimeString('es-CO')}
+                                    {formatearFechaHoraConsulta(p.timestamp)}
                                   </td>
                                   <td className="px-4 py-3 font-medium">
                                     <div className="flex items-center gap-1.5">

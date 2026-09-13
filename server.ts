@@ -383,13 +383,16 @@ interface MetricasIAStore {
   peticionesRecientes: PeticionIA[];
 }
 
-const fechaBogotaHoy = (): string =>
-  new Intl.DateTimeFormat('en-CA', {
+const fechaBogotaHoy = (): string => {
+  const partes = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Bogota',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date());
+  }).formatToParts(new Date());
+  const parte = (tipo: string) => partes.find((item) => item.type === tipo)?.value;
+  return `${parte('year')}-${parte('month')}-${parte('day')}`;
+};
 
 /** Evita que un proveedor lento bloquee el chat y fuerce un falso modo local. */
 const fetchConTiempoLimite = async (url: string, init: RequestInit, ms = 12000): Promise<Response> => {
