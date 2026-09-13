@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularResumenVaquita, textoParaCompartirVaquita, type Vaquita } from './vaquitasColombia';
+import { calcularResumenVaquita, type Vaquita } from './vaquitasColombia';
 
 describe('vaquitasColombia - calcularResumenVaquita', () => {
   it('calcula recolección, faltantes y liquidación entre amigos', () => {
@@ -38,19 +38,5 @@ describe('vaquitasColombia - calcularResumenVaquita', () => {
     expect(resumen.liquidacionesSugeridas[0].deudor).toBe('María');
     expect(resumen.liquidacionesSugeridas[0].acreedor).toBe('Carlos');
     expect(resumen.liquidacionesSugeridas[0].montoCop).toBe(50_000);
-  });
-
-  it('prepara un resumen para enviar con la firma de LukApp', () => {
-    const vaquita: Vaquita = {
-      id: 'vaca-2', nombre: 'Regalo', emoji: '🐮', metaCop: 40_000, gastos: [], creadaEn: '2026-09-13',
-      participantes: [
-        { nombre: 'Persona 1', cuotaComprometida: 20_000, aportadoCop: 20_000 },
-        { nombre: 'Persona 2', cuotaComprometida: 20_000, aportadoCop: 0 },
-      ],
-    };
-
-    expect(textoParaCompartirVaquita(vaquita)).toContain('Persona 1: Pagó');
-    expect(textoParaCompartirVaquita(vaquita)).toContain('Persona 2: Faltan');
-    expect(textoParaCompartirVaquita(vaquita)).toContain('Creado con LukApp');
   });
 });

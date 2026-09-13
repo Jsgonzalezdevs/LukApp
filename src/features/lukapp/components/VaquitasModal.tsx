@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Users, Plus, CheckCircle2, ArrowRight, Trash2, Share2 } from 'lucide-react';
+import { X, Users, Plus, CheckCircle2, ArrowRight, Trash2 } from 'lucide-react';
 import {
   calcularResumenVaquita,
-  textoParaCompartirVaquita,
   type Vaquita,
   type ParticipanteVaquita,
 } from '../lib/vaquitasColombia';
@@ -37,8 +36,7 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
   // Formulario crear vaquita
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevaMetaStr, setNuevaMetaStr] = useState('');
-  const [cantidadPersonas, setCantidadPersonas] = useState('2');
-  const [mensajeCompartido, setMensajeCompartido] = useState(false);
+  const [nombresAmigosStr, setNombresAmigosStr] = useState('');
 
   // Persistir en localStorage
   useEffect(() => {
@@ -57,15 +55,19 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
     e.preventDefault();
     if (!nuevoNombre.trim()) return;
 
-    const cantidad = Math.min(50, Math.max(1, Number(cantidadPersonas.replace(/\D/g, '')) || 2));
-    const todosParticipantes = Array.from({ length: cantidad }, (_, indice) => `Persona ${indice + 1}`);
+    const amigos = nombresAmigosStr
+      .split(',')
+      .map((n) => n.trim())
+      .filter(Boolean);
+
+    const todosParticipantes = ['Yo', ...amigos];
     const meta = Number(nuevaMetaStr.replace(/\D/g, '')) || 0;
     const cuotaPorPersona = todosParticipantes.length > 0 ? Math.round(meta / todosParticipantes.length) : meta;
 
     const participantes: ParticipanteVaquita[] = todosParticipantes.map((p) => ({
       nombre: p,
       cuotaComprometida: cuotaPorPersona,
-      aportadoCop: 0,
+      aportadoCop: p === 'Yo' ? cuotaPorPersona : 0,
     }));
 
     const nuevaVaca: Vaquita = {
@@ -83,7 +85,7 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
     setMostrarCrear(false);
     setNuevoNombre('');
     setNuevaMetaStr('');
-    setCantidadPersonas('2');
+    setNombresAmigosStr('');
   };
 
   const handleEliminarVaquita = (id: string) => {
@@ -96,15 +98,15 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
     }
   };
 
-  const handleMarcarPagado = (indiceParticipante: number) => {
+  const handleMarcarPagado = (nombreParticipante: string) => {
     if (!vaquitaActiva) return;
     setVaquitas((prev) =>
       prev.map((v) => {
         if (v.id !== vaquitaActiva.id) return v;
         return {
           ...v,
-          participantes: v.participantes.map((p, indice) => {
-            if (indice !== indiceParticipante) return p;
+          participantes: v.participantes.map((p) => {
+            if (p.nombre !== nombreParticipante) return p;
             return {
               ...p,
               aportadoCop: p.cuotaComprometida,
@@ -113,35 +115,6 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
         };
       }),
     );
-  };
-
-  const handleCambiarNombre = (indice: number, nombre: string) => {
-    if (!vaquitaActiva) return;
-    setVaquitas((prev) => prev.map((v) => v.id !== vaquitaActiva.id ? v : {
-      ...v,
-      participantes: v.participantes.map((p, posicion) => posicion === indice ? { ...p, nombre } : p),
-    }));
-  };
-
-  const handleEnviarResumen = async () => {
-    if (!vaquitaActiva) return;
-    const texto = textoParaCompartirVaquita(vaquitaActiva);
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: `Vaquita: ${vaquitaActiva.nombre}`, text: texto });
-      } else {
-        await navigator.clipboard?.writeText(texto);
-        window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, '_blank');
-      }
-      setMensajeCompartido(true);
-      window.setTimeout(() => setMensajeCompartido(false), 3000);
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        await navigator.clipboard?.writeText(texto);
-        setMensajeCompartido(true);
-        window.setTimeout(() => setMensajeCompartido(false), 3000);
-      }
-    }
   };
 
   if (!isOpen) return null;
@@ -273,23 +246,17 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
                     Participantes ({vaquitaActiva.participantes.length}):
                   </span>
                   <div className="space-y-2">
-                    {vaquitaActiva.participantes.map((p, indice) => {
+                    {vaquitaActiva.participantes.map((p) => {
                       const pagoCompleto = p.aportadoCop >= p.cuotaComprometida;
                       return (
                         <div
-                          key={`${indice}-${p.nombre}`}
+                          key={p.nombre}
                           className="flex items-center justify-between p-3 rounded-xl bg-[var(--fin-bg)] border border-[var(--fin-line)]"
                         >
                           <div>
-                            <input
-                              aria-label={`Nombre del participante ${indice + 1}`}
-                              value={p.nombre}
-                              onChange={(e) => handleCambiarNombre(indice, e.target.value)}
-                              onBlur={(e) => {
-                                if (!e.target.value.trim()) handleCambiarNombre(indice, `Persona ${indice + 1}`);
-                              }}
-                              className="w-full max-w-40 bg-transparent text-[14px] font-semibold text-[var(--fin-ink)] outline-none focus:border-b focus:border-[var(--fin-accent)]"
-                            />
+                            <span className="text-[14px] font-semibold text-[var(--fin-ink)] block">
+                              {p.nombre}
+                            </span>
                             <span className="text-[12px] text-[var(--fin-ink-soft)]">
                               Cuota: {formatCop(p.cuotaComprometida)} · Aportó: {formatCop(p.aportadoCop)}
                             </span>
@@ -302,7 +269,7 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
                           ) : (
                             <button
                               type="button"
-                              onClick={() => handleMarcarPagado(indice)}
+                              onClick={() => handleMarcarPagado(p.nombre)}
                               className="px-2.5 py-1 rounded-lg bg-[var(--fin-accent)] text-[var(--fin-on-accent)] text-[12px] font-bold hover:opacity-90"
                             >
                               Marcar pagado
@@ -331,18 +298,6 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
                     ))}
                   </div>
                 )}
-
-                <div className="space-y-1.5">
-                  <button
-                    type="button"
-                    onClick={handleEnviarResumen}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[var(--fin-accent)] text-[var(--fin-on-accent)] text-[14px] font-bold hover:opacity-90 transition-opacity"
-                  >
-                    <Share2 className="h-4 w-4" />
-                    {mensajeCompartido ? 'Resumen listo para enviar' : 'Enviar resumen'}
-                  </button>
-                  <p className="text-center text-[11px] text-[var(--fin-ink-faint)]">El resumen incluye la marca “Creado con LukApp”.</p>
-                </div>
 
                 <button
                   type="button"
@@ -391,20 +346,17 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
 
                 <div>
                   <label className="block text-[13px] font-semibold text-[var(--fin-ink)] mb-1">
-                    ¿Cuántas personas participan?
+                    Amigos que participan (separados por coma):
                   </label>
                   <input
                     type="text"
-                    inputMode="numeric"
-                    placeholder="Ej. 4"
-                    value={cantidadPersonas}
-                    onChange={(e) => setCantidadPersonas(e.target.value.replace(/\D/g, '').slice(0, 2))}
+                    placeholder="Ej. Carlos, María, Juan..."
+                    value={nombresAmigosStr}
+                    onChange={(e) => setNombresAmigosStr(e.target.value)}
                     required
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-bg)] text-[16px] text-[var(--fin-ink)]"
                   />
                 </div>
-
-                <p className="text-[12px] text-[var(--fin-ink-soft)]">Las personas empiezan como Persona 1, Persona 2… y puedes cambiar cada nombre después.</p>
 
                 <div className="flex gap-2 pt-2">
                   <button

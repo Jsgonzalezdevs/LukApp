@@ -11,6 +11,14 @@ interface DivisionCuentasModalProps {
   onAnotarMiParte: (montoCop: number, descripcion: string) => void;
 }
 
+interface ParticipanteDivision {
+  nombre: string;
+  pagoConfirmado: boolean;
+}
+
+const crearParticipantes = (cantidad: number): ParticipanteDivision[] =>
+  Array.from({ length: cantidad }, (_, indice) => ({ nombre: `Persona ${indice + 1}`, pagoConfirmado: false }));
+
 export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
   onCerrar,
   onAnotarMiParte,
@@ -21,18 +29,37 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
   const [totalTexto, setTotalTexto] = useState('');
   const [lugarTexto, setLugarTexto] = useState('');
   const [porcentajePropina, setPorcentajePropina] = useState<number>(10); // 10% propina típica en Colombia
-  const [personas, setPersonas] = useState<number>(2);
+  const [participantes, setParticipantes] = useState<ParticipanteDivision[]>(() => crearParticipantes(2));
   const [copiado, setCopiado] = useState(false);
 
   const totalBase = parseSaldoInput(totalTexto) ?? 0;
   const valorPropina = Math.round((totalBase * porcentajePropina) / 100);
   const totalConPropina = totalBase + valorPropina;
+  const personas = participantes.length;
   const cuotaPorPersona = personas > 0 ? Math.ceil(totalConPropina / personas) : 0;
 
   const cambiarPersonas = (delta: number) => {
     haptic.trigger('light');
     audio.play('click');
-    setPersonas((prev) => Math.max(1, Math.min(50, prev + delta)));
+    setParticipantes((prev) => {
+      if (delta < 0) return prev.length > 1 ? prev.slice(0, -1) : prev;
+      if (prev.length >= 50) return prev;
+      return [...prev, { nombre: `Persona ${prev.length + 1}`, pagoConfirmado: false }];
+    });
+  };
+
+  const cambiarNombre = (indice: number, nombre: string) => {
+    setParticipantes((prev) => prev.map((participante, posicion) =>
+      posicion === indice ? { ...participante, nombre } : participante,
+    ));
+  };
+
+  const marcarPago = (indice: number) => {
+    haptic.trigger('light');
+    audio.play('click');
+    setParticipantes((prev) => prev.map((participante, posicion) =>
+      posicion === indice ? { ...participante, pagoConfirmado: !participante.pagoConfirmado } : participante,
+    ));
   };
 
   const copiarMensaje = async () => {
@@ -43,15 +70,25 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
     const textoMensaje = `🧾 *División de cuenta${lugar}*\n` +
       `• Total cuenta: ${formatCop(totalBase)}\n` +
       (porcentajePropina > 0 ? `• Propina (${porcentajePropina}%): ${formatCop(valorPropina)}\n• Total con propina: ${formatCop(totalConPropina)}\n` : '') +
-      `👥 Dividido entre ${personas} personas: *${formatCop(cuotaPorPersona)} cada uno*\n\n` +
-      `📲 ¡Gracias por pasarme tu parte por Nequi o Bancolombia!`;
+      `Dividido entre ${personas} personas: *${formatCop(cuotaPorPersona)} cada uno*\n\n` +
+      `${participantes.map((participante) => `• ${participante.nombre || 'Sin nombre'}: ${participante.pagoConfirmado ? 'Pagó' : 'Pendiente'}`).join('\n')}\n\n` +
+      `Creado con LukApp`;
 
     try {
-      await navigator.clipboard.writeText(textoMensaje);
+      if (navigator.share) {
+        await navigator.share({ title: 'División de cuenta', text: textoMensaje });
+      } else {
+        await navigator.clipboard.writeText(textoMensaje);
+        window.open(`https://wa.me/?text=${encodeURIComponent(textoMensaje)}`, '_blank');
+      }
       setCopiado(true);
       setTimeout(() => setCopiado(false), 3000);
-    } catch {
-      // Fallback
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        await navigator.clipboard?.writeText(textoMensaje);
+        setCopiado(true);
+        setTimeout(() => setCopiado(false), 3000);
+      }
     }
   };
 
@@ -193,6 +230,39 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
             </div>
           </div>
 
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">¿Quién ya pagó?</label>
+              <span className="text-[12px] text-[var(--fin-ink-faint)]">Edita los nombres si hace falta</span>
+            </div>
+            <div className="mt-1.5 space-y-2">
+              {participantes.map((participante, indice) => (
+                <div key={indice} className="flex items-center gap-2 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-2">
+                  <input
+                    aria-label={`Nombre de la persona ${indice + 1}`}
+                    value={participante.nombre}
+                    onChange={(e) => cambiarNombre(indice, e.target.value)}
+                    onBlur={(e) => {
+                      if (!e.target.value.trim()) cambiarNombre(indice, `Persona ${indice + 1}`);
+                    }}
+                    className="min-w-0 flex-1 bg-transparent px-1 text-[14px] font-semibold text-[var(--fin-ink)] outline-none focus:border-b focus:border-orange-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => marcarPago(indice)}
+                    className={`shrink-0 rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[12px] font-bold transition-colors ${
+                      participante.pagoConfirmado
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                        : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
+                    }`}
+                  >
+                    {participante.pagoConfirmado ? 'Pagó' : 'Marcar pagado'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Tarjeta de resultado */}
           <div className="rounded-[var(--fin-r-card)] bg-orange-500/10 border border-orange-500/20 p-4 text-center">
             <p className="text-[12.5px] font-semibold text-orange-500 uppercase tracking-wide">
@@ -218,12 +288,12 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
             {copiado ? (
               <>
                 <Check className="h-4 w-4 text-emerald-500" />
-                <span>¡Copiado para WhatsApp!</span>
+                <span>¡Listo para enviar!</span>
               </>
             ) : (
               <>
                 <Share2 className="h-4 w-4" />
-                <span>Copiar cobro WhatsApp</span>
+                <span>Enviar cobro</span>
               </>
             )}
           </button>

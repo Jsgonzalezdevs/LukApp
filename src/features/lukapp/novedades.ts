@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.27.0', fecha: '2026-09-13', texto: 'Dividir cuenta y propina ahora crea personas numeradas que puedes renombrar, permite llevar quién ya pagó y envía el cobro con la firma de LukApp.' },
   { version: '3.26.1', fecha: '2026-09-13', texto: 'El Asesor ya no reabre automáticamente el chat anterior: entra siempre en una conversación nueva, con controles superiores visibles y conexión clara.' },
   { version: '3.26.0', fecha: '2026-09-13', texto: 'Las Vaquitas ahora empiezan con personas numeradas que puedes renombrar, permiten marcar quién ya aportó y enviar un resumen firmado por LukApp.' },
   { version: '3.25.1', fecha: '2026-09-13', texto: 'El Asesor ahora cancela correctamente sus consultas, usa un respaldo local único y permite reintentar sin duplicar mensajes.' },
