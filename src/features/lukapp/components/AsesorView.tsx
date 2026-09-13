@@ -319,11 +319,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         if (conversacionesRes.ok) {
           const conversacionesCargadas = ((await conversacionesRes.json()).conversaciones ?? []) as ConversacionIA[];
           setConversaciones(conversacionesCargadas);
-          // La conversación más reciente es el punto de continuidad natural.
-          // Si no hay historial, el saludo inicial permanece intacto.
-          if (activo && conversacionesCargadas[0]) {
-            await cargarConversacion(conversacionesCargadas[0], false);
-          }
+          // El historial queda listo en segundo plano; cada entrada empieza limpia.
         }
       } catch {
         // El asesor conserva su funcionamiento local aunque no haya sesión o API.
@@ -557,7 +553,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         // La comprobación de salud solo confirma que el servidor tiene un
         // proveedor configurado. La respuesta de una consulta real es la que
         // puede confirmar que la IA está efectivamente en línea.
-        if (vigente) setConexion(d?.ia ? 'configurada' : 'local');
+        if (vigente) setConexion(d?.ia ? 'en-linea' : 'local');
       })
       .catch(() => {
         // Sin servidor no hay IA, pero el motor local sigue respondiendo.
@@ -786,7 +782,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           Asesor Financiero", así que se veían dos títulos seguidos diciendo casi
           lo mismo. Aquí solo queda la línea de estado, que sí aporta algo que el
           título no puede decir. */}
-      <div className="sticky top-0 z-20 -mx-1 flex items-center justify-between gap-2 border-b border-[var(--fin-line)] bg-[var(--fin-bg)] px-1 pb-4 pt-1">
+      <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fin-line)] bg-[var(--fin-bg)] px-1 pb-4 pt-1">
         <p className="flex items-center gap-2 text-[13px] text-[var(--fin-ink-soft)]">
           <span
             aria-hidden="true"
@@ -797,7 +793,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           />
           <span className="truncate">{etiquetaConexion(conexion)}</span>
         </p>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setHistorialAbierto(true)}

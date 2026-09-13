@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.26.1', fecha: '2026-09-13', texto: 'El Asesor ya no reabre automáticamente el chat anterior: entra siempre en una conversación nueva, con controles superiores visibles y conexión clara.' },
   { version: '3.26.0', fecha: '2026-09-13', texto: 'Las Vaquitas ahora empiezan con personas numeradas que puedes renombrar, permiten marcar quién ya aportó y enviar un resumen firmado por LukApp.' },
   { version: '3.25.1', fecha: '2026-09-13', texto: 'El Asesor ahora cancela correctamente sus consultas, usa un respaldo local único y permite reintentar sin duplicar mensajes.' },
   { version: '3.25.0', fecha: '2026-09-13', texto: 'El Asesor diferencia una cancelación al salir de un timeout, reemplaza el respaldo local al reintentar y evita duplicar diagnósticos.' },
