@@ -90,7 +90,6 @@ export const LandingLukApp: React.FC<LandingProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [compacta, setCompacta] = useState(false);
   const [mostrarPWA, setMostrarPWA] = useState(false);
-  const [pwaYaVisto, setPwaYaVisto] = useState(false);
   const sesionActiva = sesion?.estado.modo === 'autenticado' || sesion?.estado.modo === 'local';
 
   /* La barra se encoge al bajar. `passive` porque el handler no llama a
@@ -119,14 +118,6 @@ export const LandingLukApp: React.FC<LandingProps> = ({
   }, []);
 
   const handleGetStarted = () => {
-    const ua = navigator.userAgent.toLowerCase();
-    const isMobile = /iphone|ipad|ipod|android/.test(ua);
-
-    if (isMobile && !pwaYaVisto) {
-      setMostrarPWA(true);
-      return;
-    }
-
     onGetStarted?.();
   };
 
@@ -140,13 +131,11 @@ export const LandingLukApp: React.FC<LandingProps> = ({
   };
 
   const handlePWASkip = () => {
-    setPwaYaVisto(true);
     setMostrarPWA(false);
     onGetStarted?.();
   };
 
   const handlePWAProceed = () => {
-    setPwaYaVisto(true);
     setMostrarPWA(false);
     onGetStarted?.();
   };

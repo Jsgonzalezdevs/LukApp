@@ -13,7 +13,7 @@ const detectPlatform = (): Platform => {
   if (isIos) return 'ios';
   if (isAndroid) return 'android';
 
-  return null;
+  return 'desktop';
 };
 
 interface PWAInstallProps {
@@ -66,8 +66,8 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
         </div>
 
         <p className="pwa-descripcion">
-          La experiencia completa está optimizada para {isIos ? 'tu iPhone' : 'tu Android'}.
-          Te mostramos cómo instalarla en un minuto.
+          LukApp queda a mano, abre más rápido y puede funcionar aunque tengas poca conexión.
+          Te acompaño paso a paso; no se descarga nada desde una tienda.
         </p>
 
         <div className="pwa-pasos">
@@ -97,7 +97,7 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
                 </div>
               </div>
             </>
-          ) : (
+          ) : platform === 'android' ? (
             <>
               <div className="pwa-paso">
                 <div className="pwa-numero">1</div>
@@ -123,6 +123,12 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
                 </div>
               </div>
             </>
+          ) : (
+            <>
+              <div className="pwa-paso"><div className="pwa-numero">1</div><div className="pwa-contenido"><h3>Busca el botón de instalar</h3><p>En Chrome puede aparecer en la barra de dirección o en el menú de los tres puntos.</p></div></div>
+              <div className="pwa-paso"><div className="pwa-numero">2</div><div className="pwa-contenido"><h3>Elige “Instalar LukApp”</h3><p>Confirma cuando el navegador te lo pregunte.</p></div></div>
+              <div className="pwa-paso"><div className="pwa-numero">3</div><div className="pwa-contenido"><h3>Ábrela desde tu escritorio</h3><p>Así tendrás LukApp como una aplicación independiente.</p></div></div>
+            </>
           )}
         </div>
 
@@ -143,7 +149,7 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
 
         <div className="pwa-acciones">
           <button className="btn-primary-lg pwa-continuar" onClick={onProceed}>
-            Ya lo instalé, continuar
+            Entendido, continuar
           </button>
           <button className="btn-secondary pwa-despues" onClick={onSkip}>
             Hacerlo después

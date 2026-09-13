@@ -9,6 +9,7 @@ import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 import { apiUrl } from '../lib/api';
+import { PWAInstall } from '../features/lukapp/components/landing/PWAInstall';
 
 /* La portada es la única ruta pública. Separar las vistas privadas evita que
    quien apenas llega descargue OCR, analítica y el dashboard antes de decidir
@@ -94,6 +95,7 @@ export const AppsRoot: React.FC = () => {
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
+  const [mostrarGuiaPWA, setMostrarGuiaPWA] = useState(false);
 
   const { ruta, ir } = useRuta();
   const enPortada =
@@ -142,6 +144,26 @@ export const AppsRoot: React.FC = () => {
   }, [adminBackup]);
 
   const emailAutenticado = sesion.estado.modo === 'autenticado' ? sesion.estado.email : undefined;
+
+  // La instalación se explica cuando la persona ya entró a su cuenta: en ese
+  // momento entiende el valor de tener LukApp a mano y no se interrumpe el
+  // registro. La clave por usuario permite que cada cuenta reciba su propia
+  // bienvenida, sin repetirla en cada visita.
+  useEffect(() => {
+    if (sesion.estado.modo !== 'autenticado' && sesion.estado.modo !== 'local') return;
+    if (esPwaInstalada()) return;
+    const clave = `lukapp-guia-pwa-v1:${sesion.estado.userId}`;
+    if (localStorage.getItem(clave)) return;
+    const id = window.setTimeout(() => setMostrarGuiaPWA(true), 1400);
+    return () => window.clearTimeout(id);
+  }, [sesion.estado]);
+
+  const cerrarGuiaPWA = () => {
+    if (sesion.estado.modo === 'autenticado' || sesion.estado.modo === 'local') {
+      localStorage.setItem(`lukapp-guia-pwa-v1:${sesion.estado.userId}`, 'vista');
+    }
+    setMostrarGuiaPWA(false);
+  };
 
   // Cargar rol de Supabase con retry logic
   useEffect(() => {
@@ -335,6 +357,7 @@ export const AppsRoot: React.FC = () => {
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <LukAppMain esAdmin={false} />
+        {mostrarGuiaPWA && <PWAInstall onClose={cerrarGuiaPWA} onSkip={cerrarGuiaPWA} onProceed={cerrarGuiaPWA} />}
       </div>
       </VistaConCarga>
     );
