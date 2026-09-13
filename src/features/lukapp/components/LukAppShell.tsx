@@ -122,7 +122,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
  cuenta justo encima de esta barra, usando su altura (`--fin-nav-h`) para
  no superponerse. */}
     <nav
-      className="fin-glass fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
+      className="fin-glass fin-navigation fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
       aria-label="Secciones"
     >
       {/* `data-guia` es el ancla de la guía de bienvenida. Es el único

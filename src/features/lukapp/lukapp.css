@@ -28,6 +28,8 @@
      below, so this alpha is what lets that blur actually read as glass instead
      of a flat colour with a fancy name. */
   --fin-card: rgb(255 255 255 / 0.72);
+  --fin-glass-bg: rgb(255 255 255 / 0.72);
+  --fin-glass-border: rgb(255 255 255 / 0.55);
   --fin-skeleton-base: rgb(0 0 0 / 0.06);
   --fin-skeleton-shine: rgb(0 0 0 / 0.1);
   --fin-soft: #f5f3f0;
@@ -175,6 +177,8 @@
     --fin-bg: #1a1817;
     --fin-bg-blur: rgb(26 24 23 / 0.85);
     --fin-card: rgb(45 42 40 / 0.6);
+    --fin-glass-bg: rgb(45 42 40 / 0.82);
+    --fin-glass-border: rgb(255 255 255 / 0.12);
     --fin-skeleton-base: rgb(255 255 255 / 0.06);
     --fin-skeleton-shine: rgb(255 255 255 / 0.14);
     --fin-soft: #2c2a28;
@@ -238,6 +242,8 @@
   --fin-bg: #1a1817;
   --fin-bg-blur: rgb(26 24 23 / 0.85);
   --fin-card: rgb(45 42 40 / 0.6);
+  --fin-glass-bg: rgb(45 42 40 / 0.82);
+  --fin-glass-border: rgb(255 255 255 / 0.12);
   --fin-skeleton-base: rgb(255 255 255 / 0.06);
   --fin-skeleton-shine: rgb(255 255 255 / 0.14);
   --fin-soft: #2c2a28;
@@ -291,6 +297,8 @@
      pareciera lavado y dificultaba leer los saldos. */
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  background: var(--fin-glass-bg);
+  border: 1px solid var(--fin-glass-border);
   box-shadow:
     inset 0 1px 0 0 var(--fin-glass-highlight),
     var(--fin-glass-shadow);
@@ -309,6 +317,26 @@
    desenfoque aunque el filtro ya estuviera apagado. */
 .fin-page nav[aria-label="Secciones"] {
   background-color: var(--fin-bg) !important;
+}
+
+/* La navegación no es una tarjeta: un borde continuo la hacía parecer una
+   barra antigua pegada sobre el contenido. La transición se desvanece antes de
+   llegar a la superficie para conservar separación sin dibujar una línea. */
+.fin-page .fin-navigation {
+  position: fixed;
+  isolation: isolate;
+  border: 0;
+  box-shadow: none;
+}
+
+.fin-page .fin-navigation::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -18px 0 auto;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, var(--fin-bg));
 }
 
 .fin-page {
@@ -443,6 +471,84 @@
   .fin-aurora::after {
     animation: none;
   }
+}
+
+/* ------------------------------------------------ división de cuenta ---
+   La hoja reúne muchos controles; aquí la jerarquía viene de las superficies y
+   no de repetir bordes oscuros alrededor de cada elemento. */
+.division-sheet {
+  background: color-mix(in srgb, var(--fin-surface) 94%, var(--fin-bg));
+  border: 1px solid color-mix(in srgb, var(--fin-line) 82%, transparent);
+  box-shadow: 0 -16px 44px rgb(20 16 12 / 0.18), var(--fin-glass-shadow);
+}
+
+.division-header { border-bottom: 1px solid color-mix(in srgb, var(--fin-line) 76%, transparent); }
+.division-icon { background: #fff3e8; color: #c55a12; }
+.division-close { background: var(--fin-soft); color: var(--fin-ink-soft); transition: background 160ms ease, color 160ms ease; }
+.division-close:hover { background: var(--fin-card-hover); color: var(--fin-ink); }
+.division-content { scrollbar-color: var(--fin-ink-ghost) transparent; }
+
+.division-money-input,
+.division-text-input,
+.division-people,
+.division-person {
+  background: var(--fin-bg-soft);
+  border: 1px solid var(--fin-line);
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.division-money-input:focus-within,
+.division-text-input:focus,
+.division-person:focus-within {
+  background: var(--fin-surface);
+  border-color: color-mix(in srgb, var(--fin-accent) 55%, var(--fin-line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fin-accent) 12%, transparent);
+}
+
+.division-tip-idle { background: var(--fin-soft); color: var(--fin-ink-soft); }
+.division-tip-idle:hover { background: var(--fin-card-hover); color: var(--fin-ink); }
+.division-tip-active { background: var(--fin-ink); color: var(--fin-bg); box-shadow: 0 7px 16px rgb(28 25 23 / 0.18); }
+.division-stepper { background: var(--fin-surface); border: 1px solid var(--fin-line); color: var(--fin-ink); box-shadow: 0 2px 5px rgb(28 25 23 / 0.06); transition: transform 160ms ease, background 160ms ease; }
+.division-stepper:hover { background: var(--fin-soft); transform: translateY(-1px); }
+.division-people-icon { color: #c55a12; }
+.division-person { background: transparent; }
+.division-payment { background: var(--fin-soft); color: var(--fin-ink-soft); }
+.division-payment:hover { background: var(--fin-card-hover); color: var(--fin-ink); }
+.division-payment.bg-emerald-500\/15 { background: color-mix(in srgb, #10b981 13%, var(--fin-bg)); color: #087a5b; }
+
+.division-result {
+  background: linear-gradient(135deg, #1f1b17 0%, #342a22 100%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 12px 24px rgb(28 25 23 / 0.14);
+}
+.division-result-label { color: #f8b980; }
+.division-result .text-\[var\(--fin-ink\)\] { color: #fffaf5; }
+.division-result .text-\[var\(--fin-ink-soft\)\] { color: rgb(255 250 245 / 0.66); }
+.division-actions { border-top: 1px solid color-mix(in srgb, var(--fin-line) 76%, transparent); padding-top: 1rem; }
+.division-share { border: 1px solid var(--fin-line); background: transparent; color: var(--fin-ink); transition: background 160ms ease, border-color 160ms ease; }
+.division-share:hover { background: var(--fin-soft); border-color: var(--fin-ink-ghost); }
+.division-save { background: var(--fin-accent); color: var(--fin-on-accent); box-shadow: 0 10px 20px color-mix(in srgb, var(--fin-accent) 25%, transparent); transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease; }
+.division-save:hover { background: var(--fin-accent-hover); box-shadow: 0 13px 24px color-mix(in srgb, var(--fin-accent) 30%, transparent); transform: translateY(-1px); }
+
+.fin-html[data-tema='oscuro'] .division-sheet { background: #211e1b; border-color: #423d37; }
+.fin-html[data-tema='oscuro'] .division-icon { background: #402d1d; color: #ffae68; }
+.fin-html[data-tema='oscuro'] .division-money-input,
+.fin-html[data-tema='oscuro'] .division-text-input,
+.fin-html[data-tema='oscuro'] .division-people,
+.fin-html[data-tema='oscuro'] .division-person { background: #1a1817; border-color: #423d37; }
+.fin-html[data-tema='oscuro'] .division-stepper { background: #302c29; border-color: #423d37; }
+.fin-html[data-tema='oscuro'] .division-tip-active { background: #fffaf5; color: #211e1b; }
+.fin-html[data-tema='oscuro'] .division-result { background: linear-gradient(135deg, #38271b 0%, #211e1b 100%); }
+
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']) .division-sheet { background: #211e1b; border-color: #423d37; }
+  .fin-html:not([data-tema='claro']) .division-icon { background: #402d1d; color: #ffae68; }
+  .fin-html:not([data-tema='claro']) .division-money-input,
+  .fin-html:not([data-tema='claro']) .division-text-input,
+  .fin-html:not([data-tema='claro']) .division-people,
+  .fin-html:not([data-tema='claro']) .division-person { background: #1a1817; border-color: #423d37; }
+  .fin-html:not([data-tema='claro']) .division-stepper { background: #302c29; border-color: #423d37; }
+  .fin-html:not([data-tema='claro']) .division-tip-active { background: #fffaf5; color: #211e1b; }
+  .fin-html:not([data-tema='claro']) .division-result { background: linear-gradient(135deg, #38271b 0%, #211e1b 100%); }
 }
 
 /* En iOS el <input type="date"> trae un ancho intrínseco propio y se planta en

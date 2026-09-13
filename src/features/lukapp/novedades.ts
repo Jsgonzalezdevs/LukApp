@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.27.3', fecha: '2026-09-13', texto: 'La navegación inferior ahora se integra suavemente con el contenido, sin la línea rígida que la separaba.' },
+  { version: '3.27.2', fecha: '2026-09-13', texto: 'Unificamos los estilos base para evitar que sombras, superficies y temas se contradigan según el orden de carga.' },
+  { version: '3.27.1', fecha: '2026-09-13', texto: 'Refinamos la pantalla para dividir cuenta y propina: ahora tiene una jerarquía más limpia, controles más elegantes y una cuota por persona que se destaca mejor.' },
   { version: '3.27.0', fecha: '2026-09-13', texto: 'Dividir cuenta y propina ahora crea personas numeradas que puedes renombrar, permite llevar quién ya pagó y envía el cobro con la firma de LukApp.' },
   { version: '3.26.1', fecha: '2026-09-13', texto: 'El Asesor ya no reabre automáticamente el chat anterior: entra siempre en una conversación nueva, con controles superiores visibles y conexión clara.' },
   { version: '3.26.0', fecha: '2026-09-13', texto: 'Las Vaquitas ahora empiezan con personas numeradas que puedes renombrar, permiten marcar quién ya aportó y enviar un resumen firmado por LukApp.' },
