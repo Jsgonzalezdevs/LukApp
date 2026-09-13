@@ -44,6 +44,9 @@ export interface ResumenVaquita {
   liquidacionesSugeridas: DeudaLiquidacion[];
 }
 
+const formatMoneda = (valor: number) =>
+  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
+
 /**
  * Calcula el estado financiero de una vaquita y calcula cómo saldar cuentas
  * entre los participantes.
@@ -119,4 +122,27 @@ export const calcularResumenVaquita = (vaquita: Vaquita): ResumenVaquita => {
     pendientesPorPagar: pendientes,
     liquidacionesSugeridas: liquidaciones,
   };
+};
+
+/** Texto breve para enviar el estado sin que dependa de la interfaz que lo muestra. */
+export const textoParaCompartirVaquita = (vaquita: Vaquita): string => {
+  const resumen = calcularResumenVaquita(vaquita);
+  const participantes = vaquita.participantes
+    .map((participante) => {
+      const estado = participante.aportadoCop >= participante.cuotaComprometida
+        ? 'Pagó'
+        : `Faltan ${formatMoneda(participante.cuotaComprometida - participante.aportadoCop)}`;
+      return `• ${participante.nombre}: ${estado}`;
+    })
+    .join('\n');
+
+  return [
+    `Vaquita: ${vaquita.nombre}`,
+    `Recolectado: ${formatMoneda(resumen.totalRecolectado)} de ${formatMoneda(vaquita.metaCop)}`,
+    '',
+    'Participantes',
+    participantes,
+    '',
+    'Creado con LukApp',
+  ].join('\n');
 };
