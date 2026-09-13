@@ -279,7 +279,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     let signal: AbortSignal | undefined;
     const peticiones = vi.fn().mockImplementation((url: string, init) => {
       if (String(url).includes('/api/salud')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
-      signal = init.signal;
+      if (String(url).includes('/api/asesor-ia')) signal = init.signal;
       return new Promise((_resolve, reject) => init.signal.addEventListener('abort', () => reject(new Error('abort'))));
     });
     vi.stubGlobal('fetch', peticiones);
@@ -323,7 +323,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     expect(screen.getByText('Validando tu sesión…')).toBeTruthy();
     await act(async () => { await vi.advanceTimersByTimeAsync(8000); });
     expect(screen.queryByText('Validando tu sesión…')).toBeNull();
-    expect(screen.getByText(/No pudimos validar tu sesión/)).toBeTruthy();
+    expect(screen.getByText(/No se pudo validar tu sesión/)).toBeTruthy();
     expect(screen.getByText(/Reintentar con IA/)).toBeTruthy();
     expect(peticiones.mock.calls.some(([url]) => String(url).includes('/api/asesor-ia'))).toBe(false);
     expect(input).not.toBeDisabled();
@@ -339,7 +339,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    await screen.findByText(status === 401 || status === 403 ? /no pudo validar tu sesión/ : status === 429 ? /límite de solicitudes/ : /error \(500\)/);
+    await screen.findByText(status === 401 || status === 403 ? /No se pudo validar tu sesión/ : status === 429 ? /límite de solicitudes/ : /error \(500\)/);
     expect(screen.queryByText('En línea')).toBeNull();
   });
   it('una respuesta de salud tardía no oculta un fallo de la IA', async () => {

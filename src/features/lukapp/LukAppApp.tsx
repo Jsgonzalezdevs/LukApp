@@ -724,7 +724,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         ) : null}
 
         {almacen.error ? (
-          <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3">
+          <div
+            className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3"
+            role="alert"
+            aria-live="assertive"
+          >
             <AlertTriangle
               className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]"
               strokeWidth={2.5}

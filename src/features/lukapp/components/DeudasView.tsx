@@ -106,7 +106,20 @@ const DeudaCard: React.FC<{
     if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
     // A purchase adds to what you owe; a payment takes away from it — and comes
     // out of a real account, which is why it goes through its own action.
-    else if (accion === 'compra') onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, { cuotasTotal: Math.max(1, Number(cuotas) || 1), cuotaCop: parseAmountInput(cuotaMensual) ?? Math.abs(valor), interesPct: interes === '' ? null : Number(interes.replace(',', '.')), cuotaManejoCop: parseAmountInput(cuotaManejo) ?? 0 });
+    else if (accion === 'compra') {
+      const detalles = {
+        cuotasTotal: Math.max(1, Number(cuotas) || 1),
+        cuotaCop: parseAmountInput(cuotaMensual) ?? Math.abs(valor),
+        interesPct: interes === '' ? null : Number(interes.replace(',', '.')),
+        cuotaManejoCop: parseAmountInput(cuotaManejo) ?? 0,
+      };
+      // Mantener la llamada corta para una compra simple protege el contrato
+      // histórico de movimientos; los metadatos solo viajan cuando la persona
+      // realmente configuró cuotas, interés o manejo.
+      const hayDetalles = detalles.cuotasTotal > 1 || cuotaMensual !== '' || interes !== '' || cuotaManejo !== '';
+      if (hayDetalles) onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, detalles);
+      else onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
+    }
     else {
       if (cuentaId === '') return;
       onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });

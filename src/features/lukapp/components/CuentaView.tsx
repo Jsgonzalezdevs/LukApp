@@ -212,7 +212,11 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+      <div
+        className="flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"
+        role="status"
+        aria-live="polite"
+      >
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             className="h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)]"
@@ -222,6 +226,13 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Sincronización</p>
             <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">{estadoSync.texto}</p>
+            <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">
+              {syncError
+                ? 'Puedes reintentar ahora. Lo que ya ves en pantalla permanece en este dispositivo.'
+                : cambiosPendientes > 0
+                  ? 'Tus cambios locales siguen disponibles y se subirán automáticamente.'
+                  : 'Tus datos locales y los de tu cuenta están al día.'}
+            </p>
           </div>
         </div>
         <button

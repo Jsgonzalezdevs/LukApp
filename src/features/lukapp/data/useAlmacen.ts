@@ -24,6 +24,7 @@ import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
 import { conReintentos } from '../../../lib/errorHandling';
+import { mensajeDeErrorPersistencia } from '../lib/mensajeErrorPersistencia';
 
 export interface Almacen {
   datos: Instantanea;
@@ -165,8 +166,7 @@ export interface Almacen {
   restaurar: (datos: Instantanea) => Promise<void>;
 }
 
-const mensajeDeError = (e: unknown): string =>
-  e instanceof Error ? e.message : 'No se pudo guardar el cambio.';
+const mensajeDeError = (e: unknown): string => mensajeDeErrorPersistencia(e);
 
 export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   const elegido = useMemo(
@@ -807,7 +807,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         nota: nota ?? 'Saldo actualizado',
       });
     },
-    [datos.cajitaMovimientos, datos.transacciones, registrarMovimiento],
+    [datos.cajitaMovimientos, datos.cajitas, datos.transacciones, registrarMovimiento],
   );
 
   const borrarMovimiento = useCallback(

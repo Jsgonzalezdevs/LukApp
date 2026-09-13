@@ -22,6 +22,21 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.25.1', fecha: '2026-09-13', texto: 'El Asesor ahora cancela correctamente sus consultas, usa un respaldo local único y permite reintentar sin duplicar mensajes.' },
+  { version: '3.25.0', fecha: '2026-09-13', texto: 'El Asesor diferencia una cancelación al salir de un timeout, reemplaza el respaldo local al reintentar y evita duplicar diagnósticos.' },
+  { version: '3.24.0', fecha: '2026-09-13', texto: 'El Asesor evita consultas duplicadas, identifica respuestas vacías y conserva un solo mensaje cuando reintentas.' },
+  { version: '3.23.0', fecha: '2026-09-13', texto: 'Cuando la IA no responde, el Asesor explica el motivo y ofrece reintentar sin duplicar tu pregunta ni tu mensaje.' },
+  { version: '3.22.0', fecha: '2026-09-13', texto: 'El Asesor retoma automáticamente la conversación más reciente para que puedas continuar donde la dejaste.' },
+  { version: '3.21.0', fecha: '2026-09-13', texto: 'Reducimos renders innecesarios de las proyecciones y limpiamos avisos de cancelaciones normales del Asesor.' },
+  { version: '3.20.0', fecha: '2026-09-13', texto: 'El cierre técnico corrige una dependencia del almacenamiento para mantener actualizados los saldos de cajitas después de un ajuste.' },
+  { version: '3.19.0', fecha: '2026-09-13', texto: 'Las compras simples de tarjetas conservan su registro habitual; los detalles de cuotas e intereses solo se envían cuando realmente los configuras.' },
+  { version: '3.18.0', fecha: '2026-09-13', texto: 'Las consultas del Asesor ahora se cancelan al salir y se liberan después de un minuto si el servidor no responde.' },
+  { version: '3.17.0', fecha: '2026-09-13', texto: 'El Asesor tolera respuestas incompletas o inválidas del servidor y vuelve al modo local sin quedarse bloqueado.' },
+  { version: '3.16.0', fecha: '2026-09-13', texto: 'El estado del Asesor ahora distingue entre servidor disponible e inteligencia artificial comprobada, para no prometer una conexión antes de tiempo.' },
+  { version: '3.15.0', fecha: '2026-09-13', texto: 'El historial del Asesor ahora devuelve el foco correctamente, se cierra con Escape y anuncia sus respuestas a lectores de pantalla.' },
+  { version: '3.14.0', fecha: '2026-09-13', texto: 'Ordenamos el manejo de errores de almacenamiento para que cada problema tenga una explicación y un siguiente paso claros.' },
+  { version: '3.13.0', fecha: '2026-09-13', texto: 'Las proyecciones explican mejor su nivel de confianza y las secciones anuncian dónde estás, con una guía interna para mantener consistentes las cifras financieras.' },
+  { version: '3.12.0', fecha: '2026-09-13', texto: 'Mejoramos la claridad de la sincronización y de los errores para que sepas qué quedó guardado, qué está pendiente y qué debes hacer.' },
   { version: '3.11.2', fecha: '2026-09-13', texto: 'La barra superior del Asesor ahora permanece visible mientras revisas el chat, para que siempre tengas a mano el historial, el chat nuevo y la memoria.' },
   { version: '3.11.1', fecha: '2026-09-13', texto: 'El Asesor abre más rápido y siempre empieza un chat nuevo; tus conversaciones anteriores quedan disponibles en el historial.' },
   { version: '3.11.0', fecha: '2026-09-13', texto: 'El superadmin actualiza las consultas del Asesor casi al instante y muestra primero a los usuarios que más lo están utilizando.' },

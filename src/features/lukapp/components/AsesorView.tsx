@@ -126,6 +126,15 @@ const limpiarTextoChat = (t: string): string => {
     .trim();
 };
 
+/** Convierte la respuesta remota en texto seguro para mostrar en el chat. */
+const extraerRespuestaIA = (respuesta: unknown): string | null => {
+  if (!respuesta || typeof respuesta !== 'object') return null;
+  const datos = respuesta as { text?: unknown; offline?: unknown };
+  if (datos.offline || typeof datos.text !== 'string') return null;
+  const texto = limpiarTextoChat(datos.text);
+  return texto || null;
+};
+
 export const AsesorView: React.FC<AsesorViewProps> = ({
   transacciones,
   cajitas,
@@ -218,9 +227,39 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [conexion, setConexion] = useState<EstadoConexion>('despertando');
   const [intentandoDespertar, setIntentandoDespertar] = useState(false);
   const [modalVaquitasAbierto, setModalVaquitasAbierto] = useState(false);
+  const [errorIA, setErrorIA] = useState<string | null>(null);
+  const [textoParaReintentar, setTextoParaReintentar] = useState<string | null>(null);
+  const [validandoSesion, setValidandoSesion] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const historialRef = useRef<HTMLElement>(null);
+  const peticionIARef = useRef<AbortController | null>(null);
+  const cancelacionIARef = useRef<'salida' | 'tiempo' | null>(null);
   const conversacionIdRef = useRef<string | null>(null);
   const creandoConversacionRef = useRef<Promise<string | null> | null>(null);
+
+  useEffect(() => {
+    if (!historialAbierto) return;
+    const anterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const foco = historialRef.current?.querySelector<HTMLElement>('button:not([disabled])');
+    const cerrarConEscape = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') {
+        evento.preventDefault();
+        setHistorialAbierto(false);
+      }
+    };
+    document.addEventListener('keydown', cerrarConEscape);
+    requestAnimationFrame(() => foco?.focus());
+    return () => {
+      document.removeEventListener('keydown', cerrarConEscape);
+      anterior?.focus();
+    };
+  }, [historialAbierto]);
+
+  useEffect(() => () => {
+    cancelacionIARef.current = 'salida';
+    peticionIARef.current?.abort();
+    peticionIARef.current = null;
+  }, []);
 
   const cabecerasIA = async (): Promise<Record<string, string>> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -279,9 +318,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         if (memoriaRes.ok) setMemoria((await memoriaRes.json()).memoria ?? []);
         if (conversacionesRes.ok) {
           const conversacionesCargadas = ((await conversacionesRes.json()).conversaciones ?? []) as ConversacionIA[];
-          // El historial se precarga para que el panel lateral abra sin espera,
-          // pero entrar al Asesor siempre empieza una conversación nueva.
           setConversaciones(conversacionesCargadas);
+          // La conversación más reciente es el punto de continuidad natural.
+          // Si no hay historial, el saludo inicial permanece intacto.
+          if (activo && conversacionesCargadas[0]) {
+            await cargarConversacion(conversacionesCargadas[0], false);
+          }
         }
       } catch {
         // El asesor conserva su funcionamiento local aunque no haya sesión o API.
@@ -512,7 +554,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     fetch(apiUrl('/api/salud'))
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (vigente) setConexion(d?.ia ? 'en-linea' : 'local');
+        // La comprobación de salud solo confirma que el servidor tiene un
+        // proveedor configurado. La respuesta de una consulta real es la que
+        // puede confirmar que la IA está efectivamente en línea.
+        if (vigente) setConexion(d?.ia ? 'configurada' : 'local');
       })
       .catch(() => {
         // Sin servidor no hay IA, pero el motor local sigue respondiendo.
@@ -530,15 +575,44 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // `setTimeout` adivinando cuánto tardaba React en re-renderizar, que es
   // frágil (¿400ms? ¿y si el dispositivo es más lento?). Pasar el texto
   // directo no depende de ningún tiempo de espera.
-  const handleSend = async (textoDirecto?: string) => {
+  const handleSend = async (textoDirecto?: string, esReintento = false) => {
     const textoUsuario = (textoDirecto ?? input).trim();
-    if (!textoUsuario || pensando) return;
+    if (!textoUsuario || pensando || peticionIARef.current) return;
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
-    setMessages((prev) => [...prev, userMsg]);
-    void guardarMensaje(userMsg);
+    if (!esReintento) {
+      setMessages((prev) => [...prev, userMsg]);
+      void guardarMensaje(userMsg);
+    } else {
+      // El primer intento ya dejó la respuesta local como respaldo. Al
+      // reintentar con IA se reemplaza ese respaldo para no mostrar dos
+      // diagnósticos sobre la misma pregunta.
+      setMessages((prev) => {
+        const ultimo = prev[prev.length - 1];
+        return ultimo?.role === 'bot' ? prev.slice(0, -1) : prev;
+      });
+    }
     setInput('');
     setPensando(true);
+    setErrorIA(null);
+    setTextoParaReintentar(null);
+
+    const controlador = new AbortController();
+    peticionIARef.current = controlador;
+    cancelacionIARef.current = null;
+
+    const usarRespaldoLocal = (mensajeError: string) => {
+      setConexion('local');
+      setErrorIA(mensajeError);
+      setTextoParaReintentar(textoUsuario);
+      const { text, newContext, action, actions, suggestions } = responderAsesor(
+        textoUsuario, transacciones, cajitas, cajitasBalances, categorias, lexico, context, disponibleDiarioCop,
+      );
+      setContext(newContext);
+      const respuestaLocal: Message = { id: nuevoId(), role: 'bot', text, action, actions, suggestions };
+      setMessages((prev) => [...prev, respuestaLocal]);
+      void guardarMensaje(respuestaLocal);
+    };
 
     try {
       const simulacion = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
@@ -592,26 +666,43 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       };
 
       const finanzasContext = contextoParaAsesor ?? legacyFinanzasContext;
-      let respondidoPorLLM = false;
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
       try {
-        const res = await fetch(apiUrl('/api/asesor-ia'), {
+        const esperarConsulta = <T,>(promesa: Promise<T>) => new Promise<T>((resolve, reject) => {
+          const timeoutId = window.setTimeout(() => {
+          cancelacionIARef.current = 'tiempo';
+          controlador.abort();
+            reject(new Error('La consulta tardó demasiado.'));
+          }, 60_000);
+          void promesa.then(resolve, reject).finally(() => window.clearTimeout(timeoutId));
+        });
+
+        const cliente = obtenerSupabase();
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (cliente) {
+          setValidandoSesion(true);
+          const sesion = await new Promise<Awaited<ReturnType<typeof cliente.auth.getSession>>>((resolve, reject) => {
+            const timeoutId = window.setTimeout(() => reject(new Error('No se pudo validar tu sesión.')), 8_000);
+            void cliente.auth.getSession().then(resolve, reject).finally(() => window.clearTimeout(timeoutId));
+          });
+          if (sesion.data.session?.access_token) headers.Authorization = `Bearer ${sesion.data.session.access_token}`;
+          setValidandoSesion(false);
+        }
+
+        const res = await esperarConsulta(fetch(apiUrl('/api/asesor-ia'), {
           method: 'POST',
           headers,
-            body: JSON.stringify({
-              prompt: textoUsuario,
-              history: messages.slice(-5),
-              finanzasContext,
-              memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
-            }),
-          });
-
-          const data = await res.json().catch(() => null);
-          if (res.ok) {
-            if (!data.offline && data.text) {
+          signal: controlador.signal,
+          body: JSON.stringify({
+            prompt: textoUsuario,
+            history: messages.slice(-5),
+            finanzasContext,
+            memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
+          }),
+        }));
+        const data = typeof res.json === 'function' ? await esperarConsulta(res.json()).catch(() => null) : null;
+        if (res.ok) {
+          const textoRespuesta = extraerRespuestaIA(data);
+          if (textoRespuesta) {
               // El modelo redacta la respuesta, pero nunca decide qué se
               // guarda: se le pasa lo que la persona dictó por la MISMA
               // puerta que usa el motor local (detectarMovimiento), que corre
@@ -629,62 +720,43 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               );
               setContext(deteccion.newContext);
 
+              const proveedor = data && typeof data === 'object' && typeof (data as { provider?: unknown }).provider === 'string'
+                ? (data as { provider: string }).provider
+                : undefined;
               const botMsg: Message = {
                 id: nuevoId(),
                 role: 'bot',
-                text: limpiarTextoChat(data.text),
-                provider: data.provider,
+                text: textoRespuesta,
+                provider: proveedor,
                 action: deteccion.propuesta?.action,
                 actions: deteccion.propuesta?.actions,
               };
               setMessages((prev) => [...prev, botMsg]);
               void guardarMensaje(botMsg);
-              respondidoPorLLM = true;
-              setConexion('en-linea');
-            }
+            setConexion('en-linea');
           } else {
-            console.warn('[asesor] La API rechazó la consulta:', res.status, data?.error ?? 'sin detalle');
+            usarRespaldoLocal('No encontramos ningún proveedor de IA disponible.');
           }
-        } catch (error) {
-          console.warn('[asesor] No se pudo conectar con la API:', error);
-          // Si falla la red, el fallback offline toma el control
+        } else {
+          const mensaje = res.status === 401 || res.status === 403
+            ? 'No se pudo validar tu sesión para consultar la IA.'
+            : res.status === 429
+              ? 'Alcanzaste el límite de solicitudes. Intenta de nuevo en un momento.'
+              : `La IA respondió con un error (${res.status}).`;
+          usarRespaldoLocal(mensaje);
         }
-
-      // 2. Si no hay LLM configurado o falló, usar el motor offline local.
-      // El indicador baja a 'local' para que el encabezado diga la verdad: si
-      // estas respuestas las da el motor de reglas, no puede seguir anunciando
-      // que hay una IA en línea.
-      if (!respondidoPorLLM) {
-        setConexion('local');
-        const {
-          text: respuesta,
-          newContext,
-          action,
-          actions,
-          suggestions,
-        } = responderAsesor(
-          textoUsuario,
-          transacciones,
-          cajitas,
-          cajitasBalances,
-          categorias,
-          lexico,
-          context,
-          disponibleDiarioCop,
-        );
-        setContext(newContext);
-        const botMsg: Message = {
-          id: nuevoId(),
-          role: 'bot',
-          text: respuesta,
-          action,
-          actions,
-          suggestions,
-        };
-        setMessages((prev) => [...prev, botMsg]);
-        void guardarMensaje(botMsg);
-      }
+      } catch (error) {
+          if (controlador.signal.aborted && cancelacionIARef.current !== 'tiempo') return;
+          const mensaje = error instanceof Error && error.message === 'No se pudo validar tu sesión.'
+            ? error.message
+            : cancelacionIARef.current === 'tiempo'
+              ? 'La IA tardó demasiado en responder. Puedes reintentarlo.'
+              : 'No pudimos conectar con la IA. El motor local sigue disponible.';
+          usarRespaldoLocal(mensaje);
+        }
     } finally {
+      if (peticionIARef.current === controlador) peticionIARef.current = null;
+      setValidandoSesion(false);
       setPensando(false);
     }
   };
@@ -792,17 +864,17 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       </div>
 
       {historialAbierto && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/45" role="dialog" aria-modal="true" aria-label="Conversaciones anteriores">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/45" role="dialog" aria-modal="true" aria-labelledby="historial-asesor-titulo">
           <button
             type="button"
             className="min-w-0 flex-1 cursor-default"
             onClick={() => setHistorialAbierto(false)}
             aria-label="Cerrar historial"
           />
-          <section className="flex h-full w-[min(88vw,22rem)] flex-col border-l border-[var(--fin-line)] bg-[var(--fin-bg)] shadow-2xl">
+          <section ref={historialRef} className="flex h-full w-[min(88vw,22rem)] flex-col border-l border-[var(--fin-line)] bg-[var(--fin-bg)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-4 py-4">
               <div>
-                <h2 className="text-[16px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
+                <h2 id="historial-asesor-titulo" className="text-[16px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
                 <p className="mt-0.5 text-[11px] text-[var(--fin-ink-faint)]">Tus chats guardados con el asesor</p>
               </div>
               <button
@@ -889,7 +961,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             </div>
           </div>
         ) : (
-          <div className="mx-auto flex max-w-2xl flex-col gap-6">
+          <div className="mx-auto flex max-w-2xl flex-col gap-6" aria-live="polite" aria-label="Conversación con el asesor">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -1081,7 +1153,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       style={{ animationDelay: '300ms' }}
                     />
                   </span>
-                  <span>Analizando tus finanzas...</span>
+                  <span>{validandoSesion ? 'Validando tu sesión…' : 'Analizando tus finanzas...'}</span>
                 </div>
               </div>
             )}
@@ -1091,6 +1163,19 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       </div>
 
       {/* Input */}
+      {errorIA && textoParaReintentar ? (
+        <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[12px]" role="status" aria-live="polite">
+          <span className="text-[var(--fin-ink-soft)]">{errorIA}</span>
+          <button
+            type="button"
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1.5 font-semibold text-[var(--fin-on-accent)]"
+            onClick={() => void handleSend(textoParaReintentar, true)}
+            disabled={pensando}
+          >
+            Reintentar con IA
+          </button>
+        </div>
+      ) : null}
       <div className="sticky bottom-0 bg-[var(--fin-bg)] pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(dictado.status === 'listening' || dictado.status === 'processing' || dictado.error) && (
           <p

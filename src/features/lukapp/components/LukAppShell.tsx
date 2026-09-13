@@ -78,6 +78,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
       refrescando={pull.refrescando}
     />
     <main
+      aria-label="Contenido principal de LukApp"
       className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
       style={{
         transform: pull.desplazamiento > 0 ? `translateY(${pull.desplazamiento}px)` : undefined,
@@ -109,6 +110,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
       ) : null}
       {children}
     </main>
+    <p className="sr-only" aria-live="polite">Sección actual: {SECTIONS.find((item) => item.id === section)?.label ?? section}</p>
     </div>
 
     {accion}

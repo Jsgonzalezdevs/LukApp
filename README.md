@@ -1,183 +1,102 @@
-# Portafolio + Ecosistema
+# LukApp
 
-> **Versión actual: `v1.0.0`.** Este proyecto se maneja por versiones en formato
-> `V0.0.0` y **todo cambio sube la versión**, por pequeño que sea. La fuente de
-> verdad es [`src/version.ts`](src/version.ts); las reglas están en
-> [CLAUDE.md](CLAUDE.md). Aplica igual a las personas y a los agentes de IA.
+Aplicación de finanzas personales para Colombia. Permite registrar movimientos
+por texto, voz, imagen y extractos bancarios; organizar cuentas, presupuestos,
+metas, deudas y tarjetas; y analizar el historial financiero.
 
-Dos aplicaciones en un repositorio, con bundles independientes:
+Versión actual: `V3.3.4`. La fuente de versión es [`src/version.ts`](src/version.ts)
+y debe coincidir con `package.json` y `src/features/lukapp/novedades.ts`.
 
-| Ruta | Qué es | Quién entra |
-|---|---|---|
-| `/` | Portafolio público — [juliangonzalez.lat](https://juliangonzalez.lat) | cualquiera |
-| `/ecosistema` | Lanzador de apps privadas, hoy **Finanzas** | solo con cuenta |
+## Funciones
 
-Son dos entradas HTML separadas en Vite, no una SPA con rutas. La app privada
-necesita su propio `<head>` (`noindex`, metas de iOS standalone, manifest de PWA)
-y así los dos bundles quedan disjuntos: el visitante del portafolio nunca
-descarga el código de finanzas.
+- Registro manual, texto libre y dictado en español colombiano.
+- Parser de montos, fechas, categorías, cuentas, comercios y contrapartes.
+- OCR de recibos con Tesseract.js.
+- Extractos PDF de Nu, Nequi, Bancolombia y Davivienda.
+- Detección de duplicados y confirmación antes de guardar.
+- Cuentas, efectivo, cajitas, metas, deudas y tarjetas de crédito.
+- Cuotas, intereses, cuota de manejo, abonos y transferencias.
+- Presupuestos por categoría con proyección al ritmo actual.
+- Tendencias de seis meses, señales de gastos y simulaciones financieras.
+- Calendario financiero y pagos recurrentes con confirmación manual.
+- Contactos, apodos, unificación de nombres y gastos compartidos.
+- Finanzas en Pareja mediante espacios compartidos e invitaciones.
+- Asesor financiero con IA y contexto de la situación del usuario.
+- Informe imprimible, CSV/Excel y respaldo JSON restaurable.
+- PWA instalable, IndexedDB, modo offline y cola de sincronización.
+- Tema claro/oscuro, atajos, accesibilidad móvil y feedback háptico.
+- Blog SEO, sitemap, robots.txt, Open Graph y datos estructurados.
+- Panel de superadmin, roles personalizados y estadísticas de visitas.
 
-## Finanzas
+## Arquitectura
 
-Contabilidad personal en pesos colombianos, pensada para no depender de que
-ningún banco tenga API.
+La entrada es [`src/main.tsx`](src/main.tsx). [`src/RaizAplicacion.tsx`](src/RaizAplicacion.tsx)
+decide entre portada, blog y aplicación privada.
 
-- **Movimientos** dictados o escritos en lenguaje natural (`gasté 45 mil en un
-  juego`), con un parser propio que saca monto, tipo y categoría.
-- **Extractos** en PDF de Nu, Nequi, Bancolombia y Davivienda. Al importar,
-  separa lo nuevo de lo que ya estaba: nunca duplica en silencio ni funde en
-  silencio.
-- **Cuentas, cajitas, deudas y tarjetas**. El saldo siempre es la suma de sus
-  movimientos; decir "tengo X" registra la diferencia como un ajuste, así que la
-  app y el banco nunca terminan discrepando sin rastro.
-- **Rendimiento E.A.** derivado, nunca escrito como movimiento — raíz 365 de la
-  tasa, replayando el historial real.
-- **Categorías propias** junto a las trece que trae la app.
-- **Señales por movimiento**: compara cada gasto contra tu propio historial
-  (inusual, recurrente, hormiga, duplicado, creciendo, nuevo). Todo local, sin
-  llamadas a ningún modelo.
+```text
+src/
+├── apps-dashboard/       Lanzador, roles, superadmin y estadísticas
+├── components/           Componentes transversales y manejo de errores
+├── context/              Contextos globales
+├── lib/                  API, analítica, autenticación y utilidades
+└── features/lukapp/
+    ├── components/       Vistas, modales y componentes visuales
+    ├── data/             Sesión, IndexedDB, Supabase y sincronización
+    ├── hooks/            Voz, OCR, PWA, almacenamiento y gestos
+    ├── lib/              Parser, cálculos y motor financiero
+    └── analista/         Importación y revisión de extractos
 
-### Decisiones que el código defiende con tests
+api/                      Funciones HTTP para transcripción y visitas
+server.ts                 API Express para analista y administración
+server_lib/               Auth, permisos y plantillas bancarias
+supabase/migrations/      Esquema, RLS y cambios de base de datos
+public/                   PWA, marca, sitemap, robots y service worker
+```
 
-- Un saldo es siempre la suma de sus movimientos.
-- El rendimiento estimado se calcula, no se guarda.
-- Deudas y tarjetas son la misma estructura invertida: una compra sube lo que debes.
-- Las señales comparan contra tu historial, no moralizan. Hay un test que exige
-  que el texto nunca diga "malo", "innecesario", "derroche" ni "deberías".
-- El color sigue a la entidad, nunca a su posición en un ranking.
+La navegación principal tiene cinco destinos: Inicio, Dinero, Mes, Asesor y
+Más. Calendario se abre desde Mes; configuración, importación, 4x1000,
+respaldos y cuenta viven en Más.
 
-## Correr en local
+Los repositorios de memoria, IndexedDB y Supabase comparten una interfaz. El
+saldo se reconstruye desde los movimientos y los ajustes no reescriben la
+historia. Row Level Security aísla los datos por usuario.
+
+## Desarrollo
 
 ```bash
 npm install
+npm run dev       # Frontend Vite en http://localhost:5173
+npm run dev:api   # API Express en modo watch
+npm test          # Vitest
+npm run lint      # Oxlint
+npm run build     # TypeScript + Vite producción
+npm run preview   # Preview del build
 ```
 
-Front (las dos entradas, en `http://localhost:5173`):
-
-```bash
-npm run dev
-```
-
-API del analista de extractos, aparte:
-
-```bash
-npm run dev:api
-```
-
-Tests, tipos y lint:
-
-```bash
-npm test
-```
+Para cobertura específica del audio: `npm run test:audio-cobertura`.
 
 ## Variables de entorno
 
-Del lado del navegador (`VITE_`) — **se incrustan en el bundle público**, así
-que aquí solo va lo que puede ser público:
+Frontend (valores publicables): `VITE_SUPABASE_URL`,
+`VITE_SUPABASE_PUBLISHABLE_KEY` (o la antigua `VITE_SUPABASE_ANON_KEY`) y
+`VITE_API_URL`.
 
-| Variable | Para qué |
-|---|---|
-| `VITE_SUPABASE_URL` | proyecto de Supabase |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | clave publicable (la antigua `VITE_SUPABASE_ANON_KEY` sigue funcionando) |
-| `VITE_API_URL` | dónde vive la API del analista |
+Servidor: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANALISTA_TOKEN`,
+`PORT` y `VISITAS_SAL`. Las claves de servicio nunca deben llevar `VITE_`.
+Consulta [`.env.example`](.env.example).
 
-Del lado del servidor, **nunca con prefijo `VITE_`**:
+## Despliegue y base de datos
 
-| Variable | Dónde | Para qué |
-|---|---|---|
-| `SUPABASE_URL` | Render | mismo proyecto |
-| `SUPABASE_SERVICE_ROLE_KEY` | **solo Render** | crear usuarios desde el panel de superadmin |
-| `ANALISTA_TOKEN` | **solo Render** | protege el endpoint que lee extractos |
-| `PORT` | Render | puerto del servidor |
-| `VISITAS_SAL` | Vercel | sal secreta del hash de visitante (ver abajo) |
+Vercel sirve el frontend y las funciones de `api/`; Render puede ejecutar
+`server.ts`. Las migraciones de [`supabase/migrations`](supabase/migrations)
+se aplican en orden. Consulta también [`docs/ARQUITECTURA_AUTH.md`](docs/ARQUITECTURA_AUTH.md),
+[`supabase/README.md`](supabase/README.md) y [`supabase/COMO_APLICAR.md`](supabase/COMO_APLICAR.md).
 
-`VISITAS_SAL` es la única variable secreta que vive en Vercel, y es de la
-función del borde — no lleva `VITE_`, así que no entra al bundle. No es la
-llave de servicio ni se le parece: lo único que habilita es calcular el hash
-diario de un visitante. La llave de servicio sigue existiendo únicamente en
-Render.
+## Convenciones
 
-## Analítica del portafolio
-
-Propia, sin cookies y sin guardar una sola IP. El beacon es una función del
-borde de Vercel (`api/visita.ts`), no el Express de Render, porque Vercel pone
-el país en `x-vercel-ip-country`: se lee de ahí y la IP no se consulta para
-nada más ni sale de esa función.
-
-De cada visita quedan cinco cosas: la ruta, el dominio del referente, el país,
-el tipo de dispositivo y un `visitante` que es `sha256(ip + user agent + fecha +
-sal)`. La fecha va dentro del hash a propósito — la misma persona produce otro
-valor mañana, así que se puede contar cuántos entraron hoy y no se puede seguir
-a nadie entre días.
-
-Nunca se guarda IP, user agent completo, cookie, id de navegador, URL completa
-del referente ni ciudad. Lo de la ciudad es deliberado: con este tráfico, "1
-visitante de Sopó" señala a una persona.
-
-El detalle crudo se borra a los 90 días (`purgar_visitas`) y antes se resume por
-día (`resumir_visitas`), que es lo que sobrevive indefinidamente. Las dos las
-agenda `pg_cron` en la migración 0012; si la extensión no está encendida, el
-resto de la migración igual aplica y solo falta agendarlas.
-
-Por eso el panel dice *"visitantes por día, sumados"* y no *"únicos"*: quien
-vuelve mañana cuenta otra vez, y no hay forma —ni debe haberla— de saber que era
-la misma persona.
-
-La clave publicable es pública por diseño; quien de verdad separa los datos de
-cada usuario es Row Level Security en Postgres, no el secreto de la clave.
-
-## Base de datos
-
-Las migraciones se corren **en orden** desde el SQL Editor de Supabase:
-
-```
-supabase/migrations/0001_finanzas.sql          tablas base + RLS
-supabase/migrations/0002_perfiles_y_roles.sql  perfiles y rol de superadmin
-supabase/migrations/0003_tasa_cajitas.sql      tasa E.A.
-supabase/migrations/0004_tipo_cajitas.sql      cuenta vs cajita
-supabase/migrations/0005_deudas_y_tarjetas.sql deudas, tarjetas y categoría del cargo
-supabase/migrations/0006_movimientos_por_cuenta.sql  movimientos atados a una cuenta
-supabase/migrations/0007_categorias_propias.sql      categorías del usuario
-supabase/migrations/0008_contactos.sql               con quién mueves la plata
-supabase/migrations/0009_presupuestos.sql            topes por categoría
-supabase/migrations/0010_recurrentes.sql             lo que se repite cada mes
-supabase/migrations/0011_apodos.sql                  cómo le dices tú a cada contacto
-supabase/migrations/0012_visitas.sql                 analítica del portafolio
-```
-
-Cada tabla tiene RLS con una política que cubre los cuatro verbos, con `using` y
-`with check`: sin las dos, alguien podría mover una fila ajena a su propia
-cuenta, o insertar una ya marcada con otro `user_id`.
-
-El registro público se apaga desde Supabase → Authentication → Sign In /
-Providers → Email → *Allow new users to sign up*. Es una configuración del
-proyecto, no del código: mientras esté encendida, cualquiera con la URL puede
-crearse una cuenta.
-
-## Despliegue
-
-- **Vercel** sirve el front. Solo las variables `VITE_`.
-- **Render** corre la API. Aquí van `SUPABASE_SERVICE_ROLE_KEY` y
-  `ANALISTA_TOKEN`, y **nunca** en Vercel.
-
-## Estructura
-
-```
-src/
-  components/            portafolio público
-  apps-dashboard/        lanzador + panel de superadmin
-  features/lukapp/
-    lib/                 lógica pura: saldos, señales, tendencias, fechas Bogotá
-    data/                repositorios (memoria, IndexedDB, Supabase) y hooks
-    components/          UI
-    analista/            planificación de importaciones
-server_lib/plantillas/   lectores de extracto, uno por banco
-supabase/migrations/     esquema
-```
-
-Los tres repositorios implementan la misma interfaz y se someten a **una sola
-batería de tests de conformidad**. La divergencia entre ellos es el fallo que de
-verdad importa: el de memoria es el que corre cuando IndexedDB no está
-disponible (Firefox en ventana privada se niega a abrir la base), así que
-cualquier conducta cierta en uno solo es un bug esperando a que alguien la
-encuentre.
+- Todo cambio incrementa la versión en los tres lugares obligatorios.
+- Todo commit incluye `vX.Y.Z`, por ejemplo `feat: v3.3.4 — resumen`.
+- Los cálculos financieros deben ser reconstruibles y tener pruebas.
+- Verde significa entrada y rojo salida; no se usan como decoración.
+- La interfaz está en español y la privacidad del usuario es una restricción
+  de diseño.
