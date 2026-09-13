@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import '../features/lukapp/lukapp.css';
 import { useSesion } from '../features/lukapp/data/useSesion';
 import { useTema } from '../features/lukapp/data/useTema';
@@ -96,6 +96,7 @@ export const AppsRoot: React.FC = () => {
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
   const [mostrarGuiaPWA, setMostrarGuiaPWA] = useState(false);
+  const ultimoAccesoRegistrado = useRef<string | null>(null);
 
   const { ruta, ir } = useRuta();
   const enPortada =
@@ -144,6 +145,34 @@ export const AppsRoot: React.FC = () => {
   }, [adminBackup]);
 
   const emailAutenticado = sesion.estado.modo === 'autenticado' ? sesion.estado.email : undefined;
+
+  // Una sesión persistida no dispara un inicio de sesión nuevo en Supabase.
+  // Registrar esta apertura después de recuperar la sesión da al superadmin la
+  // última vez que la persona realmente entró a LukApp, no la última contraseña
+  // que escribió. Se ignoran fallos: este dato administrativo no debe impedir
+  // usar las finanzas si el servidor está momentáneamente fuera de línea.
+  useEffect(() => {
+    if (sesion.estado.modo !== 'autenticado') {
+      ultimoAccesoRegistrado.current = null;
+      return;
+    }
+    const userId = sesion.estado.userId;
+    if (ultimoAccesoRegistrado.current === userId) return;
+
+    let cancelado = false;
+    const registrarAcceso = async () => {
+      const cliente = obtenerSupabase();
+      const { data: { session } } = await cliente!.auth.getSession();
+      if (!session?.access_token || cancelado) return;
+      const respuesta = await fetch(apiUrl('/api/registrar-ultimo-acceso'), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (respuesta.ok && !cancelado) ultimoAccesoRegistrado.current = userId;
+    };
+    void registrarAcceso();
+    return () => { cancelado = true; };
+  }, [sesion.estado]);
 
   // La instalación se explica cuando la persona ya entró a su cuenta: en ese
   // momento entiende el valor de tener LukApp a mano y no se interrumpe el

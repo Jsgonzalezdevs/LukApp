@@ -281,7 +281,7 @@ app.get('/api/superadmin/usuarios', async (req, res) => {
 
     const { data: perfiles, error: errorPerfiles } = await cliente
       .from('perfiles')
-      .select('id, email, usuario, rol, rol_personalizado_id, created_at')
+      .select('id, email, usuario, rol, rol_personalizado_id, created_at, ultimo_acceso_app_at')
       .order('created_at', { ascending: false });
     if (errorPerfiles) throw errorPerfiles;
 
@@ -301,12 +301,42 @@ app.get('/api/superadmin/usuarios', async (req, res) => {
     return res.status(200).json({
       usuarios: (perfiles ?? []).map((perfil) => ({
         ...perfil,
-        ultimo_acceso_at: ultimoAccesoPorId.get(perfil.id) ?? null,
+        // Las cuentas existentes conservan el último inicio de Auth hasta que
+        // vuelvan a abrir LukApp y quede registrado su acceso real.
+        ultimo_acceso_at: perfil.ultimo_acceso_app_at ?? ultimoAccesoPorId.get(perfil.id) ?? null,
       })),
     });
   } catch (error: any) {
     console.error('Error cargando usuarios del superadmin:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Registrar apertura de LukApp
+// Solo escribe la fila ligada al token recibido; el id nunca viene del cliente
+// ni se puede sustituir por el de otra persona.
+// ----------------------------------------------------------------------
+app.post('/api/registrar-ultimo-acceso', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const { error } = await cliente
+      .from('perfiles')
+      .update({ ultimo_acceso_app_at: new Date().toISOString() })
+      .eq('id', acceso.userId);
+    if (error) throw error;
+    return res.status(204).end();
+  } catch (error: any) {
+    console.warn('No se pudo registrar el último acceso:', error.message || error);
+    return res.status(500).json({ error: 'No se pudo registrar el último acceso.' });
   }
 });
 
