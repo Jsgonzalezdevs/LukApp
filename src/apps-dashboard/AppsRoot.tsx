@@ -11,6 +11,8 @@ import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 import { apiUrl } from '../lib/api';
 import { PWAInstall } from '../features/lukapp/components/landing/PWAInstall';
 
+const LegalLukApp = lazy(() => import('../features/lukapp/components/LegalLukApp').then(({ LegalLukApp }) => ({ default: LegalLukApp })));
+
 /* La portada es la única ruta pública. Separar las vistas privadas evita que
    quien apenas llega descargue OCR, analítica y el dashboard antes de decidir
    crear una cuenta, que es un coste directo para LCP e INP. */
@@ -103,6 +105,7 @@ export const AppsRoot: React.FC = () => {
     !esPwaInstalada() &&
     activeApp === 'finanzas' &&
     (segmentosDe(ruta).length === 0 || ruta === '/' || ruta === '/finanzas');
+  const enLegal = ruta === '/legal' || ruta === '/terminos';
 
   // Además del `start_url` del manifiesto, esto repara instalaciones hechas
   // antes de que la PWA apuntara al Dashboard y deja la URL coherente al abrir.
@@ -332,6 +335,10 @@ export const AppsRoot: React.FC = () => {
       </button>
     </div>
   ) : null;
+
+  if (enLegal) {
+    return <VistaConCarga><LegalLukApp onVolver={() => ir('/')} /></VistaConCarga>;
+  }
 
   if (sesion.estado.modo === 'cargando' || (sesion.estado.modo === 'autenticado' && loadingRol)) {
     return (

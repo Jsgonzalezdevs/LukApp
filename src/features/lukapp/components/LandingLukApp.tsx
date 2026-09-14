@@ -243,11 +243,25 @@ export const LandingLukApp: React.FC<LandingProps> = ({
       </main>
 
       <footer className="footer">
-        <p>© 2026 LukApp — Tu dinero, bajo control</p>
-        <a className="footer-social" href="https://www.instagram.com/lukapp.app/" target="_blank" rel="noopener noreferrer" aria-label="LukApp en Instagram">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r=".75" fill="currentColor" stroke="none" /></svg>
-          <span>@Lukapp.app</span>
-        </a>
+        <div className="footer-contenido">
+          <div className="footer-marca">
+            <BrandWordmark className="footer-logo" />
+            <p>Tu dinero, bajo control.</p>
+          </div>
+          <div className="footer-columna">
+            <h2>Legal</h2>
+            <a href="/legal#privacidad">Política de privacidad</a>
+            <a href="/legal#terminos">Términos y condiciones</a>
+            <a href="/legal#almacenamiento">Almacenamiento y analítica</a>
+            <a href="/legal#datos">Tus derechos sobre los datos</a>
+          </div>
+          <div className="footer-columna">
+            <h2>Contacto</h2>
+            <a href="mailto:jsgonzalezdevs@gmail.com">jsgonzalezdevs@gmail.com</a>
+            <a href="https://www.instagram.com/lukapp.app/" target="_blank" rel="noopener noreferrer">Instagram</a>
+          </div>
+        </div>
+        <p className="footer-copyright">© 2026 LukApp. Todos los derechos reservados.</p>
       </footer>
     </div>
   );

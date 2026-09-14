@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.30.4', fecha: '2026-09-14', texto: 'El pie de la portada ahora reúne claramente los enlaces legales y de contacto para encontrarlos desde cualquier sección.' },
+  { version: '3.30.3', fecha: '2026-09-14', texto: 'Los términos y la política de privacidad ahora identifican al responsable del tratamiento de datos y el correo para ejercer tus derechos.' },
+  { version: '3.30.2', fecha: '2026-09-14', texto: 'Ahora tienes una página legal completa con términos de uso, privacidad, derechos sobre tus datos, almacenamiento, analítica, voz e inteligencia artificial.' },
   { version: '3.30.1', fecha: '2026-09-14', texto: 'Si una sesión guardada recibe un límite temporal al renovarse, LukApp la cierra en este dispositivo para detener los reintentos y permitirte volver a entrar.' },
   { version: '3.30.0', fecha: '2026-09-13', texto: 'La analítica detallada ahora se activa sólo con tu permiso y muestra categorías amplias de navegador, sistema e idioma, sin cookies externas ni datos personales.' },
   { version: '3.29.0', fecha: '2026-09-13', texto: 'La analítica de tráfico ahora identifica fuente, medio y campaña de tus enlaces UTM, además del dominio que envía cada visita.' },
