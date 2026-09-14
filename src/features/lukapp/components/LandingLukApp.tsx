@@ -146,11 +146,11 @@ export const LandingLukApp: React.FC<LandingProps> = ({
     <div className="landing-finanzas">
       {mostrarConsentimientoAnalitica && (
         <aside className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 shadow-xl" aria-label="Preferencia de analítica">
-          <p className="text-sm font-bold text-[var(--fin-ink)]">¿Nos ayudas a mejorar LukApp?</p>
-          <p className="mt-1 text-xs leading-relaxed text-[var(--fin-ink-soft)]">Con tu permiso medimos navegador, sistema, idioma, tamaño de pantalla y zona horaria en categorías amplias. Nunca leemos cookies externas, IP, texto ni datos financieros.</p>
+          <p className="text-sm font-bold text-[var(--fin-ink)]">Términos y privacidad</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--fin-ink-soft)]">Al aceptar, confirmas que conoces nuestros <a className="font-semibold text-[var(--fin-accent)] underline underline-offset-2" href="/legal#terminos">Términos y condiciones</a> y nuestra <a className="font-semibold text-[var(--fin-accent)] underline underline-offset-2" href="/legal#privacidad">Política de privacidad</a>, incluida la analítica opcional descrita allí.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="rounded-xl bg-[var(--fin-accent)] px-3 py-2 text-xs font-bold text-[var(--fin-on-accent)]" onClick={() => { guardarConsentimientoAnalitica(true); setMostrarConsentimientoAnalitica(false); registrarVisita(); }}>Aceptar analítica detallada</button>
-            <button type="button" className="rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs font-bold text-[var(--fin-ink-soft)]" onClick={() => { guardarConsentimientoAnalitica(false); setMostrarConsentimientoAnalitica(false); }}>Solo lo esencial</button>
+            <button type="button" className="rounded-xl bg-[var(--fin-accent)] px-3 py-2 text-xs font-bold text-[var(--fin-on-accent)]" onClick={() => { guardarConsentimientoAnalitica(true); setMostrarConsentimientoAnalitica(false); registrarVisita(); }}>Aceptar</button>
+            <button type="button" className="rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs font-bold text-[var(--fin-ink-soft)]" onClick={() => { guardarConsentimientoAnalitica(false); setMostrarConsentimientoAnalitica(false); }}>Declinar</button>
           </div>
         </aside>
       )}
