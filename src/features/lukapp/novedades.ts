@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.30.1', fecha: '2026-09-14', texto: 'Si una sesión guardada recibe un límite temporal al renovarse, LukApp la cierra en este dispositivo para detener los reintentos y permitirte volver a entrar.' },
+  { version: '3.30.0', fecha: '2026-09-13', texto: 'La analítica detallada ahora se activa sólo con tu permiso y muestra categorías amplias de navegador, sistema e idioma, sin cookies externas ni datos personales.' },
   { version: '3.29.0', fecha: '2026-09-13', texto: 'La analítica de tráfico ahora identifica fuente, medio y campaña de tus enlaces UTM, además del dominio que envía cada visita.' },
   { version: '3.28.6', fecha: '2026-09-13', texto: 'Cada pregunta enviada al Asesor queda registrada incluso si termina en respaldo local, y el panel avisa claramente si Supabase necesita revisión.' },
   { version: '3.28.5', fecha: '2026-09-13', texto: 'El monitor del Asesor ahora calcula correctamente las consultas y tokens de hoy, y muestra fecha y hora en cada registro.' },

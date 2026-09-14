@@ -9,6 +9,19 @@
 
 const RUTA = '/api/visita';
 const CLAVE_ATRIBUCION = 'lukapp_atribucion_marketing';
+const CLAVE_CONSENTIMIENTO = 'lukapp_analitica_detallada';
+
+export const puedeMedirDetalle = (): boolean => {
+  try { return localStorage.getItem(CLAVE_CONSENTIMIENTO) === 'aceptada'; } catch { return false; }
+};
+
+export const guardarConsentimientoAnalitica = (acepta: boolean): void => {
+  try { localStorage.setItem(CLAVE_CONSENTIMIENTO, acepta ? 'aceptada' : 'esencial'); } catch { /* opcional */ }
+};
+
+export const pideConsentimientoAnalitica = (): boolean => {
+  try { return localStorage.getItem(CLAVE_CONSENTIMIENTO) === null; } catch { return false; }
+};
 
 type Atribucion = {
   utm_source?: string;
@@ -63,10 +76,12 @@ export const debeRegistrar = (
 export const registrarVisita = (): void => {
   if (!debeRegistrar(navigator.doNotTrack, import.meta.env.PROD)) return;
 
+  const detalles = puedeMedirDetalle() ? contextoTecnico() : {};
   const cuerpo = JSON.stringify({
     ruta: window.location.pathname,
     referente: document.referrer,
     ...leerAtribucion(),
+    ...detalles,
   });
 
   try {
@@ -89,4 +104,20 @@ export const registrarVisita = (): void => {
     // Contar visitas jamás puede romper la página de nadie. Si falla, se
     // pierde el dato y no pasa nada más.
   }
+};
+
+/** Categorías amplias: el UA completo sería una huella y no se conserva. */
+const contextoTecnico = (): Record<string, string> => {
+  const ua = navigator.userAgent;
+  const navegador = /edg\//i.test(ua) ? 'Edge' : /firefox/i.test(ua) ? 'Firefox' : /safari/i.test(ua) && !/chrome|crios/i.test(ua) ? 'Safari' : /chrome|crios/i.test(ua) ? 'Chrome' : 'Otro';
+  const sistema = /windows/i.test(ua) ? 'Windows' : /android/i.test(ua) ? 'Android' : /iphone|ipad|mac os/i.test(ua) ? 'Apple' : /linux/i.test(ua) ? 'Linux' : 'Otro';
+  const ancho = window.innerWidth;
+  const pantalla = ancho < 640 ? 'compacta' : ancho < 1024 ? 'mediana' : 'amplia';
+  return {
+    idioma: (navigator.language || 'sin-dato').slice(0, 16),
+    navegador,
+    sistema,
+    pantalla,
+    zona_horaria: Intl.DateTimeFormat().resolvedOptions().timeZone.replace('/', '-').slice(0, 48),
+  };
 };

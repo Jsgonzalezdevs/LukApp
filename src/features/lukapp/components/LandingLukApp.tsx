@@ -7,6 +7,7 @@ import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
 import '../styles/LandingLukApp.css';
+import { guardarConsentimientoAnalitica, pideConsentimientoAnalitica, registrarVisita } from '../../../lib/visita';
 
 /* El hero y la navegación forman el primer viewport y llegan con el paquete
    inicial. Estas secciones viven por debajo: separarlas reduce el JS crítico
@@ -90,6 +91,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [compacta, setCompacta] = useState(false);
   const [mostrarPWA, setMostrarPWA] = useState(false);
+  const [mostrarConsentimientoAnalitica, setMostrarConsentimientoAnalitica] = useState(pideConsentimientoAnalitica);
   const sesionActiva = sesion?.estado.modo === 'autenticado' || sesion?.estado.modo === 'local';
 
   /* La barra se encoge al bajar. `passive` porque el handler no llama a
@@ -142,6 +144,16 @@ export const LandingLukApp: React.FC<LandingProps> = ({
 
   return (
     <div className="landing-finanzas">
+      {mostrarConsentimientoAnalitica && (
+        <aside className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 shadow-xl" aria-label="Preferencia de analítica">
+          <p className="text-sm font-bold text-[var(--fin-ink)]">¿Nos ayudas a mejorar LukApp?</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--fin-ink-soft)]">Con tu permiso medimos navegador, sistema, idioma, tamaño de pantalla y zona horaria en categorías amplias. Nunca leemos cookies externas, IP, texto ni datos financieros.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" className="rounded-xl bg-[var(--fin-accent)] px-3 py-2 text-xs font-bold text-[var(--fin-on-accent)]" onClick={() => { guardarConsentimientoAnalitica(true); setMostrarConsentimientoAnalitica(false); registrarVisita(); }}>Aceptar analítica detallada</button>
+            <button type="button" className="rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs font-bold text-[var(--fin-ink-soft)]" onClick={() => { guardarConsentimientoAnalitica(false); setMostrarConsentimientoAnalitica(false); }}>Solo lo esencial</button>
+          </div>
+        </aside>
+      )}
       <a className="saltar-contenido" href="#contenido-principal">
         Saltar al contenido principal
       </a>

@@ -71,12 +71,25 @@ export const useSesion = (): Sesion => {
     }
 
     let cancelado = false;
-    cliente.auth.getSession().then(({ data }) => {
-      if (!cancelado) {
-        setEstado(aEstado(data.session));
-        if (data.session?.user?.user_metadata) {
-          sincronizarDesdeSupabase(data.session.user.user_metadata);
+    cliente.auth.getSession().then(async ({ data, error: fallo }) => {
+      if (cancelado) return;
+
+      // Si Auth limita la renovación, conservar el refresh token hace que cada
+      // apertura vuelva a golpear el mismo endpoint. Se descarta sólo la
+      // sesión de este navegador: la cuenta y sus demás dispositivos siguen
+      // intactos, y la persona puede entrar nuevamente cuando pase el límite.
+      if (esLimiteDeRenovacion(fallo)) {
+        await cliente.auth.signOut({ scope: 'local' });
+        if (!cancelado) {
+          setEstado({ modo: 'anonimo' });
+          setError('Tu sesión guardada se cerró para evitar más intentos automáticos. Vuelve a entrar.');
         }
+        return;
+      }
+
+      setEstado(aEstado(data.session));
+      if (data.session?.user?.user_metadata) {
+        sincronizarDesdeSupabase(data.session.user.user_metadata);
       }
     });
 
@@ -263,6 +276,13 @@ const conTiempoLimite = <T>(promesa: Promise<T>): Promise<T> =>
     promesa,
     new Promise<T>((_, reject) => setTimeout(() => reject(new Error(TIEMPO_AGOTADO)), LIMITE_MS)),
   ]);
+
+/** El 429 de /token durante getSession representa una renovación, no un login. */
+const esLimiteDeRenovacion = (fallo: unknown): boolean => {
+  if (!fallo || typeof fallo !== 'object') return false;
+  const { status, message } = fallo as { status?: unknown; message?: unknown };
+  return status === 429 || (typeof message === 'string' && /too many|rate limit/i.test(message));
+};
 
 /** Supabase reports auth failures in English; this is a Spanish-only tool. */
 const traducir = (mensaje: string): string => {

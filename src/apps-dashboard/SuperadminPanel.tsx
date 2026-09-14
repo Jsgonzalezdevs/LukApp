@@ -545,7 +545,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     const desde = `${dias[0]}T00:00:00-05:00`;
     const { data, error } = await cliente
       .from('visitas')
-      .select('ruta,referente,pais,dispositivo,visitante,creado_en,utm_source,utm_medium,utm_campaign,utm_content')
+      .select('ruta,referente,pais,dispositivo,visitante,creado_en,utm_source,utm_medium,utm_campaign,utm_content,idioma,sistema,navegador,pantalla,zona_horaria')
       .gte('creado_en', desde)
       .order('creado_en', { ascending: false });
 
@@ -1814,6 +1814,19 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         ))}
                       </ul>
                     </div>
+                  </div>
+                  <div className="grid gap-5 lg:grid-cols-3">
+                    {[
+                      ['Navegadores', resumenVisitas.navegadores],
+                      ['Sistemas operativos', resumenVisitas.sistemas],
+                      ['Idiomas del navegador', resumenVisitas.idiomas],
+                    ].map(([titulo, filas]) => (
+                      <div key={titulo as string} className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
+                        <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">{titulo as string}</h3>
+                        <p className="mb-4 text-[10px] text-[var(--fin-ink-faint)]">Sólo de personas que aceptaron analítica detallada.</p>
+                        {(filas as import('./estadisticas').Conteo[]).length === 0 ? <p className="py-4 text-xs text-[var(--fin-ink-faint)]">Sin consentimientos aún.</p> : <ul className="flex flex-col gap-2.5">{(filas as import('./estadisticas').Conteo[]).slice(0, 6).map((dato) => <li key={dato.clave} className="flex items-center justify-between rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs"><span className="font-medium">{dato.clave}</span><span className="font-bold tabular-nums">{dato.n}</span></li>)}</ul>}
+                      </div>
+                    ))}
                   </div>
                 </>
               )}

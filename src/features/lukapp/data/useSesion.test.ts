@@ -8,11 +8,12 @@ import { renderHook, act, waitFor } from '@testing-library/react';
  */
 interface Fallo {
   message: string;
+  status?: number;
 }
 type Aviso = (evento: string, sesion: unknown) => void;
 
 const auth = {
-  getSession: vi.fn<() => Promise<{ data: { session: unknown } }>>(),
+  getSession: vi.fn<() => Promise<{ data: { session: unknown }; error?: Fallo | null }>>(),
   onAuthStateChange:
     vi.fn<(cb: Aviso) => { data: { subscription: { unsubscribe: () => void } } }>(),
   signInWithPassword: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
@@ -277,6 +278,19 @@ describe('useSesion — estado', () => {
       userId: 'u1',
       email: 'yo@correo.com',
     });
+  });
+
+  it('descarta sólo la sesión local si Supabase limita su renovación', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Too Many Requests', status: 429 },
+    });
+
+    const { result } = await montar();
+
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(result.current.estado.modo).toBe('anonimo');
+    expect(result.current.error).toMatch(/sesión guardada/i);
   });
 
   it('sigue el cierre de sesión hecho en otra pestaña', async () => {

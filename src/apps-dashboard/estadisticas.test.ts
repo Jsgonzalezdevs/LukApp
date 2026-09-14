@@ -13,6 +13,11 @@ const visita = (over: Partial<Visita> = {}): Visita => ({
   utm_medium: null,
   utm_campaign: null,
   utm_content: null,
+  idioma: null,
+  sistema: null,
+  navegador: null,
+  pantalla: null,
+  zona_horaria: null,
   ...over,
 });
 

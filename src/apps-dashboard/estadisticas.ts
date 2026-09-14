@@ -12,6 +12,11 @@ export interface Visita {
   utm_medium: string | null;
   utm_campaign: string | null;
   utm_content: string | null;
+  idioma: string | null;
+  sistema: string | null;
+  navegador: string | null;
+  pantalla: string | null;
+  zona_horaria: string | null;
 }
 
 export interface Conteo {
@@ -43,6 +48,9 @@ export interface Resumen {
   fuentes: Conteo[];
   atribuciones: Conteo[];
   campanas: Conteo[];
+  navegadores: Conteo[];
+  sistemas: Conteo[];
+  idiomas: Conteo[];
 }
 
 /** Clasifica un host referente en una categoría legible con icono. */
@@ -90,6 +98,9 @@ export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Re
   const fuentesMap = new Map<string, number>();
   const atribuciones = new Map<string, number>();
   const campanas = new Map<string, number>();
+  const navegadores = new Map<string, number>();
+  const sistemas = new Map<string, number>();
+  const idiomas = new Map<string, number>();
 
   const porDia = new Map<string, { vistas: number; visitantes: Set<string> }>();
   for (const dia of dias) porDia.set(dia, { vistas: 0, visitantes: new Set() });
@@ -124,6 +135,9 @@ export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Re
       sumar(atribuciones, fuenteMedio);
       if (v.utm_campaign) sumar(campanas, `${v.utm_campaign} · ${fuenteMedio}`);
     }
+    if (v.navegador) sumar(navegadores, v.navegador);
+    if (v.sistema) sumar(sistemas, v.sistema);
+    if (v.idioma) sumar(idiomas, v.idioma);
   }
 
   const serie = dias.map((fecha) => {
@@ -155,6 +169,9 @@ export const resumir = (visitas: readonly Visita[], dias: readonly string[]): Re
     fuentes: ordenar(fuentesMap),
     atribuciones: ordenar(atribuciones),
     campanas: ordenar(campanas),
+    navegadores: ordenar(navegadores),
+    sistemas: ordenar(sistemas),
+    idiomas: ordenar(idiomas),
   };
 };
 

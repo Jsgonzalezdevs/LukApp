@@ -57,6 +57,7 @@ export default async function handler(req: Request): Promise<Response> {
   let cuerpo: {
     ruta?: unknown; referente?: unknown; utm_source?: unknown; utm_medium?: unknown;
     utm_campaign?: unknown; utm_content?: unknown;
+    idioma?: unknown; sistema?: unknown; navegador?: unknown; pantalla?: unknown; zona_horaria?: unknown;
   };
   try {
     cuerpo = (await req.json()) as { ruta?: unknown; referente?: unknown };
@@ -87,6 +88,11 @@ export default async function handler(req: Request): Promise<Response> {
     utm_medium: etiqueta(cuerpo.utm_medium, 80),
     utm_campaign: etiqueta(cuerpo.utm_campaign, 120),
     utm_content: etiqueta(cuerpo.utm_content, 120),
+    idioma: etiqueta(cuerpo.idioma, 16),
+    sistema: etiqueta(cuerpo.sistema, 24),
+    navegador: etiqueta(cuerpo.navegador, 24),
+    pantalla: etiqueta(cuerpo.pantalla, 24),
+    zona_horaria: etiqueta(cuerpo.zona_horaria, 48),
   };
 
   try {
