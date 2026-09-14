@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.30.6', fecha: '2026-09-14', texto: 'Los enlaces a los términos y la privacidad ya abren correctamente incluso cuando llegas directamente desde un enlace compartido.' },
   { version: '3.30.5', fecha: '2026-09-14', texto: 'El aviso de privacidad ahora es más breve: reúne términos, privacidad y las opciones claras para aceptar o declinar la analítica opcional.' },
   { version: '3.30.4', fecha: '2026-09-14', texto: 'El pie de la portada ahora reúne claramente los enlaces legales y de contacto para encontrarlos desde cualquier sección.' },
   { version: '3.30.3', fecha: '2026-09-14', texto: 'Los términos y la política de privacidad ahora identifican al responsable del tratamiento de datos y el correo para ejercer tus derechos.' },
