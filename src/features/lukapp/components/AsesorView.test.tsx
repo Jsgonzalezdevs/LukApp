@@ -214,18 +214,23 @@ describe('AsesorView — conversaciones guardadas', () => {
     vi.restoreAllMocks();
   });
 
-  it('restaura el último chat y permite verlo dentro del historial', async () => {
+  it('empieza limpio y permite abrir el último chat desde el historial', async () => {
     render(<AsesorView {...props} />);
+
+    expect(screen.queryByText('¿Cómo iba mi presupuesto?')).toBeNull();
+    expect(screen.getByText(/Soy tu asesor financiero personal/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
+    fireEvent.click(await screen.findByText('Mi presupuesto de septiembre'));
 
     await screen.findByText('¿Cómo iba mi presupuesto?');
     expect(screen.getByText('Ibas dentro de tu presupuesto.')).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
-    expect(screen.getByText('Mi presupuesto de septiembre')).toBeTruthy();
   });
 
   it('permite empezar un chat nuevo sin borrar el anterior', async () => {
     render(<AsesorView {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
+    fireEvent.click(await screen.findByText('Mi presupuesto de septiembre'));
     await screen.findByText('¿Cómo iba mi presupuesto?');
 
     fireEvent.click(screen.getByRole('button', { name: 'Nueva conversación' }));
@@ -325,7 +330,9 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     expect(screen.queryByText('Validando tu sesión…')).toBeNull();
     expect(screen.getByText(/No se pudo validar tu sesión/)).toBeTruthy();
     expect(screen.getByText(/Reintentar con IA/)).toBeTruthy();
-    expect(peticiones.mock.calls.some(([url]) => String(url).includes('/api/asesor-ia'))).toBe(false);
+    expect(peticiones.mock.calls.some(([url]) =>
+      new URL(String(url), 'http://localhost').pathname === '/api/asesor-ia',
+    )).toBe(false);
     expect(input).not.toBeDisabled();
   });
   it.each([401, 403, 429, 500])('explica el error HTTP %s sin anunciar IA en línea', async (status) => {

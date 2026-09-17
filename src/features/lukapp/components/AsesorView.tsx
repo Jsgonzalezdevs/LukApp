@@ -553,7 +553,15 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         // La comprobación de salud solo confirma que el servidor tiene un
         // proveedor configurado. La respuesta de una consulta real es la que
         // puede confirmar que la IA está efectivamente en línea.
-        if (vigente) setConexion(d?.ia ? 'en-linea' : 'local');
+        if (vigente) {
+          setConexion((actual) => {
+            // Un ping saludable confirma la configuración del servidor, no
+            // que el proveedor haya contestado. Además, una respuesta tardía
+            // no debe borrar el resultado de una consulta real.
+            if (actual !== 'despertando') return actual;
+            return d?.ia ? 'configurada' : 'local';
+          });
+        }
       })
       .catch(() => {
         // Sin servidor no hay IA, pero el motor local sigue respondiendo.
@@ -861,7 +869,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
                   const data = await res.json();
                   console.log('[asesor] Servidor disponible, IA:', data?.ia);
-                  setConexion(data?.ia ? 'en-linea' : 'local');
+                  setConexion(data?.ia ? 'configurada' : 'local');
                 } catch (error) {
                   console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
                   setConexion('local');

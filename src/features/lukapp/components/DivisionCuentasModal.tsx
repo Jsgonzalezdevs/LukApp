@@ -245,7 +245,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
                     onBlur={(e) => {
                       if (!e.target.value.trim()) cambiarNombre(indice, `Persona ${indice + 1}`);
                     }}
-                    className="min-w-0 flex-1 bg-transparent px-1 text-[14px] font-semibold text-[var(--fin-ink)] outline-none focus:border-b focus:border-orange-500"
+                    className="min-w-0 flex-1 bg-transparent px-1 text-[16px] font-semibold text-[var(--fin-ink)] outline-none focus:border-b focus:border-orange-500"
                   />
                   <button
                     type="button"
