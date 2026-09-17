@@ -83,12 +83,12 @@ const MIN_MS = 650;
  * Ahora cada segmento es su PROPIA grabación completa, con su propio
  * `MediaRecorder` que arranca y para solo -- exactamente el mismo mecanismo
  * que ya se usaba (y funcionaba bien) para la transcripción final de siempre.
- * Nunca se manda un fragmento a medias, solo archivos completos y válidos; el
- * texto de cada uno se pega con un espacio de este lado. El costo es un
- * huequito de audio de la duración de la ida y vuelta a Groq entre un
- * segmento y el siguiente -- inaudible para esto, y de todas formas la
- * transcripción DEFINITIVA (la que de verdad se guarda) sigue viniendo de una
- * sola grabación continua sin cortes, igual que antes de este cambio.
+ * Nunca se manda un fragmento a medias, solo archivos completos y válidos. El
+ * segmento siguiente empieza apenas termina el anterior, sin esperar la ida y
+ * vuelta a Groq; las peticiones se encolan para conservar el orden del texto.
+ * Esto importa al hacer una pausa: la persona puede seguir hablando mientras
+ * el fragmento anterior aún se transcribe. La transcripción DEFINITIVA (la que
+ * de verdad se guarda) sigue viniendo de una sola grabación continua.
  *
  * 2,8 segundos conserva suficiente contexto para una frase financiera corta,
  * pero muestra una primera lectura mucho antes que esperar cuatro segundos.
@@ -275,6 +275,9 @@ export const useAudioCapture = (
   // pegarle el siguiente segmento con un espacio explícito -- nunca se
   // concatena audio a medias, solo texto ya transcrito de archivos completos.
   const textoAcumuladoRef = useRef('');
+  // Grabar y transcribir son procesos separados: la cola conserva el orden de
+  // las respuestas sin obligar al micrófono a esperar la red entre segmentos.
+  const colaParcialesRef = useRef<Promise<void>>(Promise.resolve());
 
   const detenerMedidor = useCallback(() => {
     if (medidorRafRef.current !== null) {
@@ -376,10 +379,20 @@ export const useAudioCapture = (
         return;
       }
 
-      peticionTranscribir(audioSeg, tipoSeg, 'parcial', vocabularioRef.current)
-        .then((datos) => {
-          if (miSesion !== sesionRef.current) return;
-          if (!datos || datos.offline) return;
+      // El micrófono vuelve a grabar ANTES de esperar la red. Antes se hacía
+      // en `finally`, creando un hueco de varios segundos en el que una frase
+      // dicha después de una pausa nunca llegaba a los parciales.
+      continuarConElSiguiente();
+      colaParcialesRef.current = colaParcialesRef.current
+        .then(async () => {
+          if (!relanzarSegmentosRef.current || miSesion !== sesionRef.current) return;
+          const datos = await peticionTranscribir(
+            audioSeg,
+            tipoSeg,
+            'parcial',
+            vocabularioRef.current,
+          );
+          if (miSesion !== sesionRef.current || !datos || datos.offline) return;
           const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
           // El mismo filtro de alucinaciones que la transcripción final: un
           // segmento de puro silencio entre frases no debe colarse como
@@ -389,8 +402,7 @@ export const useAudioCapture = (
             setInterim(textoAcumuladoRef.current);
           }
         })
-        .catch(() => {})
-        .finally(continuarConElSiguiente);
+        .catch(() => {});
     };
 
     segmentoActivoRef.current = segmento;
@@ -670,6 +682,7 @@ export const useAudioCapture = (
     // reservar toda la subida para la transcripción definitiva.
     relanzarSegmentosRef.current = conexionPermiteParciales();
     textoAcumuladoRef.current = '';
+    colaParcialesRef.current = Promise.resolve();
     if (relanzarSegmentosRef.current) iniciarSegmento(stream, miSesion);
     setStatus('listening');
     topeRef.current = setTimeout(stop, MAX_MS);

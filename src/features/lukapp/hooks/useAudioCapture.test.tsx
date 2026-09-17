@@ -482,6 +482,51 @@ describe('useAudioCapture', () => {
     expect(cerrarContexto).toHaveBeenCalled();
   });
 
+  it('sigue grabando durante una pausa sin esperar la transcripción del segmento anterior', async () => {
+    instalarConexion('4g');
+    let resolverPrimero: ((respuesta: Response) => void) | undefined;
+    let resolverSegundo: ((respuesta: Response) => void) | undefined;
+    vi.mocked(fetch)
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => {
+        resolverPrimero = resolve;
+      }))
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => {
+        resolverSegundo = resolve;
+      }));
+    const { result } = renderHook(() => useAudioCapture(vi.fn()));
+
+    await act(async () => result.current.start());
+    expect(grabadoras).toHaveLength(2);
+
+    await act(async () => {
+      grabadoras[1].stop();
+      await Promise.resolve();
+    });
+    expect(grabadoras).toHaveLength(3);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      grabadoras[2].stop();
+      await Promise.resolve();
+    });
+    expect(grabadoras).toHaveLength(4);
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      resolverPrimero?.(await respuesta({ text: 'me gasté veinte mil pesos' }));
+    });
+    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.interim).toBe('me gasté veinte mil pesos'));
+
+    await act(async () => {
+      resolverSegundo?.(await respuesta({ text: 'en Rappi' }));
+    });
+    await waitFor(() => {
+      expect(result.current.interim).toBe('me gasté veinte mil pesos en Rappi');
+    });
+    await act(async () => result.current.cancel());
+  });
+
   it('en iPhone usa una sola grabadora para conservar válido el audio final', async () => {
     instalarConexion('4g');
     Object.defineProperty(navigator, 'userAgent', {
