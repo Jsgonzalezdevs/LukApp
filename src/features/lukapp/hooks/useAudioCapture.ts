@@ -449,6 +449,10 @@ export const useAudioCapture = (
   }, [quitarTope, detenerSegmentos]);
 
   const cancel = useCallback(() => {
+    // Invalida también una petición final que ya esté en vuelo. Así su
+    // respuesta no puede cerrar ni entregar texto dentro de la grabación que
+    // la persona abra después de cancelar esta.
+    sesionRef.current += 1;
     canceladoRef.current = true;
     quitarTope();
     detenerMedidor();
@@ -615,6 +619,8 @@ export const useAudioCapture = (
           vocabularioRef.current,
         );
 
+        if (miSesion !== sesionRef.current) return;
+
         if (!datos) {
           setError('No se pudo conectar para transcribir. Revisa tu conexión o la API.');
           return;
@@ -646,9 +652,13 @@ export const useAudioCapture = (
 
         onFinalRef.current(texto);
       } catch {
-        setError('No se pudo conectar para transcribir.');
+        if (miSesion === sesionRef.current) {
+          setError('No se pudo conectar para transcribir.');
+        }
       } finally {
-        setStatus('idle');
+        // Una respuesta vieja no puede apagar el indicador de una grabación
+        // nueva que ya esté escuchando.
+        if (miSesion === sesionRef.current) setStatus('idle');
       }
     };
 

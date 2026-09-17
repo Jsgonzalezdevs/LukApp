@@ -38,7 +38,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
 
   const [overlayAbierto, setOverlayAbierto] = useState(false);
   const [textoRevelado, setTextoRevelado] = useState<string | null>(null);
-  const descartadoRef = useRef(false);
   // El estado de React se actualiza en el siguiente render. Este ref protege
   // los dos toques que un móvil puede entregar antes de que aparezca la fase
   // de procesamiento: solo el primero puede detener la grabación.
@@ -59,10 +58,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   }, []);
 
   const manejarTextoFinal = useCallback((texto: string) => {
-    if (descartadoRef.current || transcripcionFinalizandoRef.current) {
-      descartadoRef.current = false;
-      return;
-    }
+    if (transcripcionFinalizandoRef.current) return;
     transcripcionFinalizandoRef.current = true;
     // No esperamos a que termine una animación: en iOS una actualización
     // tardía del recorder podía dejar el texto en el overlay indefinidamente.
@@ -70,7 +66,16 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
     // ser el siguiente estado de la sesión.
     setTextoRevelado(null);
     setOverlayAbierto(false);
-    onDictado(texto);
+    try {
+      onDictado(texto);
+    } finally {
+      // La bandera sólo protege la transición de este mismo evento. Dejarla
+      // activa hasta otro callback bloqueaba el micrófono para siempre cuando
+      // la persona cerraba con X el gasto que acababa de transcribir.
+      void Promise.resolve().then(() => {
+        transcripcionFinalizandoRef.current = false;
+      });
+    }
   }, [onDictado]);
 
   const dictation = useDictation(manejarTextoFinal, vocabulario);
@@ -131,7 +136,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   const cancelarDictado = () => {
     haptic.trigger('light');
     audio.play('click');
-    descartadoRef.current = true;
     transcripcionFinalizandoRef.current = false;
     dictation.cancel();
     setTextoRevelado(null);

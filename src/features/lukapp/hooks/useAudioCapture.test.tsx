@@ -243,6 +243,45 @@ describe('useAudioCapture', () => {
     expect(pista.stop).toHaveBeenCalled();
   });
 
+  it('ignora una respuesta tardía cancelada sin bloquear la grabación siguiente', async () => {
+    let resolverAnterior: ((respuesta: Response) => void) | undefined;
+    const respuestaAnterior = new Promise<Response>((resolve) => {
+      resolverAnterior = resolve;
+    });
+    vi.mocked(fetch)
+      .mockImplementationOnce(() => respuestaAnterior)
+      .mockImplementationOnce(() => respuesta({ text: 'gasté diez mil' }));
+    const alFinal = vi.fn();
+    const { result } = renderHook(() => useAudioCapture(alFinal));
+
+    await act(async () => result.current.start());
+    await act(async () => {
+      ahora += 900;
+      result.current.stop();
+      await Promise.resolve();
+    });
+    expect(result.current.status).toBe('processing');
+
+    act(() => result.current.cancel());
+    await act(async () => result.current.start());
+    expect(result.current.status).toBe('listening');
+
+    await act(async () => {
+      resolverAnterior?.(new Response(JSON.stringify({ text: 'pagué lo anterior' })));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(alFinal).not.toHaveBeenCalled();
+    expect(result.current.status).toBe('listening');
+
+    await act(async () => {
+      ahora += 900;
+      result.current.stop();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(alFinal).toHaveBeenCalledWith('gasté diez mil'));
+  });
+
   it('explica un permiso denegado y recuerda que ya se intentó pedirlo', async () => {
     (navigator.mediaDevices.getUserMedia as ReturnType<typeof vi.fn>).mockRejectedValue(
       new DOMException('No', 'NotAllowedError'),
