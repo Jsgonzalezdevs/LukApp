@@ -12,7 +12,7 @@ const respuesta = (cuerpo: unknown, status = 200) =>
   );
 
 describe('transcripción de voz', () => {
-  it('usa el modelo de máxima precisión para la transcripción definitiva', async () => {
+  it('usa exclusivamente Groq aunque exista una clave de OpenAI', async () => {
     const fetcher = vi.fn<typeof fetch>();
     fetcher.mockImplementation(() => respuesta({ text: 'Pagué veinte mil en Mi Bolsillo' }));
 
@@ -26,11 +26,13 @@ describe('transcripción de voz', () => {
     expect(resultado).toMatchObject({ success: true, text: 'Pagué veinte mil en Mi Bolsillo' });
     expect(fetcher).toHaveBeenCalledOnce();
     const [url, opciones] = fetcher.mock.calls[0];
-    expect(url).toBe('https://api.openai.com/v1/audio/transcriptions');
+    expect(url).toBe('https://api.groq.com/openai/v1/audio/transcriptions');
     const formulario = opciones?.body as FormData;
-    expect(formulario.get('model')).toBe('gpt-transcribe');
-    expect(formulario.getAll('keywords[]')).toContain('Mi Bolsillo');
-    expect(formulario.getAll('languages[]')).toEqual(['es']);
+    expect(formulario.get('model')).toBe('whisper-large-v3');
+    expect(formulario.get('prompt')).toContain('Mi Bolsillo');
+    expect(formulario.get('prompt')).toContain('Nequi');
+    expect(formulario.get('language')).toBe('es');
+    expect(formulario.get('response_format')).toBe('verbose_json');
   });
 
   it('prioriza respuesta rápida en parciales y conserva Whisper grande', async () => {
@@ -51,11 +53,9 @@ describe('transcripción de voz', () => {
     expect(formulario.get('response_format')).toBe('verbose_json');
   });
 
-  it('cae al segundo proveedor si el primero falla', async () => {
+  it('nunca intenta OpenAI si Groq falla', async () => {
     const fetcher = vi.fn<typeof fetch>();
-    fetcher
-      .mockImplementationOnce(() => respuesta({ error: 'sin cupo' }, 429))
-      .mockImplementationOnce(() => respuesta({ text: 'recibí cien mil' }));
+    fetcher.mockImplementationOnce(() => respuesta({ error: 'sin cupo' }, 429));
 
     const resultado = await transcribirAudio(audio, 'audio/webm', {
       entorno: { OPENAI_API_KEY: 'openai', GROQ_API_KEY: 'groq' },
@@ -63,9 +63,9 @@ describe('transcripción de voz', () => {
       fetcher,
     });
 
-    expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(fetcher.mock.calls[1][0]).toBe('https://api.groq.com/openai/v1/audio/transcriptions');
-    expect(resultado).toMatchObject({ success: true, text: 'recibí cien mil' });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0][0]).toBe('https://api.groq.com/openai/v1/audio/transcriptions');
+    expect(resultado).toEqual({ offline: true, error: 'No se pudo transcribir' });
   });
 
   it('calcula una señal baja cuando Whisper oyó principalmente silencio', async () => {

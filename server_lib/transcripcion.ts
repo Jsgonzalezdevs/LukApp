@@ -1,11 +1,10 @@
 export type ModoTranscripcion = 'parcial' | 'final';
 
 interface ProveedorTranscripcion {
-  nombre: 'OpenAI' | 'Groq';
+  nombre: 'Groq';
   llave: string;
   url: string;
   modelo: string;
-  tipo: 'gpt-transcribe' | 'whisper';
 }
 
 interface SegmentoWhisper {
@@ -31,7 +30,6 @@ export interface FalloTranscripcion {
   error: string;
 }
 
-const URL_OPENAI = 'https://api.openai.com/v1/audio/transcriptions';
 const URL_GROQ = 'https://api.groq.com/openai/v1/audio/transcriptions';
 
 /**
@@ -116,35 +114,17 @@ export const nombreAudioSegunTipo = (tipo: string): string => {
   return 'audio.webm';
 };
 
-const proveedoresDisponibles = (
+const proveedorGroq = (
   entorno: Record<string, string | undefined>,
-  modo: ModoTranscripcion,
-): ProveedorTranscripcion[] => {
-  const openai: ProveedorTranscripcion | null = entorno.OPENAI_API_KEY
-    ? {
-        nombre: 'OpenAI',
-        llave: entorno.OPENAI_API_KEY,
-        url: URL_OPENAI,
-        modelo: 'gpt-transcribe',
-        tipo: 'gpt-transcribe',
-      }
-    : null;
-  const groq: ProveedorTranscripcion | null = entorno.GROQ_API_KEY
+): ProveedorTranscripcion | null =>
+  entorno.GROQ_API_KEY
     ? {
         nombre: 'Groq',
         llave: entorno.GROQ_API_KEY,
         url: URL_GROQ,
         modelo: 'whisper-large-v3',
-        tipo: 'whisper',
       }
     : null;
-
-  // La lectura parcial favorece respuesta inmediata. La definitiva favorece el
-  // modelo recomendado para máxima precisión y conserva Whisper como respaldo.
-  return modo === 'parcial'
-    ? [groq, openai].filter((p): p is ProveedorTranscripcion => p !== null)
-    : [openai, groq].filter((p): p is ProveedorTranscripcion => p !== null);
-};
 
 const estimarCalidadWhisper = (
   segmentos: readonly SegmentoWhisper[] | undefined,
@@ -174,22 +154,15 @@ const construirFormulario = (
   vocabulario: readonly string[],
 ): FormData => {
   const palabrasClave = [...PALABRAS_CLAVE_BASE, ...vocabulario];
-  const contextoPersonal = vocabulario.length > 0
-    ? `${CONTEXTO_BASE} Nombres esperados en esta cuenta: ${vocabulario.join(', ')}.`
-    : CONTEXTO_BASE;
+  const contextoPersonal =
+    `${CONTEXTO_BASE} Ortografías esperadas: ${palabrasClave.join(', ')}.`;
   const formulario = new FormData();
   formulario.append('file', audio, nombreAudioSegunTipo(tipo));
   formulario.append('model', proveedor.modelo);
   formulario.append('prompt', contextoPersonal);
-
-  if (proveedor.tipo === 'gpt-transcribe') {
-    for (const palabra of palabrasClave) formulario.append('keywords[]', palabra);
-    formulario.append('languages[]', 'es');
-  } else {
-    formulario.append('language', 'es');
-    formulario.append('temperature', '0');
-    formulario.append('response_format', 'verbose_json');
-  }
+  formulario.append('language', 'es');
+  formulario.append('temperature', '0');
+  formulario.append('response_format', 'verbose_json');
 
   return formulario;
 };
@@ -202,56 +175,59 @@ interface OpcionesTranscripcion {
   onError?: (mensaje: string) => void;
 }
 
-/** Ejecuta la mejor transcripción disponible y cae al segundo proveedor. */
+/**
+ * Transcribe exclusivamente con Groq.
+ *
+ * OPENAI_API_KEY se ignora intencionalmente en este flujo: LukApp es gratuito
+ * y una clave olvidada en el entorno nunca debe convertir el dictado en un
+ * consumo facturable de OpenAI.
+ */
 export const transcribirAudio = async (
   audio: Blob,
   tipo: string,
   opciones: OpcionesTranscripcion,
 ): Promise<ResultadoTranscripcion | FalloTranscripcion> => {
-  const proveedores = proveedoresDisponibles(opciones.entorno, opciones.modo);
-  if (proveedores.length === 0) {
+  const proveedor = proveedorGroq(opciones.entorno);
+  if (!proveedor) {
     return { offline: true, error: 'Falta llave de transcripción' };
   }
 
   const hacerFetch = opciones.fetcher ?? fetch;
-  for (const proveedor of proveedores) {
-    try {
-      const respuesta = await hacerFetch(proveedor.url, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${proveedor.llave}` },
-        body: construirFormulario(
-          proveedor,
-          audio,
-          tipo,
-          opciones.vocabulario ?? [],
-        ),
-      });
+  try {
+    const respuesta = await hacerFetch(proveedor.url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${proveedor.llave}` },
+      body: construirFormulario(
+        proveedor,
+        audio,
+        tipo,
+        opciones.vocabulario ?? [],
+      ),
+    });
 
-      if (!respuesta.ok) {
-        const detalle = await respuesta.text();
-        opciones.onError?.(
-          `[transcribir] ${proveedor.nombre} ${respuesta.status}: ${detalle.slice(0, 200)}`,
-        );
-        continue;
-      }
-
-      const datos = (await respuesta.json()) as RespuestaTranscripcion;
-      const text = typeof datos.text === 'string' ? datos.text.trim() : '';
-      if (!text) {
-        opciones.onError?.(`[transcribir] ${proveedor.nombre} devolvió texto vacío`);
-        continue;
-      }
-      return {
-        success: true,
-        text,
-        calidad:
-          proveedor.tipo === 'whisper' ? estimarCalidadWhisper(datos.segments) : undefined,
-      };
-    } catch (error) {
+    if (!respuesta.ok) {
+      const detalle = await respuesta.text();
       opciones.onError?.(
-        `[transcribir] ${proveedor.nombre} error: ${error instanceof Error ? error.message : String(error)}`,
+        `[transcribir] ${proveedor.nombre} ${respuesta.status}: ${detalle.slice(0, 200)}`,
       );
+      return { offline: true, error: 'No se pudo transcribir' };
     }
+
+    const datos = (await respuesta.json()) as RespuestaTranscripcion;
+    const text = typeof datos.text === 'string' ? datos.text.trim() : '';
+    if (!text) {
+      opciones.onError?.(`[transcribir] ${proveedor.nombre} devolvió texto vacío`);
+      return { offline: true, error: 'No se pudo transcribir' };
+    }
+    return {
+      success: true,
+      text,
+      calidad: estimarCalidadWhisper(datos.segments),
+    };
+  } catch (error) {
+    opciones.onError?.(
+      `[transcribir] ${proveedor.nombre} error: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 
   return { offline: true, error: 'No se pudo transcribir' };
