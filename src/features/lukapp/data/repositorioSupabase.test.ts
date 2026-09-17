@@ -190,4 +190,87 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
       ]),
     ).rejects.toThrow('20260830190000_cuotas_tarjetas.sql');
   });
+
+  it('envía cuotas como null en compras simples sin financiación', async () => {
+    const guardado: Record<string, unknown>[] = [];
+    const cliente = {
+      from: () => ({
+        upsert: (filas: Record<string, unknown> | Record<string, unknown>[]) => {
+          guardado.push(...(Array.isArray(filas) ? filas : [filas]));
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as unknown as SupabaseClient;
+
+    await new RepositorioSupabase(cliente, 'u1').guardarTransacciones([
+      {
+        id: 't-simple', kind: 'gasto', amountCop: 50000, category: 'otros',
+        description: 'Compra simple', occurredOn: '2026-09-01', cuentaId: 'tarjeta-1',
+        rawTranscript: '', cuotasTotal: 1, cuotaCop: 50000,
+        createdAt: '2026-09-01T00:00:00.000Z',
+      },
+    ]);
+
+    expect(guardado[0]).toMatchObject({
+      id: 't-simple',
+      cuotas_total: null,
+      cuota_cop: null,
+    });
+  });
+
+  it('compensa el movimiento si falla la transacción remota', async () => {
+    const borrados: { tabla: string; id: string }[] = [];
+    const cliente = {
+      from: (tabla: string) => ({
+        upsert: () =>
+          Promise.resolve(
+            tabla === 'transacciones'
+              ? { error: { message: 'violates check constraint "transacciones_cuotas_validas"' } }
+              : { error: null },
+          ),
+        delete: () => ({
+          eq: (_col: string, val: string) => {
+            borrados.push({ tabla, id: val });
+            return Promise.resolve({ error: null });
+          },
+        }),
+      }),
+    } as unknown as SupabaseClient;
+
+    const mov = {
+      id: 'm1', cajitaId: 'c1', kind: 'compra' as const, deltaCop: 50000,
+      categoria: null, occurredOn: '2026-09-01', nota: '', createdAt: '2026-09-01T00:00:00.000Z',
+    };
+    const tx = {
+      id: 't1', kind: 'gasto' as const, amountCop: 50000, category: 'otros' as const,
+      description: 'Compra', occurredOn: '2026-09-01', cuentaId: 'c1', rawTranscript: '',
+      cuotasTotal: null, cuotaCop: null, createdAt: '2026-09-01T00:00:00.000Z',
+    };
+
+    await expect(
+      new RepositorioSupabase(cliente, 'u1').guardarMovimientosConTransaccion([mov], tx),
+    ).rejects.toThrow();
+
+    // Debe haber borrado el movimiento de la cajita para no dejarlo registrado a medias
+    expect(borrados).toContainEqual({ tabla: 'cajita_movimientos', id: 'm1' });
+  });
+
+  it('elimina primero el rastro redundante y después la transacción canónica', async () => {
+    const orden: string[] = [];
+    const cliente = {
+      from: (tabla: string) => ({
+        delete: () => ({
+          eq: async (_col: string, id: string) => {
+            orden.push(`${tabla}:${id}`);
+            return { error: null };
+          },
+        }),
+      }),
+    } as unknown as SupabaseClient;
+
+    await new RepositorioSupabase(cliente, 'u1')
+      .borrarMovimientoConTransaccion('mov-1', 'tx-1');
+
+    expect(orden).toEqual(['cajita_movimientos:mov-1', 'transacciones:tx-1']);
+  });
 });

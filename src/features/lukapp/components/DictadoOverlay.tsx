@@ -152,6 +152,11 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 >
                   {fase === 'procesando' ? COPY.input.transcribiendo : COPY.input.dictadoPrompt}
                 </motion.p>
+                {fase === 'escuchando' ? (
+                  <p className="mt-3 max-w-sm text-[14px] font-medium leading-relaxed text-white/65">
+                    También puedes abonar tarjetas, mover plata entre cuentas y cajitas, actualizar saldos o registrar rendimientos.
+                  </p>
+                ) : null}
 
                 {/* El pulso que reacciona a la voz: nada mientras procesa (ya no
  hay audio que medir), pero mientras escucha crece y se apaga con

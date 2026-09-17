@@ -100,6 +100,17 @@ describe('DeudasView', () => {
     expect(screen.getByText(/12 cuotas de \$74\.938/)).toBeInTheDocument();
   });
 
+  it('does not show the same linked purchase in both card histories', () => {
+    const tx = compra({ id: 'operacion-1', amountCop: 200_000, occurredOn: '2026-08-05' });
+    montar({
+      movimientos: [mov({ id: 'operacion-1' })],
+      transacciones: [tx],
+    });
+
+    expect(screen.getByText('Bold Sa*Platzi')).toBeInTheDocument();
+    expect(screen.queryByText(/debías/)).not.toBeInTheDocument();
+  });
+
   it('makes this month\'s card payment visible without reducing available money', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-30T12:00:00-05:00'));

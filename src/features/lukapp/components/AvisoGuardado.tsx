@@ -8,6 +8,8 @@ export interface Guardado {
   texto: string;
   /** Si el monto se sale de lo normal en esa categoría, la frase que lo dice. */
   aviso?: string | null;
+  /** Operaciones compuestas no se pueden deshacer borrando una sola transacción. */
+  permitirDeshacer?: boolean;
 }
 
 interface AvisoGuardadoProps {
@@ -82,15 +84,17 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
                 </p>
               ) : null}
             </div>
-            <button
-              type="button"
-              onClick={() => onDeshacer(guardado.id)}
-              className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
-            >
-              <Undo2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-              Deshacer
-              <span className="tabular-nums text-[var(--fin-ink-faint)]">{restante}</span>
-            </button>
+            {guardado.permitirDeshacer !== false ? (
+              <button
+                type="button"
+                onClick={() => onDeshacer(guardado.id)}
+                className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
+              >
+                <Undo2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+                Deshacer
+                <span className="tabular-nums text-[var(--fin-ink-faint)]">{restante}</span>
+              </button>
+            ) : null}
           </div>
         </motion.div>
       ) : null}

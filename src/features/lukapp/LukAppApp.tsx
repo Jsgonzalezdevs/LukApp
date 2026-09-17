@@ -11,7 +11,7 @@ import { claveDePeriodo, etiquetaDePeriodo, periodoAdyacente } from './lib/perio
 import { nuevoId } from './lib/id';
 import { movimientoEnBlanco } from './lib/parseTransaction';
 import { parseMultipleTransactions } from './lib/parseMultipleTransactions';
-import { parseTransferenciaVoz, type TransferenciaPorVoz } from './lib/parseTransferenciaVoz';
+import { parseComandoVoz, type ComandoVoz, type ComandoVozConfirmado } from './lib/parseComandoVoz';
 import type { ParsedTransaction } from './lib/parseTransaction';
 import { aprenderDe } from './lib/aprendizaje';
 import { useAlmacen } from './data/useAlmacen';
@@ -27,6 +27,7 @@ import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
 import { ES_PASIVO, etiquetaTipoCajita } from './data/modelos';
+import { idsPasivos, saldosPorCajita } from './lib/cajitas';
 import { ContactosView } from './components/ContactosView';
 import { BuscadorMovimientos } from './components/BuscadorMovimientos';
 import { PanelAtajos } from './components/PanelAtajos';
@@ -84,6 +85,7 @@ import { BotonAnotar } from './components/BotonAnotar';
 import { DetalleMovimiento } from './components/DetalleMovimiento';
 import { AvisoGuardado } from './components/AvisoGuardado';
 import type { Guardado } from './components/AvisoGuardado';
+import { ConfirmarComandoVoz } from './components/ConfirmarComandoVoz';
 import { Onboarding } from './components/Onboarding';
 import { PANELES_AJUSTES, SECTIONS } from './sections';
 import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
@@ -313,7 +315,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
   const [multiPending, setMultiPending] = useState<ParsedTransaction[] | null>(null);
-  const [transferenciaPorVoz, setTransferenciaPorVoz] = useState<TransferenciaPorVoz | null>(null);
+  const [comandoPorVoz, setComandoPorVoz] = useState<ComandoVoz | null>(null);
   const [disparoDictado, setDisparoDictado] = useState(0);
   const [editando, setEditando] = useState<Transaction | null>(null);
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
@@ -466,6 +468,17 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [cajitas],
   );
 
+  // Una compra dictada puede salir de una cuenta o cargarse a una tarjeta. Las
+  // tarjetas no participan en transferencias internas, pero sí deben estar en
+  // el parser del movimiento para que «compré con la Visa Nu» quede atribuida.
+  const cuentasParaMovimientos = useMemo(
+    () =>
+      cajitas
+        .filter((c) => c.archivedAt === null && (c.tipo === 'cuenta' || c.tipo === 'tarjeta'))
+        .map((c) => ({ id: c.id, nombre: c.nombre })),
+    [cajitas],
+  );
+
   // Computed once for the visible month rather than per row: each check scans
   // the whole ledger, so doing it inside the list would repeat that scan for
   // every movement on screen.
@@ -479,30 +492,22 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   // tecla — el parseo ocurre al enviar, no mientras se escribe.
   const lexico = useMemo(() => aprenderDe(transacciones), [transacciones]);
 
-  const cajitasBalances = useMemo(() => {
-    const balances: Record<string, number> = {};
-    for (const mov of cajitaMovimientos) {
-      balances[mov.cajitaId] = (balances[mov.cajitaId] || 0) + mov.deltaCop;
-    }
-    // Ingresos a cuenta suman, gastos de cuenta restan
-    for (const tx of transacciones) {
-      if (!tx.cuentaId) continue;
-      const haciaArriba = tx.kind === 'ingreso';
-      const sube = ES_PASIVO[cajitas.find((c) => c.id === tx.cuentaId)?.tipo ?? 'cuenta']
-        ? !haciaArriba
-        : haciaArriba;
-      balances[tx.cuentaId] = (balances[tx.cuentaId] || 0) + (sube ? tx.amountCop : -tx.amountCop);
-    }
-    return balances;
-  }, [cajitas, cajitaMovimientos, transacciones]);
+  const saldosCajitas = useMemo(
+    () => saldosPorCajita(cajitaMovimientos, transacciones, idsPasivos(cajitas)),
+    [cajitas, cajitaMovimientos, transacciones],
+  );
+  const cajitasBalances = useMemo(
+    () => Object.fromEntries(saldosCajitas),
+    [saldosCajitas],
+  );
 
   const handleSubmit = (text: string) => {
-    const transferencia = parseTransferenciaVoz(text, cuentasParaElegir);
-    if (transferencia) {
-      setTransferenciaPorVoz(transferencia);
+    const comando = parseComandoVoz(text, cajitas);
+    if (comando) {
+      setComandoPorVoz(comando);
       return;
     }
-    const parseados = parseMultipleTransactions(text, cuentasParaElegir, categorias, lexico, transacciones);
+    const parseados = parseMultipleTransactions(text, cuentasParaMovimientos, categorias, lexico, transacciones);
     if (parseados.length > 1) {
       setMultiPending(parseados);
       return;
@@ -626,6 +631,48 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const nombreDeCuenta = (id: string | null) =>
     id === null ? null : (cajitas.find((c) => c.id === id)?.nombre ?? null);
 
+  const confirmarComandoVoz = async (comando: ComandoVozConfirmado) => {
+    if (comando.tipo === 'transferencia') {
+      await almacen.transferirEntreCuentas(comando);
+      setGuardado({
+        id: 'operacion-voz',
+        texto: `Transferiste ${formatCop(comando.montoCop)}`,
+        aviso: `${nombreDeCuenta(comando.origenId)} → ${nombreDeCuenta(comando.destinoId)}`,
+        permitirDeshacer: false,
+      });
+    } else if (comando.tipo === 'abono') {
+      await almacen.abonarDeuda(comando);
+      setGuardado({
+        id: 'operacion-voz',
+        texto: `Abonaste ${formatCop(comando.montoCop)}`,
+        aviso: `${nombreDeCuenta(comando.cuentaId)} → ${nombreDeCuenta(comando.deudaId)}`,
+        permitirDeshacer: false,
+      });
+    } else if (comando.tipo === 'saldo') {
+      await almacen.fijarSaldo(comando.cajitaId, comando.saldoCop, 'Saldo actualizado por voz');
+      setGuardado({
+        id: 'operacion-voz',
+        texto: `${nombreDeCuenta(comando.cajitaId)} quedó en ${formatCop(comando.saldoCop)}`,
+        permitirDeshacer: false,
+      });
+    } else {
+      await almacen.registrarMovimiento({
+        cajitaId: comando.cajitaId,
+        kind: 'rendimiento',
+        deltaCop: comando.montoCop,
+        occurredOn: comando.occurredOn,
+        nota: 'Rendimiento registrado por voz',
+      });
+      setGuardado({
+        id: 'operacion-voz',
+        texto: `Rendimiento de ${formatCop(comando.montoCop)}`,
+        aviso: nombreDeCuenta(comando.cajitaId),
+        permitirDeshacer: false,
+      });
+    }
+    setComandoPorVoz(null);
+  };
+
   // Si el usuario marcó una cuenta favorita, se usa esa. Si no, se queda en null para preguntar antes de guardar.
   const cuentaPorDefecto = cuentaFavoritaId;
 
@@ -689,6 +736,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const ningunModalAbierto =
     pending === null &&
     multiPending === null &&
+    comandoPorVoz === null &&
     editando === null &&
     analizando === null &&
     capa === null &&
@@ -1311,25 +1359,18 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           />
         ) : null}
 
-        {transferenciaPorVoz ? (
-          <div className="fixed inset-0 z-[80] flex items-end bg-black/80 p-4 backdrop-blur-sm sm:items-center sm:justify-center">
-            <div className="w-full max-w-md rounded-[var(--fin-r-sheet)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
-              <h2 className="text-lg font-bold text-[var(--fin-ink)]">Confirmar transferencia</h2>
-              <p className="mt-2 text-sm text-[var(--fin-ink-soft)]">
-                Mover {formatCop(transferenciaPorVoz.montoCop)} de{' '}
-                <strong>{nombreDeCuenta(transferenciaPorVoz.origenId)}</strong> a{' '}
-                <strong>{nombreDeCuenta(transferenciaPorVoz.destinoId)}</strong>.
-              </p>
-              <p className="mt-2 text-xs text-[var(--fin-ink-faint)]">Se actualizarán los saldos de las dos cuentas.</p>
-              <div className="mt-5 flex gap-2">
-                <button type="button" onClick={() => setTransferenciaPorVoz(null)} className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3 font-semibold text-[var(--fin-ink-soft)]">Cancelar</button>
-                <button type="button" onClick={() => {
-                  void almacen.transferirEntreCuentas(transferenciaPorVoz);
-                  setTransferenciaPorVoz(null);
-                }} className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 font-semibold text-[var(--fin-on-accent)]">Transferir</button>
-              </div>
-            </div>
-          </div>
+        {comandoPorVoz ? (
+          <ConfirmarComandoVoz
+            comando={comandoPorVoz}
+            cajitas={cajitas}
+            saldos={saldosCajitas}
+            onConfirmar={confirmarComandoVoz}
+            onCancelar={() => setComandoPorVoz(null)}
+            onReintentar={() => {
+              setComandoPorVoz(null);
+              setDisparoDictado((actual) => actual + 1);
+            }}
+          />
         ) : null}
 
         <AvisoGuardado

@@ -70,6 +70,22 @@ const PALABRAS_CLAVE_BASE = [
   'PSE',
   'Transfiya',
   'Bre-B',
+  // Vocabulario colombiano pedido explícitamente por quienes dictan.
+  'tamal',
+  'lechona',
+  'sancocho',
+  'chipcha',
+  'Chibcha',
+  'ñapa',
+  // Órdenes financieras que cambian saldos y deben conservar su verbo.
+  'abonar',
+  'abono a tarjeta',
+  'pagar tarjeta',
+  'actualizar saldo',
+  'ajustar saldo',
+  'transferir entre cuentas',
+  'pasar a una cajita',
+  'registrar rendimiento',
   // Transporte, comercios y lugares que suelen aparecer en gastos cortos.
   'TransMilenio',
   'SITP',
@@ -88,9 +104,6 @@ const PALABRAS_CLAVE_BASE = [
   'Jumbo',
   'Olímpica',
   // Comidas y expresiones colombianas que el modelo suele castellanizar mal.
-  'tamal',
-  'lechona',
-  'sancocho',
   'ajiaco',
   'bandeja paisa',
   'changua',
@@ -107,9 +120,6 @@ const PALABRAS_CLAVE_BASE = [
   'cholado',
   'salpicón',
   'chicha',
-  'chipcha',
-  'Chibcha',
-  'ñapa',
   'corrientazo',
   'mecato',
   'tinto',
@@ -134,7 +144,8 @@ const CONTEXTO_BASE =
   'Dictado breve para registrar un movimiento financiero en pesos colombianos. ' +
   'Transcribe literalmente en español de Colombia. Las cifras, negaciones, nombres propios y ' +
   'direcciones del dinero son críticas: conserva exactamente expresiones como pagué, gasté, ' +
-  'compré, retiré, transferí, recibí, me pagaron, me transfirieron, de, desde, a y hacia. ' +
+  'compré, retiré, transferí, aboné, actualiza el saldo, recibí, me pagaron, me transfirieron, ' +
+  'de, desde, a y hacia. Conserva también el nombre completo de cada cuenta, tarjeta o cajita. ' +
   'No completes información que no se oye ni conviertas cantidades de productos en precios. ' +
   'Las ortografías sugeridas son solo pistas: úsalas únicamente cuando realmente se oigan.';
 
@@ -219,7 +230,10 @@ const construirFormulario = (
   tipo: string,
   vocabulario: readonly string[],
 ): FormData => {
-  const palabrasClave = [...PALABRAS_CLAVE_BASE, ...vocabulario];
+  // Los nombres reales del usuario van primero: son los más difíciles y los
+  // más importantes. El tope mantiene la pista dentro del contexto corto de
+  // Whisper; una lista enorme pierde fuerza y puede terminar truncada.
+  const palabrasClave = [...vocabulario, ...PALABRAS_CLAVE_BASE].slice(0, 80);
   const contextoPersonal =
     `${CONTEXTO_BASE} Ortografías esperadas: ${palabrasClave.join(', ')}.`;
   const formulario = new FormData();

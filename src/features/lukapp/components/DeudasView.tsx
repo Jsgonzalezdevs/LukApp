@@ -7,7 +7,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
 import { CAJITA_ICONS, CAJITA_MOV_LABELS, TIPO_LABELS } from '../data/modelos';
 import { iconoDeCajita } from '../cajitaIconos';
-import { historialDeCajita, resumenDePasivos } from '../lib/cajitas';
+import { emparejarComprasTarjeta, historialDeCajita, resumenDePasivos } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { bogotaDate, monthKey } from '../lib/localDate';
@@ -36,7 +36,12 @@ interface DeudasViewProps {
     kind: CajitaMovKind,
     deltaCop: number,
     categoria?: Category | null,
-    detalles?: { cuotasTotal: number; cuotaCop: number; interesPct: number | null; cuotaManejoCop: number },
+    detalles?: {
+      cuotasTotal?: number | null;
+      cuotaCop?: number | null;
+      interesPct?: number | null;
+      cuotaManejoCop?: number | null;
+    },
   ) => void;
   onEliminar: (cajitaId: string) => void;
   /** La configuración de una tarjeta vive junto con sus compras y abonos. */
@@ -98,7 +103,15 @@ const DeudaCard: React.FC<{
   const [diaPago, setDiaPago] = useState(cajita.diaPago ? String(cajita.diaPago) : '');
   const [pagoMinimo, setPagoMinimo] = useState(formatAmountInput(cajita.pagoMinimoCop ?? null));
 
-  const historial = historialDeCajita(movimientos, cajita.id);
+  const comprasEmparejadas = emparejarComprasTarjeta(
+    movimientos,
+    transacciones,
+    new Set([cajita.id]),
+  );
+  const movimientosRepresentadosEnCompras = new Set(comprasEmparejadas.values());
+  const historial = historialDeCajita(movimientos, cajita.id).filter(
+    ({ movimiento }) => !movimientosRepresentadosEnCompras.has(movimiento.id),
+  );
   const comprasRegistradas = transacciones
     .filter((tx) => tx.cuentaId === cajita.id)
     .sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
@@ -117,16 +130,23 @@ const DeudaCard: React.FC<{
     // A purchase adds to what you owe; a payment takes away from it — and comes
     // out of a real account, which is why it goes through its own action.
     else if (accion === 'compra') {
+      const cuotasNum = Number(cuotas);
+      const esFinanciada = Number.isInteger(cuotasNum) && cuotasNum >= 2;
+      const cuotaCalculada = esFinanciada && valor ? Math.round(Math.abs(valor) / cuotasNum) : null;
+      const cuotaCopNum = esFinanciada ? (parseAmountInput(cuotaMensual) ?? cuotaCalculada) : null;
+      const interesPctNum = interes === '' ? null : Number(interes.replace(',', '.'));
+      const cuotaManejoNum = parseAmountInput(cuotaManejo) ?? 0;
+
       const detalles = {
-        cuotasTotal: Math.max(1, Number(cuotas) || 1),
-        cuotaCop: parseAmountInput(cuotaMensual) ?? Math.abs(valor),
-        interesPct: interes === '' ? null : Number(interes.replace(',', '.')),
-        cuotaManejoCop: parseAmountInput(cuotaManejo) ?? 0,
+        cuotasTotal: esFinanciada ? cuotasNum : null,
+        cuotaCop: cuotaCopNum,
+        interesPct: Number.isFinite(interesPctNum) ? interesPctNum : null,
+        cuotaManejoCop: cuotaManejoNum,
       };
       // Mantener la llamada corta para una compra simple protege el contrato
       // histórico de movimientos; los metadatos solo viajan cuando la persona
       // realmente configuró cuotas, interés o manejo.
-      const hayDetalles = detalles.cuotasTotal > 1 || cuotaMensual !== '' || interes !== '' || cuotaManejo !== '';
+      const hayDetalles = esFinanciada || interes !== '' || cuotaManejo !== '';
       if (hayDetalles) onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, detalles);
       else onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
     }

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.32.0', fecha: '2026-09-16', texto: 'El dictado ahora permite abonar tarjetas y deudas, mover dinero entre cuentas y cajitas, actualizar saldos, registrar rendimientos y anotar compras a cuotas, siempre con revisión antes de aplicar.' },
   { version: '3.31.3', fecha: '2026-09-16', texto: 'El Asesor distingue correctamente un servidor disponible de una respuesta real de la IA, conserva los errores aunque el estado llegue tarde y evita el zoom involuntario al editar nombres en iPhone.' },
   { version: '3.31.2', fecha: '2026-09-16', texto: 'El dictado reconoce mejor bancos, billeteras, comidas y expresiones colombianas como Nequi, Daviplata, tamal, lechona, sancocho y ñapa.' },
   { version: '3.31.1', fecha: '2026-09-16', texto: 'El dictado ahora usa exclusivamente Groq para mantener LukApp gratuito y evitar cualquier consumo facturable de OpenAI.' },

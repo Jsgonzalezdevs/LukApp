@@ -2,6 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { parseTransaction } from './parseTransaction';
 
 describe('parseTransaction — expenses', () => {
+  it('entiende una compra dictada con tarjeta y número de cuotas', () => {
+    const r = parseTransaction(
+      'Compré un celular por un millón con la tarjeta Nu a seis cuotas',
+      [{ id: 'nu', nombre: 'Tarjeta Nu' }],
+    );
+    expect(r).toMatchObject({
+      kind: 'gasto',
+      amount: 1_000_000,
+      cuentaId: 'nu',
+      cuotasTotal: 6,
+      cuotaCop: 166_667,
+    });
+    expect(r.description.toLowerCase()).not.toContain('cuotas');
+    expect(r.signals.ambiguousAmount).toBe(false);
+  });
+
   it('en un comprobante a cuotas guarda el total y solo deja la cuota como contexto', () => {
     const r = parseTransaction(
       '[OCR] 12:47 Bold Sa*Platzi $899.259,00 en 12x de $74.938,25 08:52, Sábado, 29 de Agosto de 2026 Resolver dudas',

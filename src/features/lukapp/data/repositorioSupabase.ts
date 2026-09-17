@@ -185,6 +185,61 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo eliminar el movimiento de la cajita', error);
   }
 
+  async guardarMovimientosConTransaccion(
+    movimientos: readonly CajitaMovimiento[],
+    transaccion?: Transaction | null,
+  ): Promise<void> {
+    if (!transaccion) {
+      await this.guardarCajitaMovimientos(movimientos);
+      return;
+    }
+    if (movimientos.length === 0) {
+      await this.guardarTransacciones([transaccion]);
+      return;
+    }
+
+    const filasMov = movimientos.map((m) => desdeMovimiento(m, this.userId));
+    const filaTx = desdeTransaccion(transaccion, this.userId);
+
+    const [resMov, resTx] = await Promise.all([
+      this.cliente.from('cajita_movimientos').upsert(filasMov),
+      this.cliente.from('transacciones').upsert(filaTx),
+    ]);
+
+    if (resMov.error || resTx.error) {
+      if (!resMov.error && resTx.error) {
+        for (const m of movimientos) {
+          await this.cliente.from('cajita_movimientos').delete().eq('id', m.id);
+        }
+      } else if (resMov.error && !resTx.error) {
+        await this.cliente.from('transacciones').delete().eq('id', transaccion.id);
+      }
+      this.fallar('No se pudo guardar el movimiento de la cajita', resMov.error);
+      this.fallar('No se pudo guardar el movimiento', resTx.error);
+    }
+  }
+
+  async borrarMovimientoConTransaccion(
+    movimientoId: string,
+    transaccionId: string,
+  ): Promise<void> {
+    // El movimiento duplicado se elimina primero. Si la segunda petición
+    // falla, la transacción restante sigue siendo la fuente canónica del cargo
+    // y el saldo no desaparece. La transacción SQL real se implementa en la
+    // fase de atomicidad del repositorio remoto.
+    const movimiento = await this.cliente
+      .from('cajita_movimientos')
+      .delete()
+      .eq('id', movimientoId);
+    this.fallar('No se pudo eliminar el movimiento de la cajita', movimiento.error);
+
+    const transaccion = await this.cliente
+      .from('transacciones')
+      .delete()
+      .eq('id', transaccionId);
+    this.fallar('No se pudo eliminar el movimiento', transaccion.error);
+  }
+
   async guardarMeta(meta: Meta): Promise<void> {
     const { error } = await this.cliente.from('metas').upsert(desdeMeta(meta, this.userId));
     this.fallar('No se pudo guardar la meta', error);
@@ -298,34 +353,40 @@ interface FilaTransaccion {
   created_at: string;
 }
 
-const aTransaccion = (fila: FilaTransaccion): Transaction => ({
-  id: fila.id,
-  kind: fila.kind as TxKind,
-  amountCop: Number(fila.amount_cop),
-  category: fila.category as Category,
-  description: fila.description,
-  occurredOn: fila.occurred_on,
-  cuentaId: fila.cuenta_id,
-  rawTranscript: fila.raw_transcript,
-  cuotasTotal: fila.cuotas_total,
-  cuotaCop: fila.cuota_cop === null ? null : Number(fila.cuota_cop),
-  createdAt: fila.created_at,
-});
+const aTransaccion = (fila: FilaTransaccion): Transaction => {
+  const esFinanciado = typeof fila.cuotas_total === 'number' && fila.cuotas_total >= 2;
+  return {
+    id: fila.id,
+    kind: fila.kind as TxKind,
+    amountCop: Number(fila.amount_cop),
+    category: fila.category as Category,
+    description: fila.description,
+    occurredOn: fila.occurred_on,
+    cuentaId: fila.cuenta_id,
+    rawTranscript: fila.raw_transcript,
+    cuotasTotal: esFinanciado ? fila.cuotas_total : null,
+    cuotaCop: esFinanciado && fila.cuota_cop !== null ? Number(fila.cuota_cop) : null,
+    createdAt: fila.created_at,
+  };
+};
 
-const desdeTransaccion = (tx: Transaction, userId: string) => ({
-  id: tx.id,
-  user_id: userId,
-  kind: tx.kind,
-  amount_cop: tx.amountCop,
-  category: tx.category,
-  description: tx.description,
-  occurred_on: tx.occurredOn,
-  cuenta_id: tx.cuentaId,
-  raw_transcript: tx.rawTranscript,
-  cuotas_total: tx.cuotasTotal ?? null,
-  cuota_cop: tx.cuotaCop ?? null,
-  created_at: tx.createdAt,
-});
+const desdeTransaccion = (tx: Transaction, userId: string) => {
+  const esFinanciado = typeof tx.cuotasTotal === 'number' && tx.cuotasTotal >= 2;
+  return {
+    id: tx.id,
+    user_id: userId,
+    kind: tx.kind,
+    amount_cop: tx.amountCop,
+    category: tx.category,
+    description: tx.description,
+    occurred_on: tx.occurredOn,
+    cuenta_id: tx.cuentaId,
+    raw_transcript: tx.rawTranscript,
+    cuotas_total: esFinanciado ? tx.cuotasTotal : null,
+    cuota_cop: esFinanciado && typeof tx.cuotaCop === 'number' && tx.cuotaCop > 0 ? tx.cuotaCop : null,
+    created_at: tx.createdAt,
+  };
+};
 
 interface FilaCajita {
   id: string;

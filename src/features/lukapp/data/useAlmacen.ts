@@ -9,7 +9,12 @@ import type { Presupuesto } from '../lib/presupuestos';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
 import { comoTransaccion } from '../lib/recurrentes';
 import { normalizarNombre } from '../lib/contactos';
-import { saldoDeCajita, ajusteHacia, idsPasivos } from '../lib/cajitas';
+import {
+  saldoDeCajita,
+  ajusteHacia,
+  emparejarComprasTarjeta,
+  idsPasivos,
+} from '../lib/cajitas';
 import type {
   Cajita,
   CajitaMovimiento,
@@ -476,12 +481,52 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
 
   const actualizarTransaccion = useCallback(
     async (tx: Transaction) => {
+      const pares = emparejarComprasTarjeta(
+        datos.cajitaMovimientos,
+        datos.transacciones,
+        idsPasivos(datos.cajitas),
+      );
+      const movimientoId = pares.get(tx.id);
+      const movimientoAnterior = movimientoId
+        ? datos.cajitaMovimientos.find((mov) => mov.id === movimientoId)
+        : undefined;
+      const sigueSiendoCompraDePasivo =
+        tx.kind === 'gasto' &&
+        tx.cuentaId !== null &&
+        idsPasivos(datos.cajitas).has(tx.cuentaId);
+      const movimientoActualizado = movimientoAnterior && sigueSiendoCompraDePasivo
+        ? {
+            ...movimientoAnterior,
+            cajitaId: tx.cuentaId!,
+            deltaCop: Math.abs(tx.amountCop),
+            categoria: tx.category,
+            occurredOn: tx.occurredOn,
+            nota: tx.description,
+            cuotasTotal: tx.cuotasTotal ?? null,
+            cuotaCop: tx.cuotaCop ?? null,
+          }
+        : null;
+
       await aplicar(
         {
           ...datos,
           transacciones: datos.transacciones.map((t) => (t.id === tx.id ? tx : t)),
+          cajitaMovimientos: movimientoAnterior
+            ? movimientoActualizado
+              ? datos.cajitaMovimientos.map((mov) =>
+                  mov.id === movimientoAnterior.id ? movimientoActualizado : mov,
+                )
+              : datos.cajitaMovimientos.filter((mov) => mov.id !== movimientoAnterior.id)
+            : datos.cajitaMovimientos,
         },
-        () => repo.guardarTransacciones([tx]),
+        async () => {
+          if (movimientoActualizado) {
+            await repo.guardarMovimientosConTransaccion([movimientoActualizado], tx);
+            return;
+          }
+          if (movimientoAnterior) await repo.borrarCajitaMovimiento(movimientoAnterior.id);
+          await repo.guardarTransacciones([tx]);
+        },
       );
     },
     [aplicar, datos, repo],
@@ -489,9 +534,22 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
 
   const borrarTransaccion = useCallback(
     async (id: string) => {
+      const movimientoId = emparejarComprasTarjeta(
+        datos.cajitaMovimientos,
+        datos.transacciones,
+        idsPasivos(datos.cajitas),
+      ).get(id);
       await aplicar(
-        { ...datos, transacciones: datos.transacciones.filter((t) => t.id !== id) },
-        () => repo.borrarTransaccion(id),
+        {
+          ...datos,
+          transacciones: datos.transacciones.filter((t) => t.id !== id),
+          cajitaMovimientos: movimientoId
+            ? datos.cajitaMovimientos.filter((mov) => mov.id !== movimientoId)
+            : datos.cajitaMovimientos,
+        },
+        () => movimientoId
+          ? repo.borrarMovimientoConTransaccion(movimientoId, id)
+          : repo.borrarTransaccion(id),
       );
     },
     [aplicar, datos, repo],
@@ -640,8 +698,14 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       interesPct?: number | null;
       cuotaManejoCop?: number | null;
     }) => {
+      const esFinanciado = typeof cuotasTotal === 'number' && cuotasTotal >= 2;
+      const cuotasTotalFinal = esFinanciado ? cuotasTotal : null;
+      const cuotaCopFinal =
+        esFinanciado && typeof cuotaCop === 'number' && cuotaCop > 0 ? cuotaCop : null;
+      const operacionId = nuevoId(kind === 'compra' ? 'tx' : 'mov');
+
       const movimiento: CajitaMovimiento = {
-        id: nuevoId('mov'),
+        id: operacionId,
         cajitaId,
         kind,
         deltaCop,
@@ -649,21 +713,37 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         nota: nota ?? '',
         categoria: categoria ?? null,
         createdAt: new Date().toISOString(),
-        cuotasTotal: cuotasTotal ?? null,
-        cuotaCop: cuotaCop ?? null,
+        cuotasTotal: cuotasTotalFinal,
+        cuotaCop: cuotaCopFinal,
         interesPct: interesPct ?? null,
         cuotaManejoCop: cuotaManejoCop ?? null,
       };
-      const compra = kind === 'compra' ? {
-        id: nuevoId('tx'), kind: 'gasto' as const, amountCop: Math.abs(deltaCop),
-        category: categoria ?? 'otros', description: descripcion ?? nota ?? 'Compra con tarjeta',
-        occurredOn: movimiento.occurredOn, cuentaId: cajitaId, rawTranscript: '',
-        cuotasTotal: cuotasTotal ?? 1, cuotaCop: cuotaCop ?? Math.abs(deltaCop), createdAt: movimiento.createdAt,
-      } : null;
-      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, movimiento], transacciones: compra ? [compra, ...datos.transacciones] : datos.transacciones }, async () => {
-        await repo.guardarCajitaMovimientos([movimiento]);
-        if (compra) await repo.guardarTransacciones([compra]);
-      });
+
+      const compra: Transaction | null =
+        kind === 'compra'
+          ? {
+              id: operacionId,
+              kind: 'gasto' as const,
+              amountCop: Math.abs(deltaCop),
+              category: categoria ?? 'otros',
+              description: descripcion ?? nota ?? 'Compra con tarjeta',
+              occurredOn: movimiento.occurredOn,
+              cuentaId: cajitaId,
+              rawTranscript: '',
+              cuotasTotal: cuotasTotalFinal,
+              cuotaCop: cuotaCopFinal,
+              createdAt: movimiento.createdAt,
+            }
+          : null;
+
+      await aplicar(
+        {
+          ...datos,
+          cajitaMovimientos: [...datos.cajitaMovimientos, movimiento],
+          transacciones: compra ? [compra, ...datos.transacciones] : datos.transacciones,
+        },
+        () => repo.guardarMovimientosConTransaccion([movimiento], compra),
+      );
     },
     [aplicar, datos, repo],
   );
@@ -778,7 +858,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           cajitaMovimientos: [...datos.cajitaMovimientos, ...par],
           transacciones: [transferencia, ...datos.transacciones],
         },
-        () => Promise.all([repo.guardarCajitaMovimientos(par), repo.guardarTransacciones([transferencia])]).then(() => undefined),
+        () => repo.guardarMovimientosConTransaccion(par, transferencia),
       );
     },
     [aplicar, datos, repo],
@@ -812,9 +892,22 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
 
   const borrarMovimiento = useCallback(
     async (id: string) => {
+      const transaccionId = [...emparejarComprasTarjeta(
+        datos.cajitaMovimientos,
+        datos.transacciones,
+        idsPasivos(datos.cajitas),
+      )].find(([, movimientoId]) => movimientoId === id)?.[0];
       await aplicar(
-        { ...datos, cajitaMovimientos: datos.cajitaMovimientos.filter((m) => m.id !== id) },
-        () => repo.borrarCajitaMovimiento(id),
+        {
+          ...datos,
+          cajitaMovimientos: datos.cajitaMovimientos.filter((m) => m.id !== id),
+          transacciones: transaccionId
+            ? datos.transacciones.filter((tx) => tx.id !== transaccionId)
+            : datos.transacciones,
+        },
+        () => transaccionId
+          ? repo.borrarMovimientoConTransaccion(id, transaccionId)
+          : repo.borrarCajitaMovimiento(id),
       );
     },
     [aplicar, datos, repo],

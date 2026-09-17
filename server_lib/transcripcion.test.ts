@@ -42,6 +42,8 @@ describe('transcripción de voz', () => {
       'Daviplata',
       'Davivienda',
       'Bancolombia',
+      'abono a tarjeta',
+      'actualizar saldo',
     ]) {
       expect(prompt).toContain(termino);
     }

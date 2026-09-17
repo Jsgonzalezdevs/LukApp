@@ -29,6 +29,14 @@ export interface Repositorio {
   guardarCajitaMovimientos(movimientos: readonly CajitaMovimiento[]): Promise<void>;
   borrarCajitaMovimiento(id: string): Promise<void>;
 
+  /** Guarda los dos rastros que forman una misma operación financiera. */
+  guardarMovimientosConTransaccion(
+    movimientos: readonly CajitaMovimiento[],
+    transaccion?: Transaction | null,
+  ): Promise<void>;
+  /** Elimina los dos rastros de una compra de tarjeta. */
+  borrarMovimientoConTransaccion(movimientoId: string, transaccionId: string): Promise<void>;
+
   guardarMeta(meta: Meta): Promise<void>;
   borrarMeta(id: string): Promise<void>;
 
@@ -143,6 +151,30 @@ export class RepositorioMemoria implements Repositorio {
 
   async borrarCajitaMovimiento(id: string): Promise<void> {
     this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter((m) => m.id !== id);
+  }
+
+  async guardarMovimientosConTransaccion(
+    movimientos: readonly CajitaMovimiento[],
+    transaccion?: Transaction | null,
+  ): Promise<void> {
+    if (movimientos.length > 0) {
+      this.datos.cajitaMovimientos = this.upsert(this.datos.cajitaMovimientos, movimientos);
+    }
+    if (transaccion) {
+      this.datos.transacciones = this.upsert(this.datos.transacciones, [transaccion]);
+    }
+  }
+
+  async borrarMovimientoConTransaccion(
+    movimientoId: string,
+    transaccionId: string,
+  ): Promise<void> {
+    this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter(
+      (mov) => mov.id !== movimientoId,
+    );
+    this.datos.transacciones = this.datos.transacciones.filter(
+      (tx) => tx.id !== transaccionId,
+    );
   }
 
   async guardarMeta(meta: Meta): Promise<void> {

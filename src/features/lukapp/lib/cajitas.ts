@@ -28,6 +28,58 @@ const deltaAtribuido = (tx: Transaction, pasivos: ReadonlySet<string>): number =
   return sube ? tx.amountCop : -tx.amountCop;
 };
 
+/**
+ * Relaciona cada compra del libro con el movimiento que representa el mismo
+ * cargo en una tarjeta. Las compras nuevas comparten id; la comparación por
+ * cuenta, fecha y monto queda únicamente para datos anteriores a ese contrato.
+ *
+ * El mapa es uno a uno: dos compras iguales el mismo día consumen dos
+ * movimientos distintos en vez de hacer que una sola fila oculte ambas.
+ */
+export const emparejarComprasTarjeta = (
+  movimientos: readonly CajitaMovimiento[],
+  transacciones: readonly Transaction[],
+  pasivos: ReadonlySet<string>,
+): Map<string, string> => {
+  const pares = new Map<string, string>();
+  const movimientosUsados = new Set<string>();
+  const compras = transacciones.filter(
+    (tx) => tx.kind === 'gasto' && tx.cuentaId !== null && pasivos.has(tx.cuentaId),
+  );
+
+  // El id compartido es el contrato actual y sigue siendo válido aunque la
+  // persona edite después el monto o la fecha desde el historial general.
+  for (const tx of compras) {
+    const exacto = movimientos.find(
+      (mov) =>
+        mov.id === tx.id &&
+        mov.kind === 'compra' &&
+        mov.cajitaId === tx.cuentaId,
+    );
+    if (!exacto) continue;
+    pares.set(tx.id, exacto.id);
+    movimientosUsados.add(exacto.id);
+  }
+
+  // Compatibilidad con compras creadas antes de compartir identificador.
+  for (const tx of compras) {
+    if (pares.has(tx.id)) continue;
+    const legado = movimientos.find(
+      (mov) =>
+        !movimientosUsados.has(mov.id) &&
+        mov.kind === 'compra' &&
+        mov.cajitaId === tx.cuentaId &&
+        mov.occurredOn === tx.occurredOn &&
+        mov.deltaCop === tx.amountCop,
+    );
+    if (!legado) continue;
+    pares.set(tx.id, legado.id);
+    movimientosUsados.add(legado.id);
+  }
+
+  return pares;
+};
+
 export const saldosPorCajita = (
   movimientos: readonly CajitaMovimiento[],
   /**
@@ -39,11 +91,7 @@ export const saldosPorCajita = (
   pasivos: ReadonlySet<string> = new Set(),
 ): Map<string, number> => {
   const saldos = new Map<string, number>();
-  // Una compra con tarjeta deja dos rastros intencionales: el movimiento
-  // actualiza la deuda y la transacción alimenta cuotas/reportes. Consumir aquí
-  // cada movimiento de compra una sola vez evita convertir esos dos rastros en
-  // una deuda duplicada, incluso si hay dos compras iguales el mismo día.
-  const comprasConsumidas = new Set<string>();
+  const comprasEmparejadas = emparejarComprasTarjeta(movimientos, transacciones, pasivos);
   for (const mov of movimientos) {
     saldos.set(mov.cajitaId, (saldos.get(mov.cajitaId) ?? 0) + mov.deltaCop);
   }
@@ -51,20 +99,7 @@ export const saldosPorCajita = (
   // This is what stops a balance going stale the moment something is recorded.
   for (const tx of transacciones) {
     if (!tx.cuentaId) continue;
-    if (tx.kind === 'gasto' && pasivos.has(tx.cuentaId)) {
-      const indice = movimientos.findIndex(
-        (mov, i) =>
-          mov.kind === 'compra' &&
-          mov.cajitaId === tx.cuentaId &&
-          mov.occurredOn === tx.occurredOn &&
-          mov.deltaCop === tx.amountCop &&
-          !comprasConsumidas.has(String(i)),
-      );
-      if (indice !== -1) {
-        comprasConsumidas.add(String(indice));
-        continue;
-      }
-    }
+    if (comprasEmparejadas.has(tx.id)) continue;
     saldos.set(tx.cuentaId, (saldos.get(tx.cuentaId) ?? 0) + deltaAtribuido(tx, pasivos));
   }
   return saldos;

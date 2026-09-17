@@ -263,6 +263,35 @@ export class RepositorioIndexedDB implements Repositorio {
     });
   }
 
+  async guardarMovimientosConTransaccion(
+    movimientos: readonly CajitaMovimiento[],
+    transaccion?: Transaction | null,
+  ): Promise<void> {
+    if (movimientos.length === 0 && !transaccion) return;
+    const stores: StoreNombre[] = transaccion
+      ? [STORES.cajitaMovimientos, STORES.transacciones]
+      : [STORES.cajitaMovimientos];
+    await this.escribir(stores, (tx) => {
+      if (movimientos.length > 0) {
+        const storeMov = tx.objectStore(STORES.cajitaMovimientos);
+        for (const m of movimientos) storeMov.put(m);
+      }
+      if (transaccion) {
+        tx.objectStore(STORES.transacciones).put(transaccion);
+      }
+    });
+  }
+
+  async borrarMovimientoConTransaccion(
+    movimientoId: string,
+    transaccionId: string,
+  ): Promise<void> {
+    await this.escribir([STORES.cajitaMovimientos, STORES.transacciones], (tx) => {
+      tx.objectStore(STORES.cajitaMovimientos).delete(movimientoId);
+      tx.objectStore(STORES.transacciones).delete(transaccionId);
+    });
+  }
+
   async guardarMeta(meta: Meta): Promise<void> {
     await this.escribir([STORES.metas], (tx) => {
       tx.objectStore(STORES.metas).put(meta);

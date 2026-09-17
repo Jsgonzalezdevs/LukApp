@@ -129,6 +129,33 @@ const contrato = (nombre: string, crear: () => Repositorio) => {
       expect(datos.cajitaMovimientos).toHaveLength(2);
     });
 
+    it('round-trips movements with their optional transaction in one repository operation', async () => {
+      await repo.guardarCajita(cajita({ id: 'd1', tipo: 'tarjeta' }));
+      const mov1 = movimiento({ id: 'mov-1', cajitaId: 'd1', kind: 'compra', deltaCop: 50000 });
+      const tx1 = tx({ id: 'tx-1', amountCop: 50000, cuentaId: 'd1', cuotasTotal: null, cuotaCop: null });
+
+      await repo.guardarMovimientosConTransaccion([mov1], tx1);
+
+      const datos = await repo.cargarTodo();
+      expect(datos.cajitaMovimientos).toHaveLength(1);
+      expect(datos.cajitaMovimientos[0].id).toBe('mov-1');
+      expect(datos.transacciones).toHaveLength(1);
+      expect(datos.transacciones[0].id).toBe('tx-1');
+    });
+
+    it('deletes both traces of a card purchase in one repository operation', async () => {
+      await repo.guardarCajita(cajita({ id: 'd1', tipo: 'tarjeta' }));
+      const mov1 = movimiento({ id: 'operacion-1', cajitaId: 'd1', kind: 'compra' });
+      const tx1 = tx({ id: 'operacion-1', cuentaId: 'd1' });
+      await repo.guardarMovimientosConTransaccion([mov1], tx1);
+
+      await repo.borrarMovimientoConTransaccion('operacion-1', 'operacion-1');
+
+      const datos = await repo.cargarTodo();
+      expect(datos.cajitaMovimientos).toEqual([]);
+      expect(datos.transacciones).toEqual([]);
+    });
+
     it('deleting a pocket takes its movements with it', async () => {
       await repo.guardarCajita(cajita());
       await repo.guardarCajita(cajita({ id: 'caj-2', nombre: 'Carro' }));

@@ -213,6 +213,20 @@ export class RepositorioConCola implements Repositorio {
     await this.escribir('borrarCajitaMovimiento', [id]);
   }
 
+  async guardarMovimientosConTransaccion(
+    movimientos: readonly CajitaMovimiento[],
+    transaccion?: Transaction | null,
+  ): Promise<void> {
+    await this.escribir('guardarMovimientosConTransaccion', [movimientos, transaccion]);
+  }
+
+  async borrarMovimientoConTransaccion(
+    movimientoId: string,
+    transaccionId: string,
+  ): Promise<void> {
+    await this.escribir('borrarMovimientoConTransaccion', [movimientoId, transaccionId]);
+  }
+
   async guardarMeta(meta: Meta): Promise<void> {
     await this.escribir('guardarMeta', [meta]);
   }

@@ -183,6 +183,195 @@ describe('useAlmacen', () => {
     expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['tx-1']);
   });
 
+  it('records a simple card purchase with null cuotas and one shared operation id', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Tarjeta Nu',
+        icon: 'CreditCard',
+        tipo: 'tarjeta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
+    });
+    const tarjetaId = result.current.datos.cajitas[0].id;
+
+    await act(async () => {
+      await result.current.registrarMovimiento({
+        cajitaId: tarjetaId,
+        kind: 'compra',
+        deltaCop: 75000,
+        categoria: 'comida',
+        descripcion: 'Restaurante',
+      });
+    });
+
+    const { cajitaMovimientos, transacciones } = await repo.cargarTodo();
+    expect(cajitaMovimientos).toHaveLength(1);
+    expect(cajitaMovimientos[0]).toMatchObject({
+      kind: 'compra',
+      deltaCop: 75000,
+      cuotasTotal: null,
+      cuotaCop: null,
+    });
+
+    expect(transacciones).toHaveLength(1);
+    expect(transacciones[0]).toMatchObject({
+      kind: 'gasto',
+      amountCop: 75000,
+      category: 'comida',
+      description: 'Restaurante',
+      cuentaId: tarjetaId,
+      cuotasTotal: null,
+      cuotaCop: null,
+    });
+    expect(cajitaMovimientos[0].id).toBe(transacciones[0].id);
+  });
+
+  it('records a financed card purchase with valid cuotasTotal and cuotaCop', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Tarjeta Nu',
+        icon: 'CreditCard',
+        tipo: 'tarjeta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
+    });
+    const tarjetaId = result.current.datos.cajitas[0].id;
+
+    await act(async () => {
+      await result.current.registrarMovimiento({
+        cajitaId: tarjetaId,
+        kind: 'compra',
+        deltaCop: 120000,
+        categoria: 'hogar',
+        descripcion: 'Mueble',
+        cuotasTotal: 6,
+        cuotaCop: 20000,
+      });
+    });
+
+    const { cajitaMovimientos, transacciones } = await repo.cargarTodo();
+    expect(cajitaMovimientos[0]).toMatchObject({
+      kind: 'compra',
+      deltaCop: 120000,
+      cuotasTotal: 6,
+      cuotaCop: 20000,
+    });
+
+    expect(transacciones[0]).toMatchObject({
+      kind: 'gasto',
+      amountCop: 120000,
+      cuotasTotal: 6,
+      cuotaCop: 20000,
+    });
+    expect(cajitaMovimientos[0].id).toBe(transacciones[0].id);
+  });
+
+  it('keeps the card movement synchronized when its transaction is edited or deleted', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'Tarjeta Nu',
+        icon: 'CreditCard',
+        tipo: 'tarjeta',
+        metaCop: null,
+        tasaEaPct: null,
+        saldoInicialCop: 0,
+      });
+    });
+    const tarjetaId = result.current.datos.cajitas[0].id;
+    await act(async () => {
+      await result.current.registrarMovimiento({
+        cajitaId: tarjetaId,
+        kind: 'compra',
+        deltaCop: 75000,
+        categoria: 'comida',
+        descripcion: 'Restaurante',
+      });
+    });
+
+    const original = result.current.datos.transacciones[0];
+    await act(async () => {
+      await result.current.actualizarTransaccion({
+        ...original,
+        amountCop: 92000,
+        category: 'hogar',
+        description: 'Compra corregida',
+        occurredOn: '2026-09-15',
+      });
+    });
+
+    const editados = await repo.cargarTodo();
+    expect(editados.transacciones[0]).toMatchObject({ amountCop: 92000, category: 'hogar' });
+    expect(editados.cajitaMovimientos[0]).toMatchObject({
+      id: original.id,
+      deltaCop: 92000,
+      categoria: 'hogar',
+      nota: 'Compra corregida',
+      occurredOn: '2026-09-15',
+    });
+
+    await act(async () => {
+      await result.current.borrarTransaccion(original.id);
+    });
+
+    const borrados = await repo.cargarTodo();
+    expect(borrados.transacciones).toEqual([]);
+    expect(borrados.cajitaMovimientos).toEqual([]);
+  });
+
+  it('removes both traces when deleting a legacy card purchase with different ids', async () => {
+    const tarjeta: Cajita = {
+      id: 'tarjeta-1',
+      nombre: 'Visa',
+      icon: 'CreditCard',
+      tipo: 'tarjeta',
+      metaCop: null,
+      tasaEaPct: null,
+      createdAt: '2026-09-01T00:00:00.000Z',
+      archivedAt: null,
+    };
+    const repo = new RepositorioMemoria({
+      cajitas: [tarjeta],
+      cajitaMovimientos: [{
+        id: 'mov-legado',
+        cajitaId: tarjeta.id,
+        kind: 'compra',
+        deltaCop: 45000,
+        categoria: 'comida',
+        occurredOn: '2026-09-10',
+        nota: 'Almuerzo',
+        createdAt: '2026-09-10T12:00:00.000Z',
+      }],
+      transacciones: [tx({
+        id: 'tx-legada',
+        amountCop: 45000,
+        cuentaId: tarjeta.id,
+        occurredOn: '2026-09-10',
+      })],
+    });
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.borrarTransaccion('tx-legada');
+    });
+
+    const datos = await repo.cargarTodo();
+    expect(datos.transacciones).toEqual([]);
+    expect(datos.cajitaMovimientos).toEqual([]);
+  });
+
   it('reports storage that will not open, without dying', async () => {
     const repo = new RepositorioMemoria();
     vi.spyOn(repo, 'cargarTodo').mockRejectedValue(new Error('IndexedDB bloqueado'));

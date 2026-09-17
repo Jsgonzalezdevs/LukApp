@@ -3,6 +3,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
 import {
   ajusteHacia,
+  emparejarComprasTarjeta,
   idsPasivos,
   patrimonio,
   historialDeCajita,
@@ -404,6 +405,58 @@ describe('el signo de un movimiento atribuido', () => {
     );
 
     expect(saldos.get('tar')).toBe(245_000);
+  });
+
+  it('cuenta una compra enlazada una sola vez aunque tenga dos rastros', () => {
+    const compra = tx({ id: 'operacion-1', cuentaId: 'tar', amountCop: 80_000 });
+    const movimiento = mov({
+      id: 'operacion-1',
+      cajitaId: 'tar',
+      kind: 'compra',
+      deltaCop: 80_000,
+      occurredOn: compra.occurredOn,
+    });
+
+    const saldos = saldosPorCajita(
+      [movimiento],
+      [compra],
+      idsPasivos([cuenta, tarjeta]),
+    );
+
+    expect(saldos.get('tar')).toBe(80_000);
+  });
+
+  it('mantiene el vínculo por id cuando se edita el monto de la transacción', () => {
+    const compraEditada = tx({ id: 'operacion-1', cuentaId: 'tar', amountCop: 95_000 });
+    const movimientoAnterior = mov({
+      id: 'operacion-1',
+      cajitaId: 'tar',
+      kind: 'compra',
+      deltaCop: 80_000,
+      occurredOn: compraEditada.occurredOn,
+    });
+    const pares = emparejarComprasTarjeta(
+      [movimientoAnterior],
+      [compraEditada],
+      idsPasivos([cuenta, tarjeta]),
+    );
+
+    expect(pares.get('operacion-1')).toBe('operacion-1');
+  });
+
+  it('empareja uno a uno compras antiguas idénticas', () => {
+    const pasivos = idsPasivos([cuenta, tarjeta]);
+    const transacciones = [
+      tx({ id: 'tx-a', cuentaId: 'tar', amountCop: 40_000 }),
+      tx({ id: 'tx-b', cuentaId: 'tar', amountCop: 40_000 }),
+    ];
+    const movimientos = [
+      mov({ id: 'mov-a', cajitaId: 'tar', kind: 'compra', deltaCop: 40_000, occurredOn: '2026-08-10' }),
+      mov({ id: 'mov-b', cajitaId: 'tar', kind: 'compra', deltaCop: 40_000, occurredOn: '2026-08-10' }),
+    ];
+
+    expect(emparejarComprasTarjeta(movimientos, transacciones, pasivos).size).toBe(2);
+    expect(saldosPorCajita(movimientos, transacciones, pasivos).get('tar')).toBe(80_000);
   });
 
   it('un ingreso abonado a una tarjeta baja lo que debes', () => {

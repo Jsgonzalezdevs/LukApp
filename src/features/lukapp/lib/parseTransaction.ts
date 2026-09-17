@@ -349,6 +349,31 @@ interface CompraACuotasOCR {
   comercio: string;
 }
 
+interface CuotasVoz {
+  cuotas: number;
+  indices: number[];
+}
+
+/**
+ * «A seis cuotas» contiene un número, pero ese número no es dinero. Detectarlo
+ * antes de buscar montos evita que el seis compita con el precio y permite
+ * guardar la financiación dicha por voz sin ensuciar la descripción.
+ */
+const cuotasDesdeVoz = (tokens: readonly Token[]): CuotasVoz | null => {
+  const normas = tokens.map((token) => token.norm);
+  for (let i = 0; i < normas.length - 2; i += 1) {
+    if (normas[i] !== 'a' && normas[i] !== 'en') continue;
+    const leido = readNumberAt(normas, i + 1);
+    if (!leido || leido.value < 2 || leido.value > 120 || !Number.isInteger(leido.value)) continue;
+    if (!/^cuotas?$/.test(normas[leido.next] ?? '')) continue;
+    return {
+      cuotas: leido.value,
+      indices: Array.from({ length: leido.next - i + 1 }, (_, desplazamiento) => i + desplazamiento),
+    };
+  }
+  return null;
+};
+
 /**
  * En el detalle de una compra a cuotas el último monto es la cuota, no la
  * compra. El OCR no conoce esa jerarquía visual y por eso hay que leer la
@@ -729,11 +754,17 @@ export const parseTransaction = (
   const tokens = tokenize(raw);
   const consumed = new Array<boolean>(tokens.length).fill(false);
   const compraACuotasOCR = compraACuotasDesdeOCR(raw);
+  const compraACuotasVoz = raw.startsWith('[OCR]') ? null : cuotasDesdeVoz(tokens);
+  for (const indice of compraACuotasVoz?.indices ?? []) consumed[indice] = true;
 
   // 1 — Amount. Extracted FIRST, and its tokens are removed from everything
   // downstream, so the category matcher can never see `mil` and the description
   // never repeats the number.
-  const candidates = findAmountCandidates(tokens);
+  const candidates = findAmountCandidates(tokens).filter((candidato) =>
+    !compraACuotasVoz?.indices.some(
+      (indice) => indice >= candidato.start && indice < candidato.end,
+    ),
+  );
 
   // MEGA UPGRADE 6: Fraction Math
   let fractionMultiplier = 1;
@@ -1432,8 +1463,10 @@ export const parseTransaction = (
     amount,
     category,
     dateOverride,
-    cuotasTotal: compraACuotasOCR?.cuotas ?? null,
-    cuotaCop: compraACuotasOCR?.cuotaCop ?? null,
+    cuotasTotal: compraACuotasOCR?.cuotas ?? compraACuotasVoz?.cuotas ?? null,
+    cuotaCop:
+      compraACuotasOCR?.cuotaCop ??
+      (compraACuotasVoz && amount !== null ? Math.round(amount / compraACuotasVoz.cuotas) : null),
     suggestedCategories,
     cuentaId,
     description,
@@ -1448,7 +1481,7 @@ export const parseTransaction = (
       cuentaSource,
       paymentMethod,
       recurringPattern: detectarRecurrencia(raw).patrón,
-      ambiguousAmount: compraACuotasOCR ? false : ambiguousAmount,
+      ambiguousAmount: compraACuotasOCR || compraACuotasVoz ? false : ambiguousAmount,
       destinatario,
       ubicacion,
       tags,
