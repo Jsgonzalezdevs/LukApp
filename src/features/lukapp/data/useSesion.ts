@@ -74,15 +74,19 @@ export const useSesion = (): Sesion => {
     cliente.auth.getSession().then(async ({ data, error: fallo }) => {
       if (cancelado) return;
 
-      // Si Auth limita la renovación, conservar el refresh token hace que cada
-      // apertura vuelva a golpear el mismo endpoint. Se descarta sólo la
-      // sesión de este navegador: la cuenta y sus demás dispositivos siguen
-      // intactos, y la persona puede entrar nuevamente cuando pase el límite.
-      if (esLimiteDeRenovacion(fallo)) {
+      // Un refresh token revocado, ya usado o vencido no puede recuperarse. Si
+      // se conserva, cada apertura vuelve a generar el mismo 400 de `/token`.
+      // Se descarta sólo esta sesión local; la cuenta y los demás dispositivos
+      // permanecen intactos.
+      if (!data.session && (esLimiteDeRenovacion(fallo) || esSesionGuardadaInvalida(fallo))) {
         await cliente.auth.signOut({ scope: 'local' });
         if (!cancelado) {
           setEstado({ modo: 'anonimo' });
-          setError('Tu sesión guardada se cerró para evitar más intentos automáticos. Vuelve a entrar.');
+          setError(
+            esLimiteDeRenovacion(fallo)
+              ? 'Tu sesión guardada se cerró para evitar más intentos automáticos. Vuelve a entrar.'
+              : 'Tu sesión guardada venció. Vuelve a entrar para cargar tus datos.',
+          );
         }
         return;
       }
@@ -282,6 +286,22 @@ const esLimiteDeRenovacion = (fallo: unknown): boolean => {
   if (!fallo || typeof fallo !== 'object') return false;
   const { status, message } = fallo as { status?: unknown; message?: unknown };
   return status === 429 || (typeof message === 'string' && /too many|rate limit/i.test(message));
+};
+
+/** Errores definitivos que Supabase devuelve al renovar una sesión antigua. */
+const esSesionGuardadaInvalida = (fallo: unknown): boolean => {
+  if (!fallo || typeof fallo !== 'object') return false;
+  const { code, message } = fallo as { code?: unknown; message?: unknown };
+  if (
+    code === 'refresh_token_not_found' ||
+    code === 'refresh_token_already_used' ||
+    code === 'session_expired' ||
+    code === 'session_not_found'
+  ) {
+    return true;
+  }
+  return typeof message === 'string' &&
+    /(invalid refresh token|refresh token.*(?:not found|already used|revoked|expired)|session.*expired)/i.test(message);
 };
 
 /** Supabase reports auth failures in English; this is a Spanish-only tool. */

@@ -15,6 +15,7 @@ type GrabadoraFalsa = {
 
 const grabadoras: GrabadoraFalsa[] = [];
 let alTerminarPista: (() => void) | undefined;
+const userAgentOriginal = navigator.userAgent;
 const pista = {
   stop: vi.fn(),
   addEventListener: vi.fn((evento: string, escuchar: () => void) => {
@@ -88,6 +89,7 @@ beforeEach(() => {
     value: { getUserMedia: vi.fn().mockResolvedValue(flujo) },
   });
   Object.defineProperty(navigator, 'permissions', { configurable: true, value: undefined });
+  Object.defineProperty(navigator, 'userAgent', { configurable: true, value: userAgentOriginal });
   instalarConexion();
   vi.stubGlobal('fetch', vi.fn().mockImplementation(() => respuesta({ text: 'pagué 20 mil' })));
   Object.defineProperty(window, 'AudioContext', { configurable: true, value: undefined });
@@ -439,6 +441,20 @@ describe('useAudioCapture', () => {
     expect(result.current.level).toBe(0);
     expect(cancelAnimationFrame).toHaveBeenCalledWith(7);
     expect(cerrarContexto).toHaveBeenCalled();
+  });
+
+  it('en iPhone usa una sola grabadora para conservar válido el audio final', async () => {
+    instalarConexion('4g');
+    Object.defineProperty(navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)',
+    });
+    const { result } = renderHook(() => useAudioCapture(vi.fn()));
+
+    await act(async () => result.current.start());
+
+    expect(grabadoras).toHaveLength(1);
+    await act(async () => result.current.cancel());
   });
 
   it('salta un segmento vacío y continúa escuchando sin añadir texto basura', async () => {

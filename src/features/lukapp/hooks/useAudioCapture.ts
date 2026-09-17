@@ -108,12 +108,19 @@ const opcionesGrabadora = (formato: string): MediaRecorderOptions => ({
   audioBitsPerSecond: conexionPermiteParciales() ? BITS_POR_SEGUNDO_VOZ : 48_000,
 });
 
-/** En 2G/3G los parciales compiten con el audio final y lo dejan sin datos. */
+/**
+ * En 2G/3G los parciales compiten con el audio final. En iOS, dos
+ * `MediaRecorder` sobre el mismo micrófono pueden además dejar inválido el MP4
+ * definitivo; allí se conserva únicamente la grabación continua que se guarda.
+ */
 const conexionPermiteParciales = (): boolean => {
   const conexion = (navigator as Navigator & {
     connection?: { effectiveType?: string; saveData?: boolean };
   }).connection;
-  return !conexion?.saveData && !['slow-2g', '2g', '3g'].includes(conexion?.effectiveType ?? '');
+  const esIOS = /iPad|iPhone|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return !esIOS && !conexion?.saveData &&
+    !['slow-2g', '2g', '3g'].includes(conexion?.effectiveType ?? '');
 };
 
 /**

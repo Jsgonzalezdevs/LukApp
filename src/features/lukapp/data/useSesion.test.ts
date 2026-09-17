@@ -9,6 +9,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 interface Fallo {
   message: string;
   status?: number;
+  code?: string;
 }
 type Aviso = (evento: string, sesion: unknown) => void;
 
@@ -19,7 +20,7 @@ const auth = {
   signInWithPassword: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
   signInWithOAuth: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
   signUp: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
-  signOut: vi.fn<() => Promise<{ error: Fallo | null }>>(),
+  signOut: vi.fn<(opciones?: { scope?: string }) => Promise<{ error: Fallo | null }>>(),
 };
 const rpc =
   vi.fn<(nombre: string, args: unknown) => Promise<{ data: unknown; error: Fallo | null }>>();
@@ -291,6 +292,39 @@ describe('useSesion — estado', () => {
     expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
     expect(result.current.estado.modo).toBe('anonimo');
     expect(result.current.error).toMatch(/sesión guardada/i);
+  });
+
+  it('elimina un refresh token inválido para no repetir el 400 en cada apertura', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: null },
+      error: {
+        message: 'Invalid Refresh Token: Refresh Token Not Found',
+        status: 400,
+        code: 'refresh_token_not_found',
+      },
+    });
+
+    const { result } = await montar();
+
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(result.current.estado.modo).toBe('anonimo');
+    expect(result.current.error).toMatch(/venció.*vuelve a entrar/i);
+  });
+
+  it('no cierra una sesión todavía válida por un fallo de renovación anticipada', async () => {
+    auth.getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1', email: 'yo@correo.com' } } },
+      error: {
+        message: 'Invalid Refresh Token: Refresh Token Not Found',
+        status: 400,
+        code: 'refresh_token_not_found',
+      },
+    });
+
+    const { result } = await montar();
+
+    expect(auth.signOut).not.toHaveBeenCalled();
+    expect(result.current.estado.modo).toBe('autenticado');
   });
 
   it('sigue el cierre de sesión hecho en otra pestaña', async () => {

@@ -30,6 +30,8 @@ describe('transcripción de voz', () => {
     const formulario = opciones?.body as FormData;
     expect(formulario.get('model')).toBe('whisper-large-v3');
     const prompt = String(formulario.get('prompt'));
+    expect(prompt.length).toBeLessThanOrEqual(896);
+    expect(new TextEncoder().encode(prompt).byteLength).toBeLessThanOrEqual(896);
     expect(prompt).toContain('Mi Bolsillo');
     for (const termino of [
       'tamal',
@@ -49,6 +51,28 @@ describe('transcripción de voz', () => {
     }
     expect(formulario.get('language')).toBe('es');
     expect(formulario.get('response_format')).toBe('verbose_json');
+  });
+
+  it('nunca supera el límite de prompt aunque lleguen treinta nombres largos', async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    fetcher.mockImplementation(() => respuesta({ text: 'Pagué veinte mil' }));
+    const vocabulario = Array.from(
+      { length: 30 },
+      (_, indice) => `Cuenta personalizada muy extensa número ${indice + 1}`,
+    );
+
+    await transcribirAudio(audio, 'audio/webm', {
+      entorno: { GROQ_API_KEY: 'groq' },
+      modo: 'final',
+      vocabulario,
+      fetcher,
+    });
+
+    const formulario = fetcher.mock.calls[0][1]?.body as FormData;
+    const prompt = String(formulario.get('prompt'));
+    expect(prompt.length).toBeLessThanOrEqual(896);
+    expect(new TextEncoder().encode(prompt).byteLength).toBeLessThanOrEqual(896);
+    expect(prompt).toContain(vocabulario[0]);
   });
 
   it('prioriza respuesta rápida en parciales y conserva Whisper grande', async () => {

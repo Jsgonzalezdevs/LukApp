@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.32.2', fecha: '2026-09-17', texto: 'El dictado vuelve a transcribir correctamente, conserva el audio completo en iPhone y limpia sesiones vencidas que impedían cargar tus datos.' },
   { version: '3.32.1', fecha: '2026-09-17', texto: 'Las compras con tarjeta que usan categorías personalizadas ahora se pueden editar sin bloquear el guardado ni afectar su historial.' },
   { version: '3.32.0', fecha: '2026-09-16', texto: 'El dictado ahora permite abonar tarjetas y deudas, mover dinero entre cuentas y cajitas, actualizar saldos, registrar rendimientos y anotar compras a cuotas, siempre con revisión antes de aplicar.' },
   { version: '3.31.3', fecha: '2026-09-16', texto: 'El Asesor distingue correctamente un servidor disponible de una respuesta real de la IA, conserva los errores aunque el estado llegue tarde y evita el zoom involuntario al editar nombres en iPhone.' },

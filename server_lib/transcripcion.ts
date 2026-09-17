@@ -140,14 +140,32 @@ const PALABRAS_CLAVE_BASE = [
   'cuatro por mil',
 ] as const;
 
+/** Groq dice "caracteres", pero en la práctica cuenta los bytes UTF-8. */
+const MAX_BYTES_PROMPT_GROQ = 896;
+
+const bytesUtf8 = (texto: string): number => new TextEncoder().encode(texto).byteLength;
+
 const CONTEXTO_BASE =
-  'Dictado breve para registrar un movimiento financiero en pesos colombianos. ' +
-  'Transcribe literalmente en español de Colombia. Las cifras, negaciones, nombres propios y ' +
-  'direcciones del dinero son críticas: conserva exactamente expresiones como pagué, gasté, ' +
-  'compré, retiré, transferí, aboné, actualiza el saldo, recibí, me pagaron, me transfirieron, ' +
-  'de, desde, a y hacia. Conserva también el nombre completo de cada cuenta, tarjeta o cajita. ' +
-  'No completes información que no se oye ni conviertas cantidades de productos en precios. ' +
-  'Las ortografías sugeridas son solo pistas: úsalas únicamente cuando realmente se oigan.';
+  'Transcribe literalmente este dictado financiero en español de Colombia. ' +
+  'Conserva cifras, negaciones, nombres de cuentas y la dirección del dinero ' +
+  '(de, desde, a, hacia; pagué, gasté, compré, retiré, transferí, aboné, recibí). ' +
+  'No inventes ni completes lo que no se oye, ni conviertas cantidades de productos en precios. ' +
+  'Usa las ortografías sugeridas solo si realmente se oyen.';
+
+const construirPrompt = (vocabulario: readonly string[]): string => {
+  const inicioLista = ' Ortografías esperadas: ';
+  const palabrasClave = [...vocabulario, ...PALABRAS_CLAVE_BASE];
+  const elegidas: string[] = [];
+
+  for (const termino of palabrasClave) {
+    const candidato = `${CONTEXTO_BASE}${inicioLista}${[...elegidas, termino].join(', ')}.`;
+    if (bytesUtf8(candidato) <= MAX_BYTES_PROMPT_GROQ) elegidas.push(termino);
+  }
+
+  return elegidas.length > 0
+    ? `${CONTEXTO_BASE}${inicioLista}${elegidas.join(', ')}.`
+    : CONTEXTO_BASE;
+};
 
 const normalizarTermino = (valor: unknown): string | null => {
   if (typeof valor !== 'string') return null;
@@ -230,16 +248,12 @@ const construirFormulario = (
   tipo: string,
   vocabulario: readonly string[],
 ): FormData => {
-  // Los nombres reales del usuario van primero: son los más difíciles y los
-  // más importantes. El tope mantiene la pista dentro del contexto corto de
-  // Whisper; una lista enorme pierde fuerza y puede terminar truncada.
-  const palabrasClave = [...vocabulario, ...PALABRAS_CLAVE_BASE].slice(0, 80);
-  const contextoPersonal =
-    `${CONTEXTO_BASE} Ortografías esperadas: ${palabrasClave.join(', ')}.`;
   const formulario = new FormData();
   formulario.append('file', audio, nombreAudioSegunTipo(tipo));
   formulario.append('model', proveedor.modelo);
-  formulario.append('prompt', contextoPersonal);
+  // Los nombres reales van primero. Se agregan pistas mientras quepan: Groq
+  // rechaza el audio completo con `invalid_prompt` en vez de truncar el texto.
+  formulario.append('prompt', construirPrompt(vocabulario));
   formulario.append('language', 'es');
   formulario.append('temperature', '0');
   formulario.append('response_format', 'verbose_json');
