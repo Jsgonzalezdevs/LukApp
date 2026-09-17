@@ -17,6 +17,8 @@ interface BotonAnotarProps {
   onBuscar: () => void;
   /** Si cambia con un timestamp > 0, dispara el dictado por voz y abre el overlay inmediatamente. */
   autoStartTrigger?: number;
+  /** Nombres propios que el motor debe distinguir aunque sean poco comunes. */
+  vocabulario?: readonly string[];
 }
 
 /**
@@ -27,6 +29,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   onManual,
   onBuscar,
   autoStartTrigger,
+  vocabulario = [],
 }) => {
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
@@ -70,7 +73,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
     onDictado(texto);
   }, [onDictado]);
 
-  const dictation = useDictation(manejarTextoFinal);
+  const dictation = useDictation(manejarTextoFinal, vocabulario);
   const { scanImage, isScanning, progress: ocrProgress, error: ocrError } = useImageOCR((ocrText) => {
     haptic.trigger('medium');
     audio.play('click');

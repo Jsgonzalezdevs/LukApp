@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CreditCard, Plus, Trash2 } from 'lucide-react';
+import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react';
 import { CATEGORIES, CATEGORY_COLOR, CATEGORY_ICON, CATEGORY_LABELS, tint } from '../types';
 import type { Category } from '../types';
 import type { Transaction } from '../types';
@@ -39,6 +39,8 @@ interface DeudasViewProps {
     detalles?: { cuotasTotal: number; cuotaCop: number; interesPct: number | null; cuotaManejoCop: number },
   ) => void;
   onEliminar: (cajitaId: string) => void;
+  /** La configuración de una tarjeta vive junto con sus compras y abonos. */
+  onActualizar?: (cajita: Cajita) => void;
   /** Live asset balances a payment can come out of. Never debts or cards. */
   cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
   onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => void;
@@ -62,6 +64,7 @@ const DeudaCard: React.FC<{
   onFijarSaldo: DeudasViewProps['onFijarSaldo'];
   onMovimiento: DeudasViewProps['onMovimiento'];
   onEliminar: DeudasViewProps['onEliminar'];
+  onActualizar?: DeudasViewProps['onActualizar'];
   cuentas: DeudasViewProps['cuentas'];
   onAbonar: DeudasViewProps['onAbonar'];
 }> = ({
@@ -72,6 +75,7 @@ const DeudaCard: React.FC<{
   onFijarSaldo,
   onMovimiento,
   onEliminar,
+  onActualizar,
   cuentas,
   onAbonar,
 }) => {
@@ -87,6 +91,12 @@ const DeudaCard: React.FC<{
   const [cuotaMensual, setCuotaMensual] = useState('');
   const [interes, setInteres] = useState('');
   const [cuotaManejo, setCuotaManejo] = useState('');
+  const [editandoTarjeta, setEditandoTarjeta] = useState(false);
+  const [nombreTarjeta, setNombreTarjeta] = useState(cajita.nombre);
+  const [limiteTarjeta, setLimiteTarjeta] = useState(formatAmountInput(cajita.limiteCreditoCop ?? null));
+  const [diaCorte, setDiaCorte] = useState(cajita.diaCorte ? String(cajita.diaCorte) : '');
+  const [diaPago, setDiaPago] = useState(cajita.diaPago ? String(cajita.diaPago) : '');
+  const [pagoMinimo, setPagoMinimo] = useState(formatAmountInput(cajita.pagoMinimoCop ?? null));
 
   const historial = historialDeCajita(movimientos, cajita.id);
   const comprasRegistradas = transacciones
@@ -135,6 +145,25 @@ const DeudaCard: React.FC<{
     setTexto(misma ? '' : siguiente === 'saldo' ? formatAmountInput(saldoCop) : '');
   };
 
+  const guardarTarjeta = (e: React.FormEvent) => {
+    e.preventDefault();
+    const nombre = nombreTarjeta.trim();
+    if (!onActualizar || !nombre) return;
+    const leerDia = (valor: string) => {
+      const dia = Number.parseInt(valor, 10);
+      return Number.isInteger(dia) && dia >= 1 && dia <= 31 ? dia : null;
+    };
+    onActualizar({
+      ...cajita,
+      nombre,
+      limiteCreditoCop: parseAmountInput(limiteTarjeta),
+      diaCorte: leerDia(diaCorte),
+      diaPago: leerDia(diaPago),
+      pagoMinimoCop: parseAmountInput(pagoMinimo),
+    });
+    setEditandoTarjeta(false);
+  };
+
   return (
     <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
       <div className="flex items-start gap-3">
@@ -160,15 +189,41 @@ const DeudaCard: React.FC<{
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setConfirmando((v) => !v)}
-          aria-label={`Eliminar ${cajita.nombre}`}
-          className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
-        >
-          <Trash2 className="h-4 w-4" strokeWidth={2.5} />
-        </button>
+        <div className="flex shrink-0 gap-1">
+          {onActualizar ? (
+            <button
+              type="button"
+              onClick={() => setEditandoTarjeta((v) => !v)}
+              aria-label={`Editar ${cajita.nombre}`}
+              aria-expanded={editandoTarjeta}
+              className="rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+            >
+              <Pencil className="h-4 w-4" strokeWidth={2.5} />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setConfirmando((v) => !v)}
+            aria-label={`Eliminar ${cajita.nombre}`}
+            className="rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+          >
+            <Trash2 className="h-4 w-4" strokeWidth={2.5} />
+          </button>
+        </div>
       </div>
+
+      {editandoTarjeta ? (
+        <form onSubmit={guardarTarjeta} className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3">
+          <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">{cajita.tipo === 'tarjeta' ? 'Nombre de la tarjeta' : 'Nombre de la deuda'}<input value={nombreTarjeta} onChange={(e) => setNombreTarjeta(e.target.value)} className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+          {cajita.tipo === 'tarjeta' ? <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cupo<input value={limiteTarjeta} onChange={(e) => setLimiteTarjeta(conPuntos(e.target.value))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pago mínimo<input value={pagoMinimo} onChange={(e) => setPagoMinimo(conPuntos(e.target.value))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de corte<input value={diaCorte} onChange={(e) => setDiaCorte(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de pago<input value={diaPago} onChange={(e) => setDiaPago(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+            </div> : null}
+          <button type="submit" className="mt-3 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[14px] font-semibold text-[var(--fin-on-accent)]">Guardar cambios</button>
+        </form>
+      ) : null}
 
       {pagoDelMes > 0 ? (
         <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-3 py-2.5">
@@ -411,6 +466,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   onFijarSaldo,
   onMovimiento,
   onEliminar,
+  onActualizar,
   cuentas,
   onAbonar,
 }) => {
@@ -620,6 +676,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
               onFijarSaldo={onFijarSaldo}
               onMovimiento={onMovimiento}
               onEliminar={onEliminar}
+              onActualizar={onActualizar}
               cuentas={cuentas}
               onAbonar={onAbonar}
             />

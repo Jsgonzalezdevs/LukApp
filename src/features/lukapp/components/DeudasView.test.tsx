@@ -49,6 +49,7 @@ const montar = (props: Partial<React.ComponentProps<typeof DeudasView>> = {}) =>
   const onMovimiento = vi.fn();
   const onEliminar = vi.fn();
   const onAbonar = vi.fn();
+  const onActualizar = vi.fn();
 
   render(
     <DeudasView
@@ -59,13 +60,14 @@ const montar = (props: Partial<React.ComponentProps<typeof DeudasView>> = {}) =>
       onFijarSaldo={onFijarSaldo}
       onMovimiento={onMovimiento}
       onEliminar={onEliminar}
+      onActualizar={onActualizar}
       cuentas={[{ id: 'nequi', nombre: 'Nequi' }]}
       onAbonar={onAbonar}
       {...props}
     />,
   );
 
-  return { onCrear, onFijarSaldo, onMovimiento, onEliminar, onAbonar };
+  return { onCrear, onFijarSaldo, onMovimiento, onEliminar, onAbonar, onActualizar };
 };
 
 describe('DeudasView', () => {
@@ -228,5 +230,19 @@ describe('DeudasView', () => {
     fireEvent.click(within(aviso.parentElement!).getByRole('button', { name: 'Eliminar' }));
 
     expect(onEliminar).toHaveBeenCalledWith('d1');
+  });
+
+  it('edits card data in the same view as its balance and payments', () => {
+    const { onActualizar } = montar();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Visa Davivienda' }));
+    fireEvent.change(screen.getByLabelText('Nombre de la tarjeta'), { target: { value: 'NuBank' } });
+    fireEvent.change(screen.getByLabelText('Cupo'), { target: { value: '1600000' } });
+    fireEvent.change(screen.getByLabelText('Día de pago'), { target: { value: '18' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(onActualizar).toHaveBeenCalledWith(expect.objectContaining({
+      id: 'd1', nombre: 'NuBank', limiteCreditoCop: 1_600_000, diaPago: 18,
+    }));
   });
 });

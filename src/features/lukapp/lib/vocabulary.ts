@@ -11,6 +11,7 @@ import type { Category, TxKind } from '../types';
  * because "me costó 80 mil" is an EXPENSE while "me pagaron 80 mil" is income.
  */
 export const KIND_PHRASES: ReadonlyArray<{ seq: readonly string[]; kind: TxKind }> = [
+  { seq: ['acabo', 'de', 'ganar'], kind: 'ingreso' },
   { seq: ['me', 'toco', 'pagar'], kind: 'gasto' },
   { seq: ['me', 'costo'], kind: 'gasto' },
   { seq: ['me', 'costaron'], kind: 'gasto' },

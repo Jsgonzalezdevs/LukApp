@@ -3219,7 +3219,7 @@
 .pwa-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(12, 10, 14, 0.58);
   pointer-events: auto;
   backdrop-filter: blur(2px);
 }
@@ -3230,22 +3230,24 @@
   width: 100%;
   max-width: 480px;
   max-height: 90vh;
-  background: #19171b;
+  color: var(--lp-ink);
+  background: var(--lp-bg);
+  border: 1px solid var(--lp-line);
   border-radius: 24px 24px 0 0;
   padding: 32px 24px;
   pointer-events: auto;
   overflow-y: auto;
-  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 24px 80px -22px rgba(0, 0, 0, 0.52);
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
 .pwa-progreso { display: flex; gap: 6px; margin: -4px 0 2px; }
-.pwa-progreso span { height: 4px; flex: 1; border-radius: 99px; background: #403b43; }
-.pwa-progreso span.activo { background: #b8ed45; }
-.pwa-paso-activo { min-height: 92px; padding: 14px; border-radius: 16px; background: #252127; }
-.pwa-contenido small { display: block; margin-top: 7px; font-size: .78rem; color: #aaa3ae; line-height: 1.4; }
+.pwa-progreso span { height: 4px; flex: 1; border-radius: 99px; background: var(--lp-line); }
+.pwa-progreso span.activo { background: var(--lp-accent); }
+.pwa-paso-activo { min-height: 92px; padding: 14px; border: 1px solid var(--lp-line); border-radius: 16px; background: var(--lp-surface); }
+.pwa-contenido small { display: block; margin-top: 7px; font-size: .78rem; color: var(--lp-ink-faint); line-height: 1.4; }
 
 @media (min-width: 768px) {
   .pwa-modal {
@@ -3319,14 +3321,14 @@
   width: 36px;
   height: 36px;
   border-radius: 999px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-line);
+  background: color-mix(in srgb, var(--lp-accent) 14%, var(--lp-surface));
+  border: 1px solid color-mix(in srgb, var(--lp-accent) 32%, var(--lp-line));
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
   font-size: 0.85rem;
-  color: var(--lp-ink);
+  color: var(--lp-accent);
 }
 
 .pwa-contenido h3 {
@@ -3349,6 +3351,7 @@
   gap: 12px;
   padding: 16px;
   background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
   border-radius: 12px;
   margin: 8px 0;
 }
@@ -3379,4 +3382,16 @@
 
 .pwa-continuar {
   width: 100%;
+}
+
+.pwa-despues {
+  width: 100%;
+  border: 1px solid var(--lp-line);
+  background: var(--lp-surface);
+  color: var(--lp-ink-soft);
+}
+
+.pwa-despues:hover {
+  background: var(--lp-surface-hover);
+  color: var(--lp-ink);
 }

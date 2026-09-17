@@ -22,6 +22,15 @@ export interface UseAudioCapture {
   cancel: () => void;
 }
 
+type CalidadTranscripcion = 'alta' | 'media' | 'baja';
+
+interface RespuestaTranscripcion {
+  text?: string;
+  offline?: boolean;
+  error?: string;
+  calidad?: CalidadTranscripcion;
+}
+
 /**
  * Formatos que se le piden a MediaRecorder, del mejor al que siempre queda.
  *
@@ -59,7 +68,7 @@ const MAX_MS = 60_000;
  * Whisper no contesta "no oí nada": se inventa una frase de relleno. Descartar
  * aquí es más honesto que adivinar después, y de paso ahorra la petición.
  */
-const MIN_MS = 800;
+const MIN_MS = 650;
 
 /**
  * Cuánto dura cada segmento del "streaming".
@@ -92,11 +101,11 @@ const TIEMPO_MAX_TRANSCRIPCION_MS = 18_000;
  * En Wi‑Fi/4G se conserva más detalle de consonantes y nombres propios; en
  * señal débil se baja el peso para que la subida sí llegue al servidor.
  */
-const BITS_POR_SEGUNDO_VOZ = 64_000;
+const BITS_POR_SEGUNDO_VOZ = 96_000;
 
 const opcionesGrabadora = (formato: string): MediaRecorderOptions => ({
   ...(formato ? { mimeType: formato } : {}),
-  audioBitsPerSecond: conexionPermiteParciales() ? BITS_POR_SEGUNDO_VOZ : 32_000,
+  audioBitsPerSecond: conexionPermiteParciales() ? BITS_POR_SEGUNDO_VOZ : 48_000,
 });
 
 /** En 2G/3G los parciales compiten con el audio final y lo dejan sin datos. */
@@ -156,25 +165,32 @@ const enPalabras = (motivo: string | undefined): string => {
 const peticionTranscribir = async (
   audioBlob: Blob,
   tipoMime: string,
-): Promise<{ text?: string; offline?: boolean; error?: string } | null> => {
+  modo: 'parcial' | 'final',
+  vocabulario: readonly string[],
+): Promise<RespuestaTranscripcion | null> => {
+  const vocabularioCodificado = vocabulario.length > 0
+    ? encodeURIComponent(JSON.stringify(vocabulario.slice(0, 30)))
+    : null;
   const intentar = async (url: string) => {
     const controlador = new AbortController();
     const tiempo = setTimeout(() => controlador.abort(), TIEMPO_MAX_TRANSCRIPCION_MS);
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': tipoMime },
+        headers: {
+          'Content-Type': tipoMime,
+          'X-LukApp-Transcription-Mode': modo,
+          ...(vocabularioCodificado
+            ? { 'X-LukApp-Vocabulario': vocabularioCodificado }
+            : {}),
+        },
         body: audioBlob,
         signal: controlador.signal,
       });
       // Un 4xx no mejora al reenviar el mismo audio: duplicarlo era una espera
       // inútil. Un 5xx o una caída de red sí merece un único reintento.
       if (!res.ok) return { data: null, reintentar: res.status >= 500 };
-      const data = (await res.json().catch(() => null)) as {
-        text?: string;
-        offline?: boolean;
-        error?: string;
-      } | null;
+      const data = (await res.json().catch(() => null)) as RespuestaTranscripcion | null;
       return { data, reintentar: data === null };
     } catch {
       return { data: null, reintentar: true };
@@ -212,7 +228,10 @@ const peticionTranscribir = async (
  * un `FormData` llegaba entero —con sobre y todo— y Whisper lo rechazaba por no
  * ser audio.
  */
-export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCapture => {
+export const useAudioCapture = (
+  onFinal: (text: string) => void,
+  vocabulario: readonly string[] = [],
+): UseAudioCapture => {
   const [status, setStatus] = useState<AudioCaptureStatus>('idle');
   const [interim, setInterim] = useState('');
   const [level, setLevel] = useState(0);
@@ -224,6 +243,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   const topeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inicioRef = useRef(0);
   const onFinalRef = useRef(onFinal);
+  const vocabularioRef = useRef(vocabulario);
   // Si se cancela mientras se graba (o mientras el permiso todavía se está
   // pidiendo), el audio que ya se capturó se tira en vez de subirse.
   const canceladoRef = useRef(false);
@@ -349,7 +369,7 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
         return;
       }
 
-      peticionTranscribir(audioSeg, tipoSeg)
+      peticionTranscribir(audioSeg, tipoSeg, 'parcial', vocabularioRef.current)
         .then((datos) => {
           if (miSesion !== sesionRef.current) return;
           if (!datos || datos.offline) return;
@@ -377,6 +397,10 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
   useEffect(() => {
     onFinalRef.current = onFinal;
   }, [onFinal]);
+
+  useEffect(() => {
+    vocabularioRef.current = vocabulario;
+  }, [vocabulario]);
 
   const supported =
     typeof navigator !== 'undefined' &&
@@ -449,7 +473,14 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 48_000 },
+          sampleSize: { ideal: 16 },
+        },
       });
     } catch (err: unknown) {
       const nombre = err instanceof DOMException ? err.name : '';
@@ -570,7 +601,12 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
 
       setStatus('processing');
       try {
-        const datos = await peticionTranscribir(audio, tipo);
+        const datos = await peticionTranscribir(
+          audio,
+          tipo,
+          'final',
+          vocabularioRef.current,
+        );
 
         if (!datos) {
           setError('No se pudo conectar para transcribir. Revisa tu conexión o la API.');
@@ -589,6 +625,15 @@ export const useAudioCapture = (onFinal: (text: string) => void): UseAudioCaptur
         const texto = typeof datos.text === 'string' ? datos.text.trim() : '';
         if (!texto || esAlucinacion(texto)) {
           setError('No se entendió lo que dijiste. Intenta otra vez.');
+          return;
+        }
+
+        // Si Whisper detecta demasiado silencio o una probabilidad acústica muy
+        // baja, pedir otra toma es preferible a presentar un monto inventado.
+        // El modelo de máxima precisión no expone esta señal y por eso no se
+        // penaliza: solo se aplica cuando el proveedor realmente la entregó.
+        if (datos.calidad === 'baja') {
+          setError('El audio no quedó suficientemente claro. Acércate al micrófono e intenta otra vez.');
           return;
         }
 

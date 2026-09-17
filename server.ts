@@ -18,6 +18,11 @@ import {
   movimientoDesdeAtajo,
   pistaDeLlave,
 } from './server_lib/atajos.ts';
+import {
+  leerVocabularioPersonal,
+  transcribirAudio,
+  type ModoTranscripcion,
+} from './server_lib/transcripcion.ts';
 
 dotenv.config();
 
@@ -2243,98 +2248,40 @@ Reglas obligatorias:
 });
 
 // ----------------------------------------------------------------------
-// ENDPOINT: Transcribir Audio (Whisper)
+// ENDPOINT: Transcribir Audio
 // ----------------------------------------------------------------------
-/**
- * Vocabulario que se le adelanta al modelo.
- *
- * Whisper acepta un texto de contexto y lo usa para inclinar lo que oye. Sin él
- * "pagué mi crédito en Nu" salía como "Baggi míld ey doguín nú": nombres de
- * bancos colombianos de dos letras no están en lo que el modelo espera oír, y
- * sin pista los reconstruye con fonética de otro idioma.
- */
-const CONTEXTO_ES =
-  'Anotación de un gasto o un ingreso en pesos colombianos. ' +
-  'Bancos y aplicaciones: Nequi, Daviplata, Bancolombia, Davivienda, Nu, Rappi, ' +
-  'RappiPay, Lulo, Ualá, Falabella, Scotiabank, Colpatria, BBVA, Bold, Addi. ' +
-  'Palabras frecuentes: pagué, gasté, compré, retiré, transferí, me dieron, ' +
-  'mercado, almuerzo, desayuno, comida, domicilio, transporte, gasolina, ' +
-  'arriendo, servicios, crédito, cuota, mil, millón.';
-
 app.post('/api/transcribir', async (req, res) => {
-  // Transcripción sin autenticación requerida (funciona en PWA sin login).
-  //
-  // Groq va primero: su capa gratuita cubre ocho horas de audio al día, mucho
-  // más de lo que esta app dicta, y su API es compatible con la de OpenAI, así
-  // que lo único que cambia entre los dos es la URL y el modelo.
-  const proveedor = process.env.GROQ_API_KEY
-    ? {
-        nombre: 'Groq',
-        llave: process.env.GROQ_API_KEY,
-        url: 'https://api.groq.com/openai/v1/audio/transcriptions',
-        modelo: 'whisper-large-v3',
-      }
-    : process.env.OPENAI_API_KEY
-      ? {
-          nombre: 'OpenAI',
-          llave: process.env.OPENAI_API_KEY,
-          url: 'https://api.openai.com/v1/audio/transcriptions',
-          modelo: 'whisper-1',
-        }
-      : null;
-
-  if (!proveedor) {
-    return res.status(200).json({ offline: true, error: 'Falta llave de transcripción' });
-  }
-
   try {
     const audioBuffer = req.body as Buffer;
     if (!audioBuffer || audioBuffer.length === 0) {
-      return res.status(400).json({ error: 'No audio data provided' });
+      return res.status(200).json({ offline: true, error: 'No llegó audio' });
     }
 
-    // Whisper elige el decodificador por la EXTENSIÓN del archivo, no por el
-    // tipo MIME. Un iPhone graba mp4, así que mandarlo siempre como
-    // "audio.webm" hacía que lo rechazara sin más.
     const tipo = req.headers['content-type'] ?? 'audio/webm';
-    const nombre = tipo.includes('mp4') || tipo.includes('m4a')
-      ? 'audio.mp4'
-      : tipo.includes('mpeg') || tipo.includes('mp3')
-        ? 'audio.mp3'
-        : tipo.includes('ogg')
-          ? 'audio.ogg'
-          : tipo.includes('wav')
-            ? 'audio.wav'
-            : 'audio.webm';
+    const modo: ModoTranscripcion =
+      req.headers['x-lukapp-transcription-mode'] === 'parcial' ? 'parcial' : 'final';
+    const cabeceraVocabulario = req.headers['x-lukapp-vocabulario'];
+    const vocabulario = leerVocabularioPersonal(
+      Array.isArray(cabeceraVocabulario) ? cabeceraVocabulario[0] : cabeceraVocabulario,
+    );
+    const resultado = await transcribirAudio(
+      new Blob([audioBuffer], { type: tipo }),
+      tipo,
+      {
+        entorno: process.env,
+        modo,
+        vocabulario,
+        onError: (mensaje) => console.error(mensaje),
+      },
+    );
 
-    // FormData solo funciona en Node 18.10+
-    const formData = new FormData();
-    formData.append('file', new Blob([audioBuffer], { type: tipo }), nombre);
-    formData.append('model', proveedor.modelo);
-    // Fijo, no detectado: esta app se habla en español y punto.
-    formData.append('language', 'es');
-    formData.append('prompt', CONTEXTO_ES);
-    formData.append('temperature', '0');
-
-    const whisperRes = await fetch(proveedor.url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${proveedor.llave}` },
-      body: formData,
-    });
-
-    if (!whisperRes.ok) {
-      const error = await whisperRes.text();
-      console.error(
-        `[transcribir] ${proveedor.nombre} ${whisperRes.status}: ${error.slice(0, 200)}`,
-      );
-      return res.status(200).json({ offline: true, error: 'Transcription failed' });
-    }
-
-    const { text } = (await whisperRes.json()) as { text?: string };
-    return res.status(200).json({ success: true, text: text || '' });
-  } catch (error: any) {
+    return res.status(200).json(resultado);
+  } catch (error: unknown) {
     console.error('Error en transcripción:', error);
-    return res.status(200).json({ offline: true, error: error.message });
+    return res.status(200).json({
+      offline: true,
+      error: error instanceof Error ? error.message : 'No se pudo transcribir',
+    });
   }
 });
 

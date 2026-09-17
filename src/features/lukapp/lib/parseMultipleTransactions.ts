@@ -30,6 +30,24 @@ export const parseMultipleTransactions = (
     return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
   }
 
+  // Una cláusula de precio explica el mismo movimiento, aunque el dictado
+  // contenga cantidades o conectores: “me gasté 3 cafés con leche que me costó
+  // 7.500” no son dos gastos de 3 y 7.500 pesos, sino una sola compra.
+  if (/\b(?:que\s+)?me\s+(?:costo|costó|costaron|valio|valió|valieron|salio|salió|salieron)\b/i.test(trimmed)) {
+    return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
+  }
+
+  // Si hay varios productos unidos por “y” pero una sola cifra final marcada
+  // con “por” o “en total”, la cifra es el total de una sola compra. Dividirla
+  // produciría apuntes absurdos como $2 por dos pizzas y $45.000 por la gaseosa.
+  if (
+    /(?:^|\s)(?:compre|compré|pedi|pedí|gaste|gasté|pague|pagué)(?:\s|$)[\s\S]*\by\b[\s\S]*\b(?:por|en\s+total)\s+\$?\s*(?:\d+|un(?:a)?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\b/i.test(
+      trimmed,
+    )
+  ) {
+    return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
+  }
+
   // 1. Intentar división por saltos de línea (si el usuario pegó varias líneas)
   const lineas = trimmed
     .split(/\r?\n+/)

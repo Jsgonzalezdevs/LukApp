@@ -22,6 +22,13 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.31.0', fecha: '2026-09-16', texto: 'El dictado ahora prioriza la máxima precisión, reconoce los nombres de tus cuentas y categorías, descarta audios poco claros y muestra exactamente qué entendió antes de guardar.' },
+  { version: '3.30.12', fecha: '2026-09-16', texto: 'La guía para instalar LukApp ahora tiene contraste claro, textos legibles y una apariencia consistente tanto en modo claro como oscuro.' },
+  { version: '3.30.11', fecha: '2026-09-16', texto: 'También unificamos las deudas: sus pagos, saldo, historial y edición ahora viven en la misma vista, sin abrir una ficha aparte.' },
+  { version: '3.30.10', fecha: '2026-09-16', texto: 'Las tarjetas de crédito ahora se administran en una sola vista: compras, abonos, saldo y configuración de la tarjeta están juntos.' },
+  { version: '3.30.9', fecha: '2026-09-16', texto: 'El dictado reconoce mejor compras con varios productos: las cantidades no se confunden con dinero y un total dicho al final permanece en un solo movimiento.' },
+  { version: '3.30.8', fecha: '2026-09-16', texto: 'Al dictar una compra con cantidad y precio, LukApp la conserva como un solo gasto y toma correctamente el valor total.' },
+  { version: '3.30.7', fecha: '2026-09-16', texto: 'Frases como “acabo de ganar” ahora se reconocen correctamente como ingresos al registrar un movimiento.' },
   { version: '3.30.6', fecha: '2026-09-14', texto: 'Los enlaces a los términos y la privacidad ya abren correctamente incluso cuando llegas directamente desde un enlace compartido.' },
   { version: '3.30.5', fecha: '2026-09-14', texto: 'El aviso de privacidad ahora es más breve: reúne términos, privacidad y las opciones claras para aceptar o declinar la analítica opcional.' },
   { version: '3.30.4', fecha: '2026-09-14', texto: 'El pie de la portada ahora reúne claramente los enlaces legales y de contacto para encontrarlos desde cualquier sección.' },

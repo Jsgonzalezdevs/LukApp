@@ -40,8 +40,11 @@ export interface UseDictation {
  * estándar y se comporta igual en todas partes. Un camino que funciona en todos
  * lados vale más que dos que hay que adivinar cuál está vivo.
  */
-export const useDictation = (onFinal: (text: string) => void): UseDictation => {
-  const captura = useAudioCapture(onFinal);
+export const useDictation = (
+  onFinal: (text: string) => void,
+  vocabulario: readonly string[] = [],
+): UseDictation => {
+  const captura = useAudioCapture(onFinal, vocabulario);
 
   return {
     supported: captura.supported,

@@ -51,4 +51,35 @@ describe('parseMultipleTransactions', () => {
     expect(res).toHaveLength(1);
     expect(res[0].amount).toBe(10000);
   });
+
+  it('conserva una compra con cantidad y una cláusula de precio como un solo gasto', () => {
+    const res = parseMultipleTransactions('Me gasté 3 cafés con leche que me costó 7500');
+    expect(res).toHaveLength(1);
+    expect(res[0]).toMatchObject({
+      kind: 'gasto',
+      amount: 7500,
+      category: 'comida',
+      description: '3 cafés con leche',
+    });
+  });
+
+  it('no separa productos ni confunde sus cantidades cuando dicen un único total', () => {
+    for (const texto of [
+      'Me gasté tres cafés con leche y dos panes que me costaron siete mil quinientos',
+      'Compré 2 pizzas y una gaseosa por 45 mil',
+    ]) {
+      const res = parseMultipleTransactions(texto);
+      expect(res).toHaveLength(1);
+    }
+
+    expect(parseMultipleTransactions('Compré 2 pizzas y una gaseosa por 45 mil')[0]).toMatchObject({
+      kind: 'gasto', amount: 45_000, category: 'comida',
+    });
+  });
+
+  it('sí conserva separados los montos que expresan dos movimientos distintos', () => {
+    const res = parseMultipleTransactions('Pagué 20 mil de taxi y 30 mil de almuerzo');
+    expect(res).toHaveLength(2);
+    expect(res.map((movimiento) => movimiento.amount)).toEqual([20_000, 30_000]);
+  });
 });

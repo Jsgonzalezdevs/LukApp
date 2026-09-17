@@ -290,9 +290,31 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const { cuentaFavoritaId, setCuentaFavorita } = useCuentaFavorita();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
+  // Los nombres propios del libro son justo lo que un transcriptor general no
+  // conoce. Se mandan como pistas (no como texto obligatorio) para distinguir
+  // cuentas, categorías y apodos sin enseñarle al servidor todo el historial.
+  const vocabularioDictado = useMemo(() => {
+    const terminos = [
+      ...cajitas.filter((c) => !c.archivedAt).map((c) => c.nombre),
+      ...categorias.filter((c) => !c.archivedAt).map((c) => c.nombre),
+      ...almacen.datos.contactos
+        .filter((c) => !c.archivedAt)
+        .flatMap((c) => [c.nombre, ...c.apodos]),
+    ];
+    const vistos = new Set<string>();
+    return terminos.filter((termino) => {
+      const limpio = termino.trim();
+      const clave = limpio.toLocaleLowerCase('es');
+      if (limpio.length < 2 || vistos.has(clave)) return false;
+      vistos.add(clave);
+      return true;
+    }).slice(0, 30);
+  }, [cajitas, categorias, almacen.datos.contactos]);
+
   const [pending, setPending] = useState<ParsedTransaction | null>(null);
   const [multiPending, setMultiPending] = useState<ParsedTransaction[] | null>(null);
   const [transferenciaPorVoz, setTransferenciaPorVoz] = useState<TransferenciaPorVoz | null>(null);
+  const [disparoDictado, setDisparoDictado] = useState(0);
   const [editando, setEditando] = useState<Transaction | null>(null);
   const [analizando, setAnalizando] = useState<Transaction | null>(null);
   // Una sola variable de navegación. Antes eran tres a la vez (la sección, la
@@ -687,6 +709,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               onDictado={handleSubmit}
               onManual={() => setPending(movimientoEnBlanco())}
               onBuscar={() => setCapa('buscar')}
+              autoStartTrigger={disparoDictado}
+              vocabulario={vocabularioDictado}
             />
           )
         }
@@ -807,7 +831,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             modoPrivacidad={modoPrivacidad}
             cuentaFavoritaId={cuentaFavoritaId}
             onAbrir={(cajita) => {
-              setPanelDineroCajitaId(cajita.id);
+              // Las tarjetas se administran exclusivamente en su vista: ahí
+              // viven compras, abonos, saldo y configuración, sin un detalle
+              // genérico paralelo que parezca una segunda tarjeta distinta.
+              setPanelDineroCajitaId(ES_PASIVO[cajita.tipo] ? null : cajita.id);
               setPanelDinero(
                 cajita.tipo === 'tarjeta' ? 'tarjeta' : ES_PASIVO[cajita.tipo] ? 'deuda' : cajita.tipo === 'cajita' ? 'cajita' : 'cuenta',
               );
@@ -963,6 +990,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                   void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria, ...detalles })
                 }
                 onEliminar={(id) => void almacen.borrarCajita(id)}
+                onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
                 cuentas={cuentasParaElegir}
                 onAbonar={(datos) => void almacen.abonarDeuda(datos)}
               />
@@ -1198,6 +1226,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               setEsPrimeraPrueba(false);
               cerrarCaptura();
             }}
+            onReintentarVoz={pending.raw.trim() ? () => {
+              setPending(null);
+              setDisparoDictado((actual) => actual + 1);
+            } : undefined}
           />
         ) : null}
 

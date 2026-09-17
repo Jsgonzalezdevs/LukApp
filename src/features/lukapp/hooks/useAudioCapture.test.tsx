@@ -134,6 +134,61 @@ describe('useAudioCapture', () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  it('envía vocabulario propio solo como pista y marca la toma definitiva', async () => {
+    const alFinal = vi.fn();
+    const { result } = renderHook(() =>
+      useAudioCapture(alFinal, ['Mi Bolsillo', 'Ana María']),
+    );
+
+    await act(async () => result.current.start());
+    await act(async () => {
+      ahora += 900;
+      result.current.stop();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(alFinal).toHaveBeenCalled());
+    const opciones = vi.mocked(fetch).mock.calls[0][1];
+    const cabeceras = new Headers(opciones?.headers);
+    expect(cabeceras.get('X-LukApp-Transcription-Mode')).toBe('final');
+    expect(
+      JSON.parse(decodeURIComponent(cabeceras.get('X-LukApp-Vocabulario') ?? '')),
+    ).toEqual(['Mi Bolsillo', 'Ana María']);
+  });
+
+  it('pide audio mono de buena calidad con limpieza de ruido', async () => {
+    const { result } = renderHook(() => useAudioCapture(vi.fn()));
+    await act(async () => result.current.start());
+
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith({
+      audio: expect.objectContaining({
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: { ideal: 1 },
+        sampleRate: { ideal: 48_000 },
+      }),
+    });
+    await act(async () => result.current.cancel());
+  });
+
+  it('no entrega una transcripción con calidad acústica baja', async () => {
+    vi.mocked(fetch).mockImplementationOnce(() =>
+      respuesta({ text: 'pagué cincuenta mil', calidad: 'baja' }),
+    );
+    const alFinal = vi.fn();
+    const { result } = renderHook(() => useAudioCapture(alFinal));
+    await act(async () => result.current.start());
+    await act(async () => {
+      ahora += 900;
+      result.current.stop();
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.error).toContain('suficientemente claro'));
+    expect(alFinal).not.toHaveBeenCalled();
+  });
+
   it('pasa a procesando en el mismo toque aunque el navegador tarde en emitir onstop', async () => {
     MediaRecorderFalso.demorarStop = true;
     const { result } = renderHook(() => useAudioCapture(vi.fn()));

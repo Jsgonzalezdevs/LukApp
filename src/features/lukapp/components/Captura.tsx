@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Keyboard, Loader2, Sparkles, Star, Wallet, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Ear, Keyboard, Loader2, Mic, Sparkles, Star, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { etiquetaTipoCajita, type Cajita } from '../data/modelos';
@@ -39,6 +39,8 @@ interface CapturaProps {
   cuentaPorDefecto?: string | null;
   /** Marca si es la primera prueba por micrófono del onboarding. */
   esPrimeraPrueba?: boolean;
+  /** Descarta este intento y abre inmediatamente una nueva escucha. */
+  onReintentarVoz?: () => void;
 }
 
 /**
@@ -58,6 +60,7 @@ export const Captura: React.FC<CapturaProps> = ({
   onFoto,
   cuentaPorDefecto = null,
   esPrimeraPrueba = false,
+  onReintentarVoz,
 }) => {
   const [digitos, setDigitos] = useState(() =>
     parsed.amount === null ? '' : String(Math.round(parsed.amount)),
@@ -192,6 +195,15 @@ export const Captura: React.FC<CapturaProps> = ({
 
   const amountCop = digitos === '' ? null : Number(digitos);
   const esGasto = kind === 'gasto';
+  const alertaRevision = parsed.signals.amountSource === 'none' && parsed.amount !== null
+    ? 'No escuché un monto; propuse el de un movimiento anterior. Confírmalo o cámbialo.'
+    : parsed.signals.amountSource === 'none'
+      ? 'No pude identificar el monto. Escríbelo antes de guardar.'
+    : parsed.signals.ambiguousAmount
+      ? 'Escuché más de una cifra. Confirma que el monto grande sea el total correcto.'
+      : parsed.signals.kindSource === 'default'
+        ? 'No quedó claro si el dinero entró o salió. Revisa Gasto o Ingreso.'
+        : null;
 
   // Frecuencia de categorías para ordenar las más usadas primero
   const frecuenciaCategorias = useMemo(() => {
@@ -399,6 +411,43 @@ export const Captura: React.FC<CapturaProps> = ({
           </button>
         </div>
       </div>
+
+      {/* La transcripción definitiva debe permanecer visible durante la
+          confirmación. El texto parcial del overlay es solo una ayuda mientras
+          se habla y puede equivocarse; aquí se enseña exactamente la versión
+          que produjo los campos de abajo. */}
+      {parsed.raw.trim() ? (
+        <section
+          className="mt-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3.5 py-3"
+          aria-label="Transcripción del dictado"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+              <Ear className="h-3.5 w-3.5" aria-hidden="true" />
+              Esto fue lo que entendí
+            </span>
+            {onReintentarVoz ? (
+              <button
+                type="button"
+                onClick={onReintentarVoz}
+                className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--fin-ink-soft)]"
+              >
+                <Mic className="h-3.5 w-3.5" aria-hidden="true" />
+                Dictar otra vez
+              </button>
+            ) : null}
+          </div>
+          <p className="mt-2 text-[14px] font-medium leading-relaxed text-[var(--fin-ink)]">
+            &ldquo;{parsed.raw.trim()}&rdquo;
+          </p>
+          {alertaRevision ? (
+            <p className="mt-2 flex items-start gap-1.5 text-[12px] font-semibold leading-snug text-[var(--fin-warn)]">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+              {alertaRevision}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Indicador de escaneo activo en Captura */}
       {escaneandoFoto ? (

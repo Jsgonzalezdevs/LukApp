@@ -151,6 +151,7 @@ describe('parseTransaction — income', () => {
     expect(parseTransaction('recibí 500 mil de un cliente').kind).toBe('ingreso');
     expect(parseTransaction('cobré 300 mil').kind).toBe('ingreso');
     expect(parseTransaction('gané 50 mil').kind).toBe('ingreso');
+    expect(parseTransaction('acabo de ganar 20 mil pesos en Rappi').kind).toBe('ingreso');
     expect(parseTransaction('me llegó el pago de 800 mil').kind).toBe('ingreso');
   });
 
