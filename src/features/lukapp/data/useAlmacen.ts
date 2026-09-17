@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { Category, Transaction } from '../types';
+import { CATEGORIES, type Category, type Transaction } from '../types';
 import { bogotaDate } from '../lib/localDate';
 import { nuevoId } from '../lib/id';
 import { nuevaClaveCategoria } from '../categorias';
@@ -499,7 +499,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
             ...movimientoAnterior,
             cajitaId: tx.cuentaId!,
             deltaCop: Math.abs(tx.amountCop),
-            categoria: tx.category,
+            categoria: CATEGORIES.includes(tx.category as Category)
+              ? (tx.category as Category)
+              : null,
             occurredOn: tx.occurredOn,
             nota: tx.description,
             cuotasTotal: tx.cuotasTotal ?? null,

@@ -323,6 +323,17 @@ describe('useAlmacen', () => {
     });
 
     await act(async () => {
+      await result.current.actualizarTransaccion({
+        ...original,
+        category: 'categoria-personalizada',
+      });
+    });
+
+    const personalizados = await repo.cargarTodo();
+    expect(personalizados.transacciones[0].category).toBe('categoria-personalizada');
+    expect(personalizados.cajitaMovimientos[0].categoria).toBeNull();
+
+    await act(async () => {
       await result.current.borrarTransaccion(original.id);
     });
 
