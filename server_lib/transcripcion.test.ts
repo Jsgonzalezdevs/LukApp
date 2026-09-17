@@ -29,8 +29,22 @@ describe('transcripción de voz', () => {
     expect(url).toBe('https://api.groq.com/openai/v1/audio/transcriptions');
     const formulario = opciones?.body as FormData;
     expect(formulario.get('model')).toBe('whisper-large-v3');
-    expect(formulario.get('prompt')).toContain('Mi Bolsillo');
-    expect(formulario.get('prompt')).toContain('Nequi');
+    const prompt = String(formulario.get('prompt'));
+    expect(prompt).toContain('Mi Bolsillo');
+    for (const termino of [
+      'tamal',
+      'lechona',
+      'sancocho',
+      'chipcha',
+      'Chibcha',
+      'ñapa',
+      'Nequi',
+      'Daviplata',
+      'Davivienda',
+      'Bancolombia',
+    ]) {
+      expect(prompt).toContain(termino);
+    }
     expect(formulario.get('language')).toBe('es');
     expect(formulario.get('response_format')).toBe('verbose_json');
   });

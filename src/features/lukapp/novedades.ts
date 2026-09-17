@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.31.2', fecha: '2026-09-16', texto: 'El dictado reconoce mejor bancos, billeteras, comidas y expresiones colombianas como Nequi, Daviplata, tamal, lechona, sancocho y ñapa.' },
   { version: '3.31.1', fecha: '2026-09-16', texto: 'El dictado ahora usa exclusivamente Groq para mantener LukApp gratuito y evitar cualquier consumo facturable de OpenAI.' },
   { version: '3.31.0', fecha: '2026-09-16', texto: 'El dictado ahora prioriza la máxima precisión, reconoce los nombres de tus cuentas y categorías, descarta audios poco claros y muestra exactamente qué entendió antes de guardar.' },
   { version: '3.30.12', fecha: '2026-09-16', texto: 'La guía para instalar LukApp ahora tiene contraste claro, textos legibles y una apariencia consistente tanto en modo claro como oscuro.' },
