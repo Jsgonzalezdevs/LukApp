@@ -60,23 +60,11 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   const manejarTextoFinal = useCallback((texto: string) => {
     if (transcripcionFinalizandoRef.current) return;
     transcripcionFinalizandoRef.current = true;
-    // No esperamos a que termine una animación: en iOS una actualización
-    // tardía del recorder podía dejar el texto en el overlay indefinidamente.
-    // La transcripción definitiva ya está lista, así que el formulario debe
-    // ser el siguiente estado de la sesión.
-    setTextoRevelado(null);
-    setOverlayAbierto(false);
-    try {
-      onDictado(texto);
-    } finally {
-      // La bandera sólo protege la transición de este mismo evento. Dejarla
-      // activa hasta otro callback bloqueaba el micrófono para siempre cuando
-      // la persona cerraba con X el gasto que acababa de transcribir.
-      void Promise.resolve().then(() => {
-        transcripcionFinalizandoRef.current = false;
-      });
-    }
-  }, [onDictado]);
+    // El texto definitivo permanece en el overlay para que la persona pueda
+    // leerlo antes de confirmar. Antes este callback abría el formulario de
+    // inmediato y obligaba a tocar el check sin saber aún qué se entendió.
+    setTextoRevelado(texto);
+  }, []);
 
   const dictation = useDictation(manejarTextoFinal, vocabulario);
   const { scanImage, isScanning, progress: ocrProgress, error: ocrError } = useImageOCR((ocrText) => {
@@ -150,12 +138,20 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
     dictation.stop();
   };
 
-  const revelarCompleto = () => {
+  const continuarConTexto = () => {
     const texto = textoRevelado;
+    if (!texto) return;
     setTextoRevelado(null);
     setOverlayAbierto(false);
-    transcripcionFinalizandoRef.current = false;
-    if (texto) onDictado(texto);
+    try {
+      onDictado(texto);
+    } finally {
+      // Se libera después de entregar el texto para ignorar cualquier callback
+      // tardío de la misma grabación sin bloquear la próxima toma.
+      void Promise.resolve().then(() => {
+        transcripcionFinalizandoRef.current = false;
+      });
+    }
   };
 
   const faseOverlay: FaseDictado =
@@ -165,7 +161,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
     <div
       className="pointer-events-none fixed inset-x-0 z-30 flex flex-col items-center gap-2"
       style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.75rem)' }}
-      aria-hidden={overlayAbierto}
     >
       <DictadoOverlay
         abierto={overlayAbierto}
@@ -174,8 +169,8 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         texto={textoRevelado ?? dictation.interim}
         error={dictation.error}
         onCancelar={cancelarDictado}
-        onConfirmar={confirmarDictado}
-        onRevelado={revelarCompleto}
+        onTerminar={confirmarDictado}
+        onContinuar={continuarConTexto}
       />
 
       {/* Hidden File Input for Receipt/Photo Scanning */}
@@ -210,7 +205,12 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         </div>
       ) : null}
 
-      <div data-guia="anotar" className="pointer-events-auto flex items-center gap-2.5">
+      <div
+        data-guia="anotar"
+        aria-hidden={overlayAbierto}
+        inert={overlayAbierto ? true : undefined}
+        className="pointer-events-auto flex items-center gap-2.5"
+      >
         <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
           <button
             type="button"

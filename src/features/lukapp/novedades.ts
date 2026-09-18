@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.33.1', fecha: '2026-09-17', texto: 'Los nuevos Términos y Condiciones conservan su redacción original, presentan claramente títulos, negrillas y listas, y mantienen visibles los encabezados al navegar por el índice legal.' },
+  { version: '3.33.0', fecha: '2026-09-17', texto: 'El dictado ahora te guía paso a paso: primero terminas de hablar, luego lees exactamente lo entendido y solo entonces confirmas para revisar el movimiento.' },
+  { version: '3.32.5', fecha: '2026-09-17', texto: 'Actualizamos los Términos y Condiciones con reglas más completas sobre el servicio, la cuenta, el uso de inteligencia artificial, la responsabilidad y los canales de reclamación.' },
   { version: '3.32.4', fecha: '2026-09-17', texto: 'El dictado sigue escuchando durante las pausas y conserva completa una frase aunque continúes hablando después de un silencio.' },
   { version: '3.32.3', fecha: '2026-09-17', texto: 'Puedes cancelar un dictado o cerrar un gasto sin registrarlo y volver a usar el micrófono inmediatamente.' },
   { version: '3.32.2', fecha: '2026-09-17', texto: 'El dictado vuelve a transcribir correctamente, conserva el audio completo en iPhone y limpia sesiones vencidas que impedían cargar tus datos.' },

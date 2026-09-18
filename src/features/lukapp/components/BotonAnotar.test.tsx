@@ -59,19 +59,32 @@ describe('BotonAnotar — reutilizar el micrófono', () => {
     props.onDictado.mockClear();
   });
 
-  it('permite iniciar otra grabación después de cerrar el gasto transcrito', async () => {
-    render(<BotonAnotar {...props} />);
+  it('muestra el texto definitivo y espera el check antes de abrir el movimiento', async () => {
+    const vista = render(<BotonAnotar {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Anotar hablando' }));
+    dictadoPrueba.estado = 'listening';
+    vista.rerender(<BotonAnotar {...props} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Terminé de hablar' }));
+    expect(dictadoPrueba.detener).toHaveBeenCalledTimes(1);
 
     act(() => dictadoPrueba.alFinal?.('pagué veinte mil'));
+    dictadoPrueba.estado = 'idle';
+    vista.rerender(<BotonAnotar {...props} />);
+    expect(screen.getByLabelText('Transcripción final')).toHaveTextContent('pagué veinte mil');
+    expect(props.onDictado).not.toHaveBeenCalled();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar texto y revisar movimiento' }));
     expect(props.onDictado).toHaveBeenCalledWith('pagué veinte mil');
     await act(async () => Promise.resolve());
 
     fireEvent.click(screen.getByRole('button', { name: 'Anotar hablando' }));
 
-    expect(dictadoPrueba.iniciar).toHaveBeenCalledTimes(1);
+    expect(dictadoPrueba.iniciar).toHaveBeenCalledTimes(2);
   });
 
-  it('cancelar una toma no descarta la transcripción de la toma siguiente', () => {
+  it('cancelar una toma no descarta la transcripción de la toma siguiente', async () => {
     const vista = render(<BotonAnotar {...props} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Anotar hablando' }));
@@ -83,6 +96,9 @@ describe('BotonAnotar — reutilizar el micrófono', () => {
     vista.rerender(<BotonAnotar {...props} />);
     fireEvent.click(screen.getByRole('button', { name: 'Anotar hablando' }));
     act(() => dictadoPrueba.alFinal?.('gasté diez mil'));
+    dictadoPrueba.estado = 'idle';
+    vista.rerender(<BotonAnotar {...props} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirmar texto y revisar movimiento' }));
 
     expect(props.onDictado).toHaveBeenCalledWith('gasté diez mil');
   });

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Check, AlertTriangle } from 'lucide-react';
+import { X, Check, AlertTriangle, Square } from 'lucide-react';
 import { COPY } from '../copy';
 
 export type FaseDictado = 'escuchando' | 'procesando' | 'revelando' | 'error';
@@ -15,9 +15,9 @@ interface DictadoOverlayProps {
   error?: string | null;
   onCancelar: () => void;
   /** "Ya terminé de hablar": corta la grabación y pasa a transcribir. */
-  onConfirmar: () => void;
-  /** Se llama sola cuando la última palabra terminó de aparecer en pantalla. */
-  onRevelado: () => void;
+  onTerminar: () => void;
+  /** Confirma el texto definitivo y abre la revisión del movimiento. */
+  onContinuar: () => void;
 }
 
 /**
@@ -35,9 +35,9 @@ interface DictadoOverlayProps {
  *
  * Por eso `texto` sirve para dos cosas con el mismo tratamiento visual: el
  * parcial que va creciendo mientras se escucha, y la versión definitiva que
- * Whisper confirma al soltar el botón (fase "revelando"). Solo esta última
- * dispara `onRevelado` -- el parcial cambia todo el tiempo y nunca debe
- * avanzar la pantalla solo.
+ * Whisper confirma al terminar. La diferencia importante es que el check solo
+ * aparece con esta última: primero se habla, después se lee lo entendido y
+ * únicamente entonces se confirma para revisar el movimiento.
  */
 export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
   abierto,
@@ -46,22 +46,14 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
   texto,
   error,
   onCancelar,
-  onConfirmar,
-  onRevelado,
+  onTerminar,
+  onContinuar,
 }) => {
   const palabras = useMemo(() => texto.trim().split(/\s+/).filter(Boolean), [texto]);
 
   // Cuánto se demora cada palabra en aparecer: rápido para una frase corta,
   // pero nunca tan lento que una frase larga tarde una eternidad en revelarse.
   const stagger = useMemo(() => Math.min(0.05, 1.1 / Math.max(1, palabras.length)), [palabras.length]);
-
-  useEffect(() => {
-    if (fase !== 'revelando' || palabras.length === 0) return;
-    const totalMs = (palabras.length * stagger + 0.55) * 1000;
-    const t = setTimeout(onRevelado, totalMs);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fase, texto]);
 
   return (
     <AnimatePresence>
@@ -93,8 +85,23 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
               </motion.div>
             ) : palabras.length > 0 ? (
               <div className="flex flex-col items-center gap-5">
+                <div
+                  className="flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-black/15 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-white/85"
+                  aria-live="polite"
+                >
+                  {fase === 'escuchando' ? (
+                    <span className="h-2 w-2 animate-pulse rounded-[var(--fin-r-pill)] bg-white" aria-hidden="true" />
+                  ) : null}
+                  {fase === 'escuchando'
+                    ? 'Sigo escuchando'
+                    : fase === 'procesando'
+                      ? 'Preparando el texto'
+                      : 'Esto fue lo que entendí'}
+                </div>
                 <p
-                  className={`text-[26px] font-bold leading-tight sm:text-[30px] ${
+                  aria-label={fase === 'revelando' ? 'Transcripción final' : 'Transcripción en curso'}
+                  aria-live="polite"
+                  className={`max-h-[45vh] overflow-y-auto px-1 text-[26px] font-bold leading-tight sm:text-[30px] ${
                     fase === 'escuchando' || fase === 'procesando' ? 'text-white/60 italic' : 'text-white'
                   }`}
                 >
@@ -139,7 +146,15 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                     <span className="h-2.5 w-2.5 animate-pulse rounded-[var(--fin-r-pill)] bg-white" aria-hidden="true" />
                     Confirmando lo que dijiste…
                   </motion.div>
-                ) : null}
+                ) : fase === 'escuchando' ? (
+                  <p className="max-w-sm text-[14px] font-medium leading-relaxed text-white/70">
+                    Puedes seguir hablando. Toca <strong className="font-bold text-white">Terminé</strong> cuando acabes.
+                  </p>
+                ) : (
+                  <p className="max-w-sm text-[14px] font-medium leading-relaxed text-white/75">
+                    Si quedó bien, confirma para revisar el movimiento antes de guardarlo.
+                  </p>
+                )}
               </div>
             ) : (
               <>
@@ -155,6 +170,12 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 {fase === 'escuchando' ? (
                   <p className="mt-3 max-w-sm text-[14px] font-medium leading-relaxed text-white/65">
                     También puedes abonar tarjetas, mover plata entre cuentas y cajitas, actualizar saldos o registrar rendimientos.
+                  </p>
+                ) : null}
+
+                {fase === 'escuchando' ? (
+                  <p className="mt-5 rounded-[var(--fin-r-pill)] bg-black/15 px-4 py-2 text-[13px] font-semibold text-white/85">
+                    Habla con calma. Al terminar, toca <strong className="text-white">Terminé</strong> para ver el texto.
                   </p>
                 ) : null}
 
@@ -206,19 +227,37 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
             <AnimatePresence mode="wait">
               {fase === 'escuchando' ? (
                 <motion.button
-                  key="confirmar"
+                  key="terminar"
                   type="button"
-                  onClick={onConfirmar}
-                  aria-label="Ya terminé, transcribir"
+                  onClick={onTerminar}
+                  aria-label="Terminé de hablar"
                   initial={{ opacity: 0, scale: 0.7, rotate: -90 }}
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
                   exit={{ opacity: 0, scale: 0.7, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                   transition={{ duration: 0.2 }}
-                  className="flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(0_0_0/0.35)]"
+                  className="flex h-16 items-center justify-center gap-2 rounded-[var(--fin-r-pill)] px-5 text-[15px] font-bold text-white shadow-[0_10px_28px_-8px_rgb(0_0_0/0.35)]"
                   style={{ backgroundColor: 'var(--fin-out)' }}
                 >
-                  <Check className="h-7 w-7" strokeWidth={3} aria-hidden="true" />
+                  <Square className="h-4 w-4 fill-current" strokeWidth={2.5} aria-hidden="true" />
+                  Terminé
+                </motion.button>
+              ) : fase === 'revelando' ? (
+                <motion.button
+                  key="continuar"
+                  type="button"
+                  onClick={onContinuar}
+                  aria-label="Confirmar texto y revisar movimiento"
+                  initial={{ opacity: 0, scale: 0.7, x: 12 }}
+                  animate={{ opacity: 1, scale: 1, x: 0 }}
+                  exit={{ opacity: 0, scale: 0.7, x: 12 }}
+                  whileTap={{ scale: 0.94 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex h-16 items-center justify-center gap-2 rounded-[var(--fin-r-pill)] px-5 text-[15px] font-bold text-white shadow-[0_10px_28px_-8px_rgb(0_0_0/0.35)]"
+                  style={{ backgroundColor: 'var(--fin-out)' }}
+                >
+                  <Check className="h-5 w-5" strokeWidth={3} aria-hidden="true" />
+                  Revisar movimiento
                 </motion.button>
               ) : (
                 <span className="h-16 w-16" aria-hidden="true" />
