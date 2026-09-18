@@ -54,4 +54,19 @@ describe('motor financiero unificado', () => {
     expect(r.liquidez.nivel).toBe('riesgo');
     expect(r.liquidez.factores[0].concepto).toBe('Arriendo');
   });
+
+  it('mantiene el dinero disponible cuando una compra está cargada a la tarjeta', () => {
+    const e = entrada();
+    e.cajitas = [
+      cajita('banco', 'cuenta'),
+      { ...cajita('tarjeta', 'tarjeta'), diaCorte: 10, diaPago: 15 },
+    ];
+    e.cajitaMovimientos = [movimiento('saldo', 'banco', 72_000)];
+    e.transacciones = [compra('compra-tarjeta', 'tarjeta')];
+
+    const r = construirContextoFinanciero(e);
+
+    expect(r.saldo.saldoTarjetasCop).toBe(1_200_000);
+    expect(r.liquidez.dineroLibreCop).toBe(72_000);
+  });
 });

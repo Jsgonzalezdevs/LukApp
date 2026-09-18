@@ -72,7 +72,7 @@ export const COPY = {
     total: 'Total en tus cuentas',
     vacio: 'Aún no tienes cuentas.',
     vacioHint: 'Crea una para llevarle el rastro a lo que vas ahorrando.',
-    nueva: 'Agregar cuenta bancaria',
+    nueva: 'Agregar cuenta',
     nombrePlaceholder: 'Ej: Nequi, Bancolombia',
     saldoInicial: '¿Cuánto tienes en esta cuenta?',
     cuantoTienes: '¿Cuánto tienes ahora en esta cuenta?',

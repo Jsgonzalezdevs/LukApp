@@ -4,8 +4,8 @@ import { PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
 import type { Transaction } from '../types';
-import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo } from '../data/modelos';
-import { CAJITA_ICONS } from '../data/modelos';
+import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, ClaseCuenta } from '../data/modelos';
+import { CAJITA_ICONS, CLASE_CUENTA_LABELS } from '../data/modelos';
 import { resumenDeCajitas } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
@@ -33,6 +33,7 @@ interface CajitasViewProps {
     nombre: string;
     icon: string;
     tipo: CajitaTipo;
+    claseCuenta?: ClaseCuenta | null;
     metaCop: number | null;
     tasaEaPct: number | null;
     limiteCreditoCop?: number | null;
@@ -75,6 +76,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
 }) => {
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
+  const [claseCuenta, setClaseCuenta] = useState<ClaseCuenta>('banco');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
   const [saldoTexto, setSaldoTexto] = useState('');
   const [metaTexto, setMetaTexto] = useState('');
@@ -102,6 +104,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       nombre: limpio,
       icon,
       tipo,
+      claseCuenta: esCuenta ? claseCuenta : null,
       metaCop: parseAmountInput(metaTexto),
       tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
       limiteCreditoCop: esTarjeta ? parseAmountInput(limiteTexto) : null,
@@ -111,6 +114,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
     });
     setNombre('');
+    setClaseCuenta('banco');
     setIcon(CAJITA_ICONS[0]);
     setSaldoTexto('');
     setMetaTexto('');
@@ -219,6 +223,25 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               autoFocus
               className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
+
+            {esCuenta ? (
+              <label
+                htmlFor="cajita-clase-cuenta"
+                className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+              >
+                Tipo de cuenta
+                <select
+                  id="cajita-clase-cuenta"
+                  value={claseCuenta}
+                  onChange={(e) => setClaseCuenta(e.target.value as ClaseCuenta)}
+                  className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                >
+                  {(['banco', 'billetera', 'efectivo'] as const).map((clase) => (
+                    <option key={clase} value={clase}>{CLASE_CUENTA_LABELS[clase]}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
             <label
               htmlFor="cajita-saldo"

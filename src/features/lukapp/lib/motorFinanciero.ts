@@ -99,6 +99,7 @@ export const construirContextoFinanciero = (entrada: EntradaMotorFinanciero): Co
   const pasivos = idsPasivos(entrada.cajitas);
   const saldos = saldosPorCajita(entrada.cajitaMovimientos, entrada.transacciones, pasivos);
   const p = patrimonio(entrada.cajitas, entrada.cajitaMovimientos, entrada.transacciones);
+  const saldoTarjetasCop = Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'tarjeta', entrada.transacciones));
   const mes = entrada.hoy.slice(0, 7);
   const obligaciones = construirObligacionesFuturas(entrada, 90);
   const tarjetas = entrada.cajitas.filter((c) => c.tipo === 'tarjeta' && c.archivedAt === null).map((tarjeta) => {
@@ -116,7 +117,12 @@ export const construirContextoFinanciero = (entrada: EntradaMotorFinanciero): Co
   const finPeriodo = finDePeriodo(entrada.periodo.frecuencia === 'todo-el-tiempo' ? entrada.hoy : clavePeriodo, entrada.periodo);
   const compromisosDelPeriodo = obligacionesConImporte.filter((o) => o.fecha !== null && (finPeriodo === null || o.fecha <= finPeriodo));
   const obligacionesDelPeriodoCop = compromisosDelPeriodo.reduce((s, o) => s + o.montoCop, 0);
-  const dineroLibreBrutoCop = p.netoCop - reservasCop - obligacionesDelPeriodoCop + (entrada.ajusteFuturoCop ?? 0);
+  // La compra ya reduce el cupo y aumenta el saldo de la tarjeta. No ha salido
+  // dinero de las cuentas todavía, por lo que ni la deuda ni su pago estimado
+  // deben vaciar el "Dinero disponible" antes de registrar el abono real.
+  const obligacionesQueReducenDisponible = compromisosDelPeriodo.filter((o) => o.origen !== 'tarjeta');
+  const obligacionesQueReducenDisponibleCop = obligacionesQueReducenDisponible.reduce((s, o) => s + o.montoCop, 0);
+  const dineroLibreBrutoCop = p.netoCop + saldoTarjetasCop - reservasCop - obligacionesQueReducenDisponibleCop + (entrada.ajusteFuturoCop ?? 0);
   const dineroLibreCop = Math.max(0, dineroLibreBrutoCop);
   const totalDias = diasDelPeriodo(clavePeriodo, entrada.periodo);
   const transcurridos = diasTranscurridosEnPeriodo(clavePeriodo, entrada.hoy, entrada.periodo);
@@ -132,7 +138,7 @@ export const construirContextoFinanciero = (entrada: EntradaMotorFinanciero): Co
   const proyeccionCompleta = proyectarFinanzas({ ...entrada, obligaciones, entradasFuturas: construirEntradasFuturas(entrada, 90) }, { dias: 90 });
   const minimoLiquidez = proyeccionCompleta.length > 0 ? proyeccionCompleta.reduce((min, punto) => punto.saldoLiquidoCop < min.saldoLiquidoCop ? punto : min).saldoLiquidoCop : null;
   const contextoBase: ContextoFinanciero = {
-    saldo: { totalActivosCop: p.totalCop, totalPasivosCop: p.deudasCop, patrimonioCop: p.netoCop, saldoCuentasCop: p.cuentasCop, saldoAhorrosCop: p.cajitasCop, saldoTarjetasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'tarjeta', entrada.transacciones)), saldoDeudasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'deuda', entrada.transacciones)), saldoEfectivoCop, saldoBancosCop },
+    saldo: { totalActivosCop: p.totalCop, totalPasivosCop: p.deudasCop, patrimonioCop: p.netoCop, saldoCuentasCop: p.cuentasCop, saldoAhorrosCop: p.cajitasCop, saldoTarjetasCop, saldoDeudasCop: Math.abs(totalPorTipo(entrada.cajitas, entrada.cajitaMovimientos, 'deuda', entrada.transacciones)), saldoEfectivoCop, saldoBancosCop },
     compromisos: { reservasCop, ahorroComprometidoCop, obligacionesCop: obligacionesDelPeriodoCop, cuotasCop: pagosTarjetaCop, pagosTarjetaCop, totalCop: reservasCop + ahorroComprometidoCop + obligacionesDelPeriodoCop, datosIncompletos },
     liquidez: { saldoLiquidoCop: p.cuentasCop, dineroLibreBrutoCop, dineroLibreCop, obligacionesPendientesCop: obligacionesDelPeriodoCop, cuotasPendientesCop: pagosTarjetaCop, compromisosMetasCop: ahorroComprometidoCop, diasRestantesPeriodo: dias, disponibleDiarioCop: Math.max(0, disponibleDiarioBrutoCop), disponibleDiarioBrutoCop, liquidezMinimaCop: minimoLiquidez, nivel: dineroLibreBrutoCop <= 0 ? 'riesgo' : datosIncompletos ? 'incompleto' : 'bien', confianza: datosIncompletos ? 'baja' : obligaciones.some((o) => o.certeza === 'estimada') ? 'media' : 'alta', factores: compromisosDelPeriodo.map((o) => ({ concepto: o.concepto, montoCop: o.montoCop, certeza: o.certeza })), },
     proyeccion: { supuestos: ['El saldo actual se toma como punto de partida.', 'Solo se proyectan obligaciones conocidas.'], limitada: entrada.transacciones.length < 10, saldoFinalEstimadoCop: p.netoCop - obligacionesCop, serie },

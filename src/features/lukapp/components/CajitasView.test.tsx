@@ -85,7 +85,7 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
   it('ya no pregunta "¿Qué es?" — la pantalla en la que estás lo responde', () => {
     montar('cuenta', []);
 
-    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta bancaria/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
 
     expect(screen.queryByText('¿Qué es?')).not.toBeInTheDocument();
   });
@@ -93,7 +93,7 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
   it('crea con el tipo de su pantalla, sin que el usuario lo elija', () => {
     const { onCrear } = montar('cuenta', []);
 
-    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta bancaria/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Davivienda' } });
     fireEvent.change(screen.getByLabelText('¿Cuánto tienes en esta cuenta?'), {
       target: { value: '250000' },
@@ -101,13 +101,26 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
 
     expect(onCrear).toHaveBeenCalledWith(
-      expect.objectContaining({ nombre: 'Davivienda', tipo: 'cuenta', saldoInicialCop: 250000 }),
+      expect.objectContaining({ nombre: 'Davivienda', tipo: 'cuenta', claseCuenta: 'banco', saldoInicialCop: 250000 }),
     );
+  });
+
+  it('permite crear efectivo sin disfrazarlo de cuenta bancaria', () => {
+    const { onCrear } = montar('cuenta', []);
+
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Caja menor' } });
+    fireEvent.change(screen.getByLabelText('Tipo de cuenta'), { target: { value: 'efectivo' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+
+    expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({
+      nombre: 'Caja menor', tipo: 'cuenta', claseCuenta: 'efectivo',
+    }));
   });
 
   it('no ofrece meta ni rendimiento en una cuenta bancaria', () => {
     montar('cuenta', []);
-    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta bancaria/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
 
     // Una cuenta corriente no tiene meta de ahorro ni una tasa que el usuario
     // deba escribir; ofrecerlas solo alarga el formulario.

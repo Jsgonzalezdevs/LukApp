@@ -23,7 +23,7 @@ import type {
   ClaseCuenta,
   Meta,
 } from './modelos';
-import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, claseDeCuenta } from './modelos';
+import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, claseDeCuenta, cuentaEfectivo } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
@@ -384,6 +384,19 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
               }
             }
           }
+        }
+
+        // Efectivo es la única cuenta que LukApp trae de base. No usamos el id
+        // legado fijo porque es compartido entre usuarios en Supabase: cada
+        // persona recibe el suyo, con saldo cero, una sola vez.
+        // Una cuenta archivada también cuenta: sembrar otra ignorando esa
+        // decisión haría que Efectivo reapareciera después de que la persona
+        // eligió ocultarlo.
+        const hayEfectivo = cargado.cajitas.some((c) => claseDeCuenta(c) === 'efectivo');
+        if (!hayEfectivo) {
+          const efectivoPredeterminado = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
+          cargado.cajitas = [...cargado.cajitas, efectivoPredeterminado];
+          await repo.guardarCajita(efectivoPredeterminado);
         }
 
         setDatos(cargado);

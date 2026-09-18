@@ -22,6 +22,10 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.33.5', fecha: '2026-09-17', texto: 'El aviso de términos y privacidad ahora tiene un fondo sólido, botones claros y mejor contraste para leerse sin confusiones.' },
+  { version: '3.33.4', fecha: '2026-09-17', texto: 'Todas las cuentas ahora empiezan con Efectivo como cuenta predeterminada, en $0 y correctamente separado de bancos y billeteras.' },
+  { version: '3.33.3', fecha: '2026-09-17', texto: 'Al agregar dinero ahora puedes elegir si es una cuenta bancaria, billetera digital o efectivo, sin tener que crear una cuenta llamada “Efectivo”.' },
+  { version: '3.33.2', fecha: '2026-09-17', texto: 'Las compras con tarjeta de crédito ya no reducen tu Dinero disponible antes de que registres el abono. La deuda y el cupo se mantienen en la tarjeta.' },
   { version: '3.33.1', fecha: '2026-09-17', texto: 'Los nuevos Términos y Condiciones conservan su redacción original, presentan claramente títulos, negrillas y listas, y mantienen visibles los encabezados al navegar por el índice legal.' },
   { version: '3.33.0', fecha: '2026-09-17', texto: 'El dictado ahora te guía paso a paso: primero terminas de hablar, luego lees exactamente lo entendido y solo entonces confirmas para revisar el movimiento.' },
   { version: '3.32.5', fecha: '2026-09-17', texto: 'Actualizamos los Términos y Condiciones con reglas más completas sobre el servicio, la cuenta, el uso de inteligencia artificial, la responsabilidad y los canales de reclamación.' },

@@ -145,12 +145,12 @@ export const LandingLukApp: React.FC<LandingProps> = ({
   return (
     <div className="landing-finanzas">
       {mostrarConsentimientoAnalitica && (
-        <aside className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 shadow-xl" aria-label="Preferencia de analítica">
-          <p className="text-sm font-bold text-[var(--fin-ink)]">Términos y privacidad</p>
-          <p className="mt-1 text-xs leading-relaxed text-[var(--fin-ink-soft)]">Al aceptar, confirmas que conoces nuestros <a className="font-semibold text-[var(--fin-accent)] underline underline-offset-2" href="/legal#terminos">Términos y condiciones</a> y nuestra <a className="font-semibold text-[var(--fin-accent)] underline underline-offset-2" href="/legal#privacidad">Política de privacidad</a>, incluida la analítica opcional descrita allí.</p>
+        <aside className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-2xl border-2 border-[var(--lp-line)] bg-[var(--lp-surface)] p-5 shadow-[0_20px_50px_rgb(0_0_0_/_0.35)]" aria-label="Preferencia de analítica">
+          <p className="text-sm font-bold text-[var(--lp-ink)]">Términos y privacidad</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-[var(--lp-ink-soft)]">Al aceptar, confirmas que conoces nuestros <a className="font-semibold text-[var(--lp-accent)] underline decoration-2 underline-offset-2" href="/legal#terminos">Términos y condiciones</a> y nuestra <a className="font-semibold text-[var(--lp-accent)] underline decoration-2 underline-offset-2" href="/legal#privacidad">Política de privacidad</a>, incluida la analítica opcional descrita allí.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" className="rounded-xl bg-[var(--fin-accent)] px-3 py-2 text-xs font-bold text-[var(--fin-on-accent)]" onClick={() => { guardarConsentimientoAnalitica(true); setMostrarConsentimientoAnalitica(false); registrarVisita(); }}>Aceptar</button>
-            <button type="button" className="rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs font-bold text-[var(--fin-ink-soft)]" onClick={() => { guardarConsentimientoAnalitica(false); setMostrarConsentimientoAnalitica(false); }}>Declinar</button>
+            <button type="button" className="rounded-xl bg-[var(--lp-accent)] px-4 py-2.5 text-xs font-bold text-[var(--lp-on-accent)] shadow-sm" onClick={() => { guardarConsentimientoAnalitica(true); setMostrarConsentimientoAnalitica(false); registrarVisita(); }}>Aceptar</button>
+            <button type="button" className="rounded-xl bg-[var(--lp-surface-hover)] px-4 py-2.5 text-xs font-bold text-[var(--lp-ink)]" onClick={() => { guardarConsentimientoAnalitica(false); setMostrarConsentimientoAnalitica(false); }}>Declinar</button>
           </div>
         </aside>
       )}

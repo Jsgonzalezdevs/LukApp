@@ -144,9 +144,8 @@ export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
 /**
  * The cash account.
  *
- * El id legado de la cuenta de efectivo que antiguamente sembraba la app. Ya no
- * se crean cuentas automáticamente; se conserva para reparar referencias
- * existentes sin perder sus movimientos.
+ * El id legado de la cuenta de efectivo que antiguamente sembraba la app. Se
+ * conserva para reparar referencias existentes sin perder sus movimientos.
  */
 export const ID_EFECTIVO = '00000000-0000-4000-8000-0000000000ef';
 
@@ -160,6 +159,7 @@ export const ID_EFECTIVO = '00000000-0000-4000-8000-0000000000ef';
  */
 export const ID_EFECTIVO_VIEJO = 'efectivo';
 
+/** La cuenta predeterminada de efectivo siempre recibe un id único por usuario. */
 export const cuentaEfectivo = (createdAt: string, id: string = ID_EFECTIVO): Cajita => ({
   id,
   nombre: 'Efectivo',

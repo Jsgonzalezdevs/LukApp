@@ -197,7 +197,7 @@ describe('useAlmacen', () => {
         saldoInicialCop: 0,
       });
     });
-    const tarjetaId = result.current.datos.cajitas[0].id;
+    const tarjetaId = result.current.datos.cajitas.find((c) => c.nombre === 'Tarjeta Nu')!.id;
 
     await act(async () => {
       await result.current.registrarMovimiento({
@@ -245,7 +245,7 @@ describe('useAlmacen', () => {
         saldoInicialCop: 0,
       });
     });
-    const tarjetaId = result.current.datos.cajitas[0].id;
+    const tarjetaId = result.current.datos.cajitas.find((c) => c.nombre === 'Tarjeta Nu')!.id;
 
     await act(async () => {
       await result.current.registrarMovimiento({
@@ -290,7 +290,7 @@ describe('useAlmacen', () => {
         saldoInicialCop: 0,
       });
     });
-    const tarjetaId = result.current.datos.cajitas[0].id;
+    const tarjetaId = result.current.datos.cajitas.find((c) => c.nombre === 'Tarjeta Nu')!.id;
     await act(async () => {
       await result.current.registrarMovimiento({
         cajitaId: tarjetaId,
@@ -314,7 +314,7 @@ describe('useAlmacen', () => {
 
     const editados = await repo.cargarTodo();
     expect(editados.transacciones[0]).toMatchObject({ amountCop: 92000, category: 'hogar' });
-    expect(editados.cajitaMovimientos[0]).toMatchObject({
+    expect(editados.cajitaMovimientos.find((mov) => mov.id === original.id)).toMatchObject({
       id: original.id,
       deltaCop: 92000,
       categoria: 'hogar',
@@ -331,7 +331,7 @@ describe('useAlmacen', () => {
 
     const personalizados = await repo.cargarTodo();
     expect(personalizados.transacciones[0].category).toBe('categoria-personalizada');
-    expect(personalizados.cajitaMovimientos[0].categoria).toBeNull();
+    expect(personalizados.cajitaMovimientos.find((mov) => mov.id === original.id)?.categoria).toBeNull();
 
     await act(async () => {
       await result.current.borrarTransaccion(original.id);
@@ -436,16 +436,18 @@ describe('useAlmacen', () => {
     expect((await repo.cargarTodo()).cajitaMovimientos).toEqual([]);
   });
 
-  it('starts with no account for a new person', async () => {
+  it('starts with Efectivo for a new person', async () => {
     const repo = new RepositorioMemoria();
     const { result, unmount } = await montar(repo);
 
-    expect(result.current.datos.cajitas).toEqual([]);
+    expect(result.current.datos.cajitas).toMatchObject([
+      { nombre: 'Efectivo', tipo: 'cuenta', claseCuenta: 'efectivo' },
+    ]);
     unmount();
 
-    // A second session must remain empty too.
+    // A second session preserves the same default instead of duplicating it.
     const otra = await montar(repo);
-    expect(otra.result.current.datos.cajitas).toEqual([]);
+    expect(otra.result.current.datos.cajitas).toHaveLength(1);
   });
 
   it('does not resurrect the cash account once it has been archived', async () => {
@@ -1020,13 +1022,14 @@ describe('useAlmacen — el Efectivo duplicado', () => {
     archivedAt: null,
   });
 
-  it('no siembra Efectivo cuando no hay nada', async () => {
+  it('siembra Efectivo como la única cuenta predeterminada', async () => {
     const { result } = await montar();
 
     const efectivos = result.current.datos.cajitas.filter(
       (c) => c.nombre.toLowerCase() === 'efectivo',
     );
-    expect(efectivos).toHaveLength(0);
+    expect(efectivos).toHaveLength(1);
+    expect(efectivos[0]).toMatchObject({ tipo: 'cuenta', claseCuenta: 'efectivo' });
   });
 
   it('colapsa los Efectivo vacíos que dejó el sembrado repetido', async () => {
