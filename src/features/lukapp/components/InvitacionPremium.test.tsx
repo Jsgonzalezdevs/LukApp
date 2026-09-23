@@ -62,4 +62,18 @@ describe('InvitacionPremium', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('puede abrirse al instante con los datos de la vista previa local', () => {
+    render(
+      <InvitacionPremium
+        userId="vista-previa"
+        puedeMostrarse
+        planDeVistaPrevia={planNormal}
+        onVerOpciones={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Más espacio para tus finanzas, sin complicarlas.' })).toBeTruthy();
+    expect(screen.getByText('300')).toBeTruthy();
+  });
 });

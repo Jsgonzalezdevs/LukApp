@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles/premium-effects.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
@@ -99,6 +99,9 @@ import { construirContextoFinanciero } from './lib/motorFinanciero';
 import { construirContextoParaAsesor } from './lib/centroInteligenciaFinanciera';
 import { CalendarioFinancieroView } from './components/CalendarioFinancieroView';
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
+import { instalarConsolaDeVistas } from './dev/consolaVistas';
+import type { VistaDePrueba } from './dev/consolaVistas';
+import type { PlanParaInvitacion } from './components/InvitacionPremium';
 import './lukapp.css';
 
 /* Estas vistas no forman parte del Dashboard inicial. Se descargan al abrir
@@ -125,6 +128,18 @@ const ReporteFinancieroModal = lazy(() =>
 const InvitacionPremium = lazy(() =>
   import('./components/InvitacionPremium').then(({ InvitacionPremium }) => ({ default: InvitacionPremium })),
 );
+
+const PLAN_PREVIO_PREMIUM: PlanParaInvitacion = {
+  codigo: 'normal',
+  preciosPremium: { mensualCop: 9_900, anualCop: 79_900 },
+  limitesPremium: {
+    dictadosMensual: 300,
+    asesorIaMensual: 60,
+    extractosMensual: 12,
+    espaciosCompartidos: null,
+    integrantesPorEspacio: null,
+  },
+};
 
 /**
  * Rebuilds the parser's output shape from a stored row so editing can reuse
@@ -630,9 +645,81 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const [panelDineroCajitaId, setPanelDineroCajitaId] = useState<string | null>(null);
   const [detalle, setDetalle] = useState<Transaction | null>(null);
   const [guardado, setGuardado] = useState<Guardado | null>(null);
+  const [vistaPreviaPremium, setVistaPreviaPremium] = useState(false);
 
   const nombreDeCuenta = (id: string | null) =>
     id === null ? null : (cajitas.find((c) => c.id === id)?.nombre ?? null);
+
+  const cerrarVistasDePrueba = useCallback(() => {
+    setPending(null);
+    setMultiPending(null);
+    setComandoPorVoz(null);
+    setEditando(null);
+    setAnalizando(null);
+    setDetalle(null);
+    setCapa(null);
+    setPanelAjustes(null);
+    setPanelDinero(null);
+    setPanelDineroCajitaId(null);
+    setMostrarReporte(false);
+    setGuardado(null);
+    setVistaPreviaPremium(false);
+  }, [setPanelAjustes]);
+
+  const abrirVistaDePrueba = useCallback((vista: VistaDePrueba) => {
+    cerrarVistasDePrueba();
+    const categoria = categorias.find((item) => !item.archivedAt)?.id ?? 'comida';
+
+    if (vista === 'premium') {
+      setVistaPreviaPremium(true);
+      return;
+    }
+    if (vista === 'aviso') {
+      setGuardado({
+        id: 'vista-previa',
+        texto: `Mercado · ${formatCop(89_900)}`,
+        aviso: 'Este gasto es más alto que el promedio de esta categoría.',
+        permitirDeshacer: false,
+      });
+      return;
+    }
+    if (vista === 'captura') {
+      const base = movimientoEnBlanco();
+      setPending({
+        ...base,
+        amount: 29_500,
+        category: categoria,
+        description: 'Almuerzo de prueba',
+        raw: 'Gasté 29.500 en almuerzo',
+      });
+      return;
+    }
+    if (vista === 'captura-multiple') {
+      const base = movimientoEnBlanco();
+      setMultiPending([
+        { ...base, amount: 29_500, category: categoria, description: 'Almuerzo de prueba', raw: 'Almuerzo 29.500' },
+        { ...base, amount: 12_000, category: categoria, description: 'Transporte de prueba', raw: 'Transporte 12.000' },
+      ]);
+      return;
+    }
+    if (vista === 'reporte') {
+      setMostrarReporte(true);
+      return;
+    }
+    setCapa('buscar');
+  }, [categorias, cerrarVistasDePrueba]);
+
+  // La API global se instala una sola vez. Las acciones viven en una ref para
+  // que los cambios normales de datos no retiren el comando durante un render.
+  const accionesConsolaRef = useRef({ abrir: abrirVistaDePrueba, cerrar: cerrarVistasDePrueba });
+  accionesConsolaRef.current = { abrir: abrirVistaDePrueba, cerrar: cerrarVistasDePrueba };
+  useEffect(
+    () => instalarConsolaDeVistas({
+      abrir: (vista) => accionesConsolaRef.current.abrir(vista),
+      cerrar: () => accionesConsolaRef.current.cerrar(),
+    }),
+    [],
+  );
 
   const confirmarComandoVoz = async (comando: ComandoVozConfirmado) => {
     if (comando.tipo === 'transferencia') {
@@ -1443,7 +1530,19 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           />
         ) : null}
 
-        {userId && cuenta && puedeMostrarInvitacionPremium ? (
+        {vistaPreviaPremium ? (
+          <InvitacionPremium
+            userId={userId ?? 'vista-previa-local'}
+            puedeMostrarse
+            planDeVistaPrevia={PLAN_PREVIO_PREMIUM}
+            onCerrarVistaPrevia={() => setVistaPreviaPremium(false)}
+            onVerOpciones={() => {
+              setVistaPreviaPremium(false);
+              setSection('ajustes');
+              setPanelAjustes('cuenta');
+            }}
+          />
+        ) : userId && cuenta && puedeMostrarInvitacionPremium ? (
           <InvitacionPremium
             userId={userId}
             puedeMostrarse={puedeMostrarInvitacionPremium}

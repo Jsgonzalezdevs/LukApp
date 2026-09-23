@@ -5,7 +5,7 @@ import { apiUrl } from '../../../lib/api';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { obtenerSupabase } from '../data/supabase';
 
-interface PlanParaInvitacion {
+export interface PlanParaInvitacion {
   codigo: 'normal' | 'premium';
   preciosPremium: { mensualCop: number; anualCop: number };
   limitesPremium: {
@@ -21,6 +21,10 @@ interface InvitacionPremiumProps {
   userId: string;
   puedeMostrarse: boolean;
   onVerOpciones: () => void;
+  /** Inyecta datos únicamente desde el lanzador local de vistas. */
+  planDeVistaPrevia?: PlanParaInvitacion;
+  /** Libera la vista previa al cerrar para que se pueda volver a invocar. */
+  onCerrarVistaPrevia?: () => void;
 }
 
 const RETRASO_MOSTRAR_MS = 8_000;
@@ -58,9 +62,15 @@ const puedeInvitar = (userId: string): boolean => {
  * Invitación ocasional, no una barrera: el plan Normal sigue disponible y la
  * decisión de ver Premium se toma desde una pantalla con precios reales.
  */
-export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({ userId, puedeMostrarse, onVerOpciones }) => {
-  const [plan, setPlan] = useState<PlanParaInvitacion | null>(null);
-  const [abierta, setAbierta] = useState(false);
+export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
+  userId,
+  puedeMostrarse,
+  onVerOpciones,
+  planDeVistaPrevia,
+  onCerrarVistaPrevia,
+}) => {
+  const [plan, setPlan] = useState<PlanParaInvitacion | null>(planDeVistaPrevia ?? null);
+  const [abierta, setAbierta] = useState(Boolean(planDeVistaPrevia));
   const consultada = useRef(false);
   const dialogoRef = useRef<HTMLDivElement>(null);
 
@@ -69,9 +79,11 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({ userId, pu
   const cerrar = useCallback(() => {
     posponerInvitacion(userId);
     setAbierta(false);
-  }, [userId]);
+    onCerrarVistaPrevia?.();
+  }, [onCerrarVistaPrevia, userId]);
 
   useEffect(() => {
+    if (planDeVistaPrevia) return undefined;
     if (!puedeMostrarse || consultada.current || !puedeInvitar(userId)) return undefined;
     consultada.current = true;
     let cancelado = false;
@@ -103,7 +115,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({ userId, pu
       cancelado = true;
       window.clearTimeout(temporizador);
     };
-  }, [puedeMostrarse, userId]);
+  }, [planDeVistaPrevia, puedeMostrarse, userId]);
 
   useEffect(() => {
     if (!abierta) return undefined;
