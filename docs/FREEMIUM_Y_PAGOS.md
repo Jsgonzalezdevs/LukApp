@@ -96,6 +96,7 @@ tarjetas, documentos, comprobantes completos ni payloads crudos de la pasarela.
 ## Operación cotidiana
 
 - Cambiar los precios o límites desde el panel afecta usos futuros; no reescribe cobros anteriores.
+- Los botones de compra en la cuenta siempre muestran los precios de la fila **Premium**, incluso cuando la cuenta actual es Normal (cuyo precio propio es $0).
 - Normal no se puede cobrar ni desactivar. Es el respaldo automático cuando Premium vence o se cancela.
 - En **Planes → Premium vigente**, el superadmin puede cambiar la fecha de vencimiento o retirar Premium como acción de soporte. Si hace falta un reembolso, se gestiona en Wompi; LukApp solo cambia el acceso y deja trazabilidad.
 - El botón de cortesía está pensado para soporte, alianzas y pruebas. Cada acción queda registrada con el superadmin que la hizo.

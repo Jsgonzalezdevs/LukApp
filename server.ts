@@ -199,6 +199,7 @@ interface EstadoPlanServidor {
   codigo: CodigoPlan;
   nombre: string;
   precios: { mensualCop: number; anualCop: number };
+  preciosPremium: { mensualCop: number; anualCop: number };
   limites: {
     dictadosMensual: number | null;
     asesorIaMensual: number | null;
@@ -351,12 +352,20 @@ const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<Esta
 
   const codigo: CodigoPlan = suscripcion?.plan_codigo === 'premium' ? 'premium' : 'normal';
   const plan = (planes ?? []).find((candidato) => candidato.codigo === codigo);
-  if (!plan) throw new Error('No se encontró el plan.');
+  const planPremium = (planes ?? []).find((candidato) => candidato.codigo === 'premium');
+  if (!plan || !planPremium) throw new Error('No se encontró la configuración de los planes.');
 
   return {
     codigo,
     nombre: plan.nombre,
     precios: { mensualCop: Number(plan.precio_mensual_cop), anualCop: Number(plan.precio_anual_cop) },
+    // Una cuenta Normal cuesta $0. Los botones de compra, en cambio, siempre
+    // deben mostrar la fila de Premium: confundir ambas mostraba un precio
+    // gratuito aunque el checkout cobrara correctamente el valor de Premium.
+    preciosPremium: {
+      mensualCop: Number(planPremium.precio_mensual_cop),
+      anualCop: Number(planPremium.precio_anual_cop),
+    },
     limites: {
       dictadosMensual: plan.limite_dictados_mensual === null ? null : Number(plan.limite_dictados_mensual),
       asesorIaMensual: plan.limite_asesor_ia_mensual === null ? null : Number(plan.limite_asesor_ia_mensual),

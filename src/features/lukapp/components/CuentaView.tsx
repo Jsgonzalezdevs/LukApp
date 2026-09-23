@@ -29,6 +29,7 @@ interface EstadoPlan {
   codigo: 'normal' | 'premium';
   nombre: string;
   precios: { mensualCop: number; anualCop: number };
+  preciosPremium: { mensualCop: number; anualCop: number };
   limites: {
     dictadosMensual: number | null;
     asesorIaMensual: number | null;
@@ -51,7 +52,9 @@ interface PlanEnCache {
 }
 
 const DURACION_CACHE_PLAN_MS = 5 * 60 * 1000;
-const claveCachePlan = (userId: string): string => `lukapp-plan-${userId}`;
+// La versión separa la respuesta anterior, que llevaba el precio del plan
+// actual y podía conservar $0 para una cuenta Normal en los botones Premium.
+const claveCachePlan = (userId: string): string => `lukapp-plan-v2-${userId}`;
 
 const planValido = (valor: unknown): valor is EstadoPlan => {
   if (!valor || typeof valor !== 'object') return false;
@@ -59,7 +62,9 @@ const planValido = (valor: unknown): valor is EstadoPlan => {
   return (plan.codigo === 'normal' || plan.codigo === 'premium')
     && typeof plan.nombre === 'string'
     && typeof plan.precios?.mensualCop === 'number'
-    && typeof plan.precios?.anualCop === 'number';
+    && typeof plan.precios?.anualCop === 'number'
+    && typeof plan.preciosPremium?.mensualCop === 'number'
+    && typeof plan.preciosPremium?.anualCop === 'number';
 };
 
 const leerPlanEnCache = (userId: string | null): EstadoPlan | null => {
@@ -397,7 +402,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                           className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
                         >
                           {pagandoCiclo === 'mensual' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                          Premium mensual · {pesos(plan.precios.mensualCop)}
+                          Premium mensual · {pesos(plan.preciosPremium.mensualCop)}
                         </button>
                         <button
                           type="button"
@@ -406,7 +411,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                           className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
                         >
                           {pagandoCiclo === 'anual' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                          Premium anual · {pesos(plan.precios.anualCop)}
+                          Premium anual · {pesos(plan.preciosPremium.anualCop)}
                         </button>
                       </div>
                     </>
