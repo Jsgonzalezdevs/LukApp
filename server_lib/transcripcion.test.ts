@@ -33,6 +33,7 @@ describe('transcripción de voz', () => {
     expect(prompt.length).toBeLessThanOrEqual(896);
     expect(new TextEncoder().encode(prompt).byteLength).toBeLessThanOrEqual(896);
     expect(prompt).toContain('Mi Bolsillo');
+    expect(prompt).toContain('mil quinientos pesos');
     for (const termino of [
       'tamal',
       'lechona',

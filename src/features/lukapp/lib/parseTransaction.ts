@@ -133,6 +133,9 @@ export const limpiarDescripcionFinanciera = (desc: string): string => {
     t = t.replace(/\s+en\s+(?:\w+\s+)?(?:mil|millones|millón|lucas|palos)(?:\s+pesos?)?$/i, '');
     t = t.replace(/\s+(?:y\s+)?pesos?$/i, '');
     t = t.replace(/\s+(?:que\s+)?pesos?\s+como\s+\w+$/i, '');
+    // Si el monto ya fue extraído, "pesos" puede quedar al inicio de una
+    // descripción ("1.500 pesos en Amparo"). No es parte del comercio.
+    t = t.replace(/^pesos?\s+/i, '');
 
     // Artículos al inicio
     t = t.replace(/^(?:un|una|unos|unas)\s+/i, '');

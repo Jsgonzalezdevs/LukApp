@@ -25,16 +25,27 @@ export const parseMultipleTransactions = (
   const trimmed = raw.trim();
   if (!trimmed) return [];
 
+  // Whisper a veces deja un monto corto como "1 y 500 pesos". En un dictado
+  // financiero eso casi siempre es la forma hablada de $1.500, no dos gastos
+  // de $1 y $500. Unirlo antes de buscar separadores conserva los casos reales
+  // de movimientos múltiples, que traen dos montos completos ("20 mil y 30
+  // mil"). Solo se toca la copia que se analiza: `raw` sigue siendo el texto
+  // exacto que dijo la persona cuando se muestra en la confirmación.
+  const texto = trimmed.replace(
+    /\b(\d{1,3})\s+y\s+(\d{3})(?=\s+(?:pesos?|cop)\b)/gi,
+    '$1 mil $2',
+  );
+
   // Si es un escaneo OCR, usar parser único
-  if (trimmed.startsWith('[OCR]')) {
-    return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
+  if (texto.startsWith('[OCR]')) {
+    return [parseTransaction(texto, cajitas, categorias, lexico, historial)];
   }
 
   // Una cláusula de precio explica el mismo movimiento, aunque el dictado
   // contenga cantidades o conectores: “me gasté 3 cafés con leche que me costó
   // 7.500” no son dos gastos de 3 y 7.500 pesos, sino una sola compra.
-  if (/\b(?:que\s+)?me\s+(?:costo|costó|costaron|valio|valió|valieron|salio|salió|salieron)\b/i.test(trimmed)) {
-    return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
+  if (/\b(?:que\s+)?me\s+(?:costo|costó|costaron|valio|valió|valieron|salio|salió|salieron)\b/i.test(texto)) {
+    return [parseTransaction(texto, cajitas, categorias, lexico, historial)];
   }
 
   // Si hay varios productos unidos por “y” pero una sola cifra final marcada
@@ -42,14 +53,14 @@ export const parseMultipleTransactions = (
   // produciría apuntes absurdos como $2 por dos pizzas y $45.000 por la gaseosa.
   if (
     /(?:^|\s)(?:compre|compré|pedi|pedí|gaste|gasté|pague|pagué)(?:\s|$)[\s\S]*\by\b[\s\S]*\b(?:por|en\s+total)\s+\$?\s*(?:\d+|un(?:a)?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\b/i.test(
-      trimmed,
+      texto,
     )
   ) {
-    return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
+    return [parseTransaction(texto, cajitas, categorias, lexico, historial)];
   }
 
   // 1. Intentar división por saltos de línea (si el usuario pegó varias líneas)
-  const lineas = trimmed
+  const lineas = texto
     .split(/\r?\n+/)
     .map((l) => l.trim())
     .filter(Boolean);
@@ -65,7 +76,7 @@ export const parseMultipleTransactions = (
 
   // 2. Intentar división por conectores naturales colombianos
   // Evitar dividir frases explicativas de precio como "que me valió 10 mil" o ", me costó 50 mil"
-  const partes = trimmed.split(
+  const partes = texto.split(
     /(?:\s+(?:y|e|además|ademas|también|tambien|luego)\s+)|(?:\s*,\s*(?=(?:[0-9]|gaste|gasté|pague|pagué|recibi|recibí|compre|compré|transferi|transferí|meti|metí|saque|saqué|me entraron|me pagaron)(?!.*(?:que\s+(?:me\s+)?(?:valio|valió|costo|costó)))))/i,
   );
 
@@ -85,5 +96,6 @@ export const parseMultipleTransactions = (
   }
 
   // 3. Fallback: Parseo estándar individual
-  return [parseTransaction(trimmed, cajitas, categorias, lexico, historial)];
+  const parseada = parseTransaction(texto, cajitas, categorias, lexico, historial);
+  return [{ ...parseada, raw: trimmed }];
 };

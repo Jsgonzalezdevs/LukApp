@@ -82,4 +82,15 @@ describe('parseMultipleTransactions', () => {
     expect(res).toHaveLength(2);
     expect(res.map((movimiento) => movimiento.amount)).toEqual([20_000, 30_000]);
   });
+
+  it('no parte un único monto que la transcripción escribió como "1 y 500 pesos"', () => {
+    const res = parseMultipleTransactions('Me gasté 1 y 500 pesos en Amparo');
+
+    expect(res).toHaveLength(1);
+    expect(res[0]).toMatchObject({
+      amount: 1_500,
+      description: 'Amparo',
+      raw: 'Me gasté 1 y 500 pesos en Amparo',
+    });
+  });
 });

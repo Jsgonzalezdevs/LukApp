@@ -39,6 +39,15 @@ const URL_GROQ = 'https://api.groq.com/openai/v1/audio/transcriptions';
  */
 const PALABRAS_CLAVE_BASE = [
   'LukApp',
+  // Órdenes financieras: van primero porque un error aquí cambia un saldo.
+  'abonar',
+  'abono a tarjeta',
+  'pagar tarjeta',
+  'actualizar saldo',
+  'ajustar saldo',
+  'transferir entre cuentas',
+  'pasar a una cajita',
+  'registrar rendimiento',
   // Bancos, billeteras y servicios financieros usados en Colombia.
   'Nequi',
   'Daviplata',
@@ -77,15 +86,6 @@ const PALABRAS_CLAVE_BASE = [
   'chipcha',
   'Chibcha',
   'ñapa',
-  // Órdenes financieras que cambian saldos y deben conservar su verbo.
-  'abonar',
-  'abono a tarjeta',
-  'pagar tarjeta',
-  'actualizar saldo',
-  'ajustar saldo',
-  'transferir entre cuentas',
-  'pasar a una cajita',
-  'registrar rendimiento',
   // Transporte, comercios y lugares que suelen aparecer en gastos cortos.
   'TransMilenio',
   'SITP',
@@ -140,6 +140,31 @@ const PALABRAS_CLAVE_BASE = [
   'cuatro por mil',
 ] as const;
 
+// El prompt tiene un límite estricto. Estas palabras cambian con más frecuencia
+// el monto, la dirección o el comercio de un movimiento, así que entran antes
+// de la lista completa de nombres propios.
+const PALABRAS_CLAVE_PRIORITARIAS = [
+  'LukApp',
+  'Nequi',
+  'Daviplata',
+  'Bancolombia',
+  'Davivienda',
+  'abonar',
+  'abono a tarjeta',
+  'pagar tarjeta',
+  'actualizar saldo',
+  'ajustar saldo',
+  'transferir entre cuentas',
+  'pasar a una cajita',
+  'registrar rendimiento',
+  'tamal',
+  'lechona',
+  'sancocho',
+  'chipcha',
+  'Chibcha',
+  'ñapa',
+] as const;
+
 /** Groq dice "caracteres", pero en la práctica cuenta los bytes UTF-8. */
 const MAX_BYTES_PROMPT_GROQ = 896;
 
@@ -149,12 +174,15 @@ const CONTEXTO_BASE =
   'Transcribe literalmente este dictado financiero en español de Colombia. ' +
   'Conserva cifras, negaciones, nombres de cuentas y la dirección del dinero ' +
   '(de, desde, a, hacia; pagué, gasté, compré, retiré, transferí, aboné, recibí). ' +
-  'No inventes ni completes lo que no se oye, ni conviertas cantidades de productos en precios. ' +
+  'No inventes ni completes lo que no se oye: conserva los montos compuestos ' +
+  '("mil quinientos pesos", nunca "1 y 500") y no conviertas cantidades de productos en precios. ' +
   'Usa las ortografías sugeridas solo si realmente se oyen.';
 
 const construirPrompt = (vocabulario: readonly string[]): string => {
   const inicioLista = ' Ortografías esperadas: ';
-  const palabrasClave = [...vocabulario, ...PALABRAS_CLAVE_BASE];
+  const palabrasClave = [
+    ...new Set([...vocabulario, ...PALABRAS_CLAVE_PRIORITARIAS, ...PALABRAS_CLAVE_BASE]),
+  ];
   const elegidas: string[] = [];
 
   for (const termino of palabrasClave) {
