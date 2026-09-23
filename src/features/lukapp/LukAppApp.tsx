@@ -122,6 +122,9 @@ const MultiCapturaModal = lazy(() =>
 const ReporteFinancieroModal = lazy(() =>
   import('./components/ReporteFinancieroModal').then(({ ReporteFinancieroModal }) => ({ default: ReporteFinancieroModal })),
 );
+const InvitacionPremium = lazy(() =>
+  import('./components/InvitacionPremium').then(({ InvitacionPremium }) => ({ default: InvitacionPremium })),
+);
 
 /**
  * Rebuilds the parser's output shape from a stored row so editing can reuse
@@ -742,6 +745,14 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     capa === null &&
     panelAjustes === null &&
     !guiaBasicaAbierta;
+  const puedeMostrarInvitacionPremium =
+    userId !== null &&
+    cuenta !== undefined &&
+    !esAdmin &&
+    section === 'inicio' &&
+    onboarding.terminado &&
+    !guiaSeccionAbierta &&
+    ningunModalAbierto;
 
   return (
     <CatalogoProvider categorias={categorias}>
@@ -1429,6 +1440,17 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             datos={almacen.datos}
             cajitasBalances={cajitasBalances}
             emailUsuario={cuenta?.email}
+          />
+        ) : null}
+
+        {userId && cuenta && puedeMostrarInvitacionPremium ? (
+          <InvitacionPremium
+            userId={userId}
+            puedeMostrarse={puedeMostrarInvitacionPremium}
+            onVerOpciones={() => {
+              setSection('ajustes');
+              setPanelAjustes('cuenta');
+            }}
           />
         ) : null}
         </Suspense>

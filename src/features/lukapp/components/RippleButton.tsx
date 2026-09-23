@@ -18,6 +18,18 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
       Array<{ id: number; x: number; y: number }>
     >([]);
     const rippleIdRef = useRef(0);
+    const temporizadoresRef = useRef(new Set<number>());
+
+    React.useEffect(() => () => {
+      temporizadoresRef.current.forEach((temporizador) => window.clearTimeout(temporizador));
+      temporizadoresRef.current.clear();
+    }, []);
+
+    const asignarReferencia = (nodo: HTMLButtonElement | null) => {
+      buttonRef.current = nodo;
+      if (typeof ref === 'function') ref(nodo);
+      else if (ref) ref.current = nodo;
+    };
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       const rect = buttonRef.current?.getBoundingClientRect();
@@ -28,9 +40,11 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
 
         setRipples((prev) => [...prev, { id, x, y }]);
 
-        setTimeout(() => {
+        const temporizador = window.setTimeout(() => {
+          temporizadoresRef.current.delete(temporizador);
           setRipples((prev) => prev.filter((r) => r.id !== id));
         }, 600);
+        temporizadoresRef.current.add(temporizador);
       }
 
       onClick?.(e);
@@ -40,7 +54,7 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
 
     return (
       <button
-        ref={ref || buttonRef}
+        ref={asignarReferencia}
         onClick={handleClick}
         className={`relative overflow-hidden ${className ?? ''}`}
         {...rest}

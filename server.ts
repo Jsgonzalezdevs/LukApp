@@ -200,6 +200,13 @@ interface EstadoPlanServidor {
   nombre: string;
   precios: { mensualCop: number; anualCop: number };
   preciosPremium: { mensualCop: number; anualCop: number };
+  limitesPremium: {
+    dictadosMensual: number | null;
+    asesorIaMensual: number | null;
+    extractosMensual: number | null;
+    espaciosCompartidos: number | null;
+    integrantesPorEspacio: number | null;
+  };
   limites: {
     dictadosMensual: number | null;
     asesorIaMensual: number | null;
@@ -365,6 +372,13 @@ const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<Esta
     preciosPremium: {
       mensualCop: Number(planPremium.precio_mensual_cop),
       anualCop: Number(planPremium.precio_anual_cop),
+    },
+    limitesPremium: {
+      dictadosMensual: planPremium.limite_dictados_mensual === null ? null : Number(planPremium.limite_dictados_mensual),
+      asesorIaMensual: planPremium.limite_asesor_ia_mensual === null ? null : Number(planPremium.limite_asesor_ia_mensual),
+      extractosMensual: planPremium.limite_extractos_mensual === null ? null : Number(planPremium.limite_extractos_mensual),
+      espaciosCompartidos: planPremium.limite_espacios_compartidos === null ? null : Number(planPremium.limite_espacios_compartidos),
+      integrantesPorEspacio: planPremium.limite_integrantes_por_espacio === null ? null : Number(planPremium.limite_integrantes_por_espacio),
     },
     limites: {
       dictadosMensual: plan.limite_dictados_mensual === null ? null : Number(plan.limite_dictados_mensual),

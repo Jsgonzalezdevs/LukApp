@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.2.0', fecha: '2026-09-23', texto: 'De vez en cuando, quienes usan Normal verán una invitación cuidada a Premium con sus beneficios y precios reales. Siempre se puede cerrar, seguir gratis y volver a verla solo después de dos semanas.' },
   { version: '4.1.6', fecha: '2026-09-23', texto: 'La confirmación de Premium ahora muestra con mucha más claridad todo lo que acabas de desbloquear: cifras protagonistas para voz, Asesor IA, extractos y opciones para compartir.' },
   { version: '4.1.5', fecha: '2026-09-23', texto: 'Al volver de Wompi ahora ves una confirmación de pago clara y cuidada: espera la verificación segura antes de activar Premium y te acompaña hasta que quede listo.' },
   { version: '4.1.4', fecha: '2026-09-23', texto: 'Corregimos los precios de los botones Premium: ahora muestran siempre el valor vigente de Premium, incluso si tu plan actual es Normal.' },
