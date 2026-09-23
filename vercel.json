@@ -12,6 +12,8 @@
   "rewrites": [
     { "source": "/", "destination": "/index.html" },
     { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/finanzas/:path*", "destination": "/index.html" },
+    { "source": "/pago/confirmado", "destination": "/index.html" },
     {
       "source": "/(app|entrar|superadmin|estadisticas|dinero|mes|asesor|ajustes|ecosistema|blog|legal|terminos)(/.*)?",
       "destination": "/index.html"
@@ -54,6 +56,20 @@
     },
     {
       "source": "/(dinero|mes|asesor|ajustes|ecosistema)(/.*)?",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "Cache-Control", "value": "private, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/finanzas/:path*",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "Cache-Control", "value": "private, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/pago/confirmado",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
         { "key": "Cache-Control", "value": "private, no-store, must-revalidate" }

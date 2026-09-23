@@ -59,12 +59,13 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
    WOMPI_PUBLIC_KEY=pub_test_...
    WOMPI_INTEGRITY_SECRET=test_integrity_...
    WOMPI_EVENTS_SECRET=test_events_...
-   WOMPI_REDIRECT_URL=https://TU-DOMINIO/finanzas/ajustes/cuenta
+   WOMPI_REDIRECT_URL=https://TU-DOMINIO/pago/confirmado
    ```
 
    Las tres llaves se encuentran en **Wompi → Desarrolladores → Secretos para
    integración técnica**. `WOMPI_REDIRECT_URL` debe ser la URL pública HTTPS de
-   tu frontend, no la de Render. Para producción cambia el ambiente a
+   tu frontend, no la de Render. La pantalla confirma la suscripción con la
+   API; volver desde Wompi nunca activa Premium por sí solo. Para producción cambia el ambiente a
    `produccion` y usa exclusivamente `pub_prod_`, `prod_integrity_` y
    `prod_events_`.
 7. En Wompi Dashboard configura el evento `transaction.updated` para cada

@@ -4,7 +4,7 @@ import { useSesion } from '../features/lukapp/data/useSesion';
 import { useTema } from '../features/lukapp/data/useTema';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
 import { LandingLukApp } from '../features/lukapp/components/LandingLukApp';
-import { BASE_LUKAPP, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
+import { BASE_LUKAPP, esRutaConfirmacionPago, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
 import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
@@ -21,6 +21,7 @@ const LukAppMain = lazy(() => import('../features/lukapp/LukAppApp').then(({ Luk
 const AppLauncher = lazy(() => import('./AppLauncher').then(({ AppLauncher }) => ({ default: AppLauncher })));
 const SuperadminPanel = lazy(() => import('./SuperadminPanel').then(({ SuperadminPanel }) => ({ default: SuperadminPanel })));
 const EstadisticasPanel = lazy(() => import('./EstadisticasPanel').then(({ EstadisticasPanel }) => ({ default: EstadisticasPanel })));
+const ConfirmacionPagoWompi = lazy(() => import('../features/lukapp/components/ConfirmacionPagoWompi').then(({ ConfirmacionPagoWompi }) => ({ default: ConfirmacionPagoWompi })));
 
 const VistaConCarga: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Suspense
@@ -101,6 +102,7 @@ export const AppsRoot: React.FC = () => {
   const ultimoAccesoRegistrado = useRef<string | null>(null);
 
   const { ruta, ir } = useRuta();
+  const esConfirmacionPago = esRutaConfirmacionPago(ruta, window.location.search);
   const enPortada =
     !esPwaInstalada() &&
     activeApp === 'finanzas' &&
@@ -389,6 +391,17 @@ export const AppsRoot: React.FC = () => {
   if (enPortada) {
     const abrirApp = () => ir(`${BASE_LUKAPP}/app`);
     return <LandingLukApp onGetStarted={abrirApp} onLogin={abrirApp} sesion={sesion} />;
+  }
+
+  if (esConfirmacionPago) {
+    return (
+      <VistaConCarga>
+        <ConfirmacionPagoWompi
+          onIrACuenta={() => ir(`${BASE_LUKAPP}/ajustes/cuenta`)}
+          onIrAInicio={() => ir(`${BASE_LUKAPP}/app`)}
+        />
+      </VistaConCarga>
+    );
   }
 
   if (!esAdminOStaff) {

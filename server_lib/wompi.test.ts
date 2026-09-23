@@ -12,7 +12,7 @@ const entornoSandbox: NodeJS.ProcessEnv = {
   WOMPI_PUBLIC_KEY: 'pub_test_publica',
   WOMPI_INTEGRITY_SECRET: 'test_integrity_secreto',
   WOMPI_EVENTS_SECRET: 'test_events_secreto',
-  WOMPI_REDIRECT_URL: 'https://lukapp.example/finanzas/ajustes/cuenta',
+  WOMPI_REDIRECT_URL: 'https://lukapp.example/pago/confirmado',
 };
 
 describe('Wompi', () => {

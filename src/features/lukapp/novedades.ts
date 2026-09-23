@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.1.5', fecha: '2026-09-23', texto: 'Al volver de Wompi ahora ves una confirmación de pago clara y cuidada: espera la verificación segura antes de activar Premium y te acompaña hasta que quede listo.' },
   { version: '4.1.4', fecha: '2026-09-23', texto: 'Corregimos los precios de los botones Premium: ahora muestran siempre el valor vigente de Premium, incluso si tu plan actual es Normal.' },
   { version: '4.1.3', fecha: '2026-09-23', texto: 'Aceleramos la carga de beneficios: LukApp despierta el servidor al recuperar tu sesión, muestra el último plan reciente al instante y consulta sus datos en paralelo.' },
   { version: '4.1.2', fecha: '2026-09-23', texto: 'Corregimos la administración de Premium pagado: ahora retirar el acceso o ajustar la vigencia funciona sin duplicar la referencia de Wompi en la auditoría.' },

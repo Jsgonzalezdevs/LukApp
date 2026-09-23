@@ -79,3 +79,15 @@ export const segmentosDe = (ruta: string): string[] =>
     .replace(/^\/finanzas/, '')
     .split('/')
     .filter(Boolean);
+
+/**
+ * Wompi devuelve un `id` en la URL al terminar el checkout. No se usa como
+ * prueba de pago: solo decide si mostramos la pantalla que consulta al
+ * servidor. La confirmación real sigue siendo la suscripción activada por el
+ * webhook firmado.
+ */
+export const esRutaConfirmacionPago = (ruta: string, busqueda: string): boolean => {
+  const segmentos = segmentosDe(ruta).join('/');
+  return segmentos === 'pago/confirmado'
+    || (segmentos === 'ajustes/cuenta' && new URLSearchParams(busqueda).has('id'));
+};
