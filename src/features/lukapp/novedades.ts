@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.1.2', fecha: '2026-09-23', texto: 'Corregimos la administración de Premium pagado: ahora retirar el acceso o ajustar la vigencia funciona sin duplicar la referencia de Wompi en la auditoría.' },
   { version: '4.1.1', fecha: '2026-09-23', texto: 'En Superadmin ya puedes ajustar la vigencia o retirar Premium de cualquier cuenta, incluso si su pago llegó por Wompi. El historial del cobro se conserva para conciliación.' },
   { version: '4.1.0', fecha: '2026-09-23', texto: 'Ya puedes elegir Premium mensual o anual con Wompi: el pago se confirma de forma segura y tus beneficios se activan automáticamente al aprobarse.' },
   { version: '4.0.1', fecha: '2026-09-23', texto: 'Corregimos la analítica de tráfico para que las visitas sigan registrándose durante actualizaciones del esquema y el panel las cargue con un diagnóstico claro.' },
