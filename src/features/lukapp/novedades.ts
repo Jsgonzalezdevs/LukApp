@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.0.0', fecha: '2026-09-23', texto: 'LukApp ahora tiene los planes Normal y Premium con cupos protegidos, y Superadmin incorpora un panel seguro para ver y administrar beneficios.' },
   { version: '3.33.9', fecha: '2026-09-23', texto: 'Las contraseñas ahora requieren una combinación segura y ningún usuario puede convertirse en superadmin sin aprobación de otro superadmin.' },
   { version: '3.33.8', fecha: '2026-09-23', texto: 'La pantalla para confirmar movimientos ahora separa correctamente las categorías del teclado y aprovecha mejor el espacio en celulares.' },
   { version: '3.33.7', fecha: '2026-09-23', texto: 'La bienvenida ahora pregunta únicamente por bancos y billeteras, sin volver a ofrecer la cuenta de Efectivo que LukApp ya incluye.' },

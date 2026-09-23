@@ -762,10 +762,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             usarRespaldoLocal('No encontramos ningún proveedor de IA disponible.');
           }
         } else {
+          const mensajeApi = data && typeof data === 'object' && typeof (data as { error?: unknown }).error === 'string'
+            ? (data as { error: string }).error
+            : null;
           const mensaje = res.status === 401 || res.status === 403
             ? 'No se pudo validar tu sesión para consultar la IA.'
             : res.status === 429
-              ? 'Alcanzaste el límite de solicitudes. Intenta de nuevo en un momento.'
+              ? mensajeApi || 'Alcanzaste el límite de solicitudes. Intenta de nuevo en un momento.'
               : `La IA respondió con un error (${res.status}).`;
           usarRespaldoLocal(mensaje);
         }

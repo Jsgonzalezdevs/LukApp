@@ -81,8 +81,8 @@ Frontend (valores publicables): `VITE_SUPABASE_URL`,
 `VITE_SUPABASE_PUBLISHABLE_KEY` (o la antigua `VITE_SUPABASE_ANON_KEY`) y
 `VITE_API_URL`.
 
-Servidor: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANALISTA_TOKEN`,
-`PORT` y `VISITAS_SAL`. Las claves de servicio nunca deben llevar `VITE_`.
+Servidor: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT` y
+`VISITAS_SAL`. Las claves de servicio nunca deben llevar `VITE_`.
 Consulta [`.env.example`](.env.example).
 
 ## Despliegue y base de datos
@@ -90,7 +90,8 @@ Consulta [`.env.example`](.env.example).
 Vercel sirve el frontend y las funciones de `api/`; Render puede ejecutar
 `server.ts`. Las migraciones de [`supabase/migrations`](supabase/migrations)
 se aplican en orden. Consulta también [`docs/ARQUITECTURA_AUTH.md`](docs/ARQUITECTURA_AUTH.md),
-[`supabase/README.md`](supabase/README.md) y [`supabase/COMO_APLICAR.md`](supabase/COMO_APLICAR.md).
+[`supabase/README.md`](supabase/README.md), [`supabase/COMO_APLICAR.md`](supabase/COMO_APLICAR.md)
+y [`docs/FREEMIUM_Y_PAGOS.md`](docs/FREEMIUM_Y_PAGOS.md).
 
 ## Convenciones
 

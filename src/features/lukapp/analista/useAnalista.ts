@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AnalisisResultado, CodigoError, RespuestaAnalisis } from './tipos';
 import { apiUrl } from '../../../lib/api';
+import { obtenerSupabase } from '../data/supabase';
 
 const CLAVE_TOKEN = 'finanzas.analista.token';
 const RUTA_ANALIZAR = apiUrl('/api/analizar-extracto');
@@ -137,8 +138,15 @@ export const useAnalista = (): UseAnalista => {
           const headers: Record<string, string> = {
             'content-type': 'application/json',
           };
-          if (tokenActual) {
-            headers.authorization = `Bearer ${tokenActual}`;
+          // El token manual antiguo se conserva únicamente para instalaciones
+          // locales sin Supabase. En la app configurada siempre se usa la
+          // sesión actual: el servidor necesita saber a qué plan descontar el
+          // extracto y nunca acepta un id de usuario enviado por el navegador.
+          const cliente = obtenerSupabase();
+          const sesion = cliente ? await cliente.auth.getSession() : null;
+          const tokenSesion = sesion?.data.session?.access_token ?? tokenActual;
+          if (tokenSesion) {
+            headers.authorization = `Bearer ${tokenSesion}`;
           }
 
           const respuesta = await fetch(RUTA_ANALIZAR, {

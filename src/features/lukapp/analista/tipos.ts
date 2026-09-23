@@ -75,6 +75,7 @@ export type RespuestaAnalisis =
 
 export type CodigoError =
   | 'sin-autorizacion'
+  | 'cupo-agotado'
   | 'pdf-invalido'
   | 'pdf-muy-grande'
   | 'banco-no-soportado'

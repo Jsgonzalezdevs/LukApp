@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePermisoDeMicrófono } from './usePermisoDeMicrófono';
 import { apiUrl } from '../../../lib/api';
+import { obtenerSupabase } from '../data/supabase';
 
 export type AudioCaptureStatus = 'idle' | 'listening' | 'processing' | 'blocked';
 
@@ -178,6 +179,10 @@ const peticionTranscribir = async (
   const vocabularioCodificado = vocabulario.length > 0
     ? encodeURIComponent(JSON.stringify(vocabulario.slice(0, 30)))
     : null;
+  const cliente = obtenerSupabase();
+  const token = cliente
+    ? (await cliente.auth.getSession()).data.session?.access_token
+    : undefined;
   const intentar = async (url: string) => {
     const controlador = new AbortController();
     const tiempo = setTimeout(() => controlador.abort(), TIEMPO_MAX_TRANSCRIPCION_MS);
@@ -190,13 +195,23 @@ const peticionTranscribir = async (
           ...(vocabularioCodificado
             ? { 'X-LukApp-Vocabulario': vocabularioCodificado }
             : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: audioBlob,
         signal: controlador.signal,
       });
       // Un 4xx no mejora al reenviar el mismo audio: duplicarlo era una espera
       // inútil. Un 5xx o una caída de red sí merece un único reintento.
-      if (!res.ok) return { data: null, reintentar: res.status >= 500 };
+      if (!res.ok) {
+        // Solo los rechazos que la persona puede entender (sesión o cupo) se
+        // convierten en mensaje. Otros 4xx siguen el comportamiento histórico
+        // de error de conexión, y un 5xx conserva el reintento en lugar de
+        // tratar su JSON de error como una transcripción válida.
+        const data = res.status === 401 || res.status === 429
+          ? (await res.json().catch(() => null)) as RespuestaTranscripcion | null
+          : null;
+        return { data, reintentar: res.status >= 500 };
+      }
       const data = (await res.json().catch(() => null)) as RespuestaTranscripcion | null;
       return { data, reintentar: data === null };
     } catch {

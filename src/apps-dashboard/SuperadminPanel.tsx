@@ -29,6 +29,7 @@ import {
   User,
   Cog,
   Sparkles,
+  CreditCard,
 } from 'lucide-react';
 import { TemaToggle } from '../features/lukapp/components/TemaToggle';
 import type { Tema } from '../features/lukapp/data/useTema';
@@ -39,6 +40,7 @@ import type { Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
 import { VERSION_ETIQUETA } from '../version';
 import { validarContrasenaSegura } from '../lib/seguridad';
+import { FacturacionPanel } from './FacturacionPanel';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -115,7 +117,7 @@ interface MetricasIAResponse {
   usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }>;
 }
 
-type TabSuperadmin = 'usuarios' | 'roles' | 'ia-tokens' | 'visitantes' | 'auditoria';
+type TabSuperadmin = 'usuarios' | 'roles' | 'facturacion' | 'ia-tokens' | 'visitantes' | 'auditoria';
 
 /** Un rol personalizado con sus permisos, tal como lo devuelve /api/roles. */
 interface RolPersonalizado {
@@ -366,6 +368,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       return 'usuarios';
     }
     if (permisos.includes('ver_metricas_ia')) return 'ia-tokens';
+    if (permisos.includes('ver_facturacion')) return 'facturacion';
     if (permisos.includes('ver_visitantes')) return 'visitantes';
     if (permisos.includes('ver_auditoria')) return 'auditoria';
     return 'usuarios';
@@ -1041,6 +1044,20 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
             </button>
           )}
 
+          {puede('ver_facturacion') && (
+            <button
+              onClick={() => setTabActiva('facturacion')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'facturacion'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <CreditCard className="h-4 w-4" />
+              Planes
+            </button>
+          )}
+
           {puede('ver_metricas_ia') && (
             <button
               onClick={() => setTabActiva('ia-tokens')}
@@ -1340,6 +1357,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               </div>
             </div>
           )}
+
+          {/* ========================================================================= */}
+          {/* TAB: PLANES Y FACTURACIÓN */}
+          {/* ========================================================================= */}
+          {tabActiva === 'facturacion' && <FacturacionPanel />}
 
           {/* ========================================================================= */}
           {/* TAB 2: MONITOR DE IA & TOKENS */}

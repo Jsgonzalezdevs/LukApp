@@ -3,10 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { crearFetchTolerante } from './fetchTolerante';
 
 /**
- * These two DO carry the `VITE_` prefix, unlike ANALISTA_TOKEN.
- *
- * That is not an oversight and not a contradiction of the warning in
- * .env.example. The anon key is designed to be public: it identifies the
+ * Estas dos sí llevan el prefijo `VITE_`. La clave anon está diseñada para ser
+ * pública: identifica el
  * project, carries no privileges of its own, and every table it can reach is
  * gated by row level security enforced inside PostgreSQL. What must never
  * appear here is the SERVICE ROLE key, which bypasses RLS entirely — that one

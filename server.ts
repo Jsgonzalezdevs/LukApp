@@ -24,6 +24,14 @@ import {
   transcribirAudio,
   type ModoTranscripcion,
 } from './server_lib/transcripcion.ts';
+import {
+  fechaPremiumValida,
+  mensajeCupoAgotado,
+  validarConfiguracionPlan,
+  type CodigoPlan,
+  type RecursoDeCupo,
+  type ResultadoCupo,
+} from './server_lib/suscripciones.ts';
 
 dotenv.config();
 
@@ -178,6 +186,117 @@ const clienteAdmin = () => {
 };
 
 type ClienteAdmin = NonNullable<ReturnType<typeof clienteAdmin>>;
+
+interface EstadoPlanServidor {
+  codigo: CodigoPlan;
+  nombre: string;
+  precios: { mensualCop: number; anualCop: number };
+  limites: {
+    dictadosMensual: number | null;
+    asesorIaMensual: number | null;
+    extractosMensual: number | null;
+    espaciosCompartidos: number | null;
+    integrantesPorEspacio: number | null;
+  };
+  consumo: { dictados: number; asesorIa: number; extractos: number };
+  suscripcion: { id: number; ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string; cancelarAlVencer: boolean } | null;
+}
+
+/** Ejecuta el contador atómico de PostgreSQL antes de gastar IA, voz o PDF. */
+const consumirCupo = async (
+  cliente: ClienteAdmin,
+  userId: string,
+  recurso: RecursoDeCupo,
+): Promise<ResultadoCupo> => {
+  const { data, error } = await cliente.rpc('consumir_cupo_plan', {
+    p_usuario: userId,
+    p_recurso: recurso,
+  });
+  if (error) throw new Error(`No se pudo revisar el cupo: ${error.message}`);
+  const resultado = Array.isArray(data) ? data[0] : data;
+  if (!resultado || typeof resultado.permitido !== 'boolean'
+    || (resultado.plan_codigo !== 'normal' && resultado.plan_codigo !== 'premium')) {
+    throw new Error('La respuesta del cupo no es válida.');
+  }
+  return {
+    permitido: resultado.permitido,
+    plan_codigo: resultado.plan_codigo,
+    limite: resultado.limite === null ? null : Number(resultado.limite),
+    usado: Number(resultado.usado) || 0,
+  };
+};
+
+const devolverCupo = async (
+  cliente: ClienteAdmin,
+  userId: string,
+  recurso: RecursoDeCupo,
+): Promise<void> => {
+  const { error } = await cliente.rpc('devolver_cupo_plan', {
+    p_usuario: userId,
+    p_recurso: recurso,
+  });
+  if (error) console.error('[planes] No se pudo devolver un cupo tras un fallo:', error.message);
+};
+
+/** Forma estable de exponer el plan propio, sin abrir las tablas de cobros por RLS. */
+const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<EstadoPlanServidor> => {
+  const periodo = `${fechaBogotaHoy().slice(0, 7)}-01`;
+  const ahora = new Date().toISOString();
+  const [{ data: suscripcion, error: errorSuscripcion }, { data: consumo, error: errorConsumo }] = await Promise.all([
+    cliente
+      .from('suscripciones')
+      .select('id,ciclo,vence_en,cancelar_al_vencer,plan_codigo')
+      .eq('user_id', userId)
+      .eq('estado', 'activa')
+      .lte('inicia_en', ahora)
+      .gt('vence_en', ahora)
+      .order('vence_en', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    cliente
+      .from('consumos_plan_mensual')
+      .select('dictados,asesor_ia,extractos')
+      .eq('user_id', userId)
+      .eq('periodo', periodo)
+      .maybeSingle(),
+  ]);
+  if (errorSuscripcion) throw new Error(errorSuscripcion.message);
+  if (errorConsumo) throw new Error(errorConsumo.message);
+
+  const codigo: CodigoPlan = suscripcion?.plan_codigo === 'premium' ? 'premium' : 'normal';
+  const { data: plan, error: errorPlan } = await cliente
+    .from('planes_suscripcion')
+    .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio')
+    .eq('codigo', codigo)
+    .single();
+  if (errorPlan || !plan) throw new Error(errorPlan?.message || 'No se encontró el plan.');
+
+  return {
+    codigo,
+    nombre: plan.nombre,
+    precios: { mensualCop: Number(plan.precio_mensual_cop), anualCop: Number(plan.precio_anual_cop) },
+    limites: {
+      dictadosMensual: plan.limite_dictados_mensual === null ? null : Number(plan.limite_dictados_mensual),
+      asesorIaMensual: plan.limite_asesor_ia_mensual === null ? null : Number(plan.limite_asesor_ia_mensual),
+      extractosMensual: plan.limite_extractos_mensual === null ? null : Number(plan.limite_extractos_mensual),
+      espaciosCompartidos: plan.limite_espacios_compartidos === null ? null : Number(plan.limite_espacios_compartidos),
+      integrantesPorEspacio: plan.limite_integrantes_por_espacio === null ? null : Number(plan.limite_integrantes_por_espacio),
+    },
+    consumo: {
+      dictados: Number(consumo?.dictados) || 0,
+      asesorIa: Number(consumo?.asesor_ia) || 0,
+      extractos: Number(consumo?.extractos) || 0,
+    },
+    suscripcion: suscripcion
+      ? {
+        id: Number(suscripcion.id),
+        ciclo: suscripcion.ciclo,
+        venceEn: suscripcion.vence_en,
+        cancelarAlVencer: Boolean(suscripcion.cancelar_al_vencer),
+      }
+      : null,
+  };
+};
 
 /** El id y correo del que llama si es admin; si no, el estado y mensaje a devolver. */
 const exigirAdmin = async (
@@ -1277,11 +1396,241 @@ app.get('/api/mis-permisos', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
+// PLANES, SUSCRIPCIONES Y FACTURACIÓN
+// ----------------------------------------------------------------------
+// Estas rutas son la única puerta HTTP hacia las tablas de Freemium. No se
+// publican políticas RLS para ellas: así un navegador jamás puede alterar un
+// cupo, una vigencia o un cobro llamando directamente a Supabase.
+app.get('/api/mi-plan', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'Debes iniciar sesión para consultar tu plan.' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    return res.status(200).json(await estadoPlanDe(cliente, acceso.userId));
+  } catch (error: any) {
+    console.error('Error consultando el plan propio:', error);
+    return res.status(500).json({ error: 'No se pudo consultar tu plan.' });
+  }
+});
+
+app.get('/api/superadmin/facturacion', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirPermiso(cliente, token, 'ver_facturacion');
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const ahora = new Date().toISOString();
+    const [{ data: planes, error: errorPlanes }, { data: suscripciones, error: errorSuscripciones }, { data: perfil, error: errorPerfil }] = await Promise.all([
+      cliente
+        .from('planes_suscripcion')
+        .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio,activo,actualizado_en')
+        .order('codigo'),
+      cliente
+        .from('suscripciones')
+        .select('id,user_id,ciclo,origen,vence_en,cancelar_al_vencer,valor_cobrado_cop,creada_en')
+        .eq('estado', 'activa')
+        .lte('inicia_en', ahora)
+        .gt('vence_en', ahora)
+        .order('vence_en', { ascending: true }),
+      cliente.from('perfiles').select('rol').eq('id', acceso.userId).single(),
+    ]);
+    if (errorPlanes) throw errorPlanes;
+    if (errorSuscripciones) throw errorSuscripciones;
+    if (errorPerfil) throw errorPerfil;
+
+    const planPremium = (planes ?? []).find((plan) => plan.codigo === 'premium');
+    const activas = suscripciones ?? [];
+    const mensuales = activas.filter((suscripcion) => suscripcion.ciclo === 'mensual').length;
+    const anuales = activas.filter((suscripcion) => suscripcion.ciclo === 'anual').length;
+    const cortesia = activas.filter((suscripcion) => suscripcion.ciclo === 'cortesia').length;
+    const estimadoMensualCop = mensuales * Number(planPremium?.precio_mensual_cop ?? 0)
+      + anuales * Math.round(Number(planPremium?.precio_anual_cop ?? 0) / 12);
+    const esAdminFijo = perfil?.rol === 'admin';
+
+    // Un rol con "ver_facturacion" solo recibe agregados. Las identidades y
+    // vigencias de cada persona las necesita el superadmin fijo para soporte,
+    // pero no una persona a quien se le delegó el resumen contable.
+    let detalle: Array<Record<string, unknown>> = [];
+    let usuarios: Array<{ id: string; email: string; usuario: string | null }> = [];
+    if (esAdminFijo) {
+      const { data: perfiles, error: errorPerfiles } = await cliente
+        .from('perfiles')
+        .select('id,email,usuario')
+        .order('email', { ascending: true });
+      if (errorPerfiles) throw errorPerfiles;
+      const porId = new Map((perfiles ?? []).map((persona) => [persona.id, persona]));
+      detalle = activas.map((suscripcion) => ({
+        ...suscripcion,
+        usuario: porId.get(suscripcion.user_id) ?? null,
+      }));
+      usuarios = perfiles ?? [];
+    }
+
+    return res.status(200).json({
+      planes: planes ?? [],
+      resumen: {
+        premiumActivas: activas.length,
+        mensuales,
+        anuales,
+        cortesia,
+        estimadoMensualCop,
+      },
+      puedeAdministrar: esAdminFijo,
+      suscripciones: detalle,
+      usuarios,
+    });
+  } catch (error: any) {
+    console.error('Error cargando facturación:', error);
+    return res.status(500).json({ error: error.message || 'No se pudo cargar la facturación.' });
+  }
+});
+
+app.put('/api/superadmin/planes/:codigo', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const codigo = req.params.codigo;
+    if (codigo !== 'normal' && codigo !== 'premium') {
+      return res.status(400).json({ error: 'Solo existen los planes Normal y Premium.' });
+    }
+
+    const configuracion = validarConfiguracionPlan(req.body);
+    if (!configuracion.activo) {
+      return res.status(400).json({ error: 'No se puede desactivar un plan: Normal debe estar siempre disponible y Premium debe respetar beneficios vigentes.' });
+    }
+    if (codigo === 'normal' && (configuracion.precioMensualCop !== 0 || configuracion.precioAnualCop !== 0)) {
+      return res.status(400).json({ error: 'El plan Normal debe ser gratuito para siempre.' });
+    }
+    if (codigo === 'premium' && (configuracion.precioMensualCop <= 0 || configuracion.precioAnualCop <= 0)) {
+      return res.status(400).json({ error: 'Premium debe conservar un precio mensual y anual mayor que cero.' });
+    }
+
+    const { data: plan, error } = await cliente
+      .from('planes_suscripcion')
+      .update({
+        precio_mensual_cop: configuracion.precioMensualCop,
+        precio_anual_cop: configuracion.precioAnualCop,
+        limite_dictados_mensual: configuracion.limiteDictadosMensual,
+        limite_asesor_ia_mensual: configuracion.limiteAsesorIaMensual,
+        limite_extractos_mensual: configuracion.limiteExtractosMensual,
+        limite_espacios_compartidos: configuracion.limiteEspaciosCompartidos,
+        limite_integrantes_por_espacio: configuracion.limiteIntegrantesPorEspacio,
+        activo: configuracion.activo,
+        actualizado_en: new Date().toISOString(),
+        actualizado_por: acceso.userId,
+      })
+      .eq('codigo', codigo)
+      .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio,activo,actualizado_en')
+      .single();
+    if (error) throw error;
+
+    const { error: errorAuditoria } = await cliente.from('eventos_facturacion').insert({
+      actor_id: acceso.userId,
+      tipo: 'plan_actualizado',
+      detalle: `Actualizó la configuración del plan ${codigo}.`,
+    });
+    if (errorAuditoria) console.error('No se pudo auditar la actualización del plan:', errorAuditoria.message);
+    registrarAuditoria(acceso.email, 'Actualizó plan Freemium', codigo);
+    return res.status(200).json({ plan });
+  } catch (error: any) {
+    console.error('Error actualizando plan:', error);
+    return res.status(400).json({ error: error.message || 'No se pudo actualizar el plan.' });
+  }
+});
+
+app.post('/api/superadmin/suscripciones/otorgar', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const userId = typeof req.body?.userId === 'string' ? req.body.userId : '';
+    if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(userId)) {
+      return res.status(400).json({ error: 'La cuenta seleccionada no es válida.' });
+    }
+    const venceEn = fechaPremiumValida(req.body?.venceEn);
+    const nota = typeof req.body?.nota === 'string' ? req.body.nota.trim() : '';
+    if (nota.length > 280) return res.status(400).json({ error: 'La nota puede tener máximo 280 caracteres.' });
+
+    const { data: suscripcion, error } = await cliente.rpc('otorgar_premium_manual', {
+      p_usuario: userId,
+      p_vence_en: venceEn,
+      p_actor: acceso.userId,
+      p_nota: nota || null,
+    });
+    if (error) throw error;
+    registrarAuditoria(acceso.email, 'Otorgó Premium de cortesía', userId, `Hasta ${venceEn}`);
+    return res.status(201).json({ suscripcion });
+  } catch (error: any) {
+    console.error('Error otorgando Premium:', error);
+    return res.status(400).json({ error: error.message || 'No se pudo otorgar Premium.' });
+  }
+});
+
+app.post('/api/superadmin/suscripciones/:id/cancelar', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ error: 'La suscripción no es válida.' });
+    const nota = typeof req.body?.nota === 'string' ? req.body.nota.trim() : '';
+    if (nota.length > 280) return res.status(400).json({ error: 'La nota puede tener máximo 280 caracteres.' });
+
+    const { data: suscripcion, error } = await cliente.rpc('cancelar_premium_manual', {
+      p_suscripcion: id,
+      p_actor: acceso.userId,
+      p_nota: nota || null,
+    });
+    if (error) throw error;
+    registrarAuditoria(acceso.email, 'Canceló Premium', String(id));
+    return res.status(200).json({ suscripcion });
+  } catch (error: any) {
+    console.error('Error cancelando Premium:', error);
+    return res.status(400).json({ error: error.message || 'No se pudo cancelar Premium.' });
+  }
+});
+
+// ----------------------------------------------------------------------
 // ENDPOINT: Analizar Extracto Bancario
 // ----------------------------------------------------------------------
 const MAX_BYTES_PDF = 4 * 1024 * 1024; // 4MB
 
 app.post('/api/analizar-extracto', async (req, res) => {
+  const cliente = clienteAdmin();
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  let userId: string | null = null;
+  if (cliente) {
+    if (!token) {
+      return res.status(401).json({ ok: false, codigo: 'sin-autorizacion', mensaje: 'Inicia sesión para analizar extractos.' });
+    }
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) {
+      return res.status(acceso.status).json({ ok: false, codigo: 'sin-autorizacion', mensaje: 'Tu sesión ya no es válida. Inicia sesión de nuevo.' });
+    }
+    userId = acceso.userId;
+  }
+
   const { pdfBase64 } = req.body;
   if (typeof pdfBase64 !== 'string' || pdfBase64.length === 0) {
     return res.status(400).json({ ok: false, codigo: 'pdf-invalido', mensaje: 'No llegó el contenido del PDF.' });
@@ -1318,32 +1667,64 @@ app.post('/api/analizar-extracto', async (req, res) => {
     });
   }
 
-  // Un banco conocido debe pasar primero por su parser determinista. La IA
-  // audita esa lectura después, pero no puede sustituirla silenciosamente.
-  // Solo los formatos aún no soportados usan IA como lector principal.
-  const banco = detectarBanco(textoCrudo);
-  let resultado = banco ? analizarConPlantilla(textoCrudo) : null;
-  if (resultado) {
-    const validacion = await validarExtractoConIA(textoCrudo, resultado);
-    if (validacion) {
-      resultado = {
-        ...resultado,
-        advertencias: [...resultado.advertencias, ...validacion.advertencias],
-        alertas: [...resultado.alertas, ...validacion.alertas],
-      };
+  // Analizar un extracto desconocido puede requerir IA. El contador se toma
+  // justo antes de esa parte costosa y se devuelve si el servicio falla o no
+  // logra entregar un resultado útil; los errores del proveedor no se cobran.
+  let cupoConsumido = false;
+  if (cliente && userId) {
+    try {
+      const cupo = await consumirCupo(cliente, userId, 'extracto');
+      if (!cupo.permitido) {
+        return res.status(429).json({
+          ok: false,
+          codigo: 'cupo-agotado',
+          mensaje: mensajeCupoAgotado('extracto', cupo),
+        });
+      }
+      cupoConsumido = true;
+    } catch (error) {
+      console.error('No se pudo verificar el cupo del extracto:', error);
+      return res.status(503).json({ ok: false, codigo: 'fallo-interno', mensaje: 'No se pudo verificar tu plan. Inténtalo de nuevo.' });
     }
-  } else {
-    resultado = await analizarExtractoConIA(textoCrudo);
-  }
-  if (!resultado) {
-    return res.status(422).json({
-      ok: false,
-      codigo: 'sin-movimientos',
-      mensaje: 'No se pudo leer ningún movimiento de este extracto. Verifica que el PDF tenga texto seleccionable y vuelve a intentarlo.',
-    });
   }
 
-  return res.status(200).json({ ok: true, resultado });
+  try {
+    // Un banco conocido debe pasar primero por su parser determinista. La IA
+    // audita esa lectura después, pero no puede sustituirla silenciosamente.
+    // Solo los formatos aún no soportados usan IA como lector principal.
+    const banco = detectarBanco(textoCrudo);
+    let resultado = banco ? analizarConPlantilla(textoCrudo) : null;
+    if (resultado) {
+      const validacion = await validarExtractoConIA(textoCrudo, resultado);
+      if (validacion) {
+        resultado = {
+          ...resultado,
+          advertencias: [...resultado.advertencias, ...validacion.advertencias],
+          alertas: [...resultado.alertas, ...validacion.alertas],
+        };
+      }
+    } else {
+      resultado = await analizarExtractoConIA(textoCrudo);
+    }
+    if (!resultado) {
+      if (cliente && userId && cupoConsumido) await devolverCupo(cliente, userId, 'extracto');
+      return res.status(422).json({
+        ok: false,
+        codigo: 'sin-movimientos',
+        mensaje: 'No se pudo leer ningún movimiento de este extracto. Verifica que el PDF tenga texto seleccionable y vuelve a intentarlo.',
+      });
+    }
+
+    return res.status(200).json({ ok: true, resultado });
+  } catch (error) {
+    if (cliente && userId && cupoConsumido) await devolverCupo(cliente, userId, 'extracto');
+    console.error('Error analizando extracto:', error);
+    return res.status(500).json({
+      ok: false,
+      codigo: 'fallo-interno',
+      mensaje: 'No se pudo analizar el extracto. Inténtalo de nuevo.',
+    });
+  }
 });
 
 // ----------------------------------------------------------------------
@@ -2049,30 +2430,37 @@ app.delete('/api/asesor/memoria/:id', async (req, res) => {
 
 app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
-  let usuarioEmail = 'usuario_local';
-  let userId = 'local_user';
-
-  const cliente = clienteAdmin();
-  if (cliente) {
-    if (token) {
-      const quienLlama = await exigirUsuario(cliente, token);
-      if ('status' in quienLlama) {
-        // El asesor también funciona para quienes usan LukApp localmente. Un
-        // JWT vencido o emitido por otro entorno no debe bloquear Groq: esta
-        // ruta ya tiene un límite propio por IP y en ese caso no persiste
-        // identidad ni memoria del usuario.
-        console.warn('[asesor] Sesión no válida; continuando como usuario local.');
-      } else {
-        usuarioEmail = quienLlama.email || 'usuario';
-        userId = quienLlama.userId;
-      }
-    }
-  }
-
   const { prompt, history, finanzasContext, memoriaUsuario, idConsulta } = req.body ?? {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
   }
+  let usuarioEmail = 'usuario_local';
+  let userId = 'local_user';
+  let cupoConsumido = false;
+
+  const cliente = clienteAdmin();
+  if (cliente) {
+    if (!token) {
+      return res.status(401).json({ error: 'Inicia sesión para usar una consulta del Asesor IA.' });
+    }
+    const quienLlama = await exigirUsuario(cliente, token);
+    if ('status' in quienLlama) {
+      return res.status(quienLlama.status).json({ error: 'Tu sesión ya no es válida. Inicia sesión de nuevo.' });
+    }
+    usuarioEmail = quienLlama.email || 'usuario';
+    userId = quienLlama.userId;
+    try {
+      const cupo = await consumirCupo(cliente, userId, 'asesor_ia');
+      if (!cupo.permitido) {
+        return res.status(429).json({ error: mensajeCupoAgotado('asesor_ia', cupo), codigo: 'cupo-agotado' });
+      }
+      cupoConsumido = true;
+    } catch (error) {
+      console.error('No se pudo verificar el cupo del Asesor:', error);
+      return res.status(503).json({ error: 'No se pudo verificar tu plan. Inténtalo de nuevo.' });
+    }
+  }
+
   const identificadorConsulta = typeof idConsulta === 'string' && /^[a-zA-Z0-9_-]{8,120}$/.test(idConsulta)
     ? idConsulta
     : undefined;
@@ -2196,6 +2584,7 @@ Reglas clave:
     }
 
     console.error(`[asesor] Ningún proveedor respondió — motivo: ${motivo}`);
+    if (cliente && cupoConsumido) await devolverCupo(cliente, userId, 'asesor_ia');
     return res.status(200).json({ offline: true, motivo });
   } catch (error: any) {
     console.error('Error en asesor IA:', error);
@@ -2219,6 +2608,7 @@ Reglas clave:
         respuestaTexto: '[Consulta atendida por el motor local tras un fallo del servicio IA]',
       }, cliente, userId, identificadorConsulta);
     }
+    if (cliente && cupoConsumido) await devolverCupo(cliente, userId, 'asesor_ia');
     return res.status(200).json({ offline: true, error: error.message });
   }
 });
@@ -2348,15 +2738,44 @@ Reglas obligatorias:
 // ENDPOINT: Transcribir Audio
 // ----------------------------------------------------------------------
 app.post('/api/transcribir', async (req, res) => {
+  const cliente = clienteAdmin();
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const tipo = req.headers['content-type'] ?? 'audio/webm';
+  const modo: ModoTranscripcion =
+    req.headers['x-lukapp-transcription-mode'] === 'parcial' ? 'parcial' : 'final';
+  let userId: string | null = null;
+  let cupoConsumido = false;
   try {
     const audioBuffer = req.body as Buffer;
     if (!audioBuffer || audioBuffer.length === 0) {
       return res.status(200).json({ offline: true, error: 'No llegó audio' });
     }
 
-    const tipo = req.headers['content-type'] ?? 'audio/webm';
-    const modo: ModoTranscripcion =
-      req.headers['x-lukapp-transcription-mode'] === 'parcial' ? 'parcial' : 'final';
+    // La transcripción parcial era solo un adorno de texto en pantalla, pero
+    // podía disparar varias llamadas a Whisper por una sola nota. Se desactiva
+    // antes de tocar cualquier proveedor o cupo; la transcripción final sigue
+    // siendo la que la persona confirma y registra.
+    if (modo === 'parcial') {
+      return res.status(200).json({ offline: true, error: 'La vista previa por voz no está disponible.' });
+    }
+
+    if (cliente) {
+      if (!token) return res.status(401).json({ offline: true, error: 'Inicia sesión para usar el registro por voz.' });
+      const acceso = await exigirUsuario(cliente, token);
+      if ('error' in acceso) return res.status(acceso.status).json({ offline: true, error: 'Tu sesión ya no es válida. Inicia sesión de nuevo.' });
+      userId = acceso.userId;
+
+      // Los segmentos parciales son una ayuda visual y no se cobran. Solo la
+      // transcripción final, la que termina en un registro, usa el cupo.
+      if (modo === 'final') {
+        const cupo = await consumirCupo(cliente, userId, 'dictado');
+        if (!cupo.permitido) {
+          return res.status(429).json({ offline: true, error: mensajeCupoAgotado('dictado', cupo), codigo: 'cupo-agotado' });
+        }
+        cupoConsumido = true;
+      }
+    }
+
     const cabeceraVocabulario = req.headers['x-lukapp-vocabulario'];
     const vocabulario = leerVocabularioPersonal(
       Array.isArray(cabeceraVocabulario) ? cabeceraVocabulario[0] : cabeceraVocabulario,
@@ -2372,9 +2791,14 @@ app.post('/api/transcribir', async (req, res) => {
       },
     );
 
+    if (cliente && userId && cupoConsumido && ('offline' in resultado || !resultado.text)) {
+      await devolverCupo(cliente, userId, 'dictado');
+    }
+
     return res.status(200).json(resultado);
   } catch (error: unknown) {
     console.error('Error en transcripción:', error);
+    if (cliente && userId && cupoConsumido) await devolverCupo(cliente, userId, 'dictado');
     return res.status(200).json({
       offline: true,
       error: error instanceof Error ? error.message : 'No se pudo transcribir',
