@@ -569,6 +569,82 @@ const asegurarDiaActualMetricas = () => {
   }
 };
 
+// ----------------------------------------------------------------------
+// ENDPOINT: Analítica de tráfico (Superadmin)
+// ----------------------------------------------------------------------
+// La lectura pasa por el servidor, igual que los demás datos del superadmin.
+// Así el navegador no queda atado a la caché del esquema de PostgREST ni a una
+// política RLS que cambie mientras se despliega una migración.
+const RANGOS_ANALITICA = new Set([7, 30, 90]);
+const CAMPOS_VISITA_BASE = 'ruta,referente,pais,dispositivo,visitante,creado_en';
+const CAMPOS_VISITA_ENRIQUECIDOS = `${CAMPOS_VISITA_BASE},utm_source,utm_medium,utm_campaign,utm_content,idioma,sistema,navegador,pantalla,zona_horaria`;
+
+interface VisitaAnaliticaServidor {
+  creado_en: string;
+  visitante: string;
+  [campo: string]: unknown;
+}
+
+app.get('/api/superadmin/visitas', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(503).json({ error: 'La analítica todavía no está configurada.' });
+
+  const dias = typeof req.query.dias === 'string' ? Number(req.query.dias) : Number.NaN;
+  if (!Number.isInteger(dias) || !RANGOS_ANALITICA.has(dias)) {
+    return res.status(400).json({ error: 'El rango de analítica no es válido.' });
+  }
+
+  try {
+    const acceso = await exigirPermiso(cliente, token, 'ver_visitantes');
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const hoy = fechaBogotaHoy();
+    const inicioRango = new Date(`${hoy}T00:00:00-05:00`);
+    inicioRango.setUTCDate(inicioRango.getUTCDate() - (dias - 1));
+    const desde = `${inicioRango.toISOString().slice(0, 10)}T00:00:00-05:00`;
+    const inicioHoy = Date.parse(`${hoy}T00:00:00-05:00`);
+
+    const consultaEnriquecida = await cliente
+      .from('visitas')
+      .select(CAMPOS_VISITA_ENRIQUECIDOS)
+      .gte('creado_en', desde)
+      .order('creado_en', { ascending: false });
+    let error = consultaEnriquecida.error;
+    let visitas = (consultaEnriquecida.data ?? []) as VisitaAnaliticaServidor[];
+
+    // Las columnas de contexto son opcionales. Si un despliegue de la app
+    // llega antes que su migración, el tráfico base sigue siendo útil y no se
+    // convierte en ceros silenciosos para quien administra el portafolio.
+    if (error?.code === '42703' || error?.code === 'PGRST204') {
+      const consultaBase = await cliente
+        .from('visitas')
+        .select(CAMPOS_VISITA_BASE)
+        .gte('creado_en', desde)
+        .order('creado_en', { ascending: false });
+      error = consultaBase.error;
+      visitas = (consultaBase.data ?? []) as VisitaAnaliticaServidor[];
+    }
+    if (error) throw error;
+
+    const visitasDeHoy = visitas.filter((visita) => Date.parse(visita.creado_en) >= inicioHoy);
+
+    return res.status(200).json({
+      visitas,
+      hoy: {
+        fecha: hoy,
+        visitas_hoy: visitasDeHoy.length,
+        unicos_hoy: new Set(visitasDeHoy.map((visita) => visita.visitante)).size,
+      },
+    });
+  } catch (error) {
+    console.error('Error cargando analítica de tráfico:', error);
+    return res.status(500).json({ error: 'No se pudo cargar la analítica de tráfico.' });
+  }
+});
+
 const registrarUsoIA = async (
   peticion: Omit<PeticionIA, 'id' | 'timestamp'>,
   cliente?: ClienteAdmin | null,

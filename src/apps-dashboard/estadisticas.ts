@@ -8,15 +8,15 @@ export interface Visita {
   dispositivo: string;
   visitante: string;
   creado_en: string;
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
-  utm_content: string | null;
-  idioma: string | null;
-  sistema: string | null;
-  navegador: string | null;
-  pantalla: string | null;
-  zona_horaria: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+  utm_content?: string | null;
+  idioma?: string | null;
+  sistema?: string | null;
+  navegador?: string | null;
+  pantalla?: string | null;
+  zona_horaria?: string | null;
 }
 
 export interface Conteo {

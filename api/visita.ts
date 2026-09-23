@@ -96,7 +96,7 @@ export default async function handler(req: Request): Promise<Response> {
   };
 
   try {
-    await fetch(`${url}/rest/v1/visitas`, {
+    const insertar = (datos: Record<string, unknown>) => fetch(`${url}/rest/v1/visitas`, {
       method: 'POST',
       headers: {
         apikey: clave,
@@ -104,8 +104,23 @@ export default async function handler(req: Request): Promise<Response> {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       },
-      body: JSON.stringify(fila),
+      body: JSON.stringify(datos),
     });
+
+    const respuesta = await insertar(fila);
+    // Las etiquetas UTM y el contexto técnico mejoran el detalle, pero no son
+    // requisito para contar una visita. Un 400 aquí suele ser una caché de
+    // esquema que aún no conoce esas columnas: reintentamos una sola vez con
+    // el núcleo compatible para no perder todo el tráfico durante el despliegue.
+    if (respuesta.status === 400) {
+      await insertar({
+        ruta: fila.ruta,
+        referente: fila.referente,
+        pais: fila.pais,
+        dispositivo: fila.dispositivo,
+        visitante: fila.visitante,
+      });
+    }
   } catch {
     // Que la analítica falle jamás puede notarse desde el portafolio.
   }

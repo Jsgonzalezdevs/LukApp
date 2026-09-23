@@ -425,6 +425,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   const [loadingVisitas, setLoadingVisitas] = useState(false);
   const [visitasHoy, setVisitasHoy] = useState<{ fecha: string; visitas_hoy: number; unicos_hoy: number } | null>(null);
   const [loadingVisitasHoy, setLoadingVisitasHoy] = useState(false);
+  const [errorVisitas, setErrorVisitas] = useState<string | null>(null);
 
   // --- Consulta Detalle Modal ---
   const [consultaDetalle, setConsultaDetalle] = useState<PeticionIA | null>(null);
@@ -573,50 +574,38 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     }
   };
 
-  // 4. Cargar Visitantes (histórico)
-  const fetchVisitas = useCallback(async () => {
-    setLoadingVisitas(true);
-    const cliente = obtenerSupabase();
-    if (!cliente) {
-      setLoadingVisitas(false);
-      return;
-    }
-
-    const desde = `${dias[0]}T00:00:00-05:00`;
-    const { data, error } = await cliente
-      .from('visitas')
-      .select('ruta,referente,pais,dispositivo,visitante,creado_en,utm_source,utm_medium,utm_campaign,utm_content,idioma,sistema,navegador,pantalla,zona_horaria')
-      .gte('creado_en', desde)
-      .order('creado_en', { ascending: false });
-
-    if (!error && data) {
-      setVisitas(data as Visita[]);
-    }
-    setLoadingVisitas(false);
-  }, [dias]);
-
-  // 4b. Cargar Visitantes Hoy (en vivo)
-  const fetchVisitasHoy = useCallback(async () => {
-    setLoadingVisitasHoy(true);
-    const cliente = obtenerSupabase();
-    if (!cliente) {
-      setLoadingVisitasHoy(false);
-      return;
-    }
-
-    const { data, error } = await cliente
-      .from('visitas_hoy_en_vivo')
-      .select('fecha,visitas_hoy,unicos_hoy');
-
-    if (!error && data && data.length > 0) {
-      setVisitasHoy({
-        fecha: data[0].fecha ?? '',
-        visitas_hoy: Number(data[0].visitas_hoy) || 0,
-        unicos_hoy: Number(data[0].unicos_hoy) || 0,
+  // La API valida el permiso antes de usar su cliente de servidor. Centralizar
+  // esta lectura evita que una migración o la caché de PostgREST convierta un
+  // fallo real en contadores vacíos sin explicación dentro del panel.
+  const cargarVisitas = useCallback(async (soloActualizar: boolean) => {
+    if (soloActualizar) setLoadingVisitasHoy(true);
+    else setLoadingVisitas(true);
+    setErrorVisitas(null);
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl(`/api/superadmin/visitas?dias=${rangoVisitantes}`), {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo cargar la analítica de tráfico.');
+
+      setVisitas((data.visitas || []) as Visita[]);
+      setVisitasHoy({
+        fecha: data.hoy?.fecha ?? '',
+        visitas_hoy: Number(data.hoy?.visitas_hoy) || 0,
+        unicos_hoy: Number(data.hoy?.unicos_hoy) || 0,
+      });
+    } catch (error) {
+      console.error('Error cargando analítica de tráfico:', error);
+      setErrorVisitas(error instanceof Error ? error.message : 'No se pudo cargar la analítica de tráfico.');
+    } finally {
+      if (soloActualizar) setLoadingVisitasHoy(false);
+      else setLoadingVisitas(false);
     }
-    setLoadingVisitasHoy(false);
-  }, []);
+  }, [rangoVisitantes]);
+
+  const fetchVisitas = useCallback(() => cargarVisitas(false), [cargarVisitas]);
+  const fetchVisitasHoy = useCallback(() => cargarVisitas(true), [cargarVisitas]);
 
   useEffect(() => {
     // Bajo RLS, un rol personalizado sin ninguno de los 4 permisos de gestión
@@ -635,7 +624,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     if (tabActiva === 'auditoria') fetchAuditoria();
     if (tabActiva === 'visitantes') {
       fetchVisitas();
-      fetchVisitasHoy();
     }
     if (tabActiva === 'roles' || (tabActiva === 'usuarios' && rol === 'admin')) fetchRoles();
     if (tabActiva === 'usuarios' && rol === 'admin') fetchSolicitudesSuperadmin();
@@ -644,7 +632,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   useEffect(() => {
     if (tabActiva !== 'visitantes') return;
     const interval = setInterval(() => {
-      fetchVisitas();
       fetchVisitasHoy();
     }, 60000);
     return () => clearInterval(interval);
@@ -1085,7 +1072,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               }`}
             >
               <BarChart3 className="h-4 w-4" />
-              Analítica de Tráfico
+              Analítica de tráfico
             </button>
           )}
 
@@ -1625,7 +1612,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
             <div className="space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-extrabold tracking-tight">Analítica de Tráfico del Portafolio</h2>
+                  <h2 className="text-2xl font-extrabold tracking-tight">Analítica de tráfico</h2>
                   <p className="mt-1 text-xs text-[var(--fin-ink-soft)]">
                     Quién visita tu portafolio, de dónde vienen y a qué horas, 100% privado y sin cookies.
                   </p>
@@ -1655,6 +1642,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 </div>
               ) : (
                 <>
+                  {errorVisitas && (
+                    <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm font-medium text-rose-700 dark:text-rose-300">
+                      {errorVisitas}
+                    </div>
+                  )}
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">
                       <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
