@@ -43,6 +43,10 @@ export const useAiInsights = ({
   const [aiInsights, setAiInsights] = useState<Insight[]>([]);
   const [cargandoIa, setCargandoIa] = useState(false);
   const [origenIa, setOrigenIa] = useState(false);
+  // Hasta comprobar el plan no se envía ningún dato al generador de insights.
+  // Normal conserva sus avisos locales; los análisis mensuales por IA son
+  // exclusivamente de Premium.
+  const [tienePremium, setTienePremium] = useState<boolean | null>(null);
   const lastFetchKey = useRef<string>('');
 
   // 1. Insights deterministas locales inmediatos (garantía offline / sin demora)
@@ -108,7 +112,57 @@ export const useAiInsights = ({
     */
   }, [contexto]);
 
+  useEffect(() => {
+    let cancelado = false;
+
+    const consultarPlan = async () => {
+      const cliente = obtenerSupabase();
+      if (!cliente) {
+        if (!cancelado) setTienePremium(false);
+        return;
+      }
+
+      try {
+        const sesion = (await cliente.auth.getSession()).data.session;
+        if (!sesion?.access_token) {
+          if (!cancelado) setTienePremium(false);
+          return;
+        }
+
+        const respuesta = await fetch(apiUrl('/api/mi-plan'), {
+          headers: { Authorization: `Bearer ${sesion.access_token}` },
+        });
+        const plan = await respuesta.json().catch(() => ({})) as { codigo?: unknown };
+        if (!cancelado) setTienePremium(respuesta.ok && plan.codigo === 'premium');
+      } catch {
+        // Si no se puede comprobar el plan, no se arriesga una llamada a IA.
+        if (!cancelado) setTienePremium(false);
+      }
+    };
+
+    void consultarPlan();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const fetchAiInsights = async () => {
+    const cacheKey = `lukapp_ai_insights_${mesCalendario}_${transacciones.length}`;
+
+    // Si no hay plan Premium comprobado o no hay contexto, no gastar llamadas
+    // al modelo ni reutilizar una recomendación guardada de una sesión previa.
+    if (tienePremium !== true) {
+      try {
+        sessionStorage.removeItem(cacheKey);
+      } catch {
+        // Ignorar cuando el navegador no permite almacenamiento.
+      }
+      setAiInsights([]);
+      setOrigenIa(false);
+      setCargandoIa(false);
+      return;
+    }
+
     // Si no hay transacciones en el mes, no gastar llamadas al modelo
     if (!finanzasContext) {
       setAiInsights([]);
@@ -121,7 +175,6 @@ export const useAiInsights = ({
     lastFetchKey.current = currentKey;
 
     // Revisar caché en sessionStorage (20 minutos)
-    const cacheKey = `lukapp_ai_insights_${mesCalendario}_${transacciones.length}`;
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -184,7 +237,7 @@ export const useAiInsights = ({
   useEffect(() => {
     fetchAiInsights();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mesCalendario, transacciones.length]);
+  }, [mesCalendario, transacciones.length, tienePremium]);
 
   // Si hay insights de IA, mostrarlos. Si no, o como complemento, usar los locales.
   const insightsCombinados = useMemo(() => {

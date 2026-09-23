@@ -3077,6 +3077,27 @@ app.post('/api/asesor-ia/respaldo-local', rateLimiter(12, 60000), async (req, re
 
 // Endpoint para generar Tips e Insights dinámicos y no repetitivos con Grok / Groq
 app.post('/api/finanzas-insights-ia', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'Debes iniciar sesión para generar recomendaciones con IA.' });
+  if (!cliente) return res.status(503).json({ error: 'No se pudo verificar tu plan para las recomendaciones con IA.' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const plan = await estadoPlanDe(cliente, acceso.userId);
+    if (plan.codigo !== 'premium') {
+      return res.status(403).json({
+        error: 'Las recomendaciones mensuales con IA son un beneficio de Premium.',
+        codigo: 'premium-requerido',
+      });
+    }
+  } catch (error: any) {
+    console.error('Error verificando Premium para los insights IA:', error);
+    return res.status(503).json({ error: 'No se pudo verificar tu plan para las recomendaciones con IA.' });
+  }
+
   const { finanzasContext } = req.body ?? {};
   if (!finanzasContext) {
     return res.status(400).json({ error: 'Falta finanzasContext' });

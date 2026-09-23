@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.3.6', fecha: '2026-09-23', texto: 'Las recomendaciones mensuales generadas con IA ahora son un beneficio exclusivo de Premium. En Normal sigues viendo los avisos calculados localmente, sin enviar datos a la IA.' },
   { version: '4.3.5', fecha: '2026-09-23', texto: 'El dictado ahora escribe correctamente Nequi y entiende mejor las frases naturales para actualizar el saldo de esa cuenta.' },
   { version: '4.3.4', fecha: '2026-09-23', texto: 'El dictado entiende con más precisión los montos compuestos: una frase como “mil quinientos pesos” queda en un solo movimiento de $1.500, sin partirse por accidente.' },
   { version: '4.3.3', fecha: '2026-09-23', texto: 'Corregimos un gesto molesto al anotar movimientos: deslizar horizontalmente por la pantalla o alrededor de las categorías ya no cierra la ventana por accidente.' },
