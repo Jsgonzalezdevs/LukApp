@@ -206,6 +206,18 @@ const normalizarTermino = (valor: unknown): string | null => {
   return limpio;
 };
 
+// Whisper suele confundir "Nequi" con "Neki". Corregimos únicamente esa
+// variante fonética y la frase de saldo que la acompaña, sin alterar el resto
+// del dictado libre de la persona.
+const normalizarDictadoFinanciero = (texto: string): string => {
+  const conNequi = texto.replace(/\b(?:neki|neky)\b/gi, 'Nequi');
+
+  return conNequi.replace(
+    /\bcodifica(?:\s+lo)?\s+que\s+tengo(?=\s+(?:en|dentro\s+de)\s+(?:(?:el|la)\s+)?nequi\b)/gi,
+    'Modifica lo que tengo',
+  );
+};
+
 /** Decodifica el vocabulario enviado por la app sin aceptar texto arbitrario. */
 export const leerVocabularioPersonal = (cabecera: string | null | undefined): string[] => {
   if (!cabecera || cabecera.length > 6_000) return [];
@@ -336,7 +348,8 @@ export const transcribirAudio = async (
     }
 
     const datos = (await respuesta.json()) as RespuestaTranscripcion;
-    const text = typeof datos.text === 'string' ? datos.text.trim() : '';
+    const textoCrudo = typeof datos.text === 'string' ? datos.text.trim() : '';
+    const text = normalizarDictadoFinanciero(textoCrudo);
     if (!text) {
       opciones.onError?.(`[transcribir] ${proveedor.nombre} devolvió texto vacío`);
       return { offline: true, error: 'No se pudo transcribir' };

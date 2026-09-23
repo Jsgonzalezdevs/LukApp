@@ -94,6 +94,24 @@ describe('transcripción de voz', () => {
     expect(formulario.get('response_format')).toBe('verbose_json');
   });
 
+  it('corrige la variante fonética de Nequi en una instrucción de saldo', async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    fetcher.mockImplementation(() =>
+      respuesta({ text: 'Codifica lo que tengo en el Neki.' }),
+    );
+
+    const resultado = await transcribirAudio(audio, 'audio/webm', {
+      entorno: { GROQ_API_KEY: 'groq' },
+      modo: 'final',
+      fetcher,
+    });
+
+    expect(resultado).toMatchObject({
+      success: true,
+      text: 'Modifica lo que tengo en el Nequi.',
+    });
+  });
+
   it('nunca intenta OpenAI si Groq falla', async () => {
     const fetcher = vi.fn<typeof fetch>();
     fetcher.mockImplementationOnce(() => respuesta({ error: 'sin cupo' }, 429));

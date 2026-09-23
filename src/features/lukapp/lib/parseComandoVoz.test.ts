@@ -66,6 +66,9 @@ describe('parseComandoVoz', () => {
     expect(parseComandoVoz('En Nequi tengo cuatrocientos mil', ENTIDADES)).toMatchObject({
       tipo: 'saldo', cajitaId: 'nequi', saldoCop: 400_000,
     });
+    expect(parseComandoVoz('Modifica lo que tengo en el Neki', ENTIDADES)).toMatchObject({
+      tipo: 'saldo', cajitaId: 'nequi', saldoCop: null,
+    });
     const cuentaNumerada = entidad('cuenta-2', 'Cuenta 2', 'cuenta');
     expect(parseComandoVoz('Actualiza el saldo de Cuenta 2 a 100 mil', [...ENTIDADES, cuentaNumerada])).toMatchObject({
       tipo: 'saldo', cajitaId: 'cuenta-2', saldoCop: 100_000,
