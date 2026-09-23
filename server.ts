@@ -324,7 +324,7 @@ const devolverCupo = async (
 const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<EstadoPlanServidor> => {
   const periodo = `${fechaBogotaHoy().slice(0, 7)}-01`;
   const ahora = new Date().toISOString();
-  const [{ data: suscripcion, error: errorSuscripcion }, { data: consumo, error: errorConsumo }] = await Promise.all([
+  const [{ data: suscripcion, error: errorSuscripcion }, { data: consumo, error: errorConsumo }, { data: planes, error: errorPlanes }] = await Promise.all([
     cliente
       .from('suscripciones')
       .select('id,ciclo,vence_en,cancelar_al_vencer,plan_codigo')
@@ -341,17 +341,17 @@ const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<Esta
       .eq('user_id', userId)
       .eq('periodo', periodo)
       .maybeSingle(),
+    cliente
+      .from('planes_suscripcion')
+      .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio'),
   ]);
   if (errorSuscripcion) throw new Error(errorSuscripcion.message);
   if (errorConsumo) throw new Error(errorConsumo.message);
+  if (errorPlanes) throw new Error(errorPlanes.message);
 
   const codigo: CodigoPlan = suscripcion?.plan_codigo === 'premium' ? 'premium' : 'normal';
-  const { data: plan, error: errorPlan } = await cliente
-    .from('planes_suscripcion')
-    .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio')
-    .eq('codigo', codigo)
-    .single();
-  if (errorPlan || !plan) throw new Error(errorPlan?.message || 'No se encontró el plan.');
+  const plan = (planes ?? []).find((candidato) => candidato.codigo === codigo);
+  if (!plan) throw new Error('No se encontró el plan.');
 
   return {
     codigo,

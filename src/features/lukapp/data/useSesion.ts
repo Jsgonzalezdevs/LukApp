@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { obtenerSupabase } from './supabase';
 import { sincronizarDesdeSupabase } from './usePreferencias';
+import { precalentarApi } from '../../../lib/api';
 
 export type EstadoSesion =
   | { modo: 'local'; userId: string; email: string }
@@ -91,6 +92,7 @@ export const useSesion = (): Sesion => {
         return;
       }
 
+      if (data.session?.user) void precalentarApi();
       setEstado(aEstado(data.session));
       if (data.session?.user?.user_metadata) {
         sincronizarDesdeSupabase(data.session.user.user_metadata);
@@ -100,6 +102,7 @@ export const useSesion = (): Sesion => {
     // Covers token refresh and sign-out from another tab, so a session that
     // expires elsewhere does not leave this tab writing into a dead client.
     const { data: sub } = cliente.auth.onAuthStateChange((evento, sesion) => {
+      if (sesion?.user) void precalentarApi();
       setEstado(aEstado(sesion));
       if (evento === 'PASSWORD_RECOVERY') {
         setEnRecuperacion(true);

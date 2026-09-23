@@ -45,6 +45,42 @@ interface CheckoutWompi {
   campos: Record<string, string>;
 }
 
+interface PlanEnCache {
+  actualizadoEn: number;
+  plan: EstadoPlan;
+}
+
+const DURACION_CACHE_PLAN_MS = 5 * 60 * 1000;
+const claveCachePlan = (userId: string): string => `lukapp-plan-${userId}`;
+
+const planValido = (valor: unknown): valor is EstadoPlan => {
+  if (!valor || typeof valor !== 'object') return false;
+  const plan = valor as Partial<EstadoPlan>;
+  return (plan.codigo === 'normal' || plan.codigo === 'premium')
+    && typeof plan.nombre === 'string'
+    && typeof plan.precios?.mensualCop === 'number'
+    && typeof plan.precios?.anualCop === 'number';
+};
+
+const leerPlanEnCache = (userId: string | null): EstadoPlan | null => {
+  if (!userId || typeof window === 'undefined') return null;
+  try {
+    const guardado = JSON.parse(sessionStorage.getItem(claveCachePlan(userId)) ?? 'null') as PlanEnCache | null;
+    if (!guardado || Date.now() - guardado.actualizadoEn > DURACION_CACHE_PLAN_MS || !planValido(guardado.plan)) return null;
+    return guardado.plan;
+  } catch {
+    return null;
+  }
+};
+
+const guardarPlanEnCache = (userId: string, plan: EstadoPlan): void => {
+  try {
+    sessionStorage.setItem(claveCachePlan(userId), JSON.stringify({ actualizadoEn: Date.now(), plan } satisfies PlanEnCache));
+  } catch {
+    // El plan se sigue consultando normalmente si el navegador no deja usar caché de sesión.
+  }
+};
+
 const pesos = (valor: number): string =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
 
@@ -106,8 +142,8 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   const [guardandoPassword, setGuardandoPassword] = useState(false);
   const [errorPassword, setErrorPassword] = useState<string | null>(null);
   const [passwordActualizada, setPasswordActualizada] = useState(false);
-  const [plan, setPlan] = useState<EstadoPlan | null>(null);
-  const [cargandoPlan, setCargandoPlan] = useState(Boolean(cuentaEmail));
+  const [plan, setPlan] = useState<EstadoPlan | null>(() => leerPlanEnCache(userId));
+  const [cargandoPlan, setCargandoPlan] = useState(() => Boolean(cuentaEmail) && !leerPlanEnCache(userId));
   const [errorPlan, setErrorPlan] = useState<string | null>(null);
   const [pagandoCiclo, setPagandoCiclo] = useState<'mensual' | 'anual' | null>(null);
   const [verificandoPago, setVerificandoPago] = useState(() =>
@@ -134,13 +170,16 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       return;
     }
     setCargandoPlan(true);
+    setErrorPlan(null);
     try {
       const respuesta = await conToken((token) => fetch(apiUrl('/api/mi-plan'), {
         headers: { Authorization: `Bearer ${token}` },
       }));
       const cuerpo = await respuesta.json().catch(() => ({}));
       if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo consultar tu plan.');
-      setPlan(cuerpo as EstadoPlan);
+      const siguientePlan = cuerpo as EstadoPlan;
+      setPlan(siguientePlan);
+      guardarPlanEnCache(userId, siguientePlan);
       setErrorPlan(null);
     } catch (error) {
       setErrorPlan(error instanceof Error ? error.message : 'No se pudo consultar tu plan.');

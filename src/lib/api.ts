@@ -17,3 +17,34 @@ const BASE = ((import.meta.env.VITE_API_URL as string | undefined) ||
 
 /** `apiUrl('/api/x')` -> '/api/x' locally, 'https://host/api/x' when configured. */
 export const apiUrl = (ruta: string): string => `${BASE}${ruta}`;
+
+let calentamientoEnCurso: Promise<void> | null = null;
+let ultimoCalentamiento = 0;
+const INTERVALO_CALENTAMIENTO_MS = 60_000;
+
+/**
+ * Despierta Render mientras la app carga sus datos locales. En el plan gratis
+ * el proceso puede dormirse; iniciar esta petición al recuperar la sesión hace
+ * que la primera acción que necesita API no sea la que pague toda la espera.
+ * Se comparte y limita para no duplicar peticiones entre vistas.
+ */
+export const precalentarApi = (): Promise<void> => {
+  if (!BASE || typeof window === 'undefined') return Promise.resolve();
+  if (calentamientoEnCurso) return calentamientoEnCurso;
+  if (Date.now() - ultimoCalentamiento < INTERVALO_CALENTAMIENTO_MS) return Promise.resolve();
+
+  ultimoCalentamiento = Date.now();
+  const controlador = new AbortController();
+  const limite = window.setTimeout(() => controlador.abort(), 55_000);
+  calentamientoEnCurso = fetch(apiUrl('/api/salud'), {
+    cache: 'no-store',
+    signal: controlador.signal,
+  })
+    .then(() => undefined)
+    .catch(() => undefined)
+    .finally(() => {
+      window.clearTimeout(limite);
+      calentamientoEnCurso = null;
+    });
+  return calentamientoEnCurso;
+};
