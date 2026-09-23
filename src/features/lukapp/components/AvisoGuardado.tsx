@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Check, Undo2 } from 'lucide-react';
+import { debeCerrarPorDeslizamiento } from './avisoGuardadoGestos';
 
 export interface Guardado {
   /** El id del movimiento que se acaba de guardar, para poder deshacerlo. */
@@ -63,7 +64,18 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
           role="status"
           aria-live="polite"
         >
-          <div className="fin-glass pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3">
+          <motion.div
+            drag="y"
+            dragDirectionLock
+            dragConstraints={{ top: 0, bottom: 110 }}
+            dragElastic={{ top: 0, bottom: 0.22 }}
+            onDragEnd={(_, info) => {
+              if (debeCerrarPorDeslizamiento(info.offset.y, info.velocity.y)) onCerrar();
+            }}
+            whileDrag={{ opacity: 0.82, scale: 0.985 }}
+            style={{ touchAction: 'pan-x' }}
+            className="fin-glass pointer-events-auto flex w-full max-w-sm cursor-grab items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 active:cursor-grabbing"
+          >
             <Check
               className="h-5 w-5 shrink-0 text-[var(--fin-in)]"
               strokeWidth={3}
@@ -95,7 +107,7 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
                 <span className="tabular-nums text-[var(--fin-ink-faint)]">{restante}</span>
               </button>
             ) : null}
-          </div>
+          </motion.div>
         </motion.div>
       ) : null}
     </AnimatePresence>

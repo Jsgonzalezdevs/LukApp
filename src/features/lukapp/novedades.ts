@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.3.2', fecha: '2026-09-23', texto: 'El reporte mensual ahora tiene un diseño propio de LukApp: balance protagonista, gastos y cuentas mucho más claros. Además, los avisos de guardado se pueden ocultar deslizándolos hacia abajo en celular.' },
   { version: '4.3.1', fecha: '2026-09-23', texto: 'El superadmin ahora puede revisar en la app publicada las ventanas principales escribiendo un solo atajo en la consola, sin habilitar estas herramientas para las demás cuentas.' },
   { version: '4.3.0', fecha: '2026-09-23', texto: 'En desarrollo ya puedes abrir desde la consola las vistas principales de LukApp —como la invitación Premium, avisos y capturas— para revisarlas sin repetir recorridos.' },
   { version: '4.2.0', fecha: '2026-09-23', texto: 'De vez en cuando, quienes usan Normal verán una invitación cuidada a Premium con sus beneficios y precios reales. Siempre se puede cerrar, seguir gratis y volver a verla solo después de dos semanas.' },
