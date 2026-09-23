@@ -4,8 +4,6 @@ import type { Presupuesto } from '../lib/presupuestos';
 import { insightsDelMes, type Insight } from '../lib/insights';
 import { bogotaDate } from '../lib/localDate';
 import { PERIODO_POR_DEFECTO, type ConfigPeriodo } from '../lib/periodo';
-import type { ContextoFinanciero } from '../lib/motorFinanciero';
-import { construirContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
@@ -23,7 +21,6 @@ interface UseAiInsightsOptions {
    * que ves en la pantalla de Presupuestos. */
   configPeriodo?: ConfigPeriodo;
   umbralAlertaPct?: number;
-  contexto?: ContextoFinanciero;
 }
 
 export const useAiInsights = ({
@@ -33,7 +30,6 @@ export const useAiInsights = ({
   nombreDe,
   configPeriodo = PERIODO_POR_DEFECTO,
   umbralAlertaPct = 80,
-  contexto,
 }: UseAiInsightsOptions): {
   insights: Insight[];
   cargandoIa: boolean;
@@ -63,54 +59,6 @@ export const useAiInsights = ({
       ),
     [transacciones, presupuestos, mesCalendario, nombreDe, configPeriodo, umbralAlertaPct],
   );
-
-  // Contexto numérico resumido para enviar a Grok/Groq
-  const finanzasContext = useMemo(() => {
-    if (contexto) return construirContextoParaAsesor(contexto);
-    return null;
-    /* legacy context removed from the main path; historical insights remain local. */
-    /*
-    const txMes = transacciones.filter((t) => monthKey(t.occurredOn) === mesCalendario);
-    const gastosMes = txMes
-      .filter((t) => t.kind === 'gasto')
-      .reduce((sum, t) => sum + t.amountCop, 0);
-    const ingresosMes = txMes
-      .filter((t) => t.kind === 'ingreso')
-      .reduce((sum, t) => sum + t.amountCop, 0);
-
-    const chiquitos = txMes.filter((t) => t.kind === 'gasto' && t.amountCop < 10_000);
-    const totalChiquitos = chiquitos.reduce((sum, t) => sum + t.amountCop, 0);
-
-    const efectivo = saldoEfectivo(cajitas, cajitaMovimientos, transacciones);
-    const bancos = saldoCuentasSinEfectivo(cajitas, cajitaMovimientos, transacciones);
-    const patrimonio = totalVisible(cajitas, cajitaMovimientos, transacciones, mostrarAhorro);
-
-    // Top 3 categorías de gasto
-    const porCat = new Map<string, number>();
-    for (const t of txMes.filter((t) => t.kind === 'gasto')) {
-      const nombre = nombreDe(t.category);
-      porCat.set(nombre, (porCat.get(nombre) || 0) + t.amountCop);
-    }
-    const topCategorias = [...porCat.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([cat, total]) => ({ categoria: cat, totalCop: total }));
-
-    return {
-      mes: mesCalendario,
-      patrimonioTotalCop: patrimonio,
-      saldoBancosCop: bancos,
-      saldoEfectivoCop: efectivo,
-      gastosMesCop: gastosMes,
-      ingresosMesCop: ingresosMes,
-      tasaAhorroPct: ingresosMes > 0 ? Math.round(((ingresosMes - gastosMes) / ingresosMes) * 100) : 0,
-      totalComprasChiquitasCop: totalChiquitos,
-      conteoComprasChiquitas: chiquitos.length,
-      topCategoriasGasto: topCategorias,
-      totalTransaccionesMes: txMes.length,
-    };
-    */
-  }, [contexto]);
 
   useEffect(() => {
     let cancelado = false;
@@ -147,47 +95,17 @@ export const useAiInsights = ({
   }, []);
 
   const fetchAiInsights = async () => {
-    const cacheKey = `lukapp_ai_insights_${mesCalendario}_${transacciones.length}`;
-
-    // Si no hay plan Premium comprobado o no hay contexto, no gastar llamadas
-    // al modelo ni reutilizar una recomendación guardada de una sesión previa.
+    // Si no hay plan Premium comprobado, no gastar llamadas al modelo.
     if (tienePremium !== true) {
-      try {
-        sessionStorage.removeItem(cacheKey);
-      } catch {
-        // Ignorar cuando el navegador no permite almacenamiento.
-      }
       setAiInsights([]);
       setOrigenIa(false);
       setCargandoIa(false);
       return;
     }
 
-    // Si no hay transacciones en el mes, no gastar llamadas al modelo
-    if (!finanzasContext) {
-      setAiInsights([]);
-      setOrigenIa(false);
-      return;
-    }
-
-    const currentKey = `${mesCalendario}-${transacciones.length}-${JSON.stringify(finanzasContext)}`;
+    const currentKey = `${mesCalendario}-${transacciones.length}`;
     if (currentKey === lastFetchKey.current) return;
     lastFetchKey.current = currentKey;
-
-    // Revisar caché en sessionStorage (20 minutos)
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.timestamp && Date.now() - parsed.timestamp < 20 * 60 * 1000 && Array.isArray(parsed.insights)) {
-          setAiInsights(parsed.insights);
-          setOrigenIa(true);
-          return;
-        }
-      }
-    } catch {
-      // Ignorar errores de sessionStorage
-    }
 
     setCargandoIa(true);
     try {
@@ -203,7 +121,9 @@ export const useAiInsights = ({
       const res = await fetch(apiUrl('/api/finanzas-insights-ia'), {
         method: 'POST',
         headers,
-        body: JSON.stringify({ finanzasContext }),
+        // El servidor arma el perfil desde la cuenta autenticada. El cliente
+        // no manda cifras ni puede pedir datos de otra persona.
+        body: JSON.stringify({}),
       });
 
       if (res.ok) {
@@ -211,15 +131,6 @@ export const useAiInsights = ({
         if (data.success && Array.isArray(data.insights) && data.insights.length > 0) {
           setAiInsights(data.insights);
           setOrigenIa(true);
-
-          try {
-            sessionStorage.setItem(
-              cacheKey,
-              JSON.stringify({ timestamp: Date.now(), insights: data.insights }),
-            );
-          } catch {
-            // Ignorar
-          }
         } else {
           setOrigenIa(false);
         }

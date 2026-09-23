@@ -33,6 +33,11 @@ import {
   type ResultadoCupo,
 } from './server_lib/suscripciones.ts';
 import {
+  construirPerfilFinancieroCompleto,
+  huellaPerfilFinanciero,
+  type FilaFinanciera,
+} from './server_lib/perfilAsesor.ts';
+import {
   centavosWompi,
   checksumEsperadoWompi,
   coincideChecksum,
@@ -2855,6 +2860,7 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
   let usuarioEmail = 'usuario_local';
   let userId = 'local_user';
   let cupoConsumido = false;
+  let perfilFinancieroCompleto: Record<string, unknown> | null = null;
 
   const cliente = clienteAdmin();
   if (cliente) {
@@ -2868,6 +2874,11 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
     usuarioEmail = quienLlama.email || 'usuario';
     userId = quienLlama.userId;
     try {
+      // En una sesión autenticada el asesor no confía en un resumen enviado
+      // por el navegador: relee el historial financiero de su dueña desde el
+      // servidor. El filtro user_id es obligatorio incluso con service_role.
+      perfilFinancieroCompleto = await leerPerfilFinancieroParaIA(cliente, userId);
+
       const cupo = await consumirCupo(cliente, userId, 'asesor_ia');
       if (!cupo.permitido) {
         return res.status(429).json({ error: mensajeCupoAgotado('asesor_ia', cupo), codigo: 'cupo-agotado' });
@@ -2875,7 +2886,7 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
       cupoConsumido = true;
     } catch (error) {
       console.error('No se pudo verificar el cupo del Asesor:', error);
-      return res.status(503).json({ error: 'No se pudo verificar tu plan. Inténtalo de nuevo.' });
+      return res.status(503).json({ error: 'No se pudo preparar tu perfil financiero. Inténtalo de nuevo.' });
     }
   }
 
@@ -2908,18 +2919,20 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
     }
     return valor;
   };
-  const contextoCompleto = finanzasContext
-    ? JSON.stringify(compactar(finanzasContext), null, 2)
+  const contextoCompleto = perfilFinancieroCompleto
+    ? JSON.stringify(perfilFinancieroCompleto, null, 2)
+    : finanzasContext
+      ? JSON.stringify(compactar(finanzasContext), null, 2)
     : 'No hay datos financieros registrados aún.';
-  const contextoParaModelo = contextoCompleto.length > 30000
-    ? `${contextoCompleto.slice(0, 30000)}\n[Contexto adicional omitido por tamaño]`
+  const contextoParaModelo = contextoCompleto.length > 60_000
+    ? `${contextoCompleto.slice(0, 60_000)}\n[Contexto adicional omitido por tamaño]`
     : contextoCompleto;
 
   const systemPrompt = `Eres un asesor financiero personal experto para Colombia dentro de la aplicación Finanzas.
 Tu tono es empático, profesional, claro y directo.
 IDIOMA OBLIGATORIO: Responde SIEMPRE 100% en ESPAÑOL (español de Colombia / latinoamericano). NUNCA respondas ni pienses en inglés.
 ESTILO DIRECTO: NO incluyas etiquetas <think>, monólogos internos, introducciones ni explicaciones de tu proceso de pensamiento. Ve directo a la respuesta en español.
-Tienes acceso al resumen financiero real del usuario:
+Tienes acceso al expediente financiero real del usuario:
 ${contextoParaModelo}
 ${Array.isArray(memoriaUsuario) && memoriaUsuario.length > 0 ? `
 Memoria autorizada por el usuario (úsala solo para personalizar, nunca inventes datos):
@@ -2946,7 +2959,7 @@ Reglas clave:
     });
 
     const duracionMs = Date.now() - inicio;
-    const promptTokens = Math.ceil(((prompt?.length || 0) + JSON.stringify(finanzasContext || {}).length + systemPrompt.length) / 3.8);
+    const promptTokens = Math.ceil(((prompt?.length || 0) + contextoParaModelo.length + systemPrompt.length) / 3.8);
     const completionTokens = Math.ceil((texto?.length || 0) / 3.8);
     const totalTokens = promptTokens + completionTokens;
 
@@ -3011,7 +3024,7 @@ Reglas clave:
     // congelado en una entrada antigua.
     if (cliente) {
       const duracionMs = Date.now() - inicio;
-      const promptTokens = Math.ceil(((prompt?.length || 0) + JSON.stringify(finanzasContext || {}).length) / 3.8);
+      const promptTokens = Math.ceil(((prompt?.length || 0) + contextoParaModelo.length) / 3.8);
       await registrarUsoIA({
         usuarioEmail,
         proveedor: 'Ninguno',
@@ -3075,18 +3088,107 @@ app.post('/api/asesor-ia/respaldo-local', rateLimiter(12, 60000), async (req, re
   return res.status(202).json({ persistida: true });
 });
 
-// Endpoint para generar Tips e Insights dinámicos y no repetitivos con Grok / Groq
+type InsightPersonalizado = {
+  id: string;
+  titulo: string;
+  detalle: string;
+  tono: 'neutral' | 'bien' | 'atento';
+  seccion: 'mes' | 'dinero' | null;
+  origenIa: true;
+};
+
+const tonoInsight = (valor: unknown): InsightPersonalizado['tono'] =>
+  valor === 'bien' || valor === 'atento' ? valor : 'neutral';
+
+const seccionInsight = (valor: unknown): InsightPersonalizado['seccion'] =>
+  valor === 'mes' || valor === 'dinero' ? valor : null;
+
+const normalizarInsightsPersonalizados = (texto: string): InsightPersonalizado[] => {
+  try {
+    const json = texto.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parseado = JSON.parse(json) as unknown;
+    const lista = Array.isArray(parseado)
+      ? parseado
+      : parseado && typeof parseado === 'object' && Array.isArray((parseado as { insights?: unknown }).insights)
+        ? (parseado as { insights: unknown[] }).insights
+        : [];
+    return lista
+      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+      .map((item, indice) => ({
+        id: typeof item.id === 'string' && item.id.trim() ? item.id.slice(0, 100) : `perfil-${indice}`,
+        titulo: typeof item.titulo === 'string' ? item.titulo.trim().slice(0, 140) : '',
+        detalle: typeof item.detalle === 'string' ? item.detalle.trim().slice(0, 300) : '',
+        tono: tonoInsight(item.tono),
+        seccion: seccionInsight(item.seccion),
+        origenIa: true as const,
+      }))
+      .filter((item) => item.titulo && item.detalle)
+      .slice(0, 4);
+  } catch {
+    return [];
+  }
+};
+
+const leerPerfilFinancieroParaIA = async (cliente: ClienteAdmin, userId: string): Promise<Record<string, unknown>> => {
+  const [transacciones, cajitas, movimientosCajitas, metas, categorias, presupuestos, recurrentes] = await Promise.all([
+    cliente.from('transacciones').select('*').eq('user_id', userId),
+    cliente.from('cajitas').select('*').eq('user_id', userId),
+    cliente.from('cajita_movimientos').select('*').eq('user_id', userId),
+    cliente.from('metas').select('*').eq('user_id', userId),
+    cliente.from('categorias').select('*').eq('user_id', userId),
+    cliente.from('presupuestos').select('*').eq('user_id', userId),
+    cliente.from('recurrentes').select('*').eq('user_id', userId),
+  ]);
+  const respuestas = [transacciones, cajitas, movimientosCajitas, metas, categorias, presupuestos, recurrentes];
+  const error = respuestas.find((respuesta) => respuesta.error)?.error;
+  if (error) throw new Error(error.message);
+
+  return construirPerfilFinancieroCompleto({
+    transacciones: (transacciones.data ?? []) as FilaFinanciera[],
+    cajitas: (cajitas.data ?? []) as FilaFinanciera[],
+    movimientosCajitas: (movimientosCajitas.data ?? []) as FilaFinanciera[],
+    metas: (metas.data ?? []) as FilaFinanciera[],
+    categorias: (categorias.data ?? []) as FilaFinanciera[],
+    presupuestos: (presupuestos.data ?? []) as FilaFinanciera[],
+    recurrentes: (recurrentes.data ?? []) as FilaFinanciera[],
+  });
+};
+
+const insightsGuardados = (datos: unknown, huella: string): InsightPersonalizado[] | null => {
+  if (!datos || typeof datos !== 'object') return null;
+  const cache = datos as { version?: unknown; huella?: unknown; insights?: unknown };
+  if (cache.version !== 1 || cache.huella !== huella || !Array.isArray(cache.insights)) return null;
+  const insights = cache.insights
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .map((item, indice) => ({
+      id: typeof item.id === 'string' ? item.id.slice(0, 100) : `perfil-${indice}`,
+      titulo: typeof item.titulo === 'string' ? item.titulo.slice(0, 140) : '',
+      detalle: typeof item.detalle === 'string' ? item.detalle.slice(0, 300) : '',
+      tono: tonoInsight(item.tono),
+      seccion: seccionInsight(item.seccion),
+      origenIa: true as const,
+    }))
+    .filter((item) => item.titulo && item.detalle)
+    .slice(0, 4);
+  return insights.length > 0 ? insights : null;
+};
+
+// Genera sugerencias proactivas desde el expediente financiero completo de la
+// cuenta autenticada. El navegador no manda el contexto ni puede escoger otro
+// user_id: la API lo relee con service_role y lo limita al dueño de la sesión.
 app.post('/api/finanzas-insights-ia', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const cliente = clienteAdmin();
   if (!token) return res.status(401).json({ error: 'Debes iniciar sesión para generar recomendaciones con IA.' });
   if (!cliente) return res.status(503).json({ error: 'No se pudo verificar tu plan para las recomendaciones con IA.' });
 
+  let userId: string;
   try {
     const acceso = await exigirUsuario(cliente, token);
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    userId = acceso.userId;
 
-    const plan = await estadoPlanDe(cliente, acceso.userId);
+    const plan = await estadoPlanDe(cliente, userId);
     if (plan.codigo !== 'premium') {
       return res.status(403).json({
         error: 'Las recomendaciones mensuales con IA son un beneficio de Premium.',
@@ -3098,13 +3200,31 @@ app.post('/api/finanzas-insights-ia', async (req, res) => {
     return res.status(503).json({ error: 'No se pudo verificar tu plan para las recomendaciones con IA.' });
   }
 
-  const { finanzasContext } = req.body ?? {};
-  if (!finanzasContext) {
-    return res.status(400).json({ error: 'Falta finanzasContext' });
+  let perfil: Record<string, unknown>;
+  try {
+    perfil = await leerPerfilFinancieroParaIA(cliente, userId);
+  } catch (error: any) {
+    console.error('Error cargando el perfil financiero personalizado:', error);
+    return res.status(500).json({ error: 'No se pudo preparar tu perfil financiero para el Asesor.' });
+  }
+  const huella = huellaPerfilFinanciero(perfil);
+
+  const { data: analisisPrevio, error: errorAnalisisPrevio } = await cliente
+    .from('ia_analisis_usuario')
+    .select('datos')
+    .eq('usuario_id', userId)
+    .maybeSingle();
+  if (errorAnalisisPrevio && !/does not exist|schema cache/i.test(errorAnalisisPrevio.message)) {
+    console.error('Error leyendo el análisis personalizado guardado:', errorAnalisisPrevio.message);
+  }
+  const cache = insightsGuardados(analisisPrevio?.datos, huella);
+  if (cache) {
+    return res.status(200).json({ success: true, insights: cache, provider: 'Análisis personalizado guardado' });
   }
 
-  const systemPrompt = `Eres un asesor financiero experto para Colombia dentro de la aplicación Finanzas (LukApp).
-Analiza el resumen financiero real del usuario y genera entre 2 y 4 tips o insights financieros breves, dinámicos, frescos, accionables y NUNCA repetitivos.
+  const systemPrompt = `Eres el asesor financiero personal y proactivo de una persona en Colombia dentro de LukApp.
+Recibes un expediente financiero detallado, construido desde el historial completo de ESA persona: movimientos recientes, tendencias de todos los meses, cuentas, deudas, tarjetas, metas, presupuestos y pagos recurrentes.
+Analiza solo la información suministrada. No inventes cifras ni asumas movimientos que no aparecen. Si faltan datos, dilo con claridad. Genera entre 2 y 4 sugerencias concretas, personalizadas y accionables, sin necesidad de que la persona pregunte por chat.
 
 Reglas obligatorias:
 1. Devuelve ÚNICAMENTE un array JSON con objetos de la estructura:
@@ -3115,17 +3235,14 @@ Reglas obligatorias:
     "detalle": "Explicación directa o recomendación pragmática con cifras en pesos colombianos (COP)",
     "tono": "neutral" | "bien" | "atento",
     "seccion": "mes" | "dinero" | null
-  }
+ }
 ]
-2. NO uses frases cliché estáticas como "Nada de esto se ve grande solo, pero junto sí es plata".
-3. Varía los temas según lo que veas en los datos:
-   - Si hay compras chiquitas acumuladas, haz un cálculo anual o de impacto porcentual.
-   - Si el saldo en bancos es bajo o negativo frente al efectivo, aconseja balancear liquidez.
-   - Si la tasa de ahorro es alta (>40%), destaca el superávit y qué meta puede alimentar.
-   - Si una sola categoría o compra grande concentra los gastos, resalta la proporción.
-4. Tono directo, empático y colombiano. Máximo 22 palabras por detalle.`;
+2. Menciona evidencia concreta cuando exista (fecha, categoría, monto, cuota o tendencia), pero no repitas datos innecesarios.
+3. Prioriza riesgos de liquidez, pagos próximos, deudas, metas atrasadas, presupuestos y hábitos recurrentes antes que consejos genéricos.
+4. Tono directo, empático y colombiano. Máximo 36 palabras por detalle.
+5. No recomiendes inversiones de alto riesgo ni prometas resultados.`;
 
-  const userPrompt = `Datos financieros reales del usuario:\n${JSON.stringify(finanzasContext, null, 2)}\n\nGenera los insights en formato JSON.`;
+  const userPrompt = `Expediente financiero real de la persona:\n${JSON.stringify(perfil)}\n\nGenera los insights en formato JSON.`;
 
   try {
     const { texto, proveedor, modelo, fallos } = await consultarModeloIA({
@@ -3136,30 +3253,34 @@ Reglas obligatorias:
     });
 
     if (texto) {
-      let parsedInsights: any[] = [];
-      try {
-        const jsonText = texto.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-        const parsed = JSON.parse(jsonText);
-        if (Array.isArray(parsed)) {
-          parsedInsights = parsed;
-        } else if (parsed && Array.isArray(parsed.insights)) {
-          parsedInsights = parsed.insights;
-        }
-      } catch (parseErr) {
-        console.error('Error parseando JSON de insights IA:', parseErr, texto);
-      }
+      const insights = normalizarInsightsPersonalizados(texto);
+      if (insights.length > 0) {
+        const resumen = insights.map((insight) => `${insight.titulo}: ${insight.detalle}`).join('\n');
+        const { error: errorGuardar } = await cliente.from('ia_analisis_usuario').upsert({
+          usuario_id: userId,
+          resumen,
+          datos: { version: 1, huella, insights },
+          generado_en: new Date().toISOString(),
+        });
+        if (errorGuardar) console.error('Error guardando el análisis personalizado:', errorGuardar.message);
 
-      if (parsedInsights.length > 0) {
+        const promptTokens = Math.ceil((userPrompt.length + systemPrompt.length) / 3.8);
+        const completionTokens = Math.ceil(texto.length / 3.8);
+        await registrarUsoIA({
+          usuarioEmail: 'asesor-personalizado',
+          proveedor,
+          modelo,
+          promptTokens,
+          completionTokens,
+          totalTokens: promptTokens + completionTokens,
+          duracionMs: 0,
+          exito: true,
+          promptText: '[Análisis proactivo con perfil financiero completo]',
+          respuestaTexto: resumen,
+        }, cliente, userId);
         return res.status(200).json({
           success: true,
-          insights: parsedInsights.map((i, idx) => ({
-            id: i.id || `ai-insight-${idx}-${Date.now()}`,
-            titulo: String(i.titulo || ''),
-            detalle: String(i.detalle || ''),
-            tono: ['neutral', 'bien', 'atento'].includes(i.tono) ? i.tono : 'neutral',
-            seccion: ['mes', 'dinero'].includes(i.seccion) ? i.seccion : null,
-            origenIa: true,
-          })),
+          insights,
           provider: proveedor,
           model: modelo,
         });

@@ -1,29 +1,13 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ContextoFinanciero } from '../lib/motorFinanciero';
 import * as supabaseData from '../data/supabase';
 import { useAiInsights } from './useAiInsights';
-
-const contexto = {
-  saldo: { patrimonioCop: 250_000 },
-  liquidez: { confianza: 'alta', factores: [] },
-  compromisos: { datosIncompletos: false },
-  obligaciones: [],
-  entradasFuturas: [],
-  proyeccionCompleta: {},
-  forecast: null,
-  anomalias: [],
-  metasInteligentes: [],
-  tarjetas: [],
-  presupuestos: [],
-} as unknown as ContextoFinanciero;
 
 const opciones = {
   transacciones: [],
   presupuestos: [],
   mesCalendario: '2026-09',
   nombreDe: () => 'Comida',
-  contexto,
 };
 
 const sesion = {
@@ -44,7 +28,7 @@ describe('useAiInsights — recomendaciones con IA', () => {
 
   it('no solicita ni reutiliza insights IA para una cuenta Normal', async () => {
     vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(sesion as never);
-    const fetcher = vi.fn((url: string) => {
+    const fetcher = vi.fn((url: string, _init?: RequestInit) => {
       if (url.includes('/api/mi-plan')) return respuesta({ codigo: 'normal' });
       return respuesta({ success: true, insights: [{ id: 'no-deberia-llegar' }] });
     });
@@ -59,7 +43,7 @@ describe('useAiInsights — recomendaciones con IA', () => {
 
   it('solicita insights IA solo después de confirmar Premium', async () => {
     vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(sesion as never);
-    const fetcher = vi.fn((url: string) => {
+    const fetcher = vi.fn((url: string, _init?: RequestInit) => {
       if (url.includes('/api/mi-plan')) return respuesta({ codigo: 'premium' });
       return respuesta({
         success: true,
@@ -71,6 +55,10 @@ describe('useAiInsights — recomendaciones con IA', () => {
     const { result } = renderHook(() => useAiInsights(opciones));
 
     await waitFor(() => expect(result.current.origenIa).toBe(true));
-    expect(fetcher.mock.calls.some(([url]) => String(url).includes('/api/finanzas-insights-ia'))).toBe(true);
+    const llamadaInsights = fetcher.mock.calls.find(([url]) => String(url).includes('/api/finanzas-insights-ia'));
+    expect(llamadaInsights).toBeDefined();
+    const cuerpo = llamadaInsights?.[1]?.body;
+    expect(typeof cuerpo).toBe('string');
+    expect(JSON.parse(cuerpo as string)).toEqual({});
   });
 });

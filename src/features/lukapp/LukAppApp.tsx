@@ -800,7 +800,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     nombreDe: (categoria) => catalogoActual.de(categoria).nombre,
     configPeriodo: periodoAjustes.periodo,
     umbralAlertaPct: presupuestoAjustes.umbralAlertaPct,
-    contexto: contextoFinanciero,
   });
 
   const paraTi = useMemo(
