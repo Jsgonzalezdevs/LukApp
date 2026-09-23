@@ -14,15 +14,17 @@ describe('consola de vistas', () => {
     const retirar = instalarConsolaDeVistas({ abrir, cerrar });
 
     window.LukAppPruebas?.abrir('premium');
+    Reflect.get(window, 'premium');
     window.LukAppPruebas?.abrir('no-existe');
     window.LukAppPruebas?.cerrar();
 
     expect(abrir).toHaveBeenCalledWith('premium');
-    expect(abrir).toHaveBeenCalledTimes(1);
+    expect(abrir).toHaveBeenCalledTimes(2);
     expect(advertir).toHaveBeenCalledOnce();
     expect(cerrar).toHaveBeenCalledOnce();
 
     retirar();
     expect(window.LukAppPruebas).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(window, 'premium')).toBe(false);
   });
 });

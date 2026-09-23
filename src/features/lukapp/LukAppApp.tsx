@@ -192,9 +192,11 @@ type Capa = 'buscar' | null;
 export interface LukAppMainProps {
   onBack?: () => void;
   esAdmin?: boolean;
+  /** Permite revisar vistas desde DevTools únicamente a un superadmin real. */
+  permitirConsolaEnProduccion?: boolean;
 }
 
-export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
+export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirConsolaEnProduccion }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
 
@@ -223,6 +225,7 @@ export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin }) => {
       onCambiarTema={setTema}
       onBack={onBack}
       esAdmin={esAdmin}
+      permitirConsolaEnProduccion={permitirConsolaEnProduccion}
     />
   );
 };
@@ -235,6 +238,7 @@ interface LukAppPanelProps {
   onCambiarTema: (tema: Tema) => void;
   onBack?: () => void;
   esAdmin?: boolean;
+  permitirConsolaEnProduccion?: boolean;
 }
 
 const LukAppPanel: React.FC<LukAppPanelProps> = ({
@@ -244,6 +248,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   onCambiarTema,
   onBack,
   esAdmin,
+  permitirConsolaEnProduccion,
 }) => {
   const [migracionLista, setMigracionLista] = useState(false);
   const repositorio = useMemo(() => {
@@ -717,8 +722,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     () => instalarConsolaDeVistas({
       abrir: (vista) => accionesConsolaRef.current.abrir(vista),
       cerrar: () => accionesConsolaRef.current.cerrar(),
+      permitirEnProduccion: permitirConsolaEnProduccion,
     }),
-    [],
+    [permitirConsolaEnProduccion],
   );
 
   const confirmarComandoVoz = async (comando: ComandoVozConfirmado) => {

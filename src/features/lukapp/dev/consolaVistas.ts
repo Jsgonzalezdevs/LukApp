@@ -36,28 +36,45 @@ const DESCRIPCIONES: Record<VistaDePrueba, string> = {
   buscar: 'Buscador de movimientos.',
 };
 
+/** Cada alias se ejecuta al escribir esa única palabra en la consola. */
+const ATAJOS_DE_UNA_PALABRA: Record<string, VistaDePrueba | 'cerrar' | 'ayuda'> = {
+  premium: 'premium',
+  aviso: 'aviso',
+  captura: 'captura',
+  multiple: 'captura-multiple',
+  reporte: 'reporte',
+  buscar: 'buscar',
+  cerrar: 'cerrar',
+  ayuda: 'ayuda',
+};
+
 const esVistaDePrueba = (vista: string): vista is VistaDePrueba =>
   (VISTAS_DE_PRUEBA as readonly string[]).includes(vista);
 
 interface OpcionesLanzador {
   abrir: (vista: VistaDePrueba) => void;
   cerrar: () => void;
+  /** Solo el superadmin puede habilitar atajos en la app publicada. */
+  permitirEnProduccion?: boolean;
 }
 
 /** Instala y retira el único punto de entrada para pruebas desde DevTools. */
-export const instalarConsolaDeVistas = ({ abrir, cerrar }: OpcionesLanzador): (() => void) => {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return () => undefined;
+export const instalarConsolaDeVistas = ({ abrir, cerrar, permitirEnProduccion = false }: OpcionesLanzador): (() => void) => {
+  const disponible = import.meta.env.DEV || permitirEnProduccion;
+  if (!disponible || typeof window === 'undefined') return () => undefined;
 
   const anterior = window.LukAppPruebas;
+  const contexto = import.meta.env.DEV ? 'desarrollo' : 'superadmin en producción';
   const ayuda = () => {
-    console.info('LukApp · vistas disponibles solo en desarrollo');
+    console.info(`LukApp · vistas disponibles para ${contexto}`);
     console.table(
       VISTAS_DE_PRUEBA.map((vista) => ({
+        atajo: vista === 'captura-multiple' ? 'multiple' : vista,
         comando: `window.LukAppPruebas.abrir('${vista}')`,
         muestra: DESCRIPCIONES[vista],
       })),
     );
-    console.info("Para cerrar cualquier vista: window.LukAppPruebas.cerrar()");
+    console.info("Para cerrar cualquier vista: cerrar  ·  También puedes usar window.LukAppPruebas.cerrar()");
   };
 
   const consola: ConsolaDeVistas = {
@@ -73,11 +90,34 @@ export const instalarConsolaDeVistas = ({ abrir, cerrar }: OpcionesLanzador): ((
   };
 
   window.LukAppPruebas = consola;
-  console.info('LukApp · pruebas visuales listas. Ejecuta window.LukAppPruebas.ayuda().');
+  const descriptoresAnteriores = new Map<string, PropertyDescriptor | undefined>();
+  for (const [alias, destino] of Object.entries(ATAJOS_DE_UNA_PALABRA)) {
+    const descriptor = Object.getOwnPropertyDescriptor(window, alias);
+    if (descriptor && !descriptor.configurable) {
+      console.warn(`LukApp · no se pudo reservar el atajo "${alias}".`);
+      continue;
+    }
+    descriptoresAnteriores.set(alias, descriptor);
+    Object.defineProperty(window, alias, {
+      configurable: true,
+      get: () => {
+        if (destino === 'cerrar') cerrar();
+        else if (destino === 'ayuda') ayuda();
+        else consola.abrir(destino);
+        return undefined;
+      },
+    });
+  }
+  console.info(`LukApp · atajos visuales listos para ${contexto}. Escribe premium, aviso o ayuda.`);
 
   return () => {
-    if (window.LukAppPruebas !== consola) return;
-    if (anterior) window.LukAppPruebas = anterior;
-    else delete window.LukAppPruebas;
+    if (window.LukAppPruebas === consola) {
+      if (anterior) window.LukAppPruebas = anterior;
+      else delete window.LukAppPruebas;
+    }
+    for (const [alias, descriptor] of descriptoresAnteriores) {
+      if (descriptor) Object.defineProperty(window, alias, descriptor);
+      else Reflect.deleteProperty(window, alias);
+    }
   };
 };

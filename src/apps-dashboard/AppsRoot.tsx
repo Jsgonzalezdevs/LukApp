@@ -421,7 +421,11 @@ export const AppsRoot: React.FC = () => {
       <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
-        <LukAppMain onBack={() => setActiveApp(null)} esAdmin={true} />
+        <LukAppMain
+          onBack={() => setActiveApp(null)}
+          esAdmin={true}
+          permitirConsolaEnProduccion={rol === 'admin'}
+        />
       </div>
       </VistaConCarga>
     );
