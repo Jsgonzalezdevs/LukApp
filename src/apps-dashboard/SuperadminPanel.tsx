@@ -38,6 +38,7 @@ import { apiUrl } from '../lib/api';
 import type { Visita } from './estadisticas';
 import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas';
 import { VERSION_ETIQUETA } from '../version';
+import { validarContrasenaSegura } from '../lib/seguridad';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -57,6 +58,13 @@ interface Perfil {
   rol_personalizado_id: string | null;
   created_at: string;
   ultimo_acceso_at: string | null;
+}
+
+interface SolicitudSuperadmin {
+  id: string;
+  creadaEn: string;
+  objetivo?: Pick<Perfil, 'email' | 'usuario'>;
+  solicitante?: Pick<Perfil, 'email' | 'usuario'>;
 }
 
 interface AuditLog {
@@ -366,6 +374,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   // --- Usuarios State ---
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
   const [loadingUsuarios, setLoadingUsuarios] = useState(true);
+  const [solicitudesSuperadmin, setSolicitudesSuperadmin] = useState<SolicitudSuperadmin[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editando, setEditando] = useState<Perfil | null>(null);
@@ -449,6 +458,34 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       setUsuarios([]);
     } finally {
       setLoadingUsuarios(false);
+    }
+  };
+
+  const fetchSolicitudesSuperadmin = async () => {
+    if (rol !== 'admin') return;
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl('/api/solicitudes-superadmin'), { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudieron cargar las aprobaciones.');
+      setSolicitudesSuperadmin(data.solicitudes || []);
+    } catch (error) {
+      console.error('Error cargando solicitudes de superadmin:', error);
+    }
+  };
+
+  const aprobarSolicitudSuperadmin = async (id: string) => {
+    setFormError(null);
+    try {
+      const token = await tokenSesion();
+      const res = await fetch(apiUrl(`/api/solicitudes-superadmin/${id}/aprobar`), {
+        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'No se pudo aprobar la solicitud.');
+      await Promise.all([fetchSolicitudesSuperadmin(), fetchUsuarios()]);
+    } catch (error: any) {
+      setFormError(error.message);
     }
   };
 
@@ -598,6 +635,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       fetchVisitasHoy();
     }
     if (tabActiva === 'roles' || (tabActiva === 'usuarios' && rol === 'admin')) fetchRoles();
+    if (tabActiva === 'usuarios' && rol === 'admin') fetchSolicitudesSuperadmin();
   }, [tabActiva, fetchVisitas, fetchVisitasHoy, rol]);
 
   useEffect(() => {
@@ -718,7 +756,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
       if (!editando) {
         if (!nuevoEmail || !nuevaPassword) throw new Error('Correo y contraseña son obligatorios');
-        if (nuevaPassword.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
+        const errorPassword = validarContrasenaSegura(nuevaPassword, [nuevoUsuario, nuevoEmail]);
+        if (errorPassword) throw new Error(errorPassword);
 
         const res = await fetch(apiUrl('/api/crear-usuario'), {
           method: 'POST',
@@ -741,7 +780,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
         if (nuevoEmail !== editando.email) payload.email = nuevoEmail;
         if (nuevoUsuario !== (editando.usuario ?? '')) payload.usuario = nuevoUsuario;
         if (nuevaPassword.trim() !== '') {
-          if (nuevaPassword.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres');
+          const errorPassword = validarContrasenaSegura(nuevaPassword, [nuevoUsuario, nuevoEmail]);
+          if (errorPassword) throw new Error(errorPassword);
           payload.password = nuevaPassword;
         }
         if (nuevoRol !== editando.rol) payload.rol = nuevoRol;
@@ -1074,6 +1114,37 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   </button>
                 )}
               </div>
+
+              {rol === 'admin' && solicitudesSuperadmin.length > 0 && (
+                <section className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-extrabold text-[var(--fin-ink)]">Aprobaciones de superadmin pendientes</h3>
+                      <p className="mt-0.5 text-xs text-[var(--fin-ink-soft)]">
+                        La persona que solicitó la elevación ni quien será elevado pueden aprobarla.
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {solicitudesSuperadmin.map((solicitud) => (
+                          <div key={solicitud.id} className="flex flex-col gap-2 rounded-xl bg-[var(--fin-card)] p-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-xs text-[var(--fin-ink-soft)]">
+                              <strong className="text-[var(--fin-ink)]">{solicitud.objetivo?.usuario || solicitud.objetivo?.email || 'Usuario'}</strong>
+                              {' '}solicitado por {solicitud.solicitante?.usuario || solicitud.solicitante?.email || 'un superadmin'}.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => aprobarSolicitudSuperadmin(solicitud.id)}
+                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
+                            >
+                              Aprobar
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
 
               <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm overflow-hidden">
                 <div className="border-b border-[var(--fin-line)] p-4 sm:px-6">
@@ -1952,10 +2023,13 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   type="password"
                   value={nuevaPassword}
                   onChange={(e) => setNuevaPassword(e.target.value)}
-                  placeholder={editando ? '••••••••' : 'Mínimo 6 caracteres'}
+                  placeholder={editando ? '••••••••' : 'Mínimo 12 caracteres'}
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 />
               </div>
+              <p className="-mt-2 text-[11px] text-[var(--fin-ink-faint)]">
+                Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo. No puede coincidir con usuario ni correo.
+              </p>
 
               <div>
                 <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Rol</label>
@@ -1967,6 +2041,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   <option value="usuario">Usuario Normal</option>
                   <option value="admin">Superadmin</option>
                 </select>
+                {nuevoRol === 'admin' && (
+                  <p className="mt-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                    Se creará como usuario normal y quedará pendiente de aprobación por otro superadmin.
+                  </p>
+                )}
               </div>
 
               {/* Solo admin gestiona la asignación de roles personalizados

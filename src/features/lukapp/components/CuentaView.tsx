@@ -14,8 +14,7 @@ import {
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 import { VERSION_ETIQUETA } from '../../../version';
-
-const MINIMO_PASSWORD = 6;
+import { validarContrasenaSegura } from '../../../lib/seguridad';
 
 interface CuentaViewProps {
   userId: string | null;
@@ -116,8 +115,9 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
 
   const restablecerPassword = async () => {
     setErrorPassword(null);
-    if (nuevaPassword.length < MINIMO_PASSWORD) {
-      setErrorPassword(`La contraseña debe tener al menos ${MINIMO_PASSWORD} caracteres.`);
+    const errorSeguridad = validarContrasenaSegura(nuevaPassword, [apodo, cuenta?.email]);
+    if (errorSeguridad) {
+      setErrorPassword(errorSeguridad);
       return;
     }
     if (nuevaPassword !== confirmarPassword) {

@@ -12,7 +12,7 @@
  */
 
 /** El mínimo que exige Supabase Auth. Menos que esto lo rechaza igual. */
-export const LARGO_MIN_PASSWORD = 6;
+export const LARGO_MIN_PASSWORD = 12;
 
 export interface CambiosUsuario {
   usuario?: string;

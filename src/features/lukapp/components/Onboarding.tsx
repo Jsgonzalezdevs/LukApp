@@ -20,7 +20,7 @@ interface FuenteDinero {
   claseCuenta: ClaseCuenta;
 }
 
-/** Bancos, billeteras y efectivo son medios distintos aunque compartan saldo. */
+/** Este paso solo agrega entidades externas; Efectivo ya viene creado. */
 const FUENTES: readonly FuenteDinero[] = [
   { nombre: 'Bancolombia', claseCuenta: 'banco' },
   { nombre: 'Nu', claseCuenta: 'banco' },
@@ -30,7 +30,6 @@ const FUENTES: readonly FuenteDinero[] = [
   { nombre: 'Lulo Bank', claseCuenta: 'banco' },
   { nombre: 'BBVA', claseCuenta: 'banco' },
   { nombre: 'Falabella', claseCuenta: 'banco' },
-  { nombre: 'Efectivo', claseCuenta: 'efectivo' },
   { nombre: 'Otro', claseCuenta: 'banco' },
 ];
 
@@ -39,6 +38,15 @@ const ETIQUETA_CLASE: Record<ClaseCuenta, string> = {
   banco: 'Cuenta bancaria',
   billetera: 'Billetera digital',
 };
+
+const esNombreEfectivo = (valor: string): boolean =>
+  /\befectivo\b/.test(
+    valor
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase(),
+  );
 
 /**
  * La bienvenida: cuatro pantallas, UNA pregunta en cada una.
@@ -52,7 +60,10 @@ export const Onboarding: React.FC<OnboardingProps> = ({
   const [otroBanco, setOtroBanco] = useState('');
   const [digitos, setDigitos] = useState('');
 
-  const bancoFinal = fuente?.nombre === 'Otro' ? otroBanco.trim() || null : (fuente?.nombre ?? null);
+  const otroEsEfectivo = fuente?.nombre === 'Otro' && esNombreEfectivo(otroBanco);
+  const bancoFinal = fuente?.nombre === 'Otro' && !otroEsEfectivo
+    ? otroBanco.trim() || null
+    : (fuente?.nombre === 'Otro' ? null : (fuente?.nombre ?? null));
   const claseCuentaFinal = bancoFinal ? (fuente?.claseCuenta ?? 'banco') : null;
   const saldoCop = digitos === '' ? null : Number(digitos);
 
@@ -110,10 +121,17 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               autoFocus
               value={otroBanco}
               onChange={(e) => setOtroBanco(e.target.value)}
-              placeholder="Ej: Davivienda"
+              placeholder="Ej: Banco de Bogotá"
               aria-label="Nombre del banco"
+              aria-invalid={otroEsEfectivo}
+              aria-describedby={otroEsEfectivo ? 'onboarding-otro-error' : undefined}
               className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
             />
+          ) : null}
+          {otroEsEfectivo ? (
+            <p id="onboarding-otro-error" role="alert" className="text-[13px] leading-relaxed text-[var(--fin-out)]">
+              Efectivo ya viene incluido. Aquí elige un banco o una billetera.
+            </p>
           ) : null}
         </div>
       ),
@@ -185,6 +203,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({
   const indice = Math.min(Math.max(paso, 0), pasos.length - 1);
   const actual = pasos[indice];
   const ultimo = indice === pasos.length - 1;
+  const continuarDeshabilitado = indice === 1
+    && fuente?.nombre === 'Otro'
+    && (otroBanco.trim() === '' || otroEsEfectivo);
 
   return (
     <motion.div
@@ -237,7 +258,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               }
               cerrar();
             }}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)]"
+            disabled={continuarDeshabilitado}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             {actual.boton}

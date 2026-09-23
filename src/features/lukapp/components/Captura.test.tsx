@@ -15,7 +15,7 @@ describe('Captura desde dictado', () => {
       />,
     );
 
-    expect(screen.getByText('Esto fue lo que entendí')).toBeInTheDocument();
+    expect(screen.getByText('Tu dictado')).toBeInTheDocument();
     expect(screen.getByText('“pagué 2 pizzas por 45 mil”')).toBeInTheDocument();
     expect(screen.getByText(/Escuché más de una cifra/)).toBeInTheDocument();
 
@@ -45,5 +45,20 @@ describe('Captura desde dictado', () => {
     );
 
     expect(screen.getByText(/No escuché un monto; propuse el de un movimiento anterior/)).toBeInTheDocument();
+  });
+
+  it('mantiene las categorías en una sola fila para no tapar el teclado', () => {
+    render(
+      <Captura
+        parsed={parseTransaction('empanada 2500')}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const categorias = screen.getByRole('group', { name: 'Categorías' });
+    expect(categorias).toHaveClass('flex');
+    expect(categorias).not.toHaveClass('grid-rows-2');
+    expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
   });
 });

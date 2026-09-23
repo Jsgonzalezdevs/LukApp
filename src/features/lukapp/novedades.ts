@@ -22,6 +22,10 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '3.33.9', fecha: '2026-09-23', texto: 'Las contraseñas ahora requieren una combinación segura y ningún usuario puede convertirse en superadmin sin aprobación de otro superadmin.' },
+  { version: '3.33.8', fecha: '2026-09-23', texto: 'La pantalla para confirmar movimientos ahora separa correctamente las categorías del teclado y aprovecha mejor el espacio en celulares.' },
+  { version: '3.33.7', fecha: '2026-09-23', texto: 'La bienvenida ahora pregunta únicamente por bancos y billeteras, sin volver a ofrecer la cuenta de Efectivo que LukApp ya incluye.' },
+  { version: '3.33.6', fecha: '2026-09-23', texto: 'La guía para instalar LukApp ahora es más compacta, separa claramente cada paso y mantiene visibles sus botones en cualquier tema.' },
   { version: '3.33.5', fecha: '2026-09-17', texto: 'El aviso de términos y privacidad ahora tiene un fondo sólido, botones claros y mejor contraste para leerse sin confusiones.' },
   { version: '3.33.4', fecha: '2026-09-17', texto: 'Todas las cuentas ahora empiezan con Efectivo como cuenta predeterminada, en $0 y correctamente separado de bancos y billeteras.' },
   { version: '3.33.3', fecha: '2026-09-17', texto: 'Al agregar dinero ahora puedes elegir si es una cuenta bancaria, billetera digital o efectivo, sin tener que crear una cuenta llamada “Efectivo”.' },

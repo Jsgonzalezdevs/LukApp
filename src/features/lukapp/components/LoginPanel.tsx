@@ -21,6 +21,7 @@ import type { Sesion } from '../data/useSesion';
 import type { Tema } from '../data/useTema';
 import { BrandMark } from './BrandMark';
 import { TemaToggle } from './TemaToggle';
+import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
 
 interface LoginPanelProps {
   sesion: Sesion;
@@ -34,7 +35,7 @@ interface LoginPanelProps {
 type Modo = 'entrar' | 'registrarse' | 'recuperar' | 'actualizar';
 type EstadoApodo = 'vacio' | 'corto' | 'comprobando' | 'libre' | 'cogido';
 const APODO_MINIMO = 3;
-const MINIMO_PASSWORD = 6;
+const MINIMO_PASSWORD = LARGO_MINIMO_CONTRASENA;
 
 export const LoginPanel: React.FC<LoginPanelProps> = ({
   sesion,
@@ -102,14 +103,20 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   }, [usuario, sesion, modo]);
 
   const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identidad.trim());
+  const errorPassword =
+    modo === 'registrarse'
+      ? validarContrasenaSegura(password, [usuario, identidad])
+      : modo === 'actualizar'
+        ? validarContrasenaSegura(password)
+        : null;
   const listo =
     modo === 'entrar'
       ? identidad.trim() !== '' && password.length > 0
       : modo === 'registrarse'
-      ? correoValido && password.length >= MINIMO_PASSWORD && apodo === 'libre' && !sesion.ocupado
+      ? correoValido && !errorPassword && apodo === 'libre' && !sesion.ocupado
       : modo === 'recuperar'
       ? correoValido && !sesion.ocupado
-      : password.length >= MINIMO_PASSWORD && !sesion.ocupado;
+      : !errorPassword && !sesion.ocupado;
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -472,9 +479,9 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                           </button>
                         ) : (
                           <span className="text-[11px] font-medium text-[var(--fin-ink-faint)]">
-                            {password.length > 0 && password.length < MINIMO_PASSWORD
-                              ? `Faltan ${MINIMO_PASSWORD - password.length} caráct.`
-                              : `Mín. ${MINIMO_PASSWORD} caráct.`}
+                            {password.length > 0 && errorPassword
+                              ? errorPassword
+                              : `Mín. ${MINIMO_PASSWORD}: mayús., minús., número y símbolo.`}
                           </span>
                         )}
                       </div>

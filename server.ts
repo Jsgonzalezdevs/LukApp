@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import { PDFParse } from 'pdf-parse';
 import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
+import { validarContrasenaSegura } from './src/lib/seguridad.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
 import { CATEGORIES, type Category, type TxKind } from './src/features/lukapp/types.ts';
@@ -64,6 +65,9 @@ const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => {
 };
 
 app.use('/api', rateLimiter(120, 60000));
+// Las acciones que alteran cuentas no necesitan el límite amplio del resto de
+// la API. Es una segunda barrera ante automatización y fuerza bruta.
+app.use(['/api/crear-usuario', '/api/editar-usuario', '/api/solicitudes-superadmin'], rateLimiter(12, 60000));
 
 // ----------------------------------------------------------------------
 // AUDITORÍA: Registro de Actividad para Superadmin
@@ -112,7 +116,19 @@ app.post('/api/crear-usuario', async (req, res) => {
     const acceso = await exigirPermiso(cliente, token, 'crear_usuario');
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
 
-    const { email, password, usuario, rol } = req.body;
+    const { email, password, usuario, rol } = req.body ?? {};
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Correo y contraseña son obligatorios.' });
+    }
+    const errorPassword = validarContrasenaSegura(password, [usuario, email]);
+    if (errorPassword) return res.status(400).json({ error: errorPassword });
+
+    // Un rol delegado puede crear usuarios normales, pero nunca elevarlos.
+    // La elevación la solicita y aprueba otro superadmin más abajo.
+    if (rol === 'admin') {
+      const admin = await exigirAdmin(cliente, token);
+      if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
+    }
 
     const { data: newUser, error: createError } = await cliente.auth.admin.createUser({
       email,
@@ -124,12 +140,14 @@ app.post('/api/crear-usuario', async (req, res) => {
     if (createError) throw createError;
 
     if (rol === 'admin' && newUser.user) {
-      const { error: updateError } = await cliente
-        .from('perfiles')
-        .update({ rol: 'admin' })
-        .eq('id', newUser.user.id);
-
-      if (updateError) throw updateError;
+      const { error: solicitudError } = await cliente.from('solicitudes_superadmin').insert({
+        objetivo_id: newUser.user.id,
+        solicitada_por: acceso.userId,
+      });
+      if (solicitudError) {
+        await cliente.auth.admin.deleteUser(newUser.user.id);
+        throw solicitudError;
+      }
     }
 
     registrarAuditoria(
@@ -139,7 +157,7 @@ app.post('/api/crear-usuario', async (req, res) => {
       `Usuario: ${usuario || '-'}, Rol: ${rol || 'usuario'}`,
     );
 
-    return res.status(200).json({ success: true, user: newUser.user });
+    return res.status(200).json({ success: true, user: newUser.user, solicitudPendiente: rol === 'admin' });
   } catch (error: any) {
     console.error('Error creando usuario:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
@@ -511,7 +529,7 @@ const registrarUsoIA = async (
 const contextoDe = async (cliente: ClienteAdmin, objetivoId: string) => {
   const { data: objetivo, error: errorObjetivo } = await cliente
     .from('perfiles')
-    .select('rol')
+    .select('rol, email, usuario')
     .eq('id', objetivoId)
     .single();
 
@@ -537,6 +555,8 @@ const contextoDe = async (cliente: ClienteAdmin, objetivoId: string) => {
     objetivoRol: (objetivo?.rol === 'admin' ? 'admin' : 'usuario') as 'admin' | 'usuario',
     totalAdmins: count ?? 0,
     existe: objetivo !== null,
+    objetivoEmail: objetivo?.email ?? '',
+    objetivoUsuario: objetivo?.usuario ?? '',
   };
 };
 
@@ -584,6 +604,33 @@ app.post('/api/editar-usuario', async (req, res) => {
       totalAdmins: ctx.totalAdmins,
     });
     if (motivo) return res.status(400).json({ error: motivo });
+
+    const errorPassword = cambios.password === undefined
+      ? null
+      : validarContrasenaSegura(cambios.password, [cambios.usuario ?? ctx.objetivoUsuario, cambios.email ?? ctx.objetivoEmail]);
+    if (errorPassword) return res.status(400).json({ error: errorPassword });
+
+    if (cambios.rol === 'admin' && ctx.objetivoRol !== 'admin') {
+      const admin = await exigirAdmin(cliente, token);
+      if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
+      const { error: solicitudError } = await cliente.from('solicitudes_superadmin').insert({
+        objetivo_id: userId,
+        solicitada_por: admin.userId,
+      });
+      if (solicitudError?.code === '23505') {
+        return res.status(409).json({ error: 'Ya existe una solicitud de superadmin pendiente para esta persona.' });
+      }
+      if (solicitudError) throw solicitudError;
+      registrarAuditoria(admin.email, 'Solicitó elevar a superadmin', ctx.objetivoEmail);
+      return res.status(202).json({ success: true, solicitudPendiente: true });
+    }
+
+    // Ningún permiso delegado puede modificar una cuenta superadmin ni
+    // degradarla: ambos cambios requieren un superadmin fijo.
+    if (ctx.objetivoRol === 'admin' || cambios.rol === 'admin') {
+      const admin = await exigirAdmin(cliente, token);
+      if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
+    }
 
     // El correo y la contraseña viven en auth; el usuario, el correo y el rol
     // se reflejan en `perfiles`, que es lo que lee el panel. El usuario va a la
@@ -633,6 +680,56 @@ app.post('/api/editar-usuario', async (req, res) => {
   } catch (error: any) {
     console.error('Error editando usuario:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINTS: Aprobación cruzada de superadmins
+// ----------------------------------------------------------------------
+app.get('/api/solicitudes-superadmin', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase.' });
+  try {
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const { data, error } = await cliente
+      .from('solicitudes_superadmin')
+      .select('id, objetivo_id, solicitada_por, creada_en')
+      .eq('estado', 'pendiente')
+      .order('creada_en', { ascending: true });
+    if (error) throw error;
+    const ids = [...new Set((data ?? []).flatMap((s) => [s.objetivo_id, s.solicitada_por]))];
+    const { data: perfiles, error: errorPerfiles } = await cliente
+      .from('perfiles').select('id, email, usuario').in('id', ids);
+    if (errorPerfiles) throw errorPerfiles;
+    const porId = new Map((perfiles ?? []).map((p) => [p.id, p]));
+    return res.json({ solicitudes: (data ?? []).map((s) => ({
+      id: s.id, creadaEn: s.creada_en,
+      objetivo: porId.get(s.objetivo_id), solicitante: porId.get(s.solicitada_por),
+    })) });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'No se pudieron cargar las solicitudes.' });
+  }
+});
+
+app.post('/api/solicitudes-superadmin/:id/aprobar', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase.' });
+  try {
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const { error } = await cliente.rpc('aprobar_solicitud_superadmin', {
+      p_solicitud_id: req.params.id, p_aprobador_id: acceso.userId,
+    });
+    if (error) return res.status(409).json({ error: error.message });
+    registrarAuditoria(acceso.email, 'Aprobó nuevo superadmin', req.params.id);
+    return res.json({ success: true });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || 'No se pudo aprobar la solicitud.' });
   }
 });
 

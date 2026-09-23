@@ -4,9 +4,10 @@ import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-re
 import type { Sesion } from '../../data/useSesion';
 import { Reveal } from './primitivas';
 import { MascotaLuki } from './MascotaLuki';
+import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../../lib/seguridad';
 
 /** Lo mínimo que pide Supabase. Decirlo antes evita el viaje de ida y vuelta. */
-const MINIMO_PASSWORD = 6;
+const MINIMO_PASSWORD = LARGO_MINIMO_CONTRASENA;
 
 /** Estado de la comprobación del apodo contra la base. */
 type EstadoApodo = 'vacio' | 'corto' | 'comprobando' | 'libre' | 'cogido';
@@ -54,8 +55,9 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
   }, [usuario, sesion]);
 
   const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim());
+  const errorPassword = validarContrasenaSegura(password, [usuario, correo]);
   const listo =
-    correoValido && password.length >= MINIMO_PASSWORD && apodo === 'libre' && !sesion.ocupado;
+    correoValido && !errorPassword && apodo === 'libre' && !sesion.ocupado;
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,9 +151,9 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
               </button>
             </span>
             <span className="registro-pista">
-              {password.length > 0 && password.length < MINIMO_PASSWORD
-                ? `Te faltan ${MINIMO_PASSWORD - password.length} caracteres.`
-                : `Mínimo ${MINIMO_PASSWORD} caracteres.`}
+              {password.length > 0 && errorPassword
+                ? errorPassword
+                : `Mínimo ${MINIMO_PASSWORD}: mayúscula, minúscula, número y símbolo.`}
             </span>
           </label>
 

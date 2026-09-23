@@ -6,6 +6,8 @@ interface TecladoNumericoProps {
   onDigito: (digitos: string) => void;
   /** Borra el último dígito. */
   onBorrar: () => void;
+  /** Reduce la altura cuando el teclado comparte pantalla con más campos. */
+  compacto?: boolean;
 }
 
 /**
@@ -21,8 +23,9 @@ interface TecladoNumericoProps {
  * La tecla "000" está porque aquí los precios son en miles: escribir 45 mil
  * son dos toques (4, 5) más uno (000), no cinco.
  */
-export const TecladoNumerico: React.FC<TecladoNumericoProps> = ({ onDigito, onBorrar }) => {
+export const TecladoNumerico: React.FC<TecladoNumericoProps> = ({ onDigito, onBorrar, compacto = false }) => {
   const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0'];
+  const altura = compacto ? 'h-12' : 'h-14';
 
   return (
     <div className="grid grid-cols-3 gap-2" role="group" aria-label="Teclado de números">
@@ -33,7 +36,7 @@ export const TecladoNumerico: React.FC<TecladoNumericoProps> = ({ onDigito, onBo
           onClick={() => onDigito(tecla)}
           // active:scale en vez de una animación: el toque tiene que responder
           // en el mismo instante, no dentro de 150ms.
-          className="h-14 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[22px] font-semibold text-[var(--fin-ink)] tabular-nums transition-transform active:scale-95"
+          className={`${altura} rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[22px] font-semibold text-[var(--fin-ink)] tabular-nums transition-transform active:scale-95`}
         >
           {tecla}
         </button>
@@ -42,7 +45,7 @@ export const TecladoNumerico: React.FC<TecladoNumericoProps> = ({ onDigito, onBo
         type="button"
         onClick={onBorrar}
         aria-label="Borrar el último número"
-        className="flex h-14 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-transform active:scale-95"
+        className={`flex ${altura} items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-transform active:scale-95`}
       >
         <Delete className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
       </button>

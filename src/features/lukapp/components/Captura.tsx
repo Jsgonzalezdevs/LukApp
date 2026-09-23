@@ -422,9 +422,9 @@ export const Captura: React.FC<CapturaProps> = ({
           aria-label="Transcripción del dictado"
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+            <span className="flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
               <Ear className="h-3.5 w-3.5" aria-hidden="true" />
-              Esto fue lo que entendí
+              Tu dictado
             </span>
             {onReintentarVoz ? (
               <button
@@ -481,14 +481,14 @@ export const Captura: React.FC<CapturaProps> = ({
           <button
             type="button"
             onClick={() => setDesplegarCuentas(!desplegarCuentas)}
-            className={`flex items-center gap-2 rounded-[var(--fin-r-pill)] px-3.5 py-1.5 text-[13px] font-semibold transition-all ${
+            className={`flex w-full items-center gap-2 rounded-[var(--fin-r-control)] px-3.5 py-2.5 text-[13px] font-semibold transition-all ${
               cuentaSeleccionada
                 ? 'border border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink)] shadow-sm hover:bg-[var(--fin-soft)]'
                 : 'border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
             }`}
           >
             <IconoCuenta className={`h-4 w-4 shrink-0 ${cuentaSeleccionada ? 'text-[var(--fin-ink-soft)]' : 'text-amber-500'}`} />
-            <span className="truncate max-w-[170px]">
+            <span className="min-w-0 flex-1 truncate text-left">
               {cuentaSeleccionada ? cuentaSeleccionada.nombre : '¿Desde qué cuenta o tarjeta?'}
             </span>
             <ChevronDown
@@ -574,7 +574,7 @@ export const Captura: React.FC<CapturaProps> = ({
       )}
 
       {/* El centro: Monto y Descripción */}
-      <div className="mt-6 min-h-0 flex-1">
+      <div className="mt-5 min-h-0 flex-1">
         <div
           className="tabular-nums"
           style={{
@@ -606,7 +606,7 @@ export const Captura: React.FC<CapturaProps> = ({
           <button
             type="button"
             onClick={() => setEditandoTexto(true)}
-            className="mt-3 block w-full truncate text-left text-[26px] font-normal text-[var(--fin-ink)]"
+            className="mt-3 block w-full truncate text-left text-[24px] font-normal text-[var(--fin-ink)]"
           >
             {description.trim() || (
               <span className="text-[var(--fin-ink-ghost)]">¿En qué fue?</span>
@@ -614,7 +614,8 @@ export const Captura: React.FC<CapturaProps> = ({
           </button>
         )}
 
-        {/* Las categorías en cuadrícula de 2 filas deslizable */}
+        {/* Una sola fila mantiene su altura dentro del flujo. La cuadrícula de
+            dos filas desbordaba su caja y terminaba tapando 1, 2 y 3. */}
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between px-1">
             <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
@@ -628,7 +629,9 @@ export const Captura: React.FC<CapturaProps> = ({
           </div>
           <div
             data-no-swipe
-            className="-mx-5 grid grid-rows-2 grid-flow-col auto-cols-max gap-2 overflow-x-auto px-5 pb-1 scroll-px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            role="group"
+            aria-label="Categorías"
+            className="-mx-5 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-2 scroll-px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {opciones.map((entrada) => {
               const activa = category === entrada.clave;
@@ -643,15 +646,16 @@ export const Captura: React.FC<CapturaProps> = ({
                     setCategoriaDetectada(null);
                   }}
                   aria-pressed={activa}
-                  className={`flex min-w-max shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--fin-r-pill)] px-3.5 py-2 text-[14px] font-semibold transition-all ${
-                    activa ? 'ring-2 ring-[var(--fin-accent)] shadow-sm' : 'hover:bg-[var(--fin-soft)]'
+                  className={`flex min-w-max shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-[var(--fin-r-pill)] border px-3 py-2 text-[13px] font-semibold transition-all ${
+                    activa ? 'shadow-sm' : 'border-transparent hover:bg-[var(--fin-soft)]'
                   }`}
                   style={{
-                    backgroundColor: activa ? tint(entrada.color, 0.22) : 'var(--fin-soft)',
+                    backgroundColor: activa ? tint(entrada.color, 0.16) : 'var(--fin-soft)',
+                    borderColor: activa ? entrada.color : undefined,
                     color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-soft)',
                   }}
                 >
-                  <span className="text-[17px] shrink-0" aria-hidden="true">
+                  <span className="shrink-0 text-[16px]" aria-hidden="true">
                     {entrada.emoji}
                   </span>
                   <span>{entrada.nombre}</span>
@@ -663,8 +667,9 @@ export const Captura: React.FC<CapturaProps> = ({
       </div>
 
       {/* Abajo: Teclado numérico y guardar */}
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-4 flex shrink-0 flex-col gap-3 border-t border-[var(--fin-line)] pt-4">
         <TecladoNumerico
+          compacto
           onDigito={escribirDigitos}
           onBorrar={() => setDigitos((prev) => prev.slice(0, -1))}
         />
@@ -675,7 +680,7 @@ export const Captura: React.FC<CapturaProps> = ({
               type="button"
               onClick={onFoto}
               aria-label="Foto del recibo"
-              className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
             >
               <Camera className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
             </button>
@@ -684,7 +689,7 @@ export const Captura: React.FC<CapturaProps> = ({
             type="button"
             onClick={() => setEditandoTexto(true)}
             aria-label="Escribir la descripción"
-            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
           >
             <Keyboard className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
           </button>
@@ -694,7 +699,7 @@ export const Captura: React.FC<CapturaProps> = ({
             onClick={guardar}
             disabled={amountCop === null || amountCop === 0}
             rippleColor="rgba(255,255,255,0.5)"
-            className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] text-[17px] font-semibold text-[var(--fin-on-accent)] transition-opacity disabled:opacity-30"
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] text-[17px] font-semibold text-[var(--fin-on-accent)] transition-opacity disabled:opacity-30"
           >
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             Guardar

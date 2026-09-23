@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Download, Smartphone, Phone } from 'lucide-react';
-import { Reveal } from './primitivas';
 
 type Platform = 'ios' | 'android' | 'desktop' | null;
 
@@ -53,17 +52,29 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
   const [titulo, instruccion, detalle] = pasos[paso];
 
   return (
-    <section className="pwa-install">
+    <section className="pwa-install" aria-label="Instalar LukApp">
       <motion.div
         className="pwa-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        aria-hidden="true"
       />
 
-      <Reveal className="pwa-modal">
-        <div className="pwa-cabecera">
+      <motion.section
+        className="pwa-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pwa-titulo"
+        aria-describedby="pwa-descripcion"
+        initial={{ opacity: 0, y: 32, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.34, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <span className="pwa-asa" aria-hidden="true" />
+
+        <header className="pwa-cabecera">
           {/* El mismo icono que va a quedar en la pantalla de inicio: enseñarlo
               aquí es la mitad de la instrucción. */}
           <img
@@ -74,51 +85,75 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, onSkip, onProce
             alt=""
             aria-hidden
           />
-          <h2>Mejor en app</h2>
+          <div className="pwa-titulos">
+            <span>Instala LukApp</span>
+            <h2 id="pwa-titulo">Mejor en app</h2>
+          </div>
           <button
+            type="button"
             className="pwa-cerrar"
             onClick={onClose}
             aria-label="Cerrar"
           >
             <X size={20} />
           </button>
-        </div>
+        </header>
 
-        <p className="pwa-descripcion">Te acompaño en menos de un minuto. Solo sigue este paso:</p>
+        <p className="pwa-descripcion" id="pwa-descripcion">
+          Te acompaño paso a paso. Toma menos de un minuto.
+        </p>
 
         <div className="pwa-progreso" aria-label={`Paso ${paso + 1} de ${pasos.length}`}>
-          {pasos.map((_, indice) => <span key={indice} className={indice === paso ? 'activo' : ''} />)}
+          <span className="pwa-progreso-texto">Paso {paso + 1} de {pasos.length}</span>
+          <div className="pwa-progreso-barras" aria-hidden="true">
+            {pasos.map((_, indice) => (
+              <span
+                key={indice}
+                className={`${indice <= paso ? 'completo' : ''} ${indice === paso ? 'activo' : ''}`}
+              />
+            ))}
+          </div>
         </div>
 
-        <div className="pwa-paso pwa-paso-activo">
+        <motion.div
+          className="pwa-paso pwa-paso-activo"
+          key={`${platform}-${paso}`}
+          initial={{ opacity: 0, x: 12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.24, ease: 'easeOut' }}
+        >
           <div className="pwa-numero">{paso + 1}</div>
           <div className="pwa-contenido"><h3>{titulo}</h3><p>{instruccion}</p><small>{detalle}</small></div>
-        </div>
+        </motion.div>
 
-        <div className="pwa-beneficios">
+        <div className="pwa-beneficios" aria-label="Ventajas de instalar LukApp">
           <div className="pwa-beneficio">
             <Phone size={18} />
-            <span>Acceso instantáneo desde tu pantalla de inicio</span>
+            <span>Acceso rápido</span>
           </div>
           <div className="pwa-beneficio">
             <Smartphone size={18} />
-            <span>Funciona sin conexión (datos en caché)</span>
+            <span>Funciona offline</span>
           </div>
           <div className="pwa-beneficio">
             <Download size={18} />
-            <span>Sin necesidad de ir a tiendas de apps</span>
+            <span>Sin tienda</span>
           </div>
         </div>
 
         <div className="pwa-acciones">
-          <button className="btn-primary-lg pwa-continuar" onClick={() => paso < pasos.length - 1 ? setPaso(paso + 1) : onProceed?.()}>
+          <button
+            type="button"
+            className="pwa-boton pwa-continuar"
+            onClick={() => paso < pasos.length - 1 ? setPaso(paso + 1) : onProceed?.()}
+          >
             {paso < pasos.length - 1 ? 'Siguiente' : 'Listo, continuar'}
           </button>
-          <button className="btn-secondary pwa-despues" onClick={onSkip}>
+          <button type="button" className="pwa-boton pwa-despues" onClick={onSkip}>
             Hacerlo después
           </button>
         </div>
-      </Reveal>
+      </motion.section>
     </section>
   );
 };

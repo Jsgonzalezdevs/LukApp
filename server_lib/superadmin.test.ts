@@ -11,7 +11,7 @@ const ctx = (over: Partial<Parameters<typeof motivoParaRechazar>[1]> = {}) => ({
 
 describe('motivoParaRechazar', () => {
   it('deja pasar un cambio normal a otro usuario', () => {
-    expect(motivoParaRechazar({ usuario: 'Lala', password: 'secreto1' }, ctx())).toBeNull();
+    expect(motivoParaRechazar({ usuario: 'Lala', password: 'SecretoSeguro!1' }, ctx())).toBeNull();
   });
 
   it('no te deja quitarte a ti mismo el rol de admin', () => {
@@ -41,9 +41,9 @@ describe('motivoParaRechazar', () => {
   });
 
   it('rechaza una contraseña más corta que el mínimo', () => {
-    expect(motivoParaRechazar({ password: '123' }, ctx())).toMatch(/al menos 6/i);
+    expect(motivoParaRechazar({ password: '123' }, ctx())).toMatch(/al menos 12/i);
     // Justo en el límite pasa.
-    expect(motivoParaRechazar({ password: '123456' }, ctx())).toBeNull();
+    expect(motivoParaRechazar({ password: '123456789012' }, ctx())).toBeNull();
   });
 
   it('rechaza un nombre de usuario en blanco, pero no uno ausente', () => {

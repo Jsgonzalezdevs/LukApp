@@ -4,13 +4,14 @@
  */
 
 import { normalizeEmail, isValidEmail } from '../../../lib/authHelpers';
+import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
 
 export interface ValidationResult {
   valid: boolean;
   error?: string;
 }
 
-export const MINIMO_PASSWORD = 6;
+export const MINIMO_PASSWORD = LARGO_MINIMO_CONTRASENA;
 export const APODO_MINIMO = 3;
 export const APODO_MAXIMO = 30;
 export const INTENTOS_MAX_LOGIN = 5;
@@ -41,12 +42,8 @@ export function validatePassword(password: string | undefined): ValidationResult
     return { valid: false, error: 'Contraseña requerida' };
   }
 
-  if (password.length < MINIMO_PASSWORD) {
-    return {
-      valid: false,
-      error: `Contraseña debe tener al menos ${MINIMO_PASSWORD} caracteres`,
-    };
-  }
+  const errorSeguridad = validarContrasenaSegura(password);
+  if (errorSeguridad) return { valid: false, error: errorSeguridad };
 
   if (password.length > 128) {
     return { valid: false, error: 'Contraseña muy larga' };

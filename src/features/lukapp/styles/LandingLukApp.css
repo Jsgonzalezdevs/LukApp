@@ -3205,53 +3205,159 @@
   opacity: 0.12;
 }
 
-/* Modal PWA Install */
+/* La guía puede vivir sobre la portada o sobre la app ya iniciada. Mantiene su
+   propia paleta para que nunca dependa de que un --lp-* esté heredado: esa
+   dependencia dejaba el fondo y los botones transparentes fuera del landing. */
 .pwa-install {
+  --pwa-bg: #ffffff;
+  --pwa-surface: #f7f4fa;
+  --pwa-surface-hover: #efeaf4;
+  --pwa-line: #e6deeb;
+  --pwa-ink: #211a25;
+  --pwa-ink-soft: #655b69;
+  --pwa-ink-faint: #827789;
+  --pwa-accent: #772aea;
+  --pwa-on-accent: #ffffff;
   position: fixed;
   inset: 0;
   z-index: 10000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  padding: 8px;
   pointer-events: none;
+  font-family: var(--lp-font, 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='claro']) .pwa-install {
+    --pwa-bg: #1d1920;
+    --pwa-surface: #28222c;
+    --pwa-surface-hover: #332c38;
+    --pwa-line: #403746;
+    --pwa-ink: #faf7fb;
+    --pwa-ink-soft: #c6bdca;
+    --pwa-ink-faint: #9b909f;
+    --pwa-accent: #a855f7;
+    --pwa-on-accent: #ffffff;
+  }
+}
+
+:root[data-tema='oscuro'] .pwa-install {
+  --pwa-bg: #1d1920;
+  --pwa-surface: #28222c;
+  --pwa-surface-hover: #332c38;
+  --pwa-line: #403746;
+  --pwa-ink: #faf7fb;
+  --pwa-ink-soft: #c6bdca;
+  --pwa-ink-faint: #9b909f;
+  --pwa-accent: #a855f7;
+  --pwa-on-accent: #ffffff;
 }
 
 .pwa-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(12, 10, 14, 0.58);
+  background: rgba(9, 6, 11, 0.68);
   pointer-events: auto;
-  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(8px) saturate(0.8);
+  backdrop-filter: blur(8px) saturate(0.8);
 }
 
 .pwa-modal {
   position: relative;
   z-index: 10001;
   width: 100%;
-  max-width: 480px;
-  max-height: 90vh;
-  color: var(--lp-ink);
-  background: var(--lp-bg);
-  border: 1px solid var(--lp-line);
-  border-radius: 24px 24px 0 0;
-  padding: 32px 24px;
+  max-width: 500px;
+  max-height: calc(100dvh - 16px);
+  color: var(--pwa-ink);
+  background-color: var(--pwa-bg);
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--pwa-accent) 9%, transparent), transparent 35%),
+    var(--pwa-bg);
+  border: 1px solid var(--pwa-line);
+  border-radius: 28px;
+  padding: 8px 20px max(20px, env(safe-area-inset-bottom));
   pointer-events: auto;
   overflow-y: auto;
-  box-shadow: 0 24px 80px -22px rgba(0, 0, 0, 0.52);
+  overscroll-behavior: contain;
+  box-shadow: 0 28px 90px -20px rgba(0, 0, 0, 0.65);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  scrollbar-width: none;
 }
 
-.pwa-progreso { display: flex; gap: 6px; margin: -4px 0 2px; }
-.pwa-progreso span { height: 4px; flex: 1; border-radius: 99px; background: var(--lp-line); }
-.pwa-progreso span.activo { background: var(--lp-accent); }
-.pwa-paso-activo { min-height: 92px; padding: 14px; border: 1px solid var(--lp-line); border-radius: 16px; background: var(--lp-surface); }
-.pwa-contenido small { display: block; margin-top: 7px; font-size: .78rem; color: var(--lp-ink-faint); line-height: 1.4; }
+.pwa-modal::-webkit-scrollbar { display: none; }
+
+.pwa-asa {
+  width: 38px;
+  height: 4px;
+  margin: 2px auto 10px;
+  border-radius: 999px;
+  background: var(--pwa-line);
+}
+
+.pwa-progreso {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.pwa-progreso-texto {
+  color: var(--pwa-ink-faint);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.pwa-progreso-barras {
+  display: flex;
+  gap: 6px;
+}
+
+.pwa-progreso-barras span {
+  height: 4px;
+  flex: 1;
+  border-radius: 99px;
+  background: var(--pwa-line);
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.pwa-progreso-barras span.completo {
+  background: var(--pwa-accent);
+  background: color-mix(in srgb, var(--pwa-accent) 55%, var(--pwa-line));
+}
+
+.pwa-progreso-barras span.activo {
+  background: var(--pwa-accent);
+}
+
+.pwa-paso-activo {
+  min-height: 108px;
+  margin-top: 12px;
+  padding: 17px;
+  border: 1px solid var(--pwa-line);
+  border-radius: 20px;
+  background: var(--pwa-surface);
+  background: color-mix(in srgb, var(--pwa-surface) 94%, var(--pwa-accent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 36%, transparent);
+}
+
+.pwa-contenido small {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  color: var(--pwa-ink-faint);
+  line-height: 1.42;
+}
 
 @media (min-width: 768px) {
   .pwa-modal {
-    border-radius: 24px;
+    margin-bottom: 20px;
     max-height: 80vh;
   }
 }
@@ -3260,54 +3366,73 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 8px;
 }
 
 /* El icono va redondeado como lo deja el sistema al instalarlo. */
 .pwa-cabecera .pwa-icono {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   flex: none;
-  border-radius: 11px;
+  border-radius: 13px;
+  box-shadow: 0 8px 18px -10px rgba(31, 14, 43, 0.8);
+}
+
+.pwa-titulos {
+  min-width: 0;
+  margin-right: auto;
+}
+
+.pwa-titulos > span {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--pwa-accent);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .pwa-cabecera h2 {
-  margin: 0 auto 0 0;
-  font-size: 1.4rem;
+  margin: 0;
+  font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: var(--lp-ink);
+  line-height: 1.15;
+  color: var(--pwa-ink);
 }
 
 .pwa-cerrar {
-  background: none;
-  border: none;
-  padding: 8px;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  background: var(--pwa-surface);
+  border: 1px solid var(--pwa-line);
+  padding: 0;
   cursor: pointer;
-  color: var(--lp-ink-faint);
+  color: var(--pwa-ink-soft);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  transition: background 0.2s ease;
+  border-radius: 999px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .pwa-cerrar:hover {
-  background: var(--lp-surface-hover);
+  background: var(--pwa-surface-hover);
+  color: var(--pwa-ink);
+}
+
+.pwa-cerrar:active {
+  transform: scale(0.94);
 }
 
 .pwa-descripcion {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: var(--lp-ink-soft);
-}
-
-.pwa-pasos {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin: 12px 0;
+  margin: 14px 0 0;
+  max-width: 38ch;
+  font-size: 0.88rem;
+  line-height: 1.52;
+  color: var(--pwa-ink-soft);
 }
 
 .pwa-paso {
@@ -3318,80 +3443,132 @@
 
 .pwa-numero {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--lp-accent) 14%, var(--lp-surface));
-  border: 1px solid color-mix(in srgb, var(--lp-accent) 32%, var(--lp-line));
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--pwa-accent);
+  border: 1px solid var(--pwa-accent);
+  border: 1px solid color-mix(in srgb, var(--pwa-accent) 72%, white);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--lp-accent);
+  font-weight: 750;
+  font-size: 0.8rem;
+  color: var(--pwa-on-accent);
+  box-shadow: 0 8px 18px -11px var(--pwa-accent);
 }
 
 .pwa-contenido h3 {
-  margin: 0 0 4px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--lp-ink);
+  margin: 0 0 3px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--pwa-ink);
 }
 
 .pwa-contenido p {
   margin: 0;
-  font-size: 0.85rem;
-  color: var(--lp-ink-soft);
-  line-height: 1.5;
+  font-size: 0.82rem;
+  color: var(--pwa-ink-soft);
+  line-height: 1.46;
 }
 
 .pwa-beneficios {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: var(--lp-surface);
-  border: 1px solid var(--lp-line);
-  border-radius: 12px;
-  margin: 8px 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .pwa-beneficio {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  font-size: 0.85rem;
-  color: var(--lp-ink-soft);
-  line-height: 1.5;
+  min-width: 0;
+  min-height: 66px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 5px;
+  border: 1px solid var(--pwa-line);
+  border-radius: 16px;
+  background: var(--pwa-surface);
+  font-size: 0.7rem;
+  font-weight: 650;
+  color: var(--pwa-ink-soft);
+  line-height: 1.2;
+  text-align: center;
 }
 
 .pwa-beneficio svg {
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  color: var(--lp-in);
-  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  color: var(--pwa-accent);
 }
 
 .pwa-acciones {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.pwa-boton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 15px;
+  padding: 0.76rem 1rem;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .pwa-continuar {
-  width: 100%;
+  border: 1px solid var(--pwa-accent);
+  border: 1px solid color-mix(in srgb, var(--pwa-accent) 76%, white);
+  background: var(--pwa-accent);
+  color: var(--pwa-on-accent);
+  box-shadow: 0 12px 24px -14px var(--pwa-accent);
+}
+
+.pwa-continuar:hover {
+  box-shadow: 0 16px 30px -15px var(--pwa-accent);
+  transform: translateY(-1px);
 }
 
 .pwa-despues {
-  width: 100%;
-  border: 1px solid var(--lp-line);
-  background: var(--lp-surface);
-  color: var(--lp-ink-soft);
+  border: 1px solid var(--pwa-line);
+  background: transparent;
+  color: var(--pwa-ink-soft);
 }
 
 .pwa-despues:hover {
-  background: var(--lp-surface-hover);
-  color: var(--lp-ink);
+  background: var(--pwa-surface-hover);
+  color: var(--pwa-ink);
+}
+
+.pwa-boton:active {
+  transform: scale(0.985);
+}
+
+.pwa-boton:focus-visible,
+.pwa-cerrar:focus-visible {
+  outline: 3px solid var(--pwa-accent);
+  outline: 3px solid color-mix(in srgb, var(--pwa-accent) 42%, transparent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 370px) {
+  .pwa-install { padding: 5px; }
+  .pwa-modal { padding-inline: 16px; }
+  .pwa-cabecera .pwa-icono { width: 42px; height: 42px; }
+  .pwa-beneficio { font-size: 0.66rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwa-boton,
+  .pwa-cerrar,
+  .pwa-progreso-barras span { transition: none; }
 }
