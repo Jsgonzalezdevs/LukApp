@@ -15,7 +15,15 @@ LukApp tiene exactamente dos planes:
 
 Los cupos se validan en PostgreSQL, de forma atómica y con el mes de Bogotá. No dependen de lo que el navegador muestre. Si IA, voz o el análisis de un PDF fallan antes de devolver un resultado, el cupo se devuelve.
 
-No hay una pasarela de pago activada todavía. El sistema ya conserva suscripciones, ciclos, referencias externas, auditoría e idempotencia para conectarla de forma segura, pero no inicia cobros ni recibe webhooks hasta elegir un proveedor y configurar sus credenciales.
+Los pagos usan **Wompi Web Checkout**. La persona elige mensual o anual en
+**Ajustes → Cuenta**, completa el pago en Wompi y el plan cambia a Premium solo
+cuando llega un webhook firmado con estado `APPROVED`. Volver a LukApp desde la
+pantalla de Wompi es informativo; no activa beneficios por sí mismo.
+
+Esta primera integración cobra cada ciclo de forma individual. Premium se
+activa automáticamente después de cada pago aprobado y vence al mes o al año;
+no tokeniza tarjetas ni programa cargos recurrentes sin una autorización
+adicional de la persona.
 
 ## Roles del panel
 
@@ -29,7 +37,8 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
 
 1. En Supabase, crea una copia de seguridad desde **Database → Backups**.
 2. En **SQL Editor**, abre y ejecuta completo [`../supabase/migrations/20260923151315_freemium_suscripciones_y_cupos.sql`](../supabase/migrations/20260923151315_freemium_suscripciones_y_cupos.sql). No ejecutes solo fragmentos: las tablas, restricciones, RLS y funciones forman una unidad.
-3. Comprueba las dos filas de planes:
+3. Ejecuta después [`../supabase/migrations/20260923161824_wompi_checkout_y_webhooks.sql`](../supabase/migrations/20260923161824_wompi_checkout_y_webhooks.sql). Crea las intenciones de pago con RLS cerrado y el candado que evita dos checkouts abiertos para una misma cuenta.
+4. Comprueba las dos filas de planes:
 
    ```sql
    select codigo, precio_mensual_cop, precio_anual_cop,
@@ -42,27 +51,47 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
 
    Deben aparecer `normal` con precio `0` y `premium` con `9900` mensual y `79900` anual.
 
-4. En Render, añade `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` como variables privadas del servicio que ejecuta `server.ts`.
-5. En Vercel, añade las mismas dos variables **sin** prefijo `VITE_` para proteger `api/transcribir.ts`. Mantén en el cliente solamente `VITE_SUPABASE_URL` y la clave pública/anon de Supabase.
-6. Despliega backend y frontend. La migración se aplica antes del código; mientras se despliega, las funciones financieras que no usan cupos siguen funcionando normalmente.
-7. Inicia sesión como superadmin y abre **Superadmin → Planes**. Confirma que ves dos planes, no tres. Crea un rol de prueba con solo `ver_facturacion` y confirma que ve cifras, pero no el listado de personas ni botones para modificar beneficios.
-8. Otorga Premium de cortesía a una cuenta de prueba por un día. Confirma que aparece en la lista, que la cuenta recibe los límites Premium y que al cancelar vuelve a Normal.
-9. Prueba un límite Normal con una cuenta de ensayo: al exceder una consulta IA, un PDF o un dictado debe recibir un mensaje claro y no debe llamar al proveedor otra vez. Prueba también una caída simulada del proveedor: el contador debe volver al valor anterior.
+5. En Render, añade `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` como variables privadas del servicio que ejecuta `server.ts`.
+6. En el mismo servicio de Render añade estas variables privadas de Wompi. Nunca las pegues en el código ni les pongas prefijo `VITE_`:
 
-## Antes de conectar la pasarela
+   ```dotenv
+   WOMPI_AMBIENTE=sandbox
+   WOMPI_PUBLIC_KEY=pub_test_...
+   WOMPI_INTEGRITY_SECRET=test_integrity_...
+   WOMPI_EVENTS_SECRET=test_events_...
+   WOMPI_REDIRECT_URL=https://TU-DOMINIO/finanzas/ajustes/cuenta
+   ```
 
-La elección de proveedor es una decisión comercial y requiere sus credenciales, URL pública de webhook y pruebas de sandbox. No guardes llaves ni secretos en el repositorio, ni en variables `VITE_`.
+   Las tres llaves se encuentran en **Wompi → Desarrolladores → Secretos para
+   integración técnica**. `WOMPI_REDIRECT_URL` debe ser la URL pública HTTPS de
+   tu frontend, no la de Render. Para producción cambia el ambiente a
+   `produccion` y usa exclusivamente `pub_prod_`, `prod_integrity_` y
+   `prod_events_`.
+7. En Wompi Dashboard configura el evento `transaction.updated` para cada
+   ambiente. La URL debe ser la API pública de Render seguida de:
 
-Cuando se elija el proveedor, el flujo debe ser este:
+   ```text
+   https://TU-SERVICIO.onrender.com/api/pagos/wompi/webhook
+   ```
 
-1. El servidor crea la intención de pago con el precio leído de `planes_suscripcion`, nunca con un valor recibido del navegador.
-2. El usuario completa el pago en la pasarela.
-3. El webhook verifica la firma oficial del proveedor antes de escribir algo en la base.
-4. El webhook usa su identificador de evento como `referencia_externa` y llama a `public.activar_premium_pasarela(...)` con la llave de servicio. La función y su restricción única hacen que un reintento no otorgue Premium dos veces.
-5. Tras pago aprobado, la función crea una suscripción `activa` de ciclo `mensual` o `anual`; tras rechazo o reversión, registra un evento de auditoría sin conservar números de tarjeta, comprobantes completos ni payloads crudos.
-6. Prueba en sandbox pago exitoso, pago rechazado, webhook duplicado, renovación, cancelación y webhook con firma inválida antes de habilitar producción.
+   Configura una URL de sandbox y otra de producción. Wompi reintentará si no
+   recibe HTTP 200; LukApp verifica el checksum antes de tocar la base.
+8. En Vercel mantén en el cliente solamente `VITE_SUPABASE_URL`, la clave
+   pública/anon de Supabase y `VITE_API_URL` apuntando a Render. Las variables
+   privadas de Wompi **no van en Vercel** para este flujo, porque el checkout y
+   el webhook los atiende `server.ts` en Render.
+9. Despliega backend y frontend. Las migraciones se aplican antes del código.
+10. En sandbox, prueba con una cuenta de ensayo: un pago aprobado debe cambiar
+    la cuenta a Premium; uno rechazado no debe hacerlo; repetir el mismo
+    webhook debe mantener una sola suscripción. Prueba también un webhook con
+    firma alterada: debe ser rechazado y no escribir nada.
+11. Solo después repite la configuración con las llaves `prod_*`, la URL de
+    eventos de producción y un cobro real pequeño que puedas conciliar.
 
-La tabla `suscripciones` ya guarda el valor efectivamente cobrado, el ciclo, las fechas y la referencia externa. `eventos_facturacion` guarda solo trazabilidad mínima. No se almacenan datos de tarjeta ni contenido sensible de la pasarela.
+La tabla `suscripciones` guarda el valor efectivamente cobrado, ciclo, fechas y
+el identificador de la transacción de Wompi. `intentos_pago_wompi` guarda la
+referencia interna mínima para ligar ese pago a una cuenta. No se almacenan
+tarjetas, documentos, comprobantes completos ni payloads crudos de la pasarela.
 
 ## Operación cotidiana
 

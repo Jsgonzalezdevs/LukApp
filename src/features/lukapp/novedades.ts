@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.1.0', fecha: '2026-09-23', texto: 'Ya puedes elegir Premium mensual o anual con Wompi: el pago se confirma de forma segura y tus beneficios se activan automáticamente al aprobarse.' },
   { version: '4.0.1', fecha: '2026-09-23', texto: 'Corregimos la analítica de tráfico para que las visitas sigan registrándose durante actualizaciones del esquema y el panel las cargue con un diagnóstico claro.' },
   { version: '4.0.0', fecha: '2026-09-23', texto: 'LukApp ahora tiene los planes Normal y Premium con cupos protegidos, y Superadmin incorpora un panel seguro para ver y administrar beneficios.' },
   { version: '3.33.9', fecha: '2026-09-23', texto: 'Las contraseñas ahora requieren una combinación segura y ningún usuario puede convertirse en superadmin sin aprobación de otro superadmin.' },

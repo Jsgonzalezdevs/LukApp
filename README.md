@@ -81,8 +81,10 @@ Frontend (valores publicables): `VITE_SUPABASE_URL`,
 `VITE_SUPABASE_PUBLISHABLE_KEY` (o la antigua `VITE_SUPABASE_ANON_KEY`) y
 `VITE_API_URL`.
 
-Servidor: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT` y
-`VISITAS_SAL`. Las claves de servicio nunca deben llevar `VITE_`.
+Servidor: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT`, `VISITAS_SAL`
+y, si activas pagos, `WOMPI_AMBIENTE`, `WOMPI_PUBLIC_KEY`,
+`WOMPI_INTEGRITY_SECRET`, `WOMPI_EVENTS_SECRET` y `WOMPI_REDIRECT_URL`. Las
+claves de servicio y secretos nunca deben llevar `VITE_`.
 Consulta [`.env.example`](.env.example).
 
 ## Despliegue y base de datos

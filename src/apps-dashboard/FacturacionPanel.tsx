@@ -50,6 +50,7 @@ interface RespuestaFacturacion {
     estimadoMensualCop: number;
   };
   puedeAdministrar: boolean;
+  pasarela: { codigo: 'wompi'; habilitada: boolean; ambiente: 'test' | 'prod' | null };
   suscripciones: SuscripcionActiva[];
   usuarios: Array<{ id: string; email: string; usuario: string | null }>;
 }
@@ -258,6 +259,18 @@ export const FacturacionPanel: React.FC = () => {
 
       {error && <p role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs font-semibold text-red-700 dark:text-red-300">{error}</p>}
       {aviso && <p role="status" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{aviso}</p>}
+
+      <section className={`flex items-start gap-3 rounded-2xl border p-4 ${datos.pasarela.habilitada ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-amber-500/30 bg-amber-500/10'}`}>
+        {datos.pasarela.habilitada ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />}
+        <div>
+          <p className="text-sm font-extrabold text-[var(--fin-ink)]">Wompi {datos.pasarela.habilitada ? 'está listo para recibir pagos' : 'todavía no está configurado'}</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-[var(--fin-ink-soft)]">
+            {datos.pasarela.habilitada
+              ? `Ambiente activo: ${datos.pasarela.ambiente === 'prod' ? 'producción' : 'sandbox'}. Premium se activa únicamente después del webhook firmado.`
+              : 'Faltan las variables privadas de Wompi o la URL HTTPS de redirección en Render. Revisa la guía de Freemium y pagos antes de cobrar.'}
+          </p>
+        </div>
+      </section>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tarjeta titulo="Premium activos" valor={String(datos.resumen.premiumActivas)} detalle="vigentes ahora" icono={<CreditCard className="h-4 w-4 text-purple-500" />} />

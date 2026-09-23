@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Check,
   Copy,
+  CreditCard,
   Eye,
   EyeOff,
   KeyRound,
@@ -23,6 +24,32 @@ interface CuentaViewProps {
   cambiosPendientes: number;
   onSincronizar: () => Promise<void>;
 }
+
+interface EstadoPlan {
+  codigo: 'normal' | 'premium';
+  nombre: string;
+  precios: { mensualCop: number; anualCop: number };
+  limites: {
+    dictadosMensual: number | null;
+    asesorIaMensual: number | null;
+    extractosMensual: number | null;
+    espaciosCompartidos: number | null;
+    integrantesPorEspacio: number | null;
+  };
+  consumo: { dictados: number; asesorIa: number; extractos: number };
+  suscripcion: { ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string; cancelarAlVencer: boolean } | null;
+}
+
+interface CheckoutWompi {
+  destino: string;
+  campos: Record<string, string>;
+}
+
+const pesos = (valor: number): string =>
+  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
+
+const fechaCorta = (valor: string): string =>
+  new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: 'America/Bogota' }).format(new Date(valor));
 
 /** sha256 del userId, recortado a 20 caracteres -- se ve como un ID al azar,
  * pero es el mismo cada vez que se abre esta pantalla en vez de cambiar en
@@ -63,6 +90,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   cambiosPendientes,
   onSincronizar,
 }) => {
+  const cuentaEmail = cuenta?.email ?? null;
   const [apodo, setApodo] = useState<string | null>(null);
   const [id, setId] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -78,6 +106,12 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   const [guardandoPassword, setGuardandoPassword] = useState(false);
   const [errorPassword, setErrorPassword] = useState<string | null>(null);
   const [passwordActualizada, setPasswordActualizada] = useState(false);
+  const [plan, setPlan] = useState<EstadoPlan | null>(null);
+  const [cargandoPlan, setCargandoPlan] = useState(Boolean(cuentaEmail));
+  const [errorPlan, setErrorPlan] = useState<string | null>(null);
+  const [pagandoCiclo, setPagandoCiclo] = useState<'mensual' | 'anual' | null>(null);
+  const [verificandoPago, setVerificandoPago] = useState(() =>
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('id'));
 
   useEffect(() => {
     if (!userId) return;
@@ -92,6 +126,84 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       .maybeSingle()
       .then(({ data }) => setApodo(data?.usuario ?? null));
   }, [userId]);
+
+  const cargarPlan = useCallback(async () => {
+    if (!cuentaEmail || !userId) {
+      setPlan(null);
+      setCargandoPlan(false);
+      return;
+    }
+    setCargandoPlan(true);
+    try {
+      const respuesta = await conToken((token) => fetch(apiUrl('/api/mi-plan'), {
+        headers: { Authorization: `Bearer ${token}` },
+      }));
+      const cuerpo = await respuesta.json().catch(() => ({}));
+      if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo consultar tu plan.');
+      setPlan(cuerpo as EstadoPlan);
+      setErrorPlan(null);
+    } catch (error) {
+      setErrorPlan(error instanceof Error ? error.message : 'No se pudo consultar tu plan.');
+    } finally {
+      setCargandoPlan(false);
+    }
+  }, [cuentaEmail, userId]);
+
+  useEffect(() => { void cargarPlan(); }, [cargarPlan]);
+
+  // Wompi puede redirigir antes de que su webhook termine. Mientras espera, la
+  // persona ve una confirmación honesta y esta vista consulta su plan durante
+  // un minuto; jamás toma el `id` de la URL como prueba de que se pagó.
+  useEffect(() => {
+    if (!verificandoPago) return undefined;
+    if (plan?.codigo === 'premium') {
+      setVerificandoPago(false);
+      return undefined;
+    }
+    const intervalo = window.setInterval(() => void cargarPlan(), 5000);
+    const limite = window.setTimeout(() => setVerificandoPago(false), 60000);
+    return () => {
+      window.clearInterval(intervalo);
+      window.clearTimeout(limite);
+    };
+  }, [verificandoPago, plan?.codigo, cargarPlan]);
+
+  const iniciarCheckoutWompi = async (ciclo: 'mensual' | 'anual') => {
+    setPagandoCiclo(ciclo);
+    setErrorPlan(null);
+    try {
+      const respuesta = await conToken((token) => fetch(apiUrl('/api/pagos/wompi/checkout'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ciclo }),
+      }));
+      const cuerpo = await respuesta.json().catch(() => ({}));
+      if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo iniciar el pago.');
+      const checkout = cuerpo as Partial<CheckoutWompi>;
+      if (checkout.destino !== 'https://checkout.wompi.co/p/' || !checkout.campos
+        || Object.values(checkout.campos).some((valor) => typeof valor !== 'string')) {
+        throw new Error('La respuesta del checkout no es válida.');
+      }
+
+      // Un formulario GET conserva el contrato oficial de Web Checkout y evita
+      // que el frontend conozca el secreto usado para firmar estos campos.
+      const formulario = document.createElement('form');
+      formulario.method = 'GET';
+      formulario.action = checkout.destino;
+      for (const [nombre, valor] of Object.entries(checkout.campos)) {
+        const campo = document.createElement('input');
+        campo.type = 'hidden';
+        campo.name = nombre;
+        campo.value = valor;
+        formulario.append(campo);
+      }
+      document.body.append(formulario);
+      formulario.submit();
+    } catch (error) {
+      setErrorPlan(error instanceof Error ? error.message : 'No se pudo iniciar el pago.');
+      setPagandoCiclo(null);
+    }
+  };
 
   const copiarId = async () => {
     if (!id) return;
@@ -211,6 +323,72 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
           </button>
         </div>
       </div>
+
+      {cuentaEmail ? (
+        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4" aria-live="polite">
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-accent)]">
+              <CreditCard className="h-5 w-5" strokeWidth={2.25} aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-semibold text-[var(--fin-ink)]">Tu plan</p>
+              {cargandoPlan && !plan ? (
+                <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">Consultando tus beneficios…</p>
+              ) : plan ? (
+                <>
+                  <p className="mt-0.5 text-[14px] text-[var(--fin-ink-soft)]">
+                    {plan.codigo === 'premium'
+                      ? `Premium${plan.suscripcion ? ` hasta ${fechaCorta(plan.suscripcion.venceEn)}` : ''}`
+                      : 'Normal — gratis para siempre'}
+                  </p>
+                  {plan.codigo === 'premium' ? (
+                    <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                      Tienes más cupos de voz, Asesor IA, extractos y espacios compartidos. Tu beneficio se confirma automáticamente cuando Wompi aprueba el pago.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                        Conservas todas las funciones esenciales. Premium amplía los cupos que más consumen infraestructura, sin quitarte lo importante.
+                      </p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => void iniciarCheckoutWompi('mensual')}
+                          disabled={pagandoCiclo !== null}
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
+                        >
+                          {pagandoCiclo === 'mensual' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Premium mensual · {pesos(plan.precios.mensualCop)}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void iniciarCheckoutWompi('anual')}
+                          disabled={pagandoCiclo !== null}
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
+                        >
+                          {pagandoCiclo === 'anual' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Premium anual · {pesos(plan.precios.anualCop)}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : null}
+              {verificandoPago && plan?.codigo !== 'premium' ? (
+                <p className="mt-3 text-[13px] font-semibold text-[var(--fin-accent)]">
+                  Estamos verificando tu pago con Wompi. Esto puede tardar unos segundos.
+                </p>
+              ) : null}
+              {errorPlan ? (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <p className="text-[13px] font-semibold text-[var(--fin-out-ink)]">{errorPlan}</p>
+                  <button type="button" onClick={() => void cargarPlan()} className="text-[13px] font-semibold text-[var(--fin-accent)] underline">Reintentar</button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <div
         className="flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"

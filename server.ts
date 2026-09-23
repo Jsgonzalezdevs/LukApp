@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { PDFParse } from 'pdf-parse';
 import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
@@ -32,6 +32,14 @@ import {
   type RecursoDeCupo,
   type ResultadoCupo,
 } from './server_lib/suscripciones.ts';
+import {
+  centavosWompi,
+  checksumEsperadoWompi,
+  coincideChecksum,
+  configuracionWompi,
+  firmaIntegridadWompi,
+  type EventoWompi,
+} from './server_lib/wompi.ts';
 
 dotenv.config();
 
@@ -201,6 +209,80 @@ interface EstadoPlanServidor {
   consumo: { dictados: number; asesorIa: number; extractos: number };
   suscripcion: { id: number; ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string; cancelarAlVencer: boolean } | null;
 }
+
+type CicloDePago = 'mensual' | 'anual';
+
+interface IntentoPagoWompi {
+  id: number;
+  referencia: string;
+  user_id: string;
+  ciclo: CicloDePago;
+  monto_cop: number;
+  moneda: 'COP';
+  ambiente: 'test' | 'prod';
+  estado: string;
+  checkout_vence_en: string;
+  wompi_transaccion_id: string | null;
+}
+
+interface TransaccionWompi {
+  id: string;
+  referencia: string;
+  montoCentavos: number;
+  moneda: 'COP';
+  estado: 'APPROVED' | 'PENDING' | 'DECLINED' | 'VOIDED' | 'ERROR';
+}
+
+const esRegistro = (valor: unknown): valor is Record<string, unknown> =>
+  Boolean(valor) && typeof valor === 'object' && !Array.isArray(valor);
+
+const textoNoVacio = (valor: unknown, maximo = 200): string | null =>
+  typeof valor === 'string' && valor.trim().length > 0 && valor.trim().length <= maximo
+    ? valor.trim()
+    : null;
+
+const enteroPositivoSeguro = (valor: unknown): number | null =>
+  typeof valor === 'number' && Number.isSafeInteger(valor) && valor > 0 ? valor : null;
+
+const leerTransaccionWompi = (evento: EventoWompi): TransaccionWompi | null => {
+  if (!esRegistro(evento.data) || !esRegistro(evento.data.transaction)) return null;
+  const transaccion = evento.data.transaction;
+  const id = textoNoVacio(transaccion.id);
+  const referencia = textoNoVacio(transaccion.reference, 100);
+  const montoCentavos = enteroPositivoSeguro(transaccion.amount_in_cents);
+  const moneda = transaccion.currency;
+  const estado = transaccion.status;
+  if (!id || !referencia || !/^[A-Za-z0-9_-]{12,100}$/.test(referencia)
+    || !montoCentavos || moneda !== 'COP'
+    || !['APPROVED', 'PENDING', 'DECLINED', 'VOIDED', 'ERROR'].includes(String(estado))) {
+    return null;
+  }
+  return { id, referencia, montoCentavos, moneda, estado: estado as TransaccionWompi['estado'] };
+};
+
+const vencimientoPremium = (ciclo: CicloDePago, iniciaEn: Date): string => {
+  const resultado = new Date(iniciaEn);
+  const diaOriginal = resultado.getUTCDate();
+  resultado.setUTCDate(1);
+  resultado.setUTCMonth(resultado.getUTCMonth() + (ciclo === 'anual' ? 12 : 1));
+  const ultimoDia = new Date(Date.UTC(
+    resultado.getUTCFullYear(),
+    resultado.getUTCMonth() + 1,
+    0,
+  )).getUTCDate();
+  resultado.setUTCDate(Math.min(diaOriginal, ultimoDia));
+  return resultado.toISOString();
+};
+
+const estadoIntentoDesdeWompi = (estado: TransaccionWompi['estado']): IntentoPagoWompi['estado'] => ({
+  APPROVED: 'aprobado',
+  PENDING: 'pendiente',
+  DECLINED: 'rechazado',
+  VOIDED: 'anulado',
+  ERROR: 'error',
+})[estado];
+
+const configuracionWompiLista = () => configuracionWompi(process.env);
 
 /** Ejecuta el contador atómico de PostgreSQL antes de gastar IA, voz o PDF. */
 const consumirCupo = async (
@@ -1493,6 +1575,202 @@ app.get('/api/mi-plan', async (req, res) => {
   }
 });
 
+// El navegador jamás elige precio, referencia ni firma. Esta ruta relee el
+// Premium desde PostgreSQL, crea (o recupera) una intención de 30 minutos y
+// devuelve los campos exactos que el formulario GET de Web Checkout necesita.
+app.post('/api/pagos/wompi/checkout', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'Debes iniciar sesión para pagar Premium.' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de pagos todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const ciclo = req.body?.ciclo;
+    if (ciclo !== 'mensual' && ciclo !== 'anual') {
+      return res.status(400).json({ error: 'Elige el ciclo mensual o anual de Premium.' });
+    }
+
+    let wompi;
+    try {
+      wompi = configuracionWompiLista();
+    } catch (error: unknown) {
+      console.error('[wompi] Configuración incompleta:', error instanceof Error ? error.message : error);
+      return res.status(503).json({ error: 'Los pagos con Wompi aún no están habilitados. Inténtalo más tarde.' });
+    }
+
+    const estadoActual = await estadoPlanDe(cliente, acceso.userId);
+    if (estadoActual.codigo === 'premium' && estadoActual.suscripcion) {
+      return res.status(409).json({ error: 'Tu cuenta ya tiene Premium activo. No necesitas hacer otro pago ahora.' });
+    }
+
+    const { data: premium, error: errorPlan } = await cliente
+      .from('planes_suscripcion')
+      .select('precio_mensual_cop,precio_anual_cop,activo')
+      .eq('codigo', 'premium')
+      .single();
+    if (errorPlan || !premium || !premium.activo) {
+      throw new Error(errorPlan?.message || 'Premium no está disponible para cobrar.');
+    }
+
+    const montoCop = Number(ciclo === 'mensual' ? premium.precio_mensual_cop : premium.precio_anual_cop);
+    const venceCheckout = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const referenciaNueva = `LUK${ciclo === 'mensual' ? 'M' : 'A'}-${randomBytes(24).toString('hex').toUpperCase()}`;
+    const { data: resultadoIntento, error: errorIntento } = await cliente.rpc('crear_intento_pago_wompi', {
+      p_usuario: acceso.userId,
+      p_ciclo: ciclo,
+      p_monto_cop: montoCop,
+      p_ambiente: wompi.ambiente,
+      p_referencia: referenciaNueva,
+      p_checkout_vence_en: venceCheckout,
+    });
+    if (errorIntento || !resultadoIntento) throw new Error(errorIntento?.message || 'No se pudo preparar el pago.');
+
+    const intento = (Array.isArray(resultadoIntento) ? resultadoIntento[0] : resultadoIntento) as IntentoPagoWompi;
+    if (intento.ciclo !== ciclo) {
+      return res.status(409).json({
+        error: `Ya tienes un checkout ${intento.ciclo} abierto. Termínalo o espera a que venza antes de cambiar el ciclo.`,
+      });
+    }
+    if (intento.ambiente !== wompi.ambiente || intento.moneda !== 'COP') {
+      throw new Error('La intención existente no pertenece al ambiente activo.');
+    }
+
+    const montoCentavos = centavosWompi(Number(intento.monto_cop));
+    const firma = firmaIntegridadWompi(
+      intento.referencia,
+      montoCentavos,
+      intento.checkout_vence_en,
+      wompi.secretoIntegridad,
+    );
+
+    return res.status(200).json({
+      destino: 'https://checkout.wompi.co/p/',
+      campos: {
+        'public-key': wompi.llavePublica,
+        currency: 'COP',
+        'amount-in-cents': String(montoCentavos),
+        reference: intento.referencia,
+        'signature:integrity': firma,
+        'redirect-url': wompi.urlRedireccion,
+        'expiration-time': intento.checkout_vence_en,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error preparando checkout Wompi:', error);
+    return res.status(400).json({ error: error.message || 'No se pudo iniciar el checkout de Wompi.' });
+  }
+});
+
+// Wompi confirma aquí el estado final. La URL de regreso se limita a informar
+// al usuario: solo este webhook, validado con el secreto de eventos y contra
+// la intención interna, puede cambiar a una persona de Normal a Premium.
+app.post('/api/pagos/wompi/webhook', async (req, res) => {
+  const cliente = clienteAdmin();
+  if (!cliente) {
+    console.error('[wompi] Webhook recibido sin cliente de Supabase configurado.');
+    return res.status(503).json({ error: 'Servicio de pagos no disponible.' });
+  }
+
+  let wompi;
+  try {
+    wompi = configuracionWompiLista();
+  } catch (error: unknown) {
+    console.error('[wompi] Webhook recibido con configuración incompleta:', error instanceof Error ? error.message : error);
+    return res.status(503).json({ error: 'Servicio de pagos no configurado.' });
+  }
+
+  const evento = req.body as EventoWompi;
+  const firma = esRegistro(evento?.signature) ? evento.signature : null;
+  const checksumCuerpo = firma?.checksum;
+  const checksumCabecera = req.get('x-event-checksum');
+  const esperado = checksumEsperadoWompi(evento, wompi.secretoEventos);
+  if (!esperado || !coincideChecksum(esperado, checksumCuerpo)
+    || (checksumCabecera !== undefined && !coincideChecksum(esperado, checksumCabecera))) {
+    console.warn('[wompi] Se ignoró un webhook con firma inválida.');
+    return res.status(401).json({ error: 'Firma de evento inválida.' });
+  }
+
+  // Cada cuenta de Wompi debe tener su propia URL para sandbox y producción.
+  // Un evento válido del otro ambiente no puede otorgar beneficios aquí.
+  if (evento.event !== 'transaction.updated' || evento.environment !== wompi.ambiente) {
+    return res.status(200).json({ ok: true, ignorado: true });
+  }
+
+  const transaccion = leerTransaccionWompi(evento);
+  if (!transaccion) {
+    console.warn('[wompi] Evento firmado con una transacción incompleta.');
+    return res.status(200).json({ ok: true, ignorado: true });
+  }
+
+  try {
+    const { data: datoIntento, error: errorIntento } = await cliente
+      .from('intentos_pago_wompi')
+      .select('id,referencia,user_id,ciclo,monto_cop,moneda,ambiente,estado,checkout_vence_en,wompi_transaccion_id')
+      .eq('referencia', transaccion.referencia)
+      .maybeSingle();
+    if (errorIntento) throw errorIntento;
+    if (!datoIntento) {
+      console.warn('[wompi] Se recibió una referencia que LukApp no creó:', transaccion.referencia);
+      return res.status(200).json({ ok: true, ignorado: true });
+    }
+
+    const intento = datoIntento as IntentoPagoWompi;
+    if (intento.ambiente !== wompi.ambiente
+      || intento.moneda !== transaccion.moneda
+      || centavosWompi(Number(intento.monto_cop)) !== transaccion.montoCentavos
+      || (intento.wompi_transaccion_id && intento.wompi_transaccion_id !== transaccion.id)) {
+      console.warn('[wompi] El webhook no coincide con su intención interna:', transaccion.referencia);
+      return res.status(200).json({ ok: true, ignorado: true });
+    }
+
+    const ahora = new Date();
+    let suscripcionId: number | null = null;
+    if (transaccion.estado === 'APPROVED') {
+      const { data: resultadoSuscripcion, error: errorSuscripcion } = await cliente.rpc('activar_premium_pasarela', {
+        p_usuario: intento.user_id,
+        p_ciclo: intento.ciclo,
+        p_pasarela: 'wompi',
+        p_referencia_externa: transaccion.id,
+        p_valor_cobrado_cop: Number(intento.monto_cop),
+        p_inicia_en: ahora.toISOString(),
+        p_vence_en: vencimientoPremium(intento.ciclo, ahora),
+      });
+      if (errorSuscripcion || !resultadoSuscripcion) {
+        throw new Error(errorSuscripcion?.message || 'No se pudo activar Premium después del pago.');
+      }
+      const suscripcion = Array.isArray(resultadoSuscripcion) ? resultadoSuscripcion[0] : resultadoSuscripcion;
+      suscripcionId = Number((suscripcion as { id?: unknown }).id);
+      if (!Number.isSafeInteger(suscripcionId) || suscripcionId <= 0) {
+        throw new Error('La suscripción activada no devolvió un identificador válido.');
+      }
+    }
+
+    const estado = estadoIntentoDesdeWompi(transaccion.estado);
+    const esFinal = estado !== 'pendiente';
+    const { error: errorActualizar } = await cliente
+      .from('intentos_pago_wompi')
+      .update({
+        estado,
+        wompi_transaccion_id: transaccion.id,
+        suscripcion_id: suscripcionId,
+        actualizado_en: ahora.toISOString(),
+        finalizado_en: esFinal ? ahora.toISOString() : null,
+      })
+      .eq('id', intento.id);
+    if (errorActualizar) throw errorActualizar;
+
+    return res.status(200).json({ ok: true });
+  } catch (error: any) {
+    // Un 500 hace que Wompi reintente. Es correcto para una caída de base o un
+    // fallo transitorio: `activar_premium_pasarela` es idempotente por id de
+    // transacción, de modo que el reintento no duplica el beneficio.
+    console.error('Error procesando webhook de Wompi:', error);
+    return res.status(500).json({ error: 'No se pudo registrar el evento.' });
+  }
+});
+
 app.get('/api/superadmin/facturacion', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const cliente = clienteAdmin();
@@ -1530,6 +1808,14 @@ app.get('/api/superadmin/facturacion', async (req, res) => {
     const estimadoMensualCop = mensuales * Number(planPremium?.precio_mensual_cop ?? 0)
       + anuales * Math.round(Number(planPremium?.precio_anual_cop ?? 0) / 12);
     const esAdminFijo = perfil?.rol === 'admin';
+    let wompi: { habilitada: boolean; ambiente: 'test' | 'prod' | null } = { habilitada: false, ambiente: null };
+    try {
+      const configuracion = configuracionWompiLista();
+      wompi = { habilitada: true, ambiente: configuracion.ambiente };
+    } catch {
+      // La persona con permiso de facturación necesita saber si puede cobrar,
+      // pero no necesita —ni debe recibir— cuál de los secretos falta.
+    }
 
     // Un rol con "ver_facturacion" solo recibe agregados. Las identidades y
     // vigencias de cada persona las necesita el superadmin fijo para soporte,
@@ -1560,6 +1846,7 @@ app.get('/api/superadmin/facturacion', async (req, res) => {
         estimadoMensualCop,
       },
       puedeAdministrar: esAdminFijo,
+      pasarela: { codigo: 'wompi', ...wompi },
       suscripciones: detalle,
       usuarios,
     });
