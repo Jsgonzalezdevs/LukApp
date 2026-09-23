@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, CreditCard, Loader2, RefreshCw, Save, ShieldCheck, UserPlus, XCircle } from 'lucide-react';
+import { CheckCircle2, CreditCard, Loader2, Pencil, RefreshCw, Save, ShieldCheck, UserPlus, XCircle } from 'lucide-react';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
 import { apiUrl } from '../lib/api';
 
@@ -61,6 +61,17 @@ const pesos = (valor: number): string =>
 const fechaCorta = (valor: string): string =>
   new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: 'America/Bogota' }).format(new Date(valor));
 
+const fechaParaCampo = (valor: string): string => {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(valor));
+  const parte = (tipo: Intl.DateTimeFormatPartTypes): string => partes.find((item) => item.type === tipo)?.value || '';
+  return `${parte('year')}-${parte('month')}-${parte('day')}`;
+};
+
 const aForma = (plan: PlanServidor): FormaPlan => ({
   precioMensualCop: String(Number(plan.precio_mensual_cop)),
   precioAnualCop: String(Number(plan.precio_anual_cop)),
@@ -93,6 +104,10 @@ export const FacturacionPanel: React.FC = () => {
   const [guardando, setGuardando] = useState<CodigoPlan | null>(null);
   const [otorgando, setOtorgando] = useState(false);
   const [cancelando, setCancelando] = useState<number | null>(null);
+  const [suscripcionEditando, setSuscripcionEditando] = useState<SuscripcionActiva | null>(null);
+  const [venceEnEdicion, setVenceEnEdicion] = useState('');
+  const [notaEdicion, setNotaEdicion] = useState('');
+  const [actualizandoSuscripcion, setActualizandoSuscripcion] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState('');
@@ -207,7 +222,8 @@ export const FacturacionPanel: React.FC = () => {
   };
 
   const cancelarPremium = async (suscripcion: SuscripcionActiva) => {
-    if (!window.confirm(`¿Cancelar Premium para ${suscripcion.usuario?.usuario || suscripcion.usuario?.email || 'esta cuenta'} ahora?`)) return;
+    const persona = suscripcion.usuario?.usuario || suscripcion.usuario?.email || 'esta cuenta';
+    if (!window.confirm(`¿Retirar Premium para ${persona} ahora? Esto cambia su acceso a Normal, pero no reembolsa ni borra el pago registrado en Wompi.`)) return;
     setCancelando(suscripcion.id);
     setError(null);
     setAviso(null);
@@ -220,12 +236,48 @@ export const FacturacionPanel: React.FC = () => {
       });
       const cuerpo = await respuesta.json();
       if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo cancelar Premium.');
-      setAviso('La suscripción se canceló y la cuenta volvió al plan Normal.');
+      setAviso('Premium se retiró y la cuenta volvió al plan Normal. El pago histórico se conserva para conciliación.');
       await cargar();
     } catch (causa: any) {
       setError(causa?.message || 'No se pudo cancelar Premium.');
     } finally {
       setCancelando(null);
+    }
+  };
+
+  const abrirEdicion = (suscripcion: SuscripcionActiva) => {
+    setSuscripcionEditando(suscripcion);
+    setVenceEnEdicion(fechaParaCampo(suscripcion.vence_en));
+    setNotaEdicion('');
+    setError(null);
+    setAviso(null);
+  };
+
+  const guardarVigencia = async (evento: React.FormEvent) => {
+    evento.preventDefault();
+    if (!suscripcionEditando || !venceEnEdicion) return;
+    setActualizandoSuscripcion(true);
+    setError(null);
+    setAviso(null);
+    try {
+      const token = await tokenSesion();
+      const respuesta = await fetch(apiUrl(`/api/superadmin/suscripciones/${suscripcionEditando.id}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          venceEn: new Date(`${venceEnEdicion}T23:59:59-05:00`).toISOString(),
+          nota: notaEdicion,
+        }),
+      });
+      const cuerpo = await respuesta.json();
+      if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo actualizar la vigencia de Premium.');
+      setSuscripcionEditando(null);
+      setAviso('La vigencia de Premium se actualizó y quedó registrada en la auditoría.');
+      await cargar();
+    } catch (causa: any) {
+      setError(causa?.message || 'No se pudo actualizar la vigencia de Premium.');
+    } finally {
+      setActualizandoSuscripcion(false);
     }
   };
 
@@ -315,8 +367,55 @@ export const FacturacionPanel: React.FC = () => {
             </form>
 
             <div className="overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm">
-              <div className="border-b border-[var(--fin-line)] p-5 sm:px-6"><h3 className="text-base font-extrabold">Premium vigente</h3><p className="mt-1 text-xs text-[var(--fin-ink-soft)]">Las renovaciones de pasarela aparecerán aquí al conectarla.</p></div>
-              {datos.suscripciones.length === 0 ? <p className="p-8 text-center text-sm text-[var(--fin-ink-faint)]">Todavía no hay suscripciones Premium vigentes.</p> : <div className="divide-y divide-[var(--fin-line)]">{datos.suscripciones.map((suscripcion) => <div key={suscripcion.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div><p className="text-sm font-bold">{suscripcion.usuario?.usuario || suscripcion.usuario?.email || 'Cuenta eliminada'}</p><p className="mt-0.5 text-xs text-[var(--fin-ink-soft)]">{etiquetaCiclo(suscripcion.ciclo)} · vence {fechaCorta(suscripcion.vence_en)}</p></div>{suscripcion.origen === 'manual' ? <button disabled={cancelando === suscripcion.id} onClick={() => void cancelarPremium(suscripcion)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-300">{cancelando === suscripcion.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} Cancelar</button> : <span className="self-start rounded-xl bg-[var(--fin-soft)] px-3 py-2 text-xs font-bold text-[var(--fin-ink-soft)] sm:self-auto">Gestionado por pasarela</span>}</div>)}</div>}
+              <div className="border-b border-[var(--fin-line)] p-5 sm:px-6">
+                <h3 className="text-base font-extrabold">Premium vigente</h3>
+                <p className="mt-1 text-xs text-[var(--fin-ink-soft)]">Puedes ajustar la vigencia o retirar el acceso de cualquier cuenta. El cobro y su referencia de Wompi se conservan.</p>
+              </div>
+              {datos.suscripciones.length === 0 ? <p className="p-8 text-center text-sm text-[var(--fin-ink-faint)]">Todavía no hay suscripciones Premium vigentes.</p> : (
+                <div className="divide-y divide-[var(--fin-line)]">
+                  {datos.suscripciones.map((suscripcion) => {
+                    const estaEditando = suscripcionEditando?.id === suscripcion.id;
+                    return (
+                      <div key={suscripcion.id} className="p-4 sm:px-6">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm font-bold">{suscripcion.usuario?.usuario || suscripcion.usuario?.email || 'Cuenta eliminada'}</p>
+                            <p className="mt-0.5 text-xs text-[var(--fin-ink-soft)]">{etiquetaCiclo(suscripcion.ciclo)} · vence {fechaCorta(suscripcion.vence_en)}{suscripcion.origen === 'pasarela' ? ' · pago confirmado por Wompi' : ' · cortesía'}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <button onClick={() => abrirEdicion(suscripcion)} className="flex items-center justify-center gap-1.5 rounded-xl border border-[var(--fin-line)] px-3 py-2 text-xs font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]">
+                              <Pencil className="h-3.5 w-3.5" /> Editar vigencia
+                            </button>
+                            <button disabled={cancelando === suscripcion.id} onClick={() => void cancelarPremium(suscripcion)} className="flex items-center justify-center gap-1.5 rounded-xl border border-red-500/30 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-500/10 disabled:opacity-60 dark:text-red-300">
+                              {cancelando === suscripcion.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <XCircle className="h-3.5 w-3.5" />} Retirar Premium
+                            </button>
+                          </div>
+                        </div>
+                        {estaEditando && (
+                          <form onSubmit={guardarVigencia} className="mt-4 rounded-2xl border border-purple-500/25 bg-purple-500/5 p-4">
+                            <p className="text-xs font-bold text-[var(--fin-ink)]">Modificar acceso Premium</p>
+                            <p className="mt-1 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">El ciclo y el valor del pago no cambian aquí; ajusta solo hasta cuándo tendrá acceso la cuenta.</p>
+                            <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
+                              <label className="block text-xs font-bold text-[var(--fin-ink-soft)]">Nueva fecha de vencimiento
+                                <input required type="date" value={venceEnEdicion} onChange={(evento) => setVenceEnEdicion(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
+                              </label>
+                              <label className="block text-xs font-bold text-[var(--fin-ink-soft)]">Nota interna opcional
+                                <input maxLength={280} value={notaEdicion} onChange={(evento) => setNotaEdicion(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
+                              </label>
+                            </div>
+                            <div className="mt-3 flex flex-wrap justify-end gap-2">
+                              <button type="button" onClick={() => setSuscripcionEditando(null)} className="rounded-xl px-3 py-2 text-xs font-bold text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]">Cancelar</button>
+                              <button disabled={actualizandoSuscripcion} type="submit" className="flex items-center gap-1.5 rounded-xl bg-purple-600 px-3 py-2 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-60">
+                                {actualizandoSuscripcion ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Guardar vigencia
+                              </button>
+                            </div>
+                          </form>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </section>
         </>

@@ -1946,6 +1946,37 @@ app.post('/api/superadmin/suscripciones/otorgar', async (req, res) => {
   }
 });
 
+app.patch('/api/superadmin/suscripciones/:id', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirAdmin(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ error: 'La suscripción no es válida.' });
+    const venceEn = fechaPremiumValida(req.body?.venceEn);
+    const nota = typeof req.body?.nota === 'string' ? req.body.nota.trim() : '';
+    if (nota.length > 280) return res.status(400).json({ error: 'La nota puede tener máximo 280 caracteres.' });
+
+    const { data: suscripcion, error } = await cliente.rpc('administrar_premium_superadmin', {
+      p_suscripcion: id,
+      p_accion: 'actualizar_vigencia',
+      p_actor: acceso.userId,
+      p_vence_en: venceEn,
+      p_nota: nota || null,
+    });
+    if (error) throw error;
+    registrarAuditoria(acceso.email, 'Actualizó vigencia de Premium', String(id), `Hasta ${venceEn}`);
+    return res.status(200).json({ suscripcion });
+  } catch (error: any) {
+    console.error('Error actualizando vigencia de Premium:', error);
+    return res.status(400).json({ error: error.message || 'No se pudo actualizar la vigencia de Premium.' });
+  }
+});
+
 app.post('/api/superadmin/suscripciones/:id/cancelar', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   const cliente = clienteAdmin();
@@ -1960,13 +1991,14 @@ app.post('/api/superadmin/suscripciones/:id/cancelar', async (req, res) => {
     const nota = typeof req.body?.nota === 'string' ? req.body.nota.trim() : '';
     if (nota.length > 280) return res.status(400).json({ error: 'La nota puede tener máximo 280 caracteres.' });
 
-    const { data: suscripcion, error } = await cliente.rpc('cancelar_premium_manual', {
+    const { data: suscripcion, error } = await cliente.rpc('administrar_premium_superadmin', {
       p_suscripcion: id,
+      p_accion: 'cancelar',
       p_actor: acceso.userId,
       p_nota: nota || null,
     });
     if (error) throw error;
-    registrarAuditoria(acceso.email, 'Canceló Premium', String(id));
+    registrarAuditoria(acceso.email, 'Retiró Premium', String(id), 'El acceso fue retirado desde Facturación; el cobro histórico se conserva.');
     return res.status(200).json({ suscripcion });
   } catch (error: any) {
     console.error('Error cancelando Premium:', error);

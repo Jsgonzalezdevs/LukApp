@@ -27,7 +27,7 @@ adicional de la persona.
 
 ## Roles del panel
 
-- **Superadmin fijo (`admin`)**: ve el panel de Planes, cambia precios y límites, otorga Premium de cortesía y cancela beneficios manuales.
+- **Superadmin fijo (`admin`)**: ve el panel de Planes, cambia precios y límites, otorga Premium de cortesía, ajusta la vigencia y puede retirar el acceso Premium de cualquier cuenta. Esa última acción no borra ni reembolsa el cobro de Wompi: conserva la transacción para conciliación.
 - **Rol personalizado con `ver_facturacion`**: solo ve cifras agregadas. No recibe nombres, correos, vigencias individuales ni controles de cambios.
 - Ningún rol personalizado puede modificar planes, dar Premium ni cancelar suscripciones. Esa separación evita que un permiso delegado se convierta en una vía para administrar dinero o elevar privilegios.
 
@@ -97,5 +97,6 @@ tarjetas, documentos, comprobantes completos ni payloads crudos de la pasarela.
 
 - Cambiar los precios o límites desde el panel afecta usos futuros; no reescribe cobros anteriores.
 - Normal no se puede cobrar ni desactivar. Es el respaldo automático cuando Premium vence o se cancela.
+- En **Planes → Premium vigente**, el superadmin puede cambiar la fecha de vencimiento o retirar Premium como acción de soporte. Si hace falta un reembolso, se gestiona en Wompi; LukApp solo cambia el acceso y deja trazabilidad.
 - El botón de cortesía está pensado para soporte, alianzas y pruebas. Cada acción queda registrada con el superadmin que la hizo.
 - Si falta `SUPABASE_SERVICE_ROLE_KEY` en un servidor, el dictado de ese despliegue falla cerrado: no usa la llave de IA sin poder validar la identidad y el cupo.
