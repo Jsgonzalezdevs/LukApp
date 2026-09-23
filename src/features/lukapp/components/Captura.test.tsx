@@ -61,4 +61,21 @@ describe('Captura desde dictado', () => {
     expect(categorias).not.toHaveClass('grid-rows-2');
     expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
   });
+
+  it('no cancela la captura al deslizar horizontalmente en el fondo', () => {
+    const onCancel = vi.fn();
+    render(
+      <Captura
+        parsed={parseTransaction('empanada 2500')}
+        onSave={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+
+    const captura = screen.getByRole('dialog', { name: 'Anotar un movimiento' });
+    fireEvent.touchStart(captura, { touches: [{ clientX: 20, clientY: 300 }] });
+    fireEvent.touchEnd(captura, { changedTouches: [{ clientX: 260, clientY: 300 }] });
+
+    expect(onCancel).not.toHaveBeenCalled();
+  });
 });

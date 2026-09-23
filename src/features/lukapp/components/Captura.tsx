@@ -19,7 +19,6 @@ import { useImageOCR } from '../hooks/useImageOCR';
 import { TecladoNumerico } from './TecladoNumerico';
 import { AnimatedNumber } from './AnimatedNumber';
 import { RippleButton } from './RippleButton';
-import { useSwipeGesture } from '../hooks/useSwipeGesture';
 import type { ConfirmDraft } from './ConfirmSheet';
 
 interface CapturaProps {
@@ -99,7 +98,6 @@ export const Captura: React.FC<CapturaProps> = ({
   );
 
   const descRef = useRef<HTMLTextAreaElement>(null);
-  const capturaRef = useRef<HTMLDivElement>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
   const selectorFotosAbiertoRef = useRef(false);
   const catalogo = useCatalogo();
@@ -181,14 +179,6 @@ export const Captura: React.FC<CapturaProps> = ({
     if (reparseado.cuentaId) {
       setCuentaId(reparseado.cuentaId);
     }
-  });
-
-  useSwipeGesture(capturaRef as React.RefObject<HTMLElement>, {
-    onSwipeRight: () => {
-      haptic.trigger('light');
-      audio.play('click');
-      onCancel();
-    },
   });
 
   useBloqueoScroll(true);
@@ -281,7 +271,6 @@ export const Captura: React.FC<CapturaProps> = ({
 
   return (
     <motion.div
-      ref={capturaRef}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.15 }}
