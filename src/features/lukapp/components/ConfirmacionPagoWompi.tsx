@@ -3,14 +3,19 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight,
   BadgeCheck,
+  Bot,
   CalendarDays,
   Check,
   CircleAlert,
   CreditCard,
+  FileText,
   Loader2,
+  Mic,
   RefreshCw,
+  Share2,
   ShieldCheck,
   Sparkles,
+  UsersRound,
 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
@@ -21,6 +26,8 @@ interface PlanConfirmado {
     dictadosMensual: number | null;
     asesorIaMensual: number | null;
     extractosMensual: number | null;
+    espaciosCompartidos: number | null;
+    integrantesPorEspacio: number | null;
   };
   suscripcion: { ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string } | null;
 }
@@ -37,8 +44,8 @@ const fechaCorta = (valor: string): string =>
 const etiquetaCiclo = (ciclo: 'mensual' | 'anual' | 'cortesia'): string =>
   ciclo === 'anual' ? 'Premium anual' : ciclo === 'mensual' ? 'Premium mensual' : 'Premium de cortesía';
 
-const limite = (valor: number | null, sufijo: string): string =>
-  valor === null ? 'Sin límite' : `${valor} ${sufijo}`;
+const cupoDestacado = (valor: number | null): string =>
+  valor === null ? '∞' : new Intl.NumberFormat('es-CO').format(valor);
 
 interface ConfirmacionPagoWompiProps {
   onIrACuenta: () => void;
@@ -123,6 +130,38 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
   const confirmado = estado === 'confirmado';
   const revisando = estado === 'consultando' || estado === 'esperando';
   const suscripcion = confirmado ? plan?.suscripcion : null;
+  const beneficiosPremium = plan ? [
+    {
+      titulo: 'Registro por voz',
+      detalle: 'registros al mes',
+      valor: cupoDestacado(plan.limites.dictadosMensual),
+      Icono: Mic,
+    },
+    {
+      titulo: 'Asesor IA',
+      detalle: 'consultas al mes',
+      valor: cupoDestacado(plan.limites.asesorIaMensual),
+      Icono: Bot,
+    },
+    {
+      titulo: 'Extractos',
+      detalle: 'extractos al mes',
+      valor: cupoDestacado(plan.limites.extractosMensual),
+      Icono: FileText,
+    },
+    {
+      titulo: 'Espacios compartidos',
+      detalle: 'para organizarte en compañía',
+      valor: cupoDestacado(plan.limites.espaciosCompartidos),
+      Icono: Share2,
+    },
+    {
+      titulo: 'Personas por espacio',
+      detalle: 'en cada espacio que compartes',
+      valor: cupoDestacado(plan.limites.integrantesPorEspacio),
+      Icono: UsersRound,
+    },
+  ] : [];
 
   const contenidoPrincipal = confirmado
     ? {
@@ -227,27 +266,50 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
           </div>
         </div>
 
-        <div className="mt-4 rounded-[24px] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 shadow-[0_18px_45px_-34px_rgba(28,25,23,0.45)] sm:p-5">
+        <div className="relative mt-4 overflow-hidden rounded-[24px] border border-[#ded2ef] bg-[linear-gradient(135deg,#ffffff_0%,#faf7ff_56%,#f4ffe6_145%)] p-4 shadow-[0_18px_45px_-34px_rgba(28,25,23,0.45)] sm:p-5">
           {confirmado && plan ? (
             <>
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[13px] bg-[var(--fin-in-bg)] text-[var(--fin-in)]">
-                  <Check className="h-4.5 w-4.5" strokeWidth={2.75} aria-hidden="true" />
+              <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-purple-300/20 blur-3xl" aria-hidden="true" />
+              <div className="relative flex items-start gap-3">
+                <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--fin-in)] text-white shadow-lg shadow-emerald-600/20">
+                  <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden="true" />
                 </span>
-                <div>
-                  <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-[var(--fin-ink)]">Tu acceso ya está listo</h2>
-                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">Desde este momento puedes usar los cupos ampliados de Premium.</p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <h2 className="text-[17px] font-semibold tracking-[-0.025em] text-[var(--fin-ink)]">Todo tu Premium ya está habilitado</h2>
+                    <span className="rounded-full bg-[#e9ddff] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#5924a3] uppercase">5 beneficios ampliados</span>
+                  </div>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">Estos son los cupos que acabas de desbloquear para usar LukApp con más libertad.</p>
                 </div>
               </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                {[
-                  ['Voz', limite(plan.limites.dictadosMensual, 'al mes')],
-                  ['Asesor IA', limite(plan.limites.asesorIaMensual, 'consultas')],
-                  ['Extractos', limite(plan.limites.extractosMensual, 'al mes')],
-                ].map(([etiqueta, valor]) => (
-                  <div key={etiqueta} className="rounded-[15px] bg-[var(--fin-soft)] px-3 py-3">
-                    <p className="text-[11px] font-semibold text-[var(--fin-ink-faint)]">{etiqueta}</p>
-                    <p className="mt-1 text-[13px] font-semibold text-[var(--fin-ink)]">{valor}</p>
+              <div className="relative mt-5 grid gap-2.5 sm:grid-cols-3">
+                {beneficiosPremium.slice(0, 3).map(({ titulo, detalle, valor, Icono }) => (
+                  <div key={titulo} className="relative overflow-hidden rounded-[18px] bg-[#2b1349] p-4 text-white shadow-[0_14px_28px_-16px_rgba(48,16,88,0.8)]">
+                    <div className="absolute -right-7 -top-8 h-24 w-24 rounded-full bg-fuchsia-400/25 blur-2xl" aria-hidden="true" />
+                    <div className="relative flex items-center justify-between gap-3">
+                      <p className="text-[12px] font-semibold text-white/74">{titulo}</p>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-lime-200">
+                        <Icono className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
+                      </span>
+                    </div>
+                    <div className="relative mt-4 flex items-end gap-2">
+                      <strong className="text-[34px] font-semibold leading-none tracking-[-0.06em] text-white">{valor}</strong>
+                      <span className="mb-0.5 text-[11px] font-medium leading-tight text-white/62">{detalle}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="relative mt-2.5 grid gap-2.5 sm:grid-cols-2">
+                {beneficiosPremium.slice(3).map(({ titulo, detalle, valor, Icono }) => (
+                  <div key={titulo} className="flex items-center gap-3 rounded-[16px] border border-[#dfd4ef] bg-white/75 px-3.5 py-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f0e8ff] text-[#6328be]">
+                      <Icono className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] font-semibold text-[var(--fin-ink)]">{titulo}</p>
+                      <p className="mt-0.5 text-[11px] leading-snug text-[var(--fin-ink-soft)]">{detalle}</p>
+                    </div>
+                    <strong className="shrink-0 text-[28px] font-semibold leading-none tracking-[-0.06em] text-[#58219d]">{valor}</strong>
                   </div>
                 ))}
               </div>
