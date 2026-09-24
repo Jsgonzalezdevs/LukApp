@@ -47,6 +47,13 @@ import {
   huellaPerfilFinanciero,
   type FilaFinanciera,
 } from './server_lib/perfilAsesor.ts';
+import {
+  MAX_CARACTERES_CONTEXTO_ASESOR,
+  MAX_CARACTERES_MEMORIA_ASESOR,
+  MAX_CARACTERES_PREGUNTA_ASESOR,
+  acotarHistorialAsesor,
+  recortarConMuestras,
+} from './server_lib/presupuestoAsesor.ts';
 import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
 import {
   centavosWompi,
@@ -2700,6 +2707,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
   const openaiKey = process.env.OPENAI_API_KEY;
   const geminiKey = process.env.GEMINI_API_KEY;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const historialAcotado = acotarHistorialAsesor(history);
 
   const fallos: string[] = [];
   let texto = '';
@@ -2714,10 +2722,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           model: modeloGroq.id,
           messages: [
             { role: 'system', content: systemPrompt },
-            ...history.slice(-6).map((msg: any) => ({
-              role: msg.role === 'bot' || msg.role === 'assistant' ? 'assistant' : 'user',
-              content: msg.text || msg.content || '',
-            })),
+            ...historialAcotado,
             { role: 'user', content: userPrompt },
           ],
           temperature,
@@ -2765,10 +2770,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
             model: m,
             messages: [
               { role: 'system', content: systemPrompt },
-              ...history.slice(-6).map((msg: any) => ({
-                role: msg.role === 'bot' || msg.role === 'assistant' ? 'assistant' : 'user',
-                content: msg.text || msg.content || '',
-              })),
+              ...historialAcotado,
               { role: 'user', content: userPrompt },
             ],
             temperature,
@@ -2804,10 +2806,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           model: 'deepseek-chat',
           messages: [
             { role: 'system', content: systemPrompt },
-            ...history.slice(-6).map((msg: any) => ({
-              role: msg.role === 'bot' || msg.role === 'assistant' ? 'assistant' : 'user',
-              content: msg.text || msg.content || '',
-            })),
+            ...historialAcotado,
             { role: 'user', content: userPrompt },
           ],
           max_tokens: maxTokens,
@@ -2877,9 +2876,9 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt }] },
           contents: [
-            ...history.slice(-6).map((msg: any) => ({
-              role: msg.role === 'bot' || msg.role === 'assistant' ? 'model' : 'user',
-              parts: [{ text: msg.text || msg.content || '' }],
+            ...historialAcotado.map((mensaje) => ({
+              role: mensaje.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: mensaje.content }],
             })),
             { role: 'user', parts: [{ text: userPrompt }] },
           ],
@@ -2917,10 +2916,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           model: 'claude-3-5-haiku-20241022',
           system: systemPrompt,
           messages: [
-            ...history.slice(-6).map((msg: any) => ({
-              role: msg.role === 'bot' || msg.role === 'assistant' ? 'assistant' : 'user',
-              content: msg.text || msg.content || '',
-            })),
+            ...historialAcotado,
             { role: 'user', content: userPrompt },
           ],
           max_tokens: maxTokens,
@@ -3089,9 +3085,9 @@ app.post('/api/asesor-ia', async (req, res) => {
     console.error('[telemetria_ia] No hay SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY; la consulta del Asesor no podrá persistirse.');
   }
 
-  /** El motor financiero contiene series y evidencias extensas. Mandarlas
-   * completas hacía que Groq rechazara la petición con HTTP 413. Conservamos
-   * muestras de inicio y fin, cifras y estructura, que es lo útil al asesor. */
+  /** El perfil contiene series extensas. Antes el límite era 60.000 caracteres
+   * (unos 16.000 tokens), mayor que la cuota de 8.000 TPM de Groq: por eso la
+   * IA rechazaba hasta saludos sencillos con HTTP 413. */
   const compactar = (valor: unknown, profundidad = 0): unknown => {
     if (profundidad > 5) return '[detalle omitido]';
     if (typeof valor === 'string') return valor.slice(0, 500);
@@ -3113,9 +3109,17 @@ app.post('/api/asesor-ia', async (req, res) => {
     : finanzasContext
       ? JSON.stringify(compactar(finanzasContext), null, 2)
     : 'No hay datos financieros registrados aún.';
-  const contextoParaModelo = contextoCompleto.length > 60_000
-    ? `${contextoCompleto.slice(0, 60_000)}\n[Contexto adicional omitido por tamaño]`
-    : contextoCompleto;
+  const contextoParaModelo = recortarConMuestras(contextoCompleto, MAX_CARACTERES_CONTEXTO_ASESOR);
+  const memoriaParaModelo = Array.isArray(memoriaUsuario)
+    ? recortarConMuestras(
+      memoriaUsuario
+        .slice(0, 20)
+        .map((dato: unknown) => `- ${String(dato).slice(0, 300)}`)
+        .join('\n'),
+      MAX_CARACTERES_MEMORIA_ASESOR,
+    )
+    : '';
+  const preguntaParaModelo = recortarConMuestras(prompt.trim(), MAX_CARACTERES_PREGUNTA_ASESOR);
 
   const systemPrompt = `Eres un asesor financiero personal experto para Colombia dentro de la aplicación Finanzas.
 Tu tono es empático, profesional, claro y directo.
@@ -3123,9 +3127,9 @@ IDIOMA OBLIGATORIO: Responde SIEMPRE 100% en ESPAÑOL (español de Colombia / la
 ESTILO DIRECTO: NO incluyas etiquetas <think>, monólogos internos, introducciones ni explicaciones de tu proceso de pensamiento. Ve directo a la respuesta en español.
 Tienes acceso al expediente financiero real del usuario:
 ${contextoParaModelo}
-${Array.isArray(memoriaUsuario) && memoriaUsuario.length > 0 ? `
+${memoriaParaModelo ? `
 Memoria autorizada por el usuario (úsala solo para personalizar, nunca inventes datos):
-${memoriaUsuario.slice(0, 20).map((dato: unknown) => `- ${String(dato).slice(0, 300)}`).join('\n')}` : ''}
+${memoriaParaModelo}` : ''}
 
 Reglas clave:
 1. SÉ CONCISO Y DIRECTO (máximo 80 palabras). Si desglosas, usa máximo 3 viñetas cortas.
@@ -3141,14 +3145,14 @@ Reglas clave:
   try {
     const { texto, proveedor, modelo, fallos } = await consultarModeloIA({
       systemPrompt,
-      userPrompt: prompt,
+      userPrompt: preguntaParaModelo,
       history: Array.isArray(history) ? history : [],
       maxTokens: 500,
       temperature: 0.6,
     });
 
     const duracionMs = Date.now() - inicio;
-    const promptTokens = Math.ceil(((prompt?.length || 0) + contextoParaModelo.length + systemPrompt.length) / 3.8);
+    const promptTokens = Math.ceil((preguntaParaModelo.length + systemPrompt.length) / 3.8);
     const completionTokens = Math.ceil((texto?.length || 0) / 3.8);
     const totalTokens = promptTokens + completionTokens;
 
