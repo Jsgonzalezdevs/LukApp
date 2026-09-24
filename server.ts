@@ -42,6 +42,7 @@ import {
   huellaPerfilFinanciero,
   type FilaFinanciera,
 } from './server_lib/perfilAsesor.ts';
+import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
 import {
   centavosWompi,
   checksumEsperadoWompi,
@@ -2626,15 +2627,12 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
   let proveedor = '';
   let modelo = 'desconocido';
 
-  // 1. Groq (Modelos directos en español, sin volcar etiquetas de pensamiento)
+  // 1. Groq (modelos directos en español, sin volcar etiquetas de pensamiento)
   if (groqKey) {
-    // `groq/compound` ya no está disponible. Mantenerlo como respaldo solo
-    // añadía un 404 y más espera cuando el primer modelo tenía un fallo breve.
-    const groqModelos = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-    for (const m of groqModelos) {
+    for (const modeloGroq of MODELOS_GROQ_ASESOR) {
       try {
         const bodyPayload: any = {
-          model: m,
+          model: modeloGroq.id,
           messages: [
             { role: 'system', content: systemPrompt },
             ...history.slice(-6).map((msg: any) => ({
@@ -2645,6 +2643,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           ],
           temperature,
           max_tokens: maxTokens,
+          reasoning_effort: modeloGroq.esfuerzoRazonamiento,
         };
         if (responseFormat) {
           bodyPayload.response_format = responseFormat;
@@ -2662,14 +2661,15 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           if (cleaned) {
             texto = cleaned;
             proveedor = 'Groq';
-            modelo = m;
+            modelo = modeloGroq.id;
             break;
           }
+          fallos.push(`groq-${modeloGroq.id}:sin-texto`);
         } else {
-          fallos.push(`groq-${m}:${res.status}`);
+          fallos.push(`groq-${modeloGroq.id}:${res.status}`);
         }
       } catch (err: any) {
-        fallos.push(`groq-${m}:${err.message}`);
+        fallos.push(`groq-${modeloGroq.id}:${err.message}`);
       }
     }
   }
