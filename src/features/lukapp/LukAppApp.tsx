@@ -132,13 +132,15 @@ const InvitacionPremium = lazy(() =>
 const PLAN_PREVIO_PREMIUM: PlanParaInvitacion = {
   codigo: 'normal',
   preciosPremium: { mensualCop: 9_900, anualCop: 79_900 },
-  limitesPremium: {
-    dictadosMensual: 300,
-    asesorIaMensual: 60,
-    extractosMensual: 12,
-    espaciosCompartidos: null,
-    integrantesPorEspacio: null,
-  },
+  beneficiosPremium: [
+    { clave: 'dictado', titulo: 'Registro por voz', detalle: 'registros al mes', tipoValor: 'cupo', limite: 300, activo: true },
+    { clave: 'asesor_ia', titulo: 'Asesor IA', detalle: 'consultas al mes', tipoValor: 'cupo', limite: 60, activo: true },
+    { clave: 'extracto', titulo: 'Extractos PDF', detalle: 'extractos al mes', tipoValor: 'cupo', limite: 12, activo: true },
+    { clave: 'espacios_compartidos', titulo: 'Espacios compartidos', detalle: 'espacios para organizarte en compañía', tipoValor: 'cupo', limite: null, activo: true },
+    { clave: 'integrantes_espacio', titulo: 'Personas por espacio', detalle: 'personas que puedes invitar por espacio', tipoValor: 'cupo', limite: null, activo: true },
+    { clave: 'insights_ia', titulo: 'Recomendaciones con IA', detalle: 'análisis mensuales personalizados', tipoValor: 'incluido', limite: null, activo: true },
+    { clave: 'pulso_premium', titulo: 'Pulso Premium', detalle: 'margen diario y decisiones financieras', tipoValor: 'incluido', limite: null, activo: true },
+  ],
 };
 
 /**
@@ -576,6 +578,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       texto: esPrueba
         ? '✨ ¡Primer movimiento de prueba guardado!'
         : `${draft.description} · ${formatCop(draft.amountCop)}`,
+      detalle: detalleDeGuardado(draft.cuentaId),
       aviso: esPrueba
         ? 'Fue un registro de prueba. Puedes modificarlo o eliminarlo en la pestaña "Movimientos".'
         : anomalia?.esAnomalía
@@ -652,8 +655,24 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const [guardado, setGuardado] = useState<Guardado | null>(null);
   const [vistaPreviaPremium, setVistaPreviaPremium] = useState(false);
 
+  // Repetir no escribe a ciegas: abre la captura con los datos del último
+  // movimiento y la fecha de hoy. La persona todavía ve y confirma todo antes
+  // de que el libro cambie, como en cualquier otro registro.
+  const repetirMovimiento = useCallback((tx: Transaction) => {
+    const base = comoParseado(tx);
+    setPending({ ...base, raw: '' });
+  }, []);
+
   const nombreDeCuenta = (id: string | null) =>
     id === null ? null : (cajitas.find((c) => c.id === id)?.nombre ?? null);
+
+  const detalleDeGuardado = (id: string | null): string => {
+    const cuenta = cajitas.find((item) => item.id === id);
+    if (!cuenta) return 'Guardado en tu historial · sin cambiar un saldo';
+    return cuenta.tipo === 'tarjeta'
+      ? `Registrado en ${cuenta.nombre} · cupo actualizado`
+      : `Guardado en ${cuenta.nombre} · saldo actualizado`;
+  };
 
   const cerrarVistasDePrueba = useCallback(() => {
     setPending(null);
@@ -793,6 +812,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     insights: rawInsights,
     cargandoIa,
     refrescar: refrescarInsights,
+    tieneInsightsIa,
+    tienePulsoPremium,
   } = useAiInsights({
     transacciones,
     presupuestos: almacen.datos.presupuestos,
@@ -810,6 +831,29 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       })),
     [rawInsights, handleConsultarTipEnAsesor],
   );
+
+  const resumenPremium = useMemo(() => {
+    if (!tienePulsoPremium) return null;
+    const { liquidez } = contextoFinanciero;
+    return {
+      disponibleDiarioCop: liquidez.disponibleDiarioCop,
+      dineroLibreCop: liquidez.dineroLibreCop,
+      diasRestantes: liquidez.diasRestantesPeriodo,
+      confianza: liquidez.confianza,
+    };
+  }, [contextoFinanciero, tienePulsoPremium]);
+
+  const abrirResumenPremium = useCallback(() => {
+    if (!resumenPremium) return;
+    handleConsultarTipEnAsesor({
+      id: 'pulso-premium',
+      titulo: 'Mi Pulso Premium',
+      detalle: `Tengo ${formatCop(resumenPremium.disponibleDiarioCop)} para usar hoy durante los ${resumenPremium.diasRestantes} días restantes del período. Quiero entender qué podría cambiar ese margen y cuál sería la mejor decisión ahora.`,
+      tono: 'neutral',
+      seccion: null,
+      origenIa: true,
+    });
+  }, [handleConsultarTipEnAsesor, resumenPremium]);
 
   // El encabezado dice "Dinero disponible", no patrimonio. El patrimonio
   // incluye ahorros y todavía no descuenta reservas u obligaciones; para esta
@@ -953,9 +997,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             movimientos={delMes}
             conSenal={conSenal}
             onAbrirMovimiento={setDetalle}
+            onRepetirMovimiento={repetirMovimiento}
+            onEditarMovimiento={setEditando}
             insights={paraTi}
             cargandoIa={cargandoIa}
-            onRefrescarInsights={refrescarInsights}
+            onRefrescarInsights={tieneInsightsIa ? refrescarInsights : undefined}
             onConsultarAsesor={handleConsultarTipEnAsesor}
             mostrarEfectivoSeparado={mostrarEfectivoSeparado}
             saldoEfectivoCop={saldoEfectivoCop}
@@ -969,6 +1015,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             liquidez={contextoFinanciero.liquidez}
             entrada={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
             mostrarDecisiones={mostrarDecisiones}
+            resumenPremium={resumenPremium}
+            onVerResumenPremium={abrirResumenPremium}
           />
         ) : null}
 
@@ -1348,7 +1396,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 resultados={visibles}
                 cuentas={cuentasParaElegir}
               />
-              <TransactionList transactions={visibles} conSenal={conSenal} onAbrir={setDetalle} />
+              <TransactionList
+                transactions={visibles}
+                conSenal={conSenal}
+                onAbrir={setDetalle}
+                onRepetir={repetirMovimiento}
+                onEditar={setEditando}
+              />
             </div>
           </HojaPanel>
         ) : null}

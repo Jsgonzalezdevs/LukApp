@@ -7,6 +7,9 @@ import { COPY } from '../copy';
 import { formatCop, formatSigned } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { useCatalogo } from '../catalogoContexto';
+import { useHapticFeedback } from '../hooks/useHapticFeedback';
+
+const UMBRAL_GESTO_PX = 72;
 
 interface TransactionListProps {
   transactions: readonly Transaction[];
@@ -23,6 +26,10 @@ interface TransactionListProps {
    * Opcional para los listados que solo se leen.
    */
   onAbrir?: (tx: Transaction) => void;
+  /** Deslizar a la derecha confirma que se quiere repetir el movimiento. */
+  onRepetir?: (tx: Transaction) => void;
+  /** Deslizar a la izquierda abre directamente la edición. */
+  onEditar?: (tx: Transaction) => void;
   modoPrivacidad?: boolean;
 }
 
@@ -76,9 +83,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
   transactions,
   conSenal,
   onAbrir,
+  onRepetir,
+  onEditar,
   modoPrivacidad = false,
 }) => {
   const catalogo = useCatalogo();
+  const haptic = useHapticFeedback();
 
   if (transactions.length === 0) {
     return (
@@ -123,9 +133,23 @@ export const TransactionList: React.FC<TransactionListProps> = ({
               const esIngreso = tx.kind === 'ingreso';
               const esTransferencia = tx.kind === 'transferencia';
               const ultima = idx === group.items.length - 1;
+              const tieneGestos = Boolean(onRepetir || onEditar);
 
               return (
-                <li key={tx.id}>
+                <li key={tx.id} className="relative overflow-hidden">
+                  {/* Las acciones quedan por detrás de la fila: solo aparecen
+                      cuando el dedo realmente se mueve. Así no se sacrifica
+                      ancho ni se añaden botones permanentes a cada registro. */}
+                  {tieneGestos ? (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 text-[12px] font-bold" aria-hidden="true">
+                      {onRepetir ? (
+                        <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-2.5 py-1.5 text-[var(--fin-on-accent)]">Repetir</span>
+                      ) : <span />}
+                      {onEditar ? (
+                        <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1.5 text-[var(--fin-ink-soft)]">Editar</span>
+                      ) : <span />}
+                    </div>
+                  ) : null}
                   <motion.button
                     type="button"
                     onClick={onAbrir ? () => onAbrir(tx) : undefined}
@@ -137,8 +161,21 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: Math.min(idx, 8) * 0.02, ease: 'easeOut' }}
                     whileTap={onAbrir ? { scale: 0.98, backgroundColor: 'var(--fin-soft)' } : undefined}
-                    className="flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
-                    style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)' }}
+                    drag={tieneGestos ? 'x' : false}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.16}
+                    dragDirectionLock
+                    onDragEnd={(_, info) => {
+                      if (info.offset.x >= UMBRAL_GESTO_PX && onRepetir) {
+                        haptic.trigger('selection');
+                        onRepetir(tx);
+                      } else if (info.offset.x <= -UMBRAL_GESTO_PX && onEditar) {
+                        haptic.trigger('selection');
+                        onEditar(tx);
+                      }
+                    }}
+                    className="relative z-10 flex w-full items-center gap-3 bg-[var(--fin-card)] px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
+                    style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)', touchAction: tieneGestos ? 'pan-y' : undefined }}
                   >
                     {/* El icono lleva el color de la categoría. El texto no: una
  lista de veinte movimientos con veinte colores distintos
@@ -180,6 +217,12 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                         : formatSigned(tx.amountCop, tx.kind)}
                     </span>
                   </motion.button>
+                  {tieneGestos ? (
+                    <span className="sr-only">
+                      {onRepetir ? <button type="button" onClick={() => onRepetir(tx)}>Repetir {tx.description}</button> : null}
+                      {onEditar ? <button type="button" onClick={() => onEditar(tx)}>Editar {tx.description}</button> : null}
+                    </span>
+                  ) : null}
                 </li>
               );
             })}

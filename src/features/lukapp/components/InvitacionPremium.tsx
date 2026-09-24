@@ -1,20 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Bot, FileText, Mic, ShieldCheck, Sparkles, UsersRound, X } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { obtenerSupabase } from '../data/supabase';
+import { beneficiosActivos, iconoDeBeneficio, valorDeBeneficio, type BeneficioPlan } from '../lib/beneficiosPlan';
 
 export interface PlanParaInvitacion {
   codigo: 'normal' | 'premium';
   preciosPremium: { mensualCop: number; anualCop: number };
-  limitesPremium: {
-    dictadosMensual: number | null;
-    asesorIaMensual: number | null;
-    extractosMensual: number | null;
-    espaciosCompartidos: number | null;
-    integrantesPorEspacio: number | null;
-  };
+  beneficiosPremium: BeneficioPlan[];
 }
 
 interface InvitacionPremiumProps {
@@ -32,9 +27,6 @@ const INTERVALO_INVITACION_MS = 14 * 24 * 60 * 60 * 1_000;
 
 const pesos = (valor: number): string =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(valor);
-
-const cupo = (valor: number | null): string =>
-  valor === null ? '∞' : new Intl.NumberFormat('es-CO').format(valor);
 
 const claveProximaInvitacion = (userId: string): string => `lukapp-proxima-invitacion-premium-v1:${userId}`;
 
@@ -100,7 +92,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
         const cuerpo = await respuesta.json().catch(() => ({}));
         if (!respuesta.ok || cancelado) return;
         const siguientePlan = cuerpo as Partial<PlanParaInvitacion>;
-        if (siguientePlan.codigo !== 'normal' || !siguientePlan.preciosPremium || !siguientePlan.limitesPremium) return;
+        if (siguientePlan.codigo !== 'normal' || !siguientePlan.preciosPremium || !Array.isArray(siguientePlan.beneficiosPremium)) return;
         setPlan(siguientePlan as PlanParaInvitacion);
         // El intervalo se guarda al mostrarse, no solo al cerrarse: si se
         // recarga la página, una invitación ya vista no vuelve a interrumpir.
@@ -155,11 +147,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
     onVerOpciones();
   };
 
-  const beneficios = plan ? [
-    { titulo: 'Registro por voz', detalle: 'al mes', valor: cupo(plan.limitesPremium.dictadosMensual), Icono: Mic },
-    { titulo: 'Asesor IA', detalle: 'consultas al mes', valor: cupo(plan.limitesPremium.asesorIaMensual), Icono: Bot },
-    { titulo: 'Extractos', detalle: 'al mes', valor: cupo(plan.limitesPremium.extractosMensual), Icono: FileText },
-  ] : [];
+  const beneficios = plan ? beneficiosActivos(plan.beneficiosPremium) : [];
 
   return (
     <AnimatePresence>
@@ -211,28 +199,26 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
                   Más espacio para tus finanzas, sin complicarlas.
                 </h2>
                 <p id="invitacion-premium-descripcion" className="mt-4 text-[15px] leading-relaxed text-white/76 sm:text-[16px]">
-                  Premium amplía los cupos que acompañan tu rutina: registra, consulta y organiza más cuando lo necesitas. Tu plan Normal sigue siendo gratis; tú eliges cuándo cambiar.
+                  Premium reúne las prestaciones que LukApp tiene activas hoy para tu cuenta. Tu plan Normal sigue siendo gratis; tú eliges cuándo cambiar.
                 </p>
               </div>
 
               <div className="mt-6 grid gap-2.5 sm:grid-cols-3">
-                {beneficios.map(({ titulo, detalle, valor, Icono }) => (
-                  <div key={titulo} className="rounded-[18px] border border-white/10 bg-black/15 p-3.5">
+                {beneficios.map((beneficio) => {
+                  const Icono = iconoDeBeneficio(beneficio.clave);
+                  return (
+                  <div key={beneficio.clave} className="rounded-[18px] border border-white/10 bg-black/15 p-3.5">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-[11px] font-semibold text-white/65">{titulo}</p>
+                      <p className="text-[11px] font-semibold text-white/65">{beneficio.titulo}</p>
                       <Icono className="h-4 w-4 shrink-0 text-lime-200" strokeWidth={2.25} aria-hidden="true" />
                     </div>
                     <div className="mt-3 flex items-end gap-1.5">
-                      <strong className="text-[29px] font-semibold leading-none tracking-[-0.06em]">{valor}</strong>
-                      <span className="mb-0.5 text-[10px] leading-tight text-white/58">{detalle}</span>
+                      <strong className="text-[22px] font-semibold leading-none tracking-[-0.05em]">{valorDeBeneficio(beneficio)}</strong>
+                      <span className="mb-0.5 text-[10px] leading-tight text-white/58">{beneficio.detalle}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="mt-2.5 flex items-center gap-2 rounded-[15px] border border-lime-200/15 bg-lime-200/10 px-3.5 py-3 text-[12px] leading-snug text-lime-50">
-                <UsersRound className="h-4 w-4 shrink-0 text-lime-200" strokeWidth={2.25} aria-hidden="true" />
-                También amplías los espacios compartidos y las personas que puedes invitar.
+                  );
+                })}
               </div>
 
               <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">

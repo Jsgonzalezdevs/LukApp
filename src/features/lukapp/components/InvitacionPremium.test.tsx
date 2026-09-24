@@ -6,13 +6,11 @@ import { InvitacionPremium } from './InvitacionPremium';
 const planNormal = {
   codigo: 'normal' as const,
   preciosPremium: { mensualCop: 9_900, anualCop: 79_900 },
-  limitesPremium: {
-    dictadosMensual: 300,
-    asesorIaMensual: 60,
-    extractosMensual: 12,
-    espaciosCompartidos: null,
-    integrantesPorEspacio: null,
-  },
+  beneficiosPremium: [
+    { clave: 'dictado' as const, titulo: 'Registro por voz', detalle: 'registros al mes', tipoValor: 'cupo' as const, limite: 300, activo: true },
+    { clave: 'asesor_ia' as const, titulo: 'Asesor IA', detalle: 'consultas al mes', tipoValor: 'cupo' as const, limite: 60, activo: true },
+    { clave: 'extracto' as const, titulo: 'Extractos PDF', detalle: 'extractos al mes', tipoValor: 'cupo' as const, limite: 12, activo: true },
+  ],
 };
 
 const avanzarHastaInvitacion = async () => {

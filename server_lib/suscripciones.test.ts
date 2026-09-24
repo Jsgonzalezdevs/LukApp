@@ -14,8 +14,10 @@ describe('suscripciones', () => {
   });
 
   it('explica el cupo agotado con el plan y el límite vigente', () => {
-    expect(mensajeCupoAgotado('extracto', { plan_codigo: 'normal', limite: 1 }))
+    expect(mensajeCupoAgotado('extracto', { plan_codigo: 'normal', limite: 1, incluido: true }))
       .toBe('Alcanzaste el límite de 1 extracto PDF de tu plan Normal este mes.');
+    expect(mensajeCupoAgotado('dictado', { plan_codigo: 'premium', limite: 0, incluido: false }))
+      .toBe('Los registros por voz no están incluidos en tu plan Premium.');
   });
 
   it('normaliza una configuración válida sin aceptar precios fraccionados', () => {
@@ -28,6 +30,15 @@ describe('suscripciones', () => {
       limiteEspaciosCompartidos: 1,
       limiteIntegrantesPorEspacio: 4,
       activo: true,
+      beneficios: {
+        dictado: true,
+        asesor_ia: true,
+        extracto: true,
+        espacios_compartidos: true,
+        integrantes_espacio: true,
+        insights_ia: true,
+        pulso_premium: true,
+      },
     })).toMatchObject({ precioMensualCop: 9900, limiteEspaciosCompartidos: 1 });
 
     expect(() => validarConfiguracionPlan({
@@ -39,6 +50,15 @@ describe('suscripciones', () => {
       limiteEspaciosCompartidos: 1,
       limiteIntegrantesPorEspacio: 4,
       activo: true,
+      beneficios: {
+        dictado: true,
+        asesor_ia: true,
+        extracto: true,
+        espacios_compartidos: true,
+        integrantes_espacio: true,
+        insights_ia: true,
+        pulso_premium: true,
+      },
     })).toThrow('precio mensual');
   });
 

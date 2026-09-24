@@ -16,6 +16,7 @@ import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 import { VERSION_ETIQUETA } from '../../../version';
 import { validarContrasenaSegura } from '../../../lib/seguridad';
+import { beneficiosActivos, type BeneficioPlan } from '../lib/beneficiosPlan';
 
 interface CuentaViewProps {
   userId: string | null;
@@ -37,6 +38,8 @@ interface EstadoPlan {
     espaciosCompartidos: number | null;
     integrantesPorEspacio: number | null;
   };
+  beneficios: BeneficioPlan[];
+  beneficiosPremium: BeneficioPlan[];
   consumo: { dictados: number; asesorIa: number; extractos: number };
   suscripcion: { ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string; cancelarAlVencer: boolean } | null;
 }
@@ -54,7 +57,7 @@ interface PlanEnCache {
 const DURACION_CACHE_PLAN_MS = 5 * 60 * 1000;
 // La versión separa la respuesta anterior, que llevaba el precio del plan
 // actual y podía conservar $0 para una cuenta Normal en los botones Premium.
-const claveCachePlan = (userId: string): string => `lukapp-plan-v2-${userId}`;
+const claveCachePlan = (userId: string): string => `lukapp-plan-v3-${userId}`;
 
 const planValido = (valor: unknown): valor is EstadoPlan => {
   if (!valor || typeof valor !== 'object') return false;
@@ -64,7 +67,9 @@ const planValido = (valor: unknown): valor is EstadoPlan => {
     && typeof plan.precios?.mensualCop === 'number'
     && typeof plan.precios?.anualCop === 'number'
     && typeof plan.preciosPremium?.mensualCop === 'number'
-    && typeof plan.preciosPremium?.anualCop === 'number';
+    && typeof plan.preciosPremium?.anualCop === 'number'
+    && Array.isArray(plan.beneficios)
+    && Array.isArray(plan.beneficiosPremium);
 };
 
 const leerPlanEnCache = (userId: string | null): EstadoPlan | null => {
@@ -194,6 +199,17 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   }, [cuentaEmail, userId]);
 
   useEffect(() => { void cargarPlan(); }, [cargarPlan]);
+
+  useEffect(() => {
+    if (!cuentaEmail) return undefined;
+    const actualizarAlVolver = () => void cargarPlan();
+    const intervalo = window.setInterval(actualizarAlVolver, 30_000);
+    window.addEventListener('focus', actualizarAlVolver);
+    return () => {
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus', actualizarAlVolver);
+    };
+  }, [cuentaEmail, cargarPlan]);
 
   // Wompi puede redirigir antes de que su webhook termine. Mientras espera, la
   // persona ve una confirmación honesta y esta vista consulta su plan durante
@@ -385,14 +401,22 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                       ? `Premium${plan.suscripcion ? ` hasta ${fechaCorta(plan.suscripcion.venceEn)}` : ''}`
                       : 'Normal — gratis para siempre'}
                   </p>
-                  {plan.codigo === 'premium' ? (
-                    <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-                      Tienes más cupos de voz, Asesor IA, extractos y espacios compartidos. Tu beneficio se confirma automáticamente cuando Wompi aprueba el pago.
+                  <div className="mt-2">
+                    <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                      {plan.codigo === 'premium'
+                        ? 'Estas son las prestaciones activas de tu Premium ahora mismo.'
+                        : 'Estas son las prestaciones activas de tu plan Normal.'}
                     </p>
-                  ) : (
+                    <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Prestaciones incluidas">
+                      {beneficiosActivos(plan.beneficios).map((beneficio) => (
+                        <span key={beneficio.clave} className="rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--fin-ink-soft)]">{beneficio.titulo}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {plan.codigo === 'premium' ? null : (
                     <>
                       <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-                        Conservas todas las funciones esenciales. Premium amplía los cupos que más consumen infraestructura, sin quitarte lo importante.
+                        Premium incluye {beneficiosActivos(plan.beneficiosPremium).length} prestaciones configuradas actualmente, con los precios que ves abajo.
                       </p>
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
                         <button

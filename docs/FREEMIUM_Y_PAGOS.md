@@ -12,8 +12,10 @@ LukApp tiene exactamente dos planes:
 | Registro por voz | 60 al mes | 300 al mes |
 | Asesor IA | 5 consultas al mes | 60 consultas al mes |
 | Importar extractos PDF | 1 al mes | 12 al mes |
+| Recomendaciones mensuales con IA | No incluido | Incluido |
+| Pulso Premium | No incluido | Incluido |
 
-Los cupos se validan en PostgreSQL, de forma atómica y con el mes de Bogotá. No dependen de lo que el navegador muestre. Si IA, voz o el análisis de un PDF fallan antes de devolver un resultado, el cupo se devuelve.
+La tabla muestra la configuración inicial. El superadmin puede seleccionar cada prestación de Normal y Premium desde el panel; una selección cambia automáticamente la lista en Cuenta, la invitación, la confirmación de pago y los accesos reales. Los cupos se validan en PostgreSQL, de forma atómica y con el mes de Bogotá. No dependen de lo que el navegador muestre. Si IA, voz o el análisis de un PDF fallan antes de devolver un resultado, el cupo se devuelve.
 
 Los pagos usan **Wompi Web Checkout**. La persona elige mensual o anual en
 **Ajustes → Cuenta**, completa el pago en Wompi y el plan cambia a Premium solo
@@ -38,7 +40,8 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
 1. En Supabase, crea una copia de seguridad desde **Database → Backups**.
 2. En **SQL Editor**, abre y ejecuta completo [`../supabase/migrations/20260923151315_freemium_suscripciones_y_cupos.sql`](../supabase/migrations/20260923151315_freemium_suscripciones_y_cupos.sql). No ejecutes solo fragmentos: las tablas, restricciones, RLS y funciones forman una unidad.
 3. Ejecuta después [`../supabase/migrations/20260923161824_wompi_checkout_y_webhooks.sql`](../supabase/migrations/20260923161824_wompi_checkout_y_webhooks.sql). Crea las intenciones de pago con RLS cerrado y el candado que evita dos checkouts abiertos para una misma cuenta.
-4. Comprueba las dos filas de planes:
+4. Ejecuta [`../supabase/migrations/20260924002440_catalogo_beneficios_premium.sql`](../supabase/migrations/20260924002440_catalogo_beneficios_premium.sql). Agrega el catálogo protegido de prestaciones y hace que los cupos y espacios respeten la selección del plan.
+5. Comprueba las dos filas de planes:
 
    ```sql
    select codigo, precio_mensual_cop, precio_anual_cop,
@@ -51,8 +54,8 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
 
    Deben aparecer `normal` con precio `0` y `premium` con `9900` mensual y `79900` anual.
 
-5. En Render, añade `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` como variables privadas del servicio que ejecuta `server.ts`.
-6. En el mismo servicio de Render añade estas variables privadas de Wompi. Nunca las pegues en el código ni les pongas prefijo `VITE_`:
+6. En Render, añade `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` como variables privadas del servicio que ejecuta `server.ts`.
+7. En el mismo servicio de Render añade estas variables privadas de Wompi. Nunca las pegues en el código ni les pongas prefijo `VITE_`:
 
    ```dotenv
    WOMPI_AMBIENTE=sandbox
@@ -68,7 +71,7 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
    API; volver desde Wompi nunca activa Premium por sí solo. Para producción cambia el ambiente a
    `produccion` y usa exclusivamente `pub_prod_`, `prod_integrity_` y
    `prod_events_`.
-7. En Wompi Dashboard configura el evento `transaction.updated` para cada
+8. En Wompi Dashboard configura el evento `transaction.updated` para cada
    ambiente. La URL debe ser la API pública de Render seguida de:
 
    ```text
@@ -77,16 +80,16 @@ Hazlo primero en una rama o proyecto de prueba. No actives una pasarela en produ
 
    Configura una URL de sandbox y otra de producción. Wompi reintentará si no
    recibe HTTP 200; LukApp verifica el checksum antes de tocar la base.
-8. En Vercel mantén en el cliente solamente `VITE_SUPABASE_URL`, la clave
+9. En Vercel mantén en el cliente solamente `VITE_SUPABASE_URL`, la clave
    pública/anon de Supabase y `VITE_API_URL` apuntando a Render. Las variables
    privadas de Wompi **no van en Vercel** para este flujo, porque el checkout y
    el webhook los atiende `server.ts` en Render.
-9. Despliega backend y frontend. Las migraciones se aplican antes del código.
-10. En sandbox, prueba con una cuenta de ensayo: un pago aprobado debe cambiar
+10. Despliega backend y frontend. Las migraciones se aplican antes del código.
+11. En sandbox, prueba con una cuenta de ensayo: un pago aprobado debe cambiar
     la cuenta a Premium; uno rechazado no debe hacerlo; repetir el mismo
     webhook debe mantener una sola suscripción. Prueba también un webhook con
     firma alterada: debe ser rechazado y no escribir nada.
-11. Solo después repite la configuración con las llaves `prod_*`, la URL de
+12. Solo después repite la configuración con las llaves `prod_*`, la URL de
     eventos de producción y un cobro real pequeño que puedas conciliar.
 
 La tabla `suscripciones` guarda el valor efectivamente cobrado, ciclo, fechas y
@@ -96,7 +99,7 @@ tarjetas, documentos, comprobantes completos ni payloads crudos de la pasarela.
 
 ## Operación cotidiana
 
-- Cambiar los precios o límites desde el panel afecta usos futuros; no reescribe cobros anteriores.
+- Cambiar precios, límites o prestaciones desde el panel afecta usos futuros; no reescribe cobros anteriores. Las pantallas abiertas vuelven a consultar esa configuración cada 30 segundos y al volver a enfocarse; las rutas protegidas aplican el cambio inmediatamente.
 - Los botones de compra en la cuenta siempre muestran los precios de la fila **Premium**, incluso cuando la cuenta actual es Normal (cuyo precio propio es $0).
 - Normal no se puede cobrar ni desactivar. Es el respaldo automático cuando Premium vence o se cancela.
 - En **Planes → Premium vigente**, el superadmin puede cambiar la fecha de vencimiento o retirar Premium como acción de soporte. Si hace falta un reembolso, se gestiona en Wompi; LukApp solo cambia el acceso y deja trazabilidad.

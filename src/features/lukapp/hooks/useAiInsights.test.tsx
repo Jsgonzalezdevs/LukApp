@@ -29,7 +29,7 @@ describe('useAiInsights — recomendaciones con IA', () => {
   it('no solicita ni reutiliza insights IA para una cuenta Normal', async () => {
     vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(sesion as never);
     const fetcher = vi.fn((url: string, _init?: RequestInit) => {
-      if (url.includes('/api/mi-plan')) return respuesta({ codigo: 'normal' });
+      if (url.includes('/api/mi-plan')) return respuesta({ codigo: 'normal', beneficios: [] });
       return respuesta({ success: true, insights: [{ id: 'no-deberia-llegar' }] });
     });
     vi.stubGlobal('fetch', fetcher);
@@ -44,7 +44,13 @@ describe('useAiInsights — recomendaciones con IA', () => {
   it('solicita insights IA solo después de confirmar Premium', async () => {
     vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(sesion as never);
     const fetcher = vi.fn((url: string, _init?: RequestInit) => {
-      if (url.includes('/api/mi-plan')) return respuesta({ codigo: 'premium' });
+      if (url.includes('/api/mi-plan')) return respuesta({
+        codigo: 'premium',
+        beneficios: [
+          { clave: 'insights_ia', activo: true },
+          { clave: 'pulso_premium', activo: true },
+        ],
+      });
       return respuesta({
         success: true,
         insights: [{ id: 'premium-1', titulo: 'Vas bien', detalle: 'Sigue así', tono: 'bien', seccion: 'mes' }],
@@ -55,6 +61,9 @@ describe('useAiInsights — recomendaciones con IA', () => {
     const { result } = renderHook(() => useAiInsights(opciones));
 
     await waitFor(() => expect(result.current.origenIa).toBe(true));
+    expect(result.current.tieneInsightsIa).toBe(true);
+    expect(result.current.tienePulsoPremium).toBe(true);
+    expect(result.current.insights[0]?.origenIa).toBe(true);
     const llamadaInsights = fetcher.mock.calls.find(([url]) => String(url).includes('/api/finanzas-insights-ia'));
     expect(llamadaInsights).toBeDefined();
     const cuerpo = llamadaInsights?.[1]?.body;

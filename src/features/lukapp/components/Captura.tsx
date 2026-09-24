@@ -21,6 +21,13 @@ import { AnimatedNumber } from './AnimatedNumber';
 import { RippleButton } from './RippleButton';
 import type { ConfirmDraft } from './ConfirmSheet';
 
+const claveDescripcion = (texto: string): string =>
+  texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase('es-CO');
+
 interface CapturaProps {
   /** Lo que el motor de texto entendió de lo que dijiste. */
   parsed: ParsedTransaction;
@@ -96,6 +103,30 @@ export const Captura: React.FC<CapturaProps> = ({
     () => cuentasActivas.find((c) => c.id === cuentaId) ?? null,
     [cuentasActivas, cuentaId],
   );
+
+  // Solo se sugiere una repetición cuando la descripción coincide de verdad.
+  // Una coincidencia floja por categoría ("Mercado" → "Almuerzo") sería una
+  // comodidad aparente que puede terminar enviando el gasto a la cuenta mala.
+  const sugerenciaContextual = useMemo(() => {
+    const clave = claveDescripcion(description);
+    if (clave.length < 3) return null;
+    const ultimaCoincidencia = transacciones
+      .filter((tx) => claveDescripcion(tx.description) === clave)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    if (!ultimaCoincidencia) return null;
+
+    const cambiaAlgo =
+      ultimaCoincidencia.kind !== kind ||
+      ultimaCoincidencia.category !== category ||
+      ultimaCoincidencia.cuentaId !== cuentaId ||
+      (digitos === '' && ultimaCoincidencia.amountCop > 0);
+    if (!cambiaAlgo) return null;
+
+    return {
+      movimiento: ultimaCoincidencia,
+      cuenta: cuentasActivas.find((cuenta) => cuenta.id === ultimaCoincidencia.cuentaId) ?? null,
+    };
+  }, [category, cuentaId, cuentasActivas, description, digitos, kind, transacciones]);
 
   const descRef = useRef<HTMLTextAreaElement>(null);
   const fotoInputRef = useRef<HTMLInputElement>(null);
@@ -462,6 +493,37 @@ export const Captura: React.FC<CapturaProps> = ({
       ) : null}
       {!escaneandoFoto && errorImagen ? (
         <p className="mt-2 text-center text-[12px] font-medium text-[var(--fin-out)]">{errorImagen}</p>
+      ) : null}
+
+      {sugerenciaContextual ? (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 flex items-center gap-2.5 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/20 bg-[var(--fin-soft)] px-3 py-2.5"
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.3} aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-[12px] leading-snug text-[var(--fin-ink-soft)]">
+            <strong className="font-semibold text-[var(--fin-ink)]">Como la última vez:</strong>{' '}
+            {catalogo.de(sugerenciaContextual.movimiento.category).nombre}
+            {sugerenciaContextual.cuenta ? ` · ${sugerenciaContextual.cuenta.nombre}` : ''}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              const { movimiento } = sugerenciaContextual;
+              haptic.trigger('selection');
+              audio.play('selection');
+              setKind(movimiento.kind);
+              setCategory(movimiento.category);
+              setCuentaId(movimiento.cuentaId);
+              if (digitos === '') setDigitos(String(Math.round(movimiento.amountCop)));
+              setCategoriaDetectada(movimiento.category);
+            }}
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--fin-ink)] shadow-xs transition-colors hover:bg-[var(--fin-bg)]"
+          >
+            Usar
+          </button>
+        </motion.div>
       ) : null}
 
       {/* Selector Plegable de Banco / Cuenta */}

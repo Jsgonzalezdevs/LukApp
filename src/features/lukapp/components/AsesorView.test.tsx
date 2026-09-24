@@ -346,7 +346,15 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    await screen.findByText(status === 401 || status === 403 ? /No se pudo validar tu sesión/ : status === 429 ? /límite de solicitudes/ : /error \(500\)/);
+    await screen.findByText(
+      status === 401
+        ? /Tu sesión venció/
+        : status === 403
+          ? /Tu plan actual no incluye/
+          : status === 429
+            ? /límite de solicitudes/
+            : /La IA no pudo preparar tu consulta/,
+    );
     expect(screen.queryByText('En línea')).toBeNull();
   });
   it('una respuesta de salud tardía no oculta un fallo de la IA', async () => {

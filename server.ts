@@ -25,10 +25,15 @@ import {
   type ModoTranscripcion,
 } from './server_lib/transcripcion.ts';
 import {
+  beneficiosDelPlan,
+  esClaveBeneficioPlan,
   fechaPremiumValida,
   mensajeCupoAgotado,
   validarConfiguracionPlan,
+  type BeneficioPlan,
+  type ClaveBeneficioPlan,
   type CodigoPlan,
+  type LimitesPlan,
   type RecursoDeCupo,
   type ResultadoCupo,
 } from './server_lib/suscripciones.ts';
@@ -219,6 +224,8 @@ interface EstadoPlanServidor {
     espaciosCompartidos: number | null;
     integrantesPorEspacio: number | null;
   };
+  beneficios: BeneficioPlan[];
+  beneficiosPremium: BeneficioPlan[];
   consumo: { dictados: number; asesorIa: number; extractos: number };
   suscripcion: { id: number; ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string; cancelarAlVencer: boolean } | null;
 }
@@ -297,6 +304,71 @@ const estadoIntentoDesdeWompi = (estado: TransaccionWompi['estado']): IntentoPag
 
 const configuracionWompiLista = () => configuracionWompi(process.env);
 
+type FilaBeneficioPlan = { plan_codigo: string; clave: string; activo: boolean };
+
+/**
+ * Durante un despliegue el servidor nuevo puede iniciar unos segundos antes
+ * que la migración que crea el catálogo. Conservamos los beneficios que ya
+ * existían antes de dicho catálogo para no desconectar el Asesor ni la cuenta
+ * mientras termina la actualización de la base.
+ */
+const BENEFICIOS_ANTERIORES_AL_CATALOGO: Record<CodigoPlan, Partial<Record<ClaveBeneficioPlan, boolean>>> = {
+  normal: {
+    dictado: true,
+    asesor_ia: true,
+    extracto: true,
+    espacios_compartidos: true,
+    integrantes_espacio: true,
+    insights_ia: false,
+    pulso_premium: false,
+  },
+  premium: {
+    dictado: true,
+    asesor_ia: true,
+    extracto: true,
+    espacios_compartidos: true,
+    integrantes_espacio: true,
+    insights_ia: true,
+    pulso_premium: true,
+  },
+};
+
+const esMigracionCatalogoPendiente = (error: unknown): boolean => {
+  if (!error || typeof error !== 'object') return false;
+  const detalle = error as { code?: unknown; message?: unknown; details?: unknown; hint?: unknown };
+  const texto = [detalle.message, detalle.details, detalle.hint]
+    .filter((valor): valor is string => typeof valor === 'string')
+    .join(' ')
+    .toLowerCase();
+  return /beneficios_plan|actualizar_plan_con_beneficios/.test(texto)
+    && /does not exist|could not find|schema cache|not found/.test(texto);
+};
+
+const limitesDePlan = (plan: Record<string, unknown>): LimitesPlan => ({
+  dictadosMensual: plan.limite_dictados_mensual === null ? null : Number(plan.limite_dictados_mensual),
+  asesorIaMensual: plan.limite_asesor_ia_mensual === null ? null : Number(plan.limite_asesor_ia_mensual),
+  extractosMensual: plan.limite_extractos_mensual === null ? null : Number(plan.limite_extractos_mensual),
+  espaciosCompartidos: plan.limite_espacios_compartidos === null ? null : Number(plan.limite_espacios_compartidos),
+  integrantesPorEspacio: plan.limite_integrantes_por_espacio === null ? null : Number(plan.limite_integrantes_por_espacio),
+});
+
+const beneficiosDePlan = (
+  filas: readonly FilaBeneficioPlan[],
+  codigo: CodigoPlan,
+  limites: LimitesPlan,
+): BeneficioPlan[] => {
+  const seleccion: Partial<Record<ClaveBeneficioPlan, boolean>> = {};
+  for (const fila of filas) {
+    if (fila.plan_codigo === codigo && esClaveBeneficioPlan(fila.clave)) {
+      seleccion[fila.clave] = fila.activo === true;
+    }
+  }
+  return beneficiosDelPlan(seleccion, limites);
+};
+
+const beneficiosCompatiblesConVersionAnterior = (codigo: CodigoPlan, limites: LimitesPlan): BeneficioPlan[] =>
+  beneficiosDelPlan(BENEFICIOS_ANTERIORES_AL_CATALOGO[codigo], limites);
+
 /** Ejecuta el contador atómico de PostgreSQL antes de gastar IA, voz o PDF. */
 const consumirCupo = async (
   cliente: ClienteAdmin,
@@ -318,6 +390,10 @@ const consumirCupo = async (
     plan_codigo: resultado.plan_codigo,
     limite: resultado.limite === null ? null : Number(resultado.limite),
     usado: Number(resultado.usado) || 0,
+    // La RPC anterior a v4.5 no devolvía este campo. Darla por incluida es
+    // exactamente su comportamiento histórico y permite desplegar API y
+    // migración sin dejar al Asesor fuera de servicio entre ambos pasos.
+    incluido: typeof resultado.incluido === 'boolean' ? resultado.incluido : true,
   };
 };
 
@@ -337,7 +413,12 @@ const devolverCupo = async (
 const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<EstadoPlanServidor> => {
   const periodo = `${fechaBogotaHoy().slice(0, 7)}-01`;
   const ahora = new Date().toISOString();
-  const [{ data: suscripcion, error: errorSuscripcion }, { data: consumo, error: errorConsumo }, { data: planes, error: errorPlanes }] = await Promise.all([
+  const [
+    { data: suscripcion, error: errorSuscripcion },
+    { data: consumo, error: errorConsumo },
+    { data: planes, error: errorPlanes },
+    { data: beneficios, error: errorBeneficios },
+  ] = await Promise.all([
     cliente
       .from('suscripciones')
       .select('id,ciclo,vence_en,cancelar_al_vencer,plan_codigo')
@@ -357,15 +438,25 @@ const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<Esta
     cliente
       .from('planes_suscripcion')
       .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio'),
+    cliente
+      .from('beneficios_plan')
+      .select('plan_codigo,clave,activo'),
   ]);
   if (errorSuscripcion) throw new Error(errorSuscripcion.message);
   if (errorConsumo) throw new Error(errorConsumo.message);
   if (errorPlanes) throw new Error(errorPlanes.message);
+  if (errorBeneficios && !esMigracionCatalogoPendiente(errorBeneficios)) {
+    throw new Error(errorBeneficios.message);
+  }
 
   const codigo: CodigoPlan = suscripcion?.plan_codigo === 'premium' ? 'premium' : 'normal';
   const plan = (planes ?? []).find((candidato) => candidato.codigo === codigo);
   const planPremium = (planes ?? []).find((candidato) => candidato.codigo === 'premium');
   if (!plan || !planPremium) throw new Error('No se encontró la configuración de los planes.');
+  const limites = limitesDePlan(plan);
+  const limitesPremium = limitesDePlan(planPremium);
+  const beneficiosConfigurados = (beneficios ?? []) as FilaBeneficioPlan[];
+  const usarCompatibilidad = Boolean(errorBeneficios);
 
   return {
     codigo,
@@ -378,20 +469,14 @@ const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<Esta
       mensualCop: Number(planPremium.precio_mensual_cop),
       anualCop: Number(planPremium.precio_anual_cop),
     },
-    limitesPremium: {
-      dictadosMensual: planPremium.limite_dictados_mensual === null ? null : Number(planPremium.limite_dictados_mensual),
-      asesorIaMensual: planPremium.limite_asesor_ia_mensual === null ? null : Number(planPremium.limite_asesor_ia_mensual),
-      extractosMensual: planPremium.limite_extractos_mensual === null ? null : Number(planPremium.limite_extractos_mensual),
-      espaciosCompartidos: planPremium.limite_espacios_compartidos === null ? null : Number(planPremium.limite_espacios_compartidos),
-      integrantesPorEspacio: planPremium.limite_integrantes_por_espacio === null ? null : Number(planPremium.limite_integrantes_por_espacio),
-    },
-    limites: {
-      dictadosMensual: plan.limite_dictados_mensual === null ? null : Number(plan.limite_dictados_mensual),
-      asesorIaMensual: plan.limite_asesor_ia_mensual === null ? null : Number(plan.limite_asesor_ia_mensual),
-      extractosMensual: plan.limite_extractos_mensual === null ? null : Number(plan.limite_extractos_mensual),
-      espaciosCompartidos: plan.limite_espacios_compartidos === null ? null : Number(plan.limite_espacios_compartidos),
-      integrantesPorEspacio: plan.limite_integrantes_por_espacio === null ? null : Number(plan.limite_integrantes_por_espacio),
-    },
+    limitesPremium,
+    limites,
+    beneficios: usarCompatibilidad
+      ? beneficiosCompatiblesConVersionAnterior(codigo, limites)
+      : beneficiosDePlan(beneficiosConfigurados, codigo, limites),
+    beneficiosPremium: usarCompatibilidad
+      ? beneficiosCompatiblesConVersionAnterior('premium', limitesPremium)
+      : beneficiosDePlan(beneficiosConfigurados, 'premium', limitesPremium),
     consumo: {
       dictados: Number(consumo?.dictados) || 0,
       asesorIa: Number(consumo?.asesor_ia) || 0,
@@ -1632,6 +1717,9 @@ app.post('/api/pagos/wompi/checkout', async (req, res) => {
     if (estadoActual.codigo === 'premium' && estadoActual.suscripcion) {
       return res.status(409).json({ error: 'Tu cuenta ya tiene Premium activo. No necesitas hacer otro pago ahora.' });
     }
+    if (!estadoActual.beneficiosPremium.some((beneficio) => beneficio.activo)) {
+      return res.status(503).json({ error: 'Premium no tiene prestaciones activas para cobrar en este momento.' });
+    }
 
     const { data: premium, error: errorPlan } = await cliente
       .from('planes_suscripcion')
@@ -1810,7 +1898,12 @@ app.get('/api/superadmin/facturacion', async (req, res) => {
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
 
     const ahora = new Date().toISOString();
-    const [{ data: planes, error: errorPlanes }, { data: suscripciones, error: errorSuscripciones }, { data: perfil, error: errorPerfil }] = await Promise.all([
+    const [
+      { data: planes, error: errorPlanes },
+      { data: suscripciones, error: errorSuscripciones },
+      { data: perfil, error: errorPerfil },
+      { data: beneficios, error: errorBeneficios },
+    ] = await Promise.all([
       cliente
         .from('planes_suscripcion')
         .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio,activo,actualizado_en')
@@ -1823,10 +1916,12 @@ app.get('/api/superadmin/facturacion', async (req, res) => {
         .gt('vence_en', ahora)
         .order('vence_en', { ascending: true }),
       cliente.from('perfiles').select('rol').eq('id', acceso.userId).single(),
+      cliente.from('beneficios_plan').select('plan_codigo,clave,activo'),
     ]);
     if (errorPlanes) throw errorPlanes;
     if (errorSuscripciones) throw errorSuscripciones;
     if (errorPerfil) throw errorPerfil;
+    if (errorBeneficios && !esMigracionCatalogoPendiente(errorBeneficios)) throw errorBeneficios;
 
     const planPremium = (planes ?? []).find((plan) => plan.codigo === 'premium');
     const activas = suscripciones ?? [];
@@ -1864,8 +1959,18 @@ app.get('/api/superadmin/facturacion', async (req, res) => {
       usuarios = perfiles ?? [];
     }
 
+    const usarCompatibilidad = Boolean(errorBeneficios);
     return res.status(200).json({
-      planes: planes ?? [],
+      planes: (planes ?? []).map((plan) => ({
+        ...plan,
+        beneficios: usarCompatibilidad
+          ? beneficiosCompatiblesConVersionAnterior(plan.codigo as CodigoPlan, limitesDePlan(plan))
+          : beneficiosDePlan(
+            (beneficios ?? []) as FilaBeneficioPlan[],
+            plan.codigo as CodigoPlan,
+            limitesDePlan(plan),
+          ),
+      })),
       resumen: {
         premiumActivas: activas.length,
         mensuales,
@@ -1909,31 +2014,29 @@ app.put('/api/superadmin/planes/:codigo', async (req, res) => {
       return res.status(400).json({ error: 'Premium debe conservar un precio mensual y anual mayor que cero.' });
     }
 
-    const { data: plan, error } = await cliente
-      .from('planes_suscripcion')
-      .update({
-        precio_mensual_cop: configuracion.precioMensualCop,
-        precio_anual_cop: configuracion.precioAnualCop,
-        limite_dictados_mensual: configuracion.limiteDictadosMensual,
-        limite_asesor_ia_mensual: configuracion.limiteAsesorIaMensual,
-        limite_extractos_mensual: configuracion.limiteExtractosMensual,
-        limite_espacios_compartidos: configuracion.limiteEspaciosCompartidos,
-        limite_integrantes_por_espacio: configuracion.limiteIntegrantesPorEspacio,
-        activo: configuracion.activo,
-        actualizado_en: new Date().toISOString(),
-        actualizado_por: acceso.userId,
-      })
-      .eq('codigo', codigo)
-      .select('codigo,nombre,precio_mensual_cop,precio_anual_cop,limite_dictados_mensual,limite_asesor_ia_mensual,limite_extractos_mensual,limite_espacios_compartidos,limite_integrantes_por_espacio,activo,actualizado_en')
-      .single();
-    if (error) throw error;
-
-    const { error: errorAuditoria } = await cliente.from('eventos_facturacion').insert({
-      actor_id: acceso.userId,
-      tipo: 'plan_actualizado',
-      detalle: `Actualizó la configuración del plan ${codigo}.`,
+    const { data, error } = await cliente.rpc('actualizar_plan_con_beneficios', {
+      p_codigo: codigo,
+      p_precio_mensual_cop: configuracion.precioMensualCop,
+      p_precio_anual_cop: configuracion.precioAnualCop,
+      p_limite_dictados_mensual: configuracion.limiteDictadosMensual,
+      p_limite_asesor_ia_mensual: configuracion.limiteAsesorIaMensual,
+      p_limite_extractos_mensual: configuracion.limiteExtractosMensual,
+      p_limite_espacios_compartidos: configuracion.limiteEspaciosCompartidos,
+      p_limite_integrantes_por_espacio: configuracion.limiteIntegrantesPorEspacio,
+      p_activo: configuracion.activo,
+      p_beneficios: configuracion.beneficios,
+      p_actor: acceso.userId,
     });
-    if (errorAuditoria) console.error('No se pudo auditar la actualización del plan:', errorAuditoria.message);
+    if (error) {
+      if (esMigracionCatalogoPendiente(error)) {
+        return res.status(409).json({
+          error: 'La configuración de prestaciones aún se está actualizando. Aplica la migración de Premium y vuelve a intentarlo.',
+          codigo: 'migracion-premium-pendiente',
+        });
+      }
+      throw error;
+    }
+    const plan = Array.isArray(data) ? data[0] : data;
     registrarAuditoria(acceso.email, 'Actualizó plan Freemium', codigo);
     return res.status(200).json({ plan });
   } catch (error: any) {
@@ -2525,7 +2628,9 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
 
   // 1. Groq (Modelos directos en español, sin volcar etiquetas de pensamiento)
   if (groqKey) {
-    const groqModelos = ['openai/gpt-oss-120b', 'groq/compound', 'openai/gpt-oss-20b'];
+    // `groq/compound` ya no está disponible. Mantenerlo como respaldo solo
+    // añadía un 404 y más espera cuando el primer modelo tenía un fallo breve.
+    const groqModelos = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
     for (const m of groqModelos) {
       try {
         const bodyPayload: any = {
@@ -3189,10 +3294,10 @@ app.post('/api/finanzas-insights-ia', async (req, res) => {
     userId = acceso.userId;
 
     const plan = await estadoPlanDe(cliente, userId);
-    if (plan.codigo !== 'premium') {
+    if (!plan.beneficios.some((beneficio) => beneficio.clave === 'insights_ia' && beneficio.activo)) {
       return res.status(403).json({
-        error: 'Las recomendaciones mensuales con IA son un beneficio de Premium.',
-        codigo: 'premium-requerido',
+        error: 'Las recomendaciones mensuales con IA no están incluidas en tu plan actual.',
+        codigo: 'beneficio-no-incluido',
       });
     }
   } catch (error: any) {

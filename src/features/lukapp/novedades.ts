@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.5.1', fecha: '2026-09-24', texto: 'El Asesor ahora evita un modelo retirado, explica con claridad si venció tu sesión, tu cupo o el servidor fallaron, y sigue disponible mientras termina una actualización segura de Premium.' },
+  { version: '4.5.0', fecha: '2026-09-23', texto: 'Premium ahora se arma a tu medida: desde Superadmin puedes elegir cada prestación incluida, además de sus cupos y precios. La misma selección actualiza Cuenta, invitaciones, confirmación de pago y los accesos protegidos de toda la app.' },
+  { version: '4.4.0', fecha: '2026-09-23', texto: 'LukApp se siente más ágil: desliza un movimiento para repetirlo o editarlo, aprovecha sugerencias basadas en registros iguales y recibe confirmaciones claras de dónde se actualizó tu dinero. Premium estrena Pulso Premium, con tu margen diario y acceso directo al análisis personalizado del Asesor.' },
   { version: '4.3.7', fecha: '2026-09-23', texto: 'El Asesor Premium ahora construye un perfil financiero mucho más completo con tus movimientos, cuentas, deudas, metas, presupuestos y pagos recurrentes para darte sugerencias personalizadas sin tener que preguntarle primero.' },
   { version: '4.3.6', fecha: '2026-09-23', texto: 'Las recomendaciones mensuales generadas con IA ahora son un beneficio exclusivo de Premium. En Normal sigues viendo los avisos calculados localmente, sin enviar datos a la IA.' },
   { version: '4.3.5', fecha: '2026-09-23', texto: 'El dictado ahora escribe correctamente Nequi y entiende mejor las frases naturales para actualizar el saldo de esa cuenta.' },

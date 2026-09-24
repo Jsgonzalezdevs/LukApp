@@ -765,11 +765,15 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           const mensajeApi = data && typeof data === 'object' && typeof (data as { error?: unknown }).error === 'string'
             ? (data as { error: string }).error
             : null;
-          const mensaje = res.status === 401 || res.status === 403
-            ? 'No se pudo validar tu sesión para consultar la IA.'
-            : res.status === 429
-              ? mensajeApi || 'Alcanzaste el límite de solicitudes. Intenta de nuevo en un momento.'
-              : `La IA respondió con un error (${res.status}).`;
+          const mensaje = res.status === 401
+            ? 'Tu sesión venció. Entra de nuevo para consultar la IA.'
+            : res.status === 403
+              ? mensajeApi || 'Tu plan actual no incluye esta función de IA.'
+              : res.status === 429
+                ? mensajeApi || 'Alcanzaste el límite de solicitudes. Intenta de nuevo en un momento.'
+                : res.status >= 500
+                  ? mensajeApi || 'La IA no pudo preparar tu consulta. Intenta de nuevo en unos minutos.'
+                  : mensajeApi || `La IA respondió con un error (${res.status}).`;
           usarRespaldoLocal(mensaje);
         }
       } catch (error) {
@@ -1163,6 +1167,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               <div className="flex items-end gap-3">
                 <MascotaLuki
                   className="h-10 w-10 shrink-0 object-contain"
+                  src="/brand/luki-pensando-transparente.png"
                   alt="Luki, pensando"
                 />
                 <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] rounded-bl-sm bg-[var(--fin-card)] px-4 py-3 text-[13px] text-[var(--fin-ink-soft)]">

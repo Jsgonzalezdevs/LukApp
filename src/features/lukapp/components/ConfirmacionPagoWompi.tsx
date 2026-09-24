@@ -3,32 +3,22 @@ import { motion } from 'framer-motion';
 import {
   ArrowRight,
   BadgeCheck,
-  Bot,
   CalendarDays,
   Check,
   CircleAlert,
   CreditCard,
-  FileText,
   Loader2,
-  Mic,
   RefreshCw,
-  Share2,
   ShieldCheck,
   Sparkles,
-  UsersRound,
 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
+import { beneficiosActivos, iconoDeBeneficio, valorDeBeneficio, type BeneficioPlan } from '../lib/beneficiosPlan';
 
 interface PlanConfirmado {
   codigo: 'normal' | 'premium';
-  limites: {
-    dictadosMensual: number | null;
-    asesorIaMensual: number | null;
-    extractosMensual: number | null;
-    espaciosCompartidos: number | null;
-    integrantesPorEspacio: number | null;
-  };
+  beneficios: BeneficioPlan[];
   suscripcion: { ciclo: 'mensual' | 'anual' | 'cortesia'; venceEn: string } | null;
 }
 
@@ -43,9 +33,6 @@ const fechaCorta = (valor: string): string =>
 
 const etiquetaCiclo = (ciclo: 'mensual' | 'anual' | 'cortesia'): string =>
   ciclo === 'anual' ? 'Premium anual' : ciclo === 'mensual' ? 'Premium mensual' : 'Premium de cortesía';
-
-const cupoDestacado = (valor: number | null): string =>
-  valor === null ? '∞' : new Intl.NumberFormat('es-CO').format(valor);
 
 interface ConfirmacionPagoWompiProps {
   onIrACuenta: () => void;
@@ -130,38 +117,7 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
   const confirmado = estado === 'confirmado';
   const revisando = estado === 'consultando' || estado === 'esperando';
   const suscripcion = confirmado ? plan?.suscripcion : null;
-  const beneficiosPremium = plan ? [
-    {
-      titulo: 'Registro por voz',
-      detalle: 'registros al mes',
-      valor: cupoDestacado(plan.limites.dictadosMensual),
-      Icono: Mic,
-    },
-    {
-      titulo: 'Asesor IA',
-      detalle: 'consultas al mes',
-      valor: cupoDestacado(plan.limites.asesorIaMensual),
-      Icono: Bot,
-    },
-    {
-      titulo: 'Extractos',
-      detalle: 'extractos al mes',
-      valor: cupoDestacado(plan.limites.extractosMensual),
-      Icono: FileText,
-    },
-    {
-      titulo: 'Espacios compartidos',
-      detalle: 'para organizarte en compañía',
-      valor: cupoDestacado(plan.limites.espaciosCompartidos),
-      Icono: Share2,
-    },
-    {
-      titulo: 'Personas por espacio',
-      detalle: 'en cada espacio que compartes',
-      valor: cupoDestacado(plan.limites.integrantesPorEspacio),
-      Icono: UsersRound,
-    },
-  ] : [];
+  const beneficiosPremium = plan ? beneficiosActivos(plan.beneficios) : [];
 
   const contenidoPrincipal = confirmado
     ? {
@@ -277,41 +233,47 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <h2 className="text-[17px] font-semibold tracking-[-0.025em] text-[var(--fin-ink)]">Todo tu Premium ya está habilitado</h2>
-                    <span className="rounded-full bg-[#e9ddff] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#5924a3] uppercase">5 beneficios ampliados</span>
+                    <span className="rounded-full bg-[#e9ddff] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#5924a3] uppercase">{beneficiosPremium.length} prestaciones activas</span>
                   </div>
-                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">Estos son los cupos que acabas de desbloquear para usar LukApp con más libertad.</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">Esta lista se compone con la configuración vigente de Premium.</p>
                 </div>
               </div>
               <div className="relative mt-5 grid gap-2.5 sm:grid-cols-3">
-                {beneficiosPremium.slice(0, 3).map(({ titulo, detalle, valor, Icono }) => (
-                  <div key={titulo} className="relative overflow-hidden rounded-[18px] bg-[#2b1349] p-4 text-white shadow-[0_14px_28px_-16px_rgba(48,16,88,0.8)]">
+                {beneficiosPremium.slice(0, 3).map((beneficio) => {
+                  const Icono = iconoDeBeneficio(beneficio.clave);
+                  return (
+                  <div key={beneficio.clave} className="relative overflow-hidden rounded-[18px] bg-[#2b1349] p-4 text-white shadow-[0_14px_28px_-16px_rgba(48,16,88,0.8)]">
                     <div className="absolute -right-7 -top-8 h-24 w-24 rounded-full bg-fuchsia-400/25 blur-2xl" aria-hidden="true" />
                     <div className="relative flex items-center justify-between gap-3">
-                      <p className="text-[12px] font-semibold text-white/74">{titulo}</p>
+                      <p className="text-[12px] font-semibold text-white/74">{beneficio.titulo}</p>
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-lime-200">
                         <Icono className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
                       </span>
                     </div>
                     <div className="relative mt-4 flex items-end gap-2">
-                      <strong className="text-[34px] font-semibold leading-none tracking-[-0.06em] text-white">{valor}</strong>
-                      <span className="mb-0.5 text-[11px] font-medium leading-tight text-white/62">{detalle}</span>
+                      <strong className="text-[28px] font-semibold leading-none tracking-[-0.05em] text-white">{valorDeBeneficio(beneficio)}</strong>
+                      <span className="mb-0.5 text-[11px] font-medium leading-tight text-white/62">{beneficio.detalle}</span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
               <div className="relative mt-2.5 grid gap-2.5 sm:grid-cols-2">
-                {beneficiosPremium.slice(3).map(({ titulo, detalle, valor, Icono }) => (
-                  <div key={titulo} className="flex items-center gap-3 rounded-[16px] border border-[#dfd4ef] bg-white/75 px-3.5 py-3">
+                {beneficiosPremium.slice(3).map((beneficio) => {
+                  const Icono = iconoDeBeneficio(beneficio.clave);
+                  return (
+                  <div key={beneficio.clave} className="flex items-center gap-3 rounded-[16px] border border-[#dfd4ef] bg-white/75 px-3.5 py-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f0e8ff] text-[#6328be]">
                       <Icono className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold text-[var(--fin-ink)]">{titulo}</p>
-                      <p className="mt-0.5 text-[11px] leading-snug text-[var(--fin-ink-soft)]">{detalle}</p>
+                      <p className="text-[12px] font-semibold text-[var(--fin-ink)]">{beneficio.titulo}</p>
+                      <p className="mt-0.5 text-[11px] leading-snug text-[var(--fin-ink-soft)]">{beneficio.detalle}</p>
                     </div>
-                    <strong className="shrink-0 text-[28px] font-semibold leading-none tracking-[-0.06em] text-[#58219d]">{valor}</strong>
+                    <strong className="shrink-0 text-[22px] font-semibold leading-none tracking-[-0.05em] text-[#58219d]">{valorDeBeneficio(beneficio)}</strong>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           ) : (

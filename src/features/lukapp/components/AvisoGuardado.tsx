@@ -7,6 +7,8 @@ export interface Guardado {
   /** El id del movimiento que se acaba de guardar, para poder deshacerlo. */
   id: string;
   texto: string;
+  /** Estado concreto: evita que "guardado" deje la duda de dónde quedó. */
+  detalle?: string | null;
   /** Si el monto se sale de lo normal en esa categoría, la frase que lo dice. */
   aviso?: string | null;
   /** Operaciones compuestas no se pueden deshacer borrando una sola transacción. */
@@ -85,6 +87,11 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
               <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">
                 {guardado.texto}
               </p>
+              {guardado.detalle ? (
+                <p className="mt-0.5 truncate text-[12px] text-[var(--fin-ink-faint)]">
+                  {guardado.detalle}
+                </p>
+              ) : null}
               {guardado.aviso ? (
                 <p className="mt-0.5 flex items-start gap-1.5 text-[13px] text-[var(--fin-warn)]">
                   <AlertTriangle

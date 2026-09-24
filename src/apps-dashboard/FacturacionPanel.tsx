@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CreditCard, Loader2, Pencil, RefreshCw, Save, ShieldCheck, UserPlus, XCircle } from 'lucide-react';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
+import type { BeneficioPlan, ClaveBeneficioPlan } from '../features/lukapp/lib/beneficiosPlan';
 import { apiUrl } from '../lib/api';
 
 type CodigoPlan = 'normal' | 'premium';
@@ -17,6 +18,7 @@ interface PlanServidor {
   limite_integrantes_por_espacio: number | null;
   activo: boolean;
   actualizado_en: string;
+  beneficios: BeneficioPlan[];
 }
 
 interface FormaPlan {
@@ -28,7 +30,10 @@ interface FormaPlan {
   limiteEspaciosCompartidos: string;
   limiteIntegrantesPorEspacio: string;
   activo: boolean;
+  beneficios: Record<ClaveBeneficioPlan, boolean>;
 }
+
+type CampoForma = Exclude<keyof FormaPlan, 'beneficios'>;
 
 interface SuscripcionActiva {
   id: number;
@@ -81,6 +86,7 @@ const aForma = (plan: PlanServidor): FormaPlan => ({
   limiteEspaciosCompartidos: plan.limite_espacios_compartidos === null ? '' : String(plan.limite_espacios_compartidos),
   limiteIntegrantesPorEspacio: plan.limite_integrantes_por_espacio === null ? '' : String(plan.limite_integrantes_por_espacio),
   activo: plan.activo,
+  beneficios: Object.fromEntries(plan.beneficios.map((beneficio) => [beneficio.clave, beneficio.activo])) as Record<ClaveBeneficioPlan, boolean>,
 });
 
 const numeroPositivoOInfinito = (valor: string, etiqueta: string): number | null => {
@@ -147,11 +153,21 @@ export const FacturacionPanel: React.FC = () => {
 
   const premium = useMemo(() => datos?.planes.find((plan) => plan.codigo === 'premium') ?? null, [datos]);
 
-  const actualizarForma = (codigo: CodigoPlan, campo: keyof FormaPlan, valor: string | boolean) => {
+  const actualizarForma = (codigo: CodigoPlan, campo: CampoForma, valor: string | boolean) => {
     setFormas((actual) => ({
       ...actual,
       [codigo]: { ...(actual[codigo] ?? aForma(datos!.planes.find((plan) => plan.codigo === codigo)!)), [campo]: valor },
     }));
+  };
+
+  const actualizarBeneficio = (codigo: CodigoPlan, clave: ClaveBeneficioPlan, activo: boolean) => {
+    setFormas((actual) => {
+      const forma = actual[codigo] ?? aForma(datos!.planes.find((plan) => plan.codigo === codigo)!);
+      const beneficios = { ...forma.beneficios, [clave]: activo };
+      if (clave === 'espacios_compartidos' && !activo) beneficios.integrantes_espacio = false;
+      if (clave === 'asesor_ia' && !activo) beneficios.pulso_premium = false;
+      return { ...actual, [codigo]: { ...forma, beneficios } };
+    });
   };
 
   const guardarPlan = async (codigo: CodigoPlan) => {
@@ -174,6 +190,7 @@ export const FacturacionPanel: React.FC = () => {
           limiteEspaciosCompartidos: numeroPositivoOInfinito(forma.limiteEspaciosCompartidos, 'El límite de espacios'),
           limiteIntegrantesPorEspacio: numeroPositivoOInfinito(forma.limiteIntegrantesPorEspacio, 'El límite de integrantes'),
           activo: forma.activo,
+          beneficios: forma.beneficios,
         }),
       });
       const cuerpo = await respuesta.json();
@@ -340,7 +357,8 @@ export const FacturacionPanel: React.FC = () => {
               {(['normal', 'premium'] as const).map((codigo) => {
                 const forma = formas[codigo];
                 if (!forma) return null;
-                return <FormularioPlan key={codigo} codigo={codigo} forma={forma} guardando={guardando === codigo} alCambiar={(campo, valor) => actualizarForma(codigo, campo, valor)} alGuardar={() => void guardarPlan(codigo)} />;
+                const plan = datos.planes.find((candidato) => candidato.codigo === codigo)!;
+                return <FormularioPlan key={codigo} codigo={codigo} forma={forma} beneficios={plan.beneficios} guardando={guardando === codigo} alCambiar={(campo, valor) => actualizarForma(codigo, campo, valor)} alCambiarBeneficio={(clave, activo) => actualizarBeneficio(codigo, clave, activo)} alGuardar={() => void guardarPlan(codigo)} />;
               })}
             </div>
           </section>
@@ -441,10 +459,12 @@ const Tarjeta: React.FC<{ titulo: string; valor: string; detalle: string; icono:
 const FormularioPlan: React.FC<{
   codigo: CodigoPlan;
   forma: FormaPlan;
+  beneficios: BeneficioPlan[];
   guardando: boolean;
-  alCambiar: (campo: keyof FormaPlan, valor: string | boolean) => void;
+  alCambiar: (campo: CampoForma, valor: string | boolean) => void;
+  alCambiarBeneficio: (clave: ClaveBeneficioPlan, activo: boolean) => void;
   alGuardar: () => void;
-}> = ({ codigo, forma, guardando, alCambiar, alGuardar }) => {
+}> = ({ codigo, forma, beneficios, guardando, alCambiar, alCambiarBeneficio, alGuardar }) => {
   const normal = codigo === 'normal';
   const campos: Array<{ campo: keyof Pick<FormaPlan, 'limiteDictadosMensual' | 'limiteAsesorIaMensual' | 'limiteExtractosMensual' | 'limiteEspaciosCompartidos' | 'limiteIntegrantesPorEspacio'>; etiqueta: string }> = [
     { campo: 'limiteDictadosMensual', etiqueta: 'Registros por voz / mes' },
@@ -461,6 +481,31 @@ const FormularioPlan: React.FC<{
         <CampoNumerico etiqueta="Precio anual (COP)" valor={forma.precioAnualCop} bloqueado={normal} alCambiar={(valor) => alCambiar('precioAnualCop', valor)} />
         {campos.map(({ campo, etiqueta }) => <CampoNumerico key={campo} etiqueta={etiqueta} valor={forma[campo]} alCambiar={(valor) => alCambiar(campo, valor)} ayuda="Vacío = ilimitado" />)}
       </div>
+      <fieldset className="mt-4 border-t border-[var(--fin-line)] pt-4">
+        <legend className="text-[11px] font-bold text-[var(--fin-ink-soft)]">Prestaciones incluidas</legend>
+        <p className="mt-1 text-[10px] leading-relaxed text-[var(--fin-ink-faint)]">Esta selección actualiza lo que se muestra y lo que cada cuenta puede usar.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {beneficios.map((beneficio) => {
+            const deshabilitado = (beneficio.clave === 'integrantes_espacio' && !forma.beneficios.espacios_compartidos)
+              || (beneficio.clave === 'pulso_premium' && !forma.beneficios.asesor_ia);
+            return (
+              <label key={beneficio.clave} className={`flex cursor-pointer items-start gap-2 rounded-xl border px-2.5 py-2 text-[11px] transition-colors ${forma.beneficios[beneficio.clave] ? 'border-purple-500/35 bg-purple-500/10' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'} ${deshabilitado ? 'cursor-not-allowed opacity-50' : ''}`}>
+                <input
+                  type="checkbox"
+                  checked={forma.beneficios[beneficio.clave]}
+                  disabled={deshabilitado}
+                  onChange={(evento) => alCambiarBeneficio(beneficio.clave, evento.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5 accent-purple-600"
+                />
+                <span>
+                  <span className="block font-bold text-[var(--fin-ink)]">{beneficio.titulo}</span>
+                  <span className="block leading-snug text-[var(--fin-ink-faint)]">{beneficio.detalle}</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
       <button disabled={guardando} onClick={alGuardar} className="mt-4 flex items-center gap-2 rounded-xl bg-[var(--fin-ink)] px-3.5 py-2 text-xs font-bold text-[var(--fin-bg)] hover:opacity-90 disabled:opacity-60">{guardando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />} Guardar {normal ? 'Normal' : 'Premium'}</button>
     </div>
   );

@@ -34,15 +34,18 @@ export const useAiInsights = ({
   insights: Insight[];
   cargandoIa: boolean;
   origenIa: boolean;
+  /** Solo verdadero después de validar estas prestaciones en el servidor. */
+  tieneInsightsIa: boolean;
+  tienePulsoPremium: boolean;
   refrescar: () => void;
 } => {
   const [aiInsights, setAiInsights] = useState<Insight[]>([]);
   const [cargandoIa, setCargandoIa] = useState(false);
   const [origenIa, setOrigenIa] = useState(false);
-  // Hasta comprobar el plan no se envía ningún dato al generador de insights.
-  // Normal conserva sus avisos locales; los análisis mensuales por IA son
-  // exclusivamente de Premium.
-  const [tienePremium, setTienePremium] = useState<boolean | null>(null);
+  // Hasta comprobar las prestaciones no se envía ningún dato al generador de
+  // insights. Así Super Admin puede cambiar Premium sin dejar un acceso vivo
+  // solo porque una pantalla se abrió antes del cambio.
+  const [prestaciones, setPrestaciones] = useState({ insightsIa: false, pulsoPremium: false });
   const lastFetchKey = useRef<string>('');
 
   // 1. Insights deterministas locales inmediatos (garantía offline / sin demora)
@@ -66,37 +69,46 @@ export const useAiInsights = ({
     const consultarPlan = async () => {
       const cliente = obtenerSupabase();
       if (!cliente) {
-        if (!cancelado) setTienePremium(false);
+        if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false });
         return;
       }
 
       try {
         const sesion = (await cliente.auth.getSession()).data.session;
         if (!sesion?.access_token) {
-          if (!cancelado) setTienePremium(false);
+          if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false });
           return;
         }
 
         const respuesta = await fetch(apiUrl('/api/mi-plan'), {
           headers: { Authorization: `Bearer ${sesion.access_token}` },
         });
-        const plan = await respuesta.json().catch(() => ({})) as { codigo?: unknown };
-        if (!cancelado) setTienePremium(respuesta.ok && plan.codigo === 'premium');
+        const plan = await respuesta.json().catch(() => ({})) as {
+          beneficios?: Array<{ clave?: unknown; activo?: unknown }>;
+        };
+        const tiene = (clave: string): boolean => respuesta.ok
+          && Array.isArray(plan.beneficios)
+          && plan.beneficios.some((beneficio) => beneficio?.clave === clave && beneficio?.activo === true);
+        if (!cancelado) setPrestaciones({ insightsIa: tiene('insights_ia'), pulsoPremium: tiene('pulso_premium') });
       } catch {
         // Si no se puede comprobar el plan, no se arriesga una llamada a IA.
-        if (!cancelado) setTienePremium(false);
+        if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false });
       }
     };
 
     void consultarPlan();
+    const intervalo = window.setInterval(() => void consultarPlan(), 30_000);
+    window.addEventListener('focus', consultarPlan);
     return () => {
       cancelado = true;
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus', consultarPlan);
     };
   }, []);
 
   const fetchAiInsights = async () => {
-    // Si no hay plan Premium comprobado, no gastar llamadas al modelo.
-    if (tienePremium !== true) {
+    // Si no está incluida la prestación, no gastar llamadas al modelo.
+    if (!prestaciones.insightsIa) {
       setAiInsights([]);
       setOrigenIa(false);
       setCargandoIa(false);
@@ -129,7 +141,10 @@ export const useAiInsights = ({
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.insights) && data.insights.length > 0) {
-          setAiInsights(data.insights);
+          // El servidor devuelve el contenido; esta marca vive en el cliente
+          // porque es quien comprobó el plan antes de pedirlo. No confiamos en
+          // una etiqueta enviada por la respuesta para vender Premium.
+          setAiInsights(data.insights.map((insight: Insight) => ({ ...insight, origenIa: true })));
           setOrigenIa(true);
         } else {
           setOrigenIa(false);
@@ -148,7 +163,7 @@ export const useAiInsights = ({
   useEffect(() => {
     fetchAiInsights();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mesCalendario, transacciones.length, tienePremium]);
+  }, [mesCalendario, transacciones.length, prestaciones.insightsIa]);
 
   // Si hay insights de IA, mostrarlos. Si no, o como complemento, usar los locales.
   const insightsCombinados = useMemo(() => {
@@ -162,6 +177,8 @@ export const useAiInsights = ({
     insights: insightsCombinados,
     cargandoIa,
     origenIa,
+    tieneInsightsIa: prestaciones.insightsIa,
+    tienePulsoPremium: prestaciones.pulsoPremium,
     refrescar: () => {
       lastFetchKey.current = '';
       fetchAiInsights();

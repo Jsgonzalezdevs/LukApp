@@ -5,7 +5,7 @@
 // Debe avanzar junto con la versión de la app. Al hacerlo, activate elimina
 // recursos de lanzamientos anteriores en vez de dejar una PWA instalada con
 // cachés viejos acumulados.
-const VERSION = 'v4.3.7';
+const VERSION = 'v4.5.1';
 const SHELL = `lukapp-shell-${VERSION}`;
 const ASSETS = `lukapp-assets-${VERSION}`;
 

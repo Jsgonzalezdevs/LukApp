@@ -41,6 +41,8 @@ interface InicioViewProps {
   movimientos: readonly Transaction[];
   conSenal?: ReadonlySet<string>;
   onAbrirMovimiento: (tx: Transaction) => void;
+  onRepetirMovimiento?: (tx: Transaction) => void;
+  onEditarMovimiento?: (tx: Transaction) => void;
   insights?: readonly (Insight & { onTocar?: () => void })[];
   cargandoIa?: boolean;
   onRefrescarInsights?: () => void;
@@ -57,6 +59,13 @@ interface InicioViewProps {
   liquidez: ContextoFinanciero['liquidez'];
   entrada: import('../lib/motorFinanciero').EntradaMotorFinanciero;
   mostrarDecisiones?: boolean;
+  resumenPremium?: {
+    disponibleDiarioCop: number;
+    dineroLibreCop: number;
+    diasRestantes: number;
+    confianza: 'alta' | 'media' | 'baja';
+  } | null;
+  onVerResumenPremium?: () => void;
 }
 
 const formatMontoCompacto = (monto: number): string => {
@@ -88,6 +97,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   movimientos,
   conSenal,
   onAbrirMovimiento,
+  onRepetirMovimiento,
+  onEditarMovimiento,
   insights,
   cargandoIa,
   onRefrescarInsights,
@@ -103,6 +114,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   liquidez,
   entrada,
   mostrarDecisiones,
+  resumenPremium = null,
+  onVerResumenPremium,
 }) => {
   const [novedadExpandida, setNovedadExpandida] = useState(false);
   const catalogo = useCatalogo();
@@ -324,6 +337,43 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </AnimatePresence>
 
+      {resumenPremium ? (
+        <motion.button
+          type="button"
+          onClick={onVerResumenPremium}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.985 }}
+          className="mt-3 w-full rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-3.5 py-3 text-left shadow-xs transition-colors hover:bg-[var(--fin-soft)]"
+        >
+          <span className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--fin-accent)]">
+              <Sparkles className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden="true" />
+              Pulso Premium
+            </span>
+            <span className="text-[11px] font-medium text-[var(--fin-ink-faint)]">
+              {resumenPremium.confianza === 'alta' ? 'Datos al día' : 'Cálculo estimado'}
+            </span>
+          </span>
+          <span className="mt-1.5 flex items-baseline justify-between gap-3">
+            <span>
+              <strong className="text-[21px] tracking-[-0.04em] tabular-nums text-[var(--fin-ink)]">
+                {modoPrivacidad ? '$ ••••••' : formatCop(resumenPremium.disponibleDiarioCop)}
+              </strong>
+              <span className="ml-1 text-[12px] text-[var(--fin-ink-soft)]">para usar hoy</span>
+            </span>
+            <span className="text-right text-[11px] leading-snug text-[var(--fin-ink-faint)]">
+              {resumenPremium.diasRestantes === 1 ? 'Queda 1 día' : `Quedan ${resumenPremium.diasRestantes} días`}
+            </span>
+          </span>
+          <span className="mt-1 block text-[12px] leading-snug text-[var(--fin-ink-soft)]">
+            {modoPrivacidad
+              ? 'Calculado tras separar tus pagos y reservas conocidos.'
+              : `${formatCop(resumenPremium.dineroLibreCop)} libres después de separar pagos y reservas conocidos.`}
+          </span>
+        </motion.button>
+      ) : null}
+
       <AnimatePresence>
         {insightActual && !novedad && (
           <motion.div
@@ -339,6 +389,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
             >
               <Sparkles className="h-3.5 w-3.5 text-[var(--fin-accent)] shrink-0" />
               <span className="truncate text-[var(--fin-ink-soft)]">
+                {insightActual.origenIa ? (
+                  <span className="mr-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">
+                    Premium
+                  </span>
+                ) : null}
                 <strong className="text-[var(--fin-ink)] font-semibold">
                   {insightActual.titulo}:
                 </strong>{' '}
@@ -350,7 +405,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
                 <button
                   type="button"
                   onClick={onRefrescarInsights}
-                  title="Actualizar IA"
+                  title="Actualizar resumen Premium"
                   className="p-1 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
                 >
                   <RefreshCw
@@ -560,6 +615,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
           transactions={movimientosAMostrar}
           conSenal={conSenal}
           onAbrir={onAbrirMovimiento}
+          onRepetir={onRepetirMovimiento}
+          onEditar={onEditarMovimiento}
           modoPrivacidad={modoPrivacidad}
         />
       </div>
