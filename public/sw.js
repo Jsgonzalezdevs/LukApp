@@ -5,7 +5,7 @@
 // Debe avanzar junto con la versión de la app. Al hacerlo, activate elimina
 // recursos de lanzamientos anteriores en vez de dejar una PWA instalada con
 // cachés viejos acumulados.
-const VERSION = 'v4.5.7';
+const VERSION = 'v4.5.8';
 const SHELL = `lukapp-shell-${VERSION}`;
 const ASSETS = `lukapp-assets-${VERSION}`;
 
@@ -15,7 +15,14 @@ const SHELL_URL = '/';
 /**
  * The app's own routes.
  */
-const RUTAS_APP = ['/', '/app', '/entrar', '/ajustes', '/superadmin', '/estadisticas'];
+const RUTAS_APP = ['/', '/app', '/entrar', '/ajustes', '/superadmin', '/estadisticas', '/ecosistema'];
+
+const respuestaSinConexion = () =>
+  new Response('Sin conexión. Vuelve a intentarlo cuando recuperes internet.', {
+    status: 503,
+    statusText: 'Sin conexión',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
 
 const esRutaDeLaApp = (url) =>
   RUTAS_APP.some((r) => url.pathname === r || url.pathname.startsWith(`${r}/`));
@@ -74,9 +81,7 @@ self.addEventListener('fetch', (evento) => {
           }
           return respuesta;
         })
-        .catch(() =>
-          caches.match(SHELL_URL).then((r) => r ?? fetch(peticion).catch(() => Response.error())),
-        ),
+        .catch(() => caches.match(SHELL_URL).then((r) => r ?? respuestaSinConexion())),
     );
     return;
   }
@@ -85,13 +90,15 @@ self.addEventListener('fetch', (evento) => {
     caches.match(peticion).then(
       (enCache) =>
         enCache ??
-        fetch(peticion).then((respuesta) => {
-          if (respuesta.ok && respuesta.type === 'basic') {
-            const copia = respuesta.clone();
-            caches.open(ASSETS).then((cache) => cache.put(peticion, copia));
-          }
-          return respuesta;
-        }),
+        fetch(peticion)
+          .then((respuesta) => {
+            if (respuesta.ok && respuesta.type === 'basic') {
+              const copia = respuesta.clone();
+              caches.open(ASSETS).then((cache) => cache.put(peticion, copia));
+            }
+            return respuesta;
+          })
+          .catch(respuestaSinConexion),
     ),
   );
 });

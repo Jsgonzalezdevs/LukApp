@@ -34,5 +34,5 @@
     "strict": false,
     "noImplicitAny": false
   },
-  "include": ["server.ts", "server_lib"]
+  "include": ["server.ts", "server_lib", "src/lib/alcanceAsesor.ts"]
 }

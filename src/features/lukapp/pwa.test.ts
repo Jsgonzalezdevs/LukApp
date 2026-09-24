@@ -72,4 +72,9 @@ describe('service worker', () => {
   it('never caches the manifest or icons across revisions', () => {
     expect(sw).toContain("url.pathname.endsWith('.webmanifest')");
   });
+
+  it('trata Ecosistema como una ruta de la aplicación al navegar sin conexión', () => {
+    expect(sw).toContain("'/ecosistema'");
+    expect(sw).toContain('respuestaSinConexion');
+  });
 });

@@ -2,6 +2,7 @@ import { parseTransaction, type ParsedTransaction } from './parseTransaction';
 import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { normalizarNombre } from './contactos';
+import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from '../../../lib/alcanceAsesor';
 import type { LexicoAprendido } from './aprendizaje';
 import type { CategoriaPersonal } from '../categorias';
 import { analizarTopesRenta } from './tributarioColombia';
@@ -259,6 +260,9 @@ export function responderAsesor(
   context: AsesorContext,
   disponibleDiarioCop?: number,
 ): AsesorResponse {
+  if (clasificarAlcanceAsesor(texto) === 'tecnica-sin-finanzas') {
+    return { text: RESPUESTA_TEMA_TECNICO, newContext: { ...context } };
+  }
   const norm = normalizarNombre(texto);
   let newContext = { ...context };
   const consulta = continuarDeuda(texto, context.conversacionDeuda, cajitas, cajitasBalances);

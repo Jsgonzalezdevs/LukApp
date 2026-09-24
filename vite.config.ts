@@ -9,10 +9,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  esbuild: {
-    drop: ['debugger'],
-    legalComments: 'none',
-  },
   build: {
     sourcemap: false,
     minify: 'esbuild',

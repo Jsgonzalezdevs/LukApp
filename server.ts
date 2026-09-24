@@ -9,6 +9,7 @@ import { PDFParse } from 'pdf-parse';
 import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { validarContrasenaSegura } from './src/lib/seguridad.ts';
+import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
 import { CATEGORIES, type Category, type TxKind } from './src/features/lukapp/types.ts';
@@ -3178,6 +3179,15 @@ app.post('/api/asesor-ia', async (req, res) => {
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
   }
+  const alcanceConsulta = clasificarAlcanceAsesor(prompt);
+  if (alcanceConsulta === 'tecnica-sin-finanzas') {
+    return res.status(200).json({
+      success: true,
+      text: RESPUESTA_TEMA_TECNICO,
+      provider: 'Asesor LukApp',
+      offline: false,
+    });
+  }
   let usuarioEmail = 'usuario_local';
   let userId = 'local_user';
   let cupoConsumido = false;
@@ -3267,7 +3277,8 @@ Reglas clave:
 5. Usa contexto en pesos colombianos (COP).
 6. Da recomendaciones realistas y accionables para Colombia (ahorro, cajitas, CDT, presupuestos, recorte de gastos hormiga).
 7. No des recomendaciones de inversión de alto riesgo sin advertencias.
-8. Si te cuentan algo personal o difícil, reconócelo en UNA frase y sigue con lo financiero.`;
+8. Si te cuentan algo personal o difícil, reconócelo en UNA frase y sigue con lo financiero.
+9. Tu alcance es exclusivamente financiero. Si mezclan una pregunta técnica o general con una consulta financiera, ignora la parte ajena y responde solo la parte financiera. No expliques SQL, programación ni cómo crear bases de datos.`;
 
   const inicio = Date.now();
   try {

@@ -95,6 +95,12 @@ const preguntar = (
   );
 
 describe('responderAsesor — resumen del mes', () => {
+  it('mantiene el alcance financiero también cuando responde sin IA', () => {
+    const r = preguntar('¿Cómo hago una base de datos en SQL?');
+    expect(r.text).toMatch(/analiza tus finanzas/i);
+    expect(r.text).toMatch(/resumen del mes/i);
+  });
+
   it('suma ingresos y gastos solo del mes actual (fijado en agosto 2026)', () => {
     const transacciones = [
       tx({ kind: 'ingreso', amountCop: 1_000_000, occurredOn: '2026-08-05' }),
