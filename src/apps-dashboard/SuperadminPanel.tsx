@@ -687,7 +687,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       } = await cliente.auth.getSession();
       if (!adminSession) throw new Error('No hay sesión activa');
 
-      localStorage.setItem(
+      sessionStorage.setItem(
         '__admin_session_backup__',
         JSON.stringify({
           access_token: adminSession.access_token,
@@ -718,7 +718,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
       if (otpError) throw otpError;
 
-      localStorage.setItem(
+      sessionStorage.setItem(
         '__impersonated_user__',
         JSON.stringify({
           usuario: impersonando.usuario,
@@ -730,7 +730,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       onNavigateTo?.('finanzas');
     } catch (err: any) {
       setFormError(err.message);
-      localStorage.removeItem('__admin_session_backup__');
+      sessionStorage.removeItem('__admin_session_backup__');
     } finally {
       setImpersonacionCargando(false);
     }

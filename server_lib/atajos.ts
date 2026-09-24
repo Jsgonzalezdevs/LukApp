@@ -41,7 +41,7 @@ export const hashLlave = (llave: string): string =>
 export const pistaDeLlave = (llave: string): string => llave.trim().slice(-4);
 
 /**
- * La llave que trae la petición, venga como venga.
+ * La llave que trae una cabecera HTTP.
  *
  * Se acepta `Bearer <llave>` y también la llave pelada. No es dejadez: en la
  * app Atajos las cabeceras se escriben en dos campitos de texto, y escribir

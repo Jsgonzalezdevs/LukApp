@@ -20,6 +20,11 @@ import {
   pistaDeLlave,
 } from './server_lib/atajos.ts';
 import {
+  CABECERAS_API_SEGURAS,
+  esOrigenCorsPermitido,
+  origenesCorsPermitidos,
+} from './server_lib/seguridadHttp.ts';
+import {
   leerVocabularioPersonal,
   transcribirAudio,
   type ModoTranscripcion,
@@ -59,11 +64,40 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MAX_BYTES_AUDIO = 8 * 1024 * 1024; // 8 MB
 
-app.use(cors());
-// Limite ampliado a 10MB para PDFs y audio
-app.use(express.json({ limit: '10mb' }));
-app.use(express.raw({ type: 'audio/*', limit: '10mb' }));
+// Express no debe revelar la tecnología de la que parte la API.
+app.disable('x-powered-by');
+
+// Las respuestas de API pueden contener información financiera. Aplicar estas
+// cabeceras antes de CORS también protege las preflight que CORS responde solo.
+app.use('/api', (req, res, next) => {
+  for (const [nombre, valor] of Object.entries(CABECERAS_API_SEGURAS)) {
+    res.setHeader(nombre, valor);
+  }
+  const protocoloDelProxy = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  if (req.secure || protocoloDelProxy === 'https') {
+    res.setHeader('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  }
+  next();
+});
+
+const origenesCors = origenesCorsPermitidos(process.env);
+app.use('/api', cors({
+  origin: (origen, callback) => callback(null, esOrigenCorsPermitido(origen, origenesCors)),
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: [
+    'Accept',
+    'Authorization',
+    'Content-Type',
+    'X-Api-Key',
+    'X-Lukapp-Transcription-Mode',
+    'X-Lukapp-Vocabulario',
+  ],
+  credentials: false,
+  maxAge: 86_400,
+  optionsSuccessStatus: 204,
+}));
 
 // ----------------------------------------------------------------------
 // SEGURIDAD: Rate Limiter en Memoria para APIs
@@ -95,6 +129,31 @@ app.use('/api', rateLimiter(120, 60000));
 // Las acciones que alteran cuentas no necesitan el límite amplio del resto de
 // la API. Es una segunda barrera ante automatización y fuerza bruta.
 app.use(['/api/crear-usuario', '/api/editar-usuario', '/api/solicitudes-superadmin'], rateLimiter(12, 60000));
+// Estos límites van antes de leer el cuerpo: así una ráfaga no fuerza a
+// deserializar PDFs, audios o prompts costosos antes de ser rechazada.
+app.use('/api/analizar-extracto', rateLimiter(6, 60000));
+app.use('/api/asesor-ia', rateLimiter(12, 60000));
+app.use('/api/finanzas-insights-ia', rateLimiter(6, 60000));
+app.use('/api/transcribir', rateLimiter(12, 60000));
+app.use('/api/atajo/movimiento', rateLimiter(20, 60000));
+app.use('/api/transcribir', (req, res, next) => {
+  const contenido = Number(req.get('content-length'));
+  if (Number.isFinite(contenido) && contenido > MAX_BYTES_AUDIO) {
+    return res.status(413).json({ offline: true, error: 'El audio supera el límite de 8 MB.' });
+  }
+  return next();
+});
+
+// PDF de hasta 4 MB en base64 ocupa cerca de 5.4 MB; 6 MB deja margen sin
+// aceptar de forma innecesaria cuerpos enormes. El audio se limita por ruta.
+app.use(express.json({ limit: '6mb' }));
+app.use(express.raw({ type: 'audio/*', limit: MAX_BYTES_AUDIO }));
+app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (typeof error === 'object' && error && (error as { type?: string }).type === 'entity.too.large') {
+    return res.status(413).json({ error: 'La solicitud supera el tamaño permitido.' });
+  }
+  return next(error);
+});
 
 // ----------------------------------------------------------------------
 // AUDITORÍA: Registro de Actividad para Superadmin
@@ -205,6 +264,29 @@ const clienteAdmin = () => {
 };
 
 type ClienteAdmin = NonNullable<ReturnType<typeof clienteAdmin>>;
+
+/**
+ * La API que puede consumir IA o procesar documentos es privada por defecto.
+ * Un servidor sin Supabase no debe convertirse, por un error de despliegue, en
+ * un proxy público de las llaves de IA. El modo local se habilita solo de forma
+ * explícita y únicamente fuera de producción para pruebas manuales.
+ */
+const sePermiteApiLocalSinSesion = (): boolean =>
+  process.env.NODE_ENV !== 'production'
+  && !process.env.RENDER
+  && process.env.PERMITIR_API_SIN_SESION_EN_LOCAL === 'true';
+
+const exigirConfiguracionSegura = (
+  cliente: ClienteAdmin | null,
+  res: express.Response,
+  servicio: string,
+): boolean => {
+  if (cliente || sePermiteApiLocalSinSesion()) return true;
+  res.status(503).json({
+    error: `${servicio} requiere que el servidor valide la sesión. Inténtalo de nuevo más tarde.`,
+  });
+  return false;
+};
 
 interface EstadoPlanServidor {
   codigo: CodigoPlan;
@@ -2145,6 +2227,7 @@ const MAX_BYTES_PDF = 4 * 1024 * 1024; // 4MB
 
 app.post('/api/analizar-extracto', async (req, res) => {
   const cliente = clienteAdmin();
+  if (!exigirConfiguracionSegura(cliente, res, 'El análisis de extractos')) return;
   const token = req.headers.authorization?.replace('Bearer ', '');
   let userId: string | null = null;
   if (cliente) {
@@ -2401,11 +2484,7 @@ app.post('/api/atajos/revocar', async (req, res) => {
 app.post('/api/atajo/movimiento', async (req, res) => {
   const llave =
     llaveDeCabecera(req.headers.authorization) ||
-    llaveDeCabecera(req.headers['x-api-key'] as string | undefined) ||
-    (typeof req.query.llave === 'string' ? req.query.llave.trim() : null) ||
-    (typeof req.query.key === 'string' ? req.query.key.trim() : null) ||
-    (typeof req.body?.llave === 'string' ? req.body.llave.trim() : null) ||
-    (typeof req.body?.key === 'string' ? req.body.key.trim() : null);
+    llaveDeCabecera(req.headers['x-api-key'] as string | undefined);
 
   if (!llave) return res.status(401).json({ error: 'Falta la llave' });
 
@@ -2449,7 +2528,7 @@ app.post('/api/atajo/movimiento', async (req, res) => {
     return res.status(201).json({ success: true, id: resultado.fila.id });
   } catch (error: any) {
     console.error('Error registrando movimiento de atajo:', error);
-    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+    return res.status(500).json({ error: 'No se pudo registrar el movimiento. Inténtalo de nuevo.' });
   }
 });
 
@@ -2956,8 +3035,21 @@ app.delete('/api/asesor/memoria/:id', async (req, res) => {
   return res.json({ ok: true });
 });
 
-app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
+app.post('/api/asesor-ia', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  let sesionVerificada: { userId: string; email: string } | null = null;
+  if (!exigirConfiguracionSegura(cliente, res, 'El Asesor IA')) return;
+  if (cliente && !token) {
+    return res.status(401).json({ error: 'Inicia sesión para usar una consulta del Asesor IA.' });
+  }
+  if (cliente && token) {
+    const quienLlama = await exigirUsuario(cliente, token);
+    if ('status' in quienLlama) {
+      return res.status(quienLlama.status).json({ error: 'Tu sesión ya no es válida. Inicia sesión de nuevo.' });
+    }
+    sesionVerificada = quienLlama;
+  }
   const { prompt, history, finanzasContext, memoriaUsuario, idConsulta } = req.body ?? {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
@@ -2967,17 +3059,9 @@ app.post('/api/asesor-ia', rateLimiter(12, 60000), async (req, res) => {
   let cupoConsumido = false;
   let perfilFinancieroCompleto: Record<string, unknown> | null = null;
 
-  const cliente = clienteAdmin();
-  if (cliente) {
-    if (!token) {
-      return res.status(401).json({ error: 'Inicia sesión para usar una consulta del Asesor IA.' });
-    }
-    const quienLlama = await exigirUsuario(cliente, token);
-    if ('status' in quienLlama) {
-      return res.status(quienLlama.status).json({ error: 'Tu sesión ya no es válida. Inicia sesión de nuevo.' });
-    }
-    usuarioEmail = quienLlama.email || 'usuario';
-    userId = quienLlama.userId;
+  if (cliente && sesionVerificada) {
+    usuarioEmail = sesionVerificada.email || 'usuario';
+    userId = sesionVerificada.userId;
     try {
       // En una sesión autenticada el asesor no confía en un resumen enviado
       // por el navegador: relee el historial financiero de su dueña desde el
@@ -3404,6 +3488,7 @@ Reglas obligatorias:
 // ----------------------------------------------------------------------
 app.post('/api/transcribir', async (req, res) => {
   const cliente = clienteAdmin();
+  if (!exigirConfiguracionSegura(cliente, res, 'La transcripción')) return;
   const token = req.headers.authorization?.replace('Bearer ', '');
   const tipo = req.headers['content-type'] ?? 'audio/webm';
   const modo: ModoTranscripcion =
@@ -3412,8 +3497,11 @@ app.post('/api/transcribir', async (req, res) => {
   let cupoConsumido = false;
   try {
     const audioBuffer = req.body as Buffer;
-    if (!audioBuffer || audioBuffer.length === 0) {
+    if (!Buffer.isBuffer(audioBuffer) || audioBuffer.length === 0) {
       return res.status(200).json({ offline: true, error: 'No llegó audio' });
+    }
+    if (audioBuffer.length > MAX_BYTES_AUDIO) {
+      return res.status(413).json({ offline: true, error: 'El audio supera el límite de 8 MB.' });
     }
 
     // La transcripción parcial era solo un adorno de texto en pantalla, pero

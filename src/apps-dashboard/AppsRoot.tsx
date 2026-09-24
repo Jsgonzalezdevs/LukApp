@@ -36,6 +36,26 @@ const VistaConCarga: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 );
 
 const ADMIN_BACKUP_KEY = '__admin_session_backup__';
+const IMPERSONATED_USER_KEY = '__impersonated_user__';
+
+/**
+ * Los tokens de una suplantación administrativa no deben sobrevivir al cierre
+ * del navegador. Se migra una sola vez el formato antiguo de localStorage para
+ * no dejar a un administrador atrapado a mitad de una sesión ya iniciada.
+ */
+const leerDatoDeSuplantacion = (clave: string): string | null => {
+  try {
+    const actual = sessionStorage.getItem(clave);
+    if (actual !== null) return actual;
+    const anterior = localStorage.getItem(clave);
+    if (anterior === null) return null;
+    sessionStorage.setItem(clave, anterior);
+    localStorage.removeItem(clave);
+    return anterior;
+  } catch {
+    return null;
+  }
+};
 
 // `AppId` incluye `null`, y un objeto no puede tener `null` como llave -- por
 // eso esto es una función y no un `Record<AppId, string>`.
@@ -118,7 +138,7 @@ export const AppsRoot: React.FC = () => {
   // Admin impersonation banner
   const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {
     try {
-      const raw = localStorage.getItem(ADMIN_BACKUP_KEY);
+      const raw = leerDatoDeSuplantacion(ADMIN_BACKUP_KEY);
       return raw ? (JSON.parse(raw) as AdminBackup) : null;
     } catch {
       return null;
@@ -127,7 +147,7 @@ export const AppsRoot: React.FC = () => {
 
   const [impersonatedUser, setImpersonatedUser] = useState<{ usuario: string | null; email: string } | null>(() => {
     try {
-      const raw = localStorage.getItem('__impersonated_user__');
+      const raw = leerDatoDeSuplantacion(IMPERSONATED_USER_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch {
       return null;
@@ -142,8 +162,8 @@ export const AppsRoot: React.FC = () => {
       access_token: adminBackup.access_token,
       refresh_token: adminBackup.refresh_token,
     });
-    localStorage.removeItem(ADMIN_BACKUP_KEY);
-    localStorage.removeItem('__impersonated_user__');
+    sessionStorage.removeItem(ADMIN_BACKUP_KEY);
+    sessionStorage.removeItem(IMPERSONATED_USER_KEY);
     setAdminBackup(null);
     setImpersonatedUser(null);
     setActiveApp('superadmin');
@@ -164,7 +184,7 @@ export const AppsRoot: React.FC = () => {
     // SuperadminPanel cambia la sesión directamente para asesorar; la marca
     // persistida existe antes del evento de Auth y es la fuente confiable aquí.
     // Esa entrada es soporte administrativo, no actividad del cliente.
-    if (localStorage.getItem(ADMIN_BACKUP_KEY)) return;
+    if (sessionStorage.getItem(ADMIN_BACKUP_KEY)) return;
     const userId = sesion.estado.userId;
     if (ultimoAccesoRegistrado.current === userId) return;
 

@@ -14,17 +14,24 @@ import {
 import { createClient } from '@supabase/supabase-js';
 
 export const config = { runtime: 'edge' };
+const MAX_BYTES_AUDIO = 8 * 1024 * 1024;
+
+const encabezadosJson = {
+  'Cache-Control': 'no-store, max-age=0',
+  'Content-Type': 'application/json',
+  'X-Content-Type-Options': 'nosniff',
+};
 
 const noSePudo = (motivo: string): Response =>
   new Response(JSON.stringify({ offline: true, error: motivo }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: encabezadosJson,
   });
 
 const responderJson = (estado: number, cuerpo: Record<string, unknown>): Response =>
   new Response(JSON.stringify(cuerpo), {
     status: estado,
-    headers: { 'Content-Type': 'application/json' },
+    headers: encabezadosJson,
   });
 
 /**
@@ -105,8 +112,10 @@ const devolverDictadoFinal = async (req: Request): Promise<void> => {
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return new Response(null, { status: 405 });
 
-  const audio = await req.blob();
-  if (audio.size === 0) return noSePudo('No llegó audio');
+  const longitudDeclarada = Number(req.headers.get('content-length'));
+  if (Number.isFinite(longitudDeclarada) && longitudDeclarada > MAX_BYTES_AUDIO) {
+    return responderJson(413, { offline: true, error: 'El audio supera el límite de 8 MB.' });
+  }
 
   const tipo = req.headers.get('content-type') ?? 'audio/webm';
   const modo: ModoTranscripcion =
@@ -114,6 +123,22 @@ export default async function handler(req: Request): Promise<Response> {
   if (modo === 'parcial') return noSePudo('La vista previa por voz no está disponible.');
   const denegada = await consumirDictadoFinal(req, modo);
   if (denegada) return denegada;
+
+  let audio: Blob;
+  try {
+    audio = await req.blob();
+  } catch {
+    await devolverDictadoFinal(req);
+    return noSePudo('No se pudo leer el audio. Inténtalo de nuevo.');
+  }
+  if (audio.size === 0) {
+    await devolverDictadoFinal(req);
+    return noSePudo('No llegó audio');
+  }
+  if (audio.size > MAX_BYTES_AUDIO) {
+    await devolverDictadoFinal(req);
+    return responderJson(413, { offline: true, error: 'El audio supera el límite de 8 MB.' });
+  }
   const vocabulario = leerVocabularioPersonal(
     req.headers.get('x-lukapp-vocabulario'),
   );
@@ -130,6 +155,6 @@ export default async function handler(req: Request): Promise<Response> {
 
   return new Response(JSON.stringify(resultado), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: encabezadosJson,
   });
 }

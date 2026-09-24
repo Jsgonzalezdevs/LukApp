@@ -163,7 +163,7 @@ describe('Auth - Admin Impersonation', () => {
    */
   it('should backup admin session before impersonating', () => {
     // When admin clicks "Asesorar a usuario", backup current session:
-    // localStorage.setItem('__admin_session_backup__', JSON.stringify({
+    // sessionStorage.setItem('__admin_session_backup__', JSON.stringify({
     //   access_token: currentSession.access_token,
     //   refresh_token: currentSession.refresh_token
     // }));
