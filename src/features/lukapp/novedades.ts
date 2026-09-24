@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.5.7', fecha: '2026-09-24', texto: 'Superadmin ahora registra los tokens reportados por cada respuesta del proveedor de IA y los desglosa por usuario. También muestra la capacidad real informada por el proveedor, sin inventar una cuota diaria fija.' },
   { version: '4.5.6', fecha: '2026-09-24', texto: 'El Asesor IA ahora ajusta automáticamente el tamaño de tu contexto financiero y conserva lo importante de tus datos recientes. Así evita que un historial grande agote la cuota del proveedor y vuelva al modo local.' },
   { version: '4.5.5', fecha: '2026-09-24', texto: 'Reforzamos la seguridad de LukApp: el API ahora limita orígenes y solicitudes costosas, protege mejor audios y documentos, y las sesiones temporales de superadmin se eliminan al cerrar el navegador.' },
   { version: '4.5.4', fecha: '2026-09-24', texto: 'El Asesor IA ahora prueba un modelo alterno de Groq cuando el principal no está habilitado o no logra entregar texto. Así conserva respuestas con IA en vez de caer de inmediato al modo local.' },

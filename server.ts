@@ -54,6 +54,14 @@ import {
   acotarHistorialAsesor,
   recortarConMuestras,
 } from './server_lib/presupuestoAsesor.ts';
+import {
+  cuotaGroqDesdeCabeceras,
+  usoDesdeRespuestaChat,
+  usoDesdeRespuestaClaude,
+  usoDesdeRespuestaGemini,
+  type CuotaProveedorIA,
+  type UsoTokensIA,
+} from './server_lib/usoProveedorIA.ts';
 import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
 import {
   centavosWompi,
@@ -795,6 +803,7 @@ export interface PeticionIA {
   totalTokens: number;
   duracionMs: number;
   exito: boolean;
+  cuotaProveedor?: CuotaProveedorIA;
   motivo?: string;
   promptText?: string;
   respuestaTexto?: string;
@@ -807,6 +816,7 @@ interface MetricasIAStore {
   llamadasExitosasHoy: number;
   llamadasFallbackHoy: number;
   latenciasMs: number[];
+  ultimaCuotaProveedor: (CuotaProveedorIA & { observadaEn: string }) | null;
   peticionesRecientes: PeticionIA[];
 }
 
@@ -839,6 +849,7 @@ const metricasIA: MetricasIAStore = {
   llamadasExitosasHoy: 0,
   llamadasFallbackHoy: 0,
   latenciasMs: [],
+  ultimaCuotaProveedor: null,
   peticionesRecientes: [],
 };
 
@@ -851,6 +862,7 @@ const asegurarDiaActualMetricas = () => {
     metricasIA.llamadasExitosasHoy = 0;
     metricasIA.llamadasFallbackHoy = 0;
     metricasIA.latenciasMs = [];
+    metricasIA.ultimaCuotaProveedor = null;
   }
 };
 
@@ -951,6 +963,12 @@ const registrarUsoIA = async (
     metricasIA.tokensHoy += peticion.totalTokens;
     metricasIA.latenciasMs.push(peticion.duracionMs);
     if (metricasIA.latenciasMs.length > 50) metricasIA.latenciasMs.shift();
+    if (peticion.cuotaProveedor) {
+      metricasIA.ultimaCuotaProveedor = {
+        ...peticion.cuotaProveedor,
+        observadaEn: registro.timestamp,
+      };
+    }
   } else {
     metricasIA.llamadasFallbackHoy += 1;
   }
@@ -960,48 +978,56 @@ const registrarUsoIA = async (
 
   // Persistencia en Supabase: si la tabla existe, el historial sobrevive a cualquier reinicio del servidor
   if (cliente) {
-    /* `Promise.resolve` envolviendo la consulta: el constructor de Supabase es
-       un thenable, no una promesa, así que su `.then()` devuelve `PromiseLike`
-       y ahí no existe `.catch`. En ejecución funcionaba de casualidad; para el
-       compilador era un acceso a un método inexistente, y era el único punto
-       del servidor donde un fallo de red al guardar telemetría podía acabar en
-       un rechazo sin capturar. */
-    await Promise.resolve(
-      cliente
-      .from('telemetria_ia')
-      .upsert({
-        id: registro.id,
-        usuario_id: userId || null,
-        usuario_email: registro.usuarioEmail,
-        proveedor: registro.proveedor,
-        modelo: registro.modelo,
-        prompt_tokens: registro.promptTokens,
-        completion_tokens: registro.completionTokens,
-        total_tokens: registro.totalTokens,
-        duracion_ms: registro.duracionMs,
-        exito: registro.exito,
-        motivo: registro.motivo || null,
-        prompt_texto: registro.promptText || null,
-        respuesta_texto: registro.respuestaTexto || null,
-        creado_en: registro.timestamp,
-      }, { onConflict: 'id', ignoreDuplicates: true }),
-    )
-      .then(({ error }) => {
-        if (error) {
-          // Si la tabla aún no se ha creado en Supabase, no rompe nada (continúa con memoria local)
-          console.error('[telemetria_ia] No se pudo persistir la consulta del Asesor:', {
-            codigo: error.code,
-            mensaje: error.message,
-            idConsulta: registro.id,
-          });
-        }
-      })
-      .catch((err) => {
-        console.error('[telemetria_ia] Error de red al persistir la consulta del Asesor:', {
+    const filaBase = {
+      id: registro.id,
+      usuario_id: userId || null,
+      usuario_email: registro.usuarioEmail,
+      proveedor: registro.proveedor,
+      modelo: registro.modelo,
+      prompt_tokens: registro.promptTokens,
+      completion_tokens: registro.completionTokens,
+      total_tokens: registro.totalTokens,
+      duracion_ms: registro.duracionMs,
+      exito: registro.exito,
+      motivo: registro.motivo || null,
+      prompt_texto: registro.promptText || null,
+      respuesta_texto: registro.respuestaTexto || null,
+      creado_en: registro.timestamp,
+    };
+    const filaConCuota = {
+      ...filaBase,
+      limite_tokens_minuto: registro.cuotaProveedor?.limiteTokensMinuto ?? null,
+      tokens_restantes_minuto: registro.cuotaProveedor?.tokensRestantesMinuto ?? null,
+      limite_solicitudes_dia: registro.cuotaProveedor?.limiteSolicitudesDia ?? null,
+      solicitudes_restantes_dia: registro.cuotaProveedor?.solicitudesRestantesDia ?? null,
+      cuota_proveedor_observada_en: registro.cuotaProveedor ? registro.timestamp : null,
+    };
+
+    try {
+      let { error } = await cliente
+        .from('telemetria_ia')
+        .upsert(filaConCuota, { onConflict: 'id', ignoreDuplicates: true });
+      // El código puede desplegarse antes de que se ejecute la migración nueva.
+      // En ese intervalo seguimos guardando los tokens reales, aunque la
+      // fotografía de la cuota todavía no tenga columnas donde persistirse.
+      if (error?.code === '42703' || error?.code === 'PGRST204') {
+        ({ error } = await cliente
+          .from('telemetria_ia')
+          .upsert(filaBase, { onConflict: 'id', ignoreDuplicates: true }));
+      }
+      if (error) {
+        console.error('[telemetria_ia] No se pudo persistir la consulta del Asesor:', {
+          codigo: error.code,
+          mensaje: error.message,
           idConsulta: registro.id,
-          error: err instanceof Error ? err.message : String(err),
         });
+      }
+    } catch (error) {
+      console.error('[telemetria_ia] Error de red al persistir la consulta del Asesor:', {
+        idConsulta: registro.id,
+        error: error instanceof Error ? error.message : String(error),
       });
+    }
   }
 };
 
@@ -1399,6 +1425,106 @@ app.get('/api/auditoria-logs', async (req, res) => {
 // ----------------------------------------------------------------------
 // ENDPOINT: Métricas de IA y Consumo de Tokens (Superadmin)
 // ----------------------------------------------------------------------
+type ConsumoUsuarioIA = {
+  usuarioEmail: string;
+  consultas: number;
+  exitosas: number;
+  locales: number;
+  tokens: number;
+};
+
+type FilaTelemetriaIA = {
+  id: string;
+  creado_en: string;
+  usuario_email: string;
+  proveedor: string;
+  modelo: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  duracion_ms: number;
+  exito: boolean;
+  motivo?: string | null;
+  prompt_texto?: string | null;
+  respuesta_texto?: string | null;
+  limite_tokens_minuto?: number | null;
+  tokens_restantes_minuto?: number | null;
+  limite_solicitudes_dia?: number | null;
+  solicitudes_restantes_dia?: number | null;
+  cuota_proveedor_observada_en?: string | null;
+  [campo: string]: unknown;
+};
+
+const cuotaProveedorDesdeFila = (fila: Record<string, unknown>): (CuotaProveedorIA & { observadaEn: string }) | null => {
+  const numero = (valor: unknown): number | null => {
+    if (valor === null || valor === undefined || valor === '') return null;
+    const convertido = Number(valor);
+    return Number.isFinite(convertido) && convertido >= 0 ? convertido : null;
+  };
+  const cuota: CuotaProveedorIA = {
+    limiteTokensMinuto: numero(fila.limite_tokens_minuto),
+    tokensRestantesMinuto: numero(fila.tokens_restantes_minuto),
+    limiteSolicitudesDia: numero(fila.limite_solicitudes_dia),
+    solicitudesRestantesDia: numero(fila.solicitudes_restantes_dia),
+  };
+  if (!Object.values(cuota).some((valor) => valor !== null)) return null;
+  return {
+    ...cuota,
+    observadaEn: typeof fila.cuota_proveedor_observada_en === 'string'
+      ? fila.cuota_proveedor_observada_en
+      : typeof fila.creado_en === 'string' ? fila.creado_en : new Date(0).toISOString(),
+  };
+};
+
+const consumoPorUsuarioDesdePeticiones = (peticiones: PeticionIA[]): ConsumoUsuarioIA[] => {
+  const porUsuario = new Map<string, Omit<ConsumoUsuarioIA, 'usuarioEmail'>>();
+  peticiones.forEach((peticion) => {
+    const usuario = peticion.usuarioEmail || 'usuario_local';
+    const actual = porUsuario.get(usuario) || { consultas: 0, exitosas: 0, locales: 0, tokens: 0 };
+    actual.consultas += 1;
+    if (peticion.exito) {
+      actual.exitosas += 1;
+      actual.tokens += Number(peticion.totalTokens) || 0;
+    } else {
+      actual.locales += 1;
+    }
+    porUsuario.set(usuario, actual);
+  });
+  return Array.from(porUsuario.entries())
+    .map(([usuarioEmail, datos]) => ({ usuarioEmail, ...datos }))
+    .sort((a, b) => b.tokens - a.tokens || b.consultas - a.consultas || a.usuarioEmail.localeCompare(b.usuarioEmail));
+};
+
+// PostgREST suele limitar una respuesta a mil filas. Paginar evita que el
+// desglose por usuario deje de contar consultas silenciosamente al crecer el
+// día. Cincuenta mil supera con margen el límite HTTP del Asesor y, si alguna
+// vez se alcanza, el panel lo informa en lugar de mostrar un total incompleto.
+const TAMANO_PAGINA_TELEMETRIA_IA = 1_000;
+const MAX_FILAS_TELEMETRIA_IA_HOY = 50_000;
+
+const cargarTelemetriaIADeHoy = async (cliente: ClienteAdmin, inicioHoyIso: string) => {
+  const filas: FilaTelemetriaIA[] = [];
+  let desde = 0;
+
+  while (filas.length < MAX_FILAS_TELEMETRIA_IA_HOY) {
+    const { data, error } = await cliente
+      .from('telemetria_ia')
+      .select('*')
+      .gte('creado_en', inicioHoyIso)
+      .order('creado_en', { ascending: false })
+      .order('id', { ascending: false })
+      .range(desde, desde + TAMANO_PAGINA_TELEMETRIA_IA - 1);
+
+    if (error) return { filas, error, truncada: false };
+    const pagina = (data ?? []) as FilaTelemetriaIA[];
+    filas.push(...pagina);
+    if (pagina.length < TAMANO_PAGINA_TELEMETRIA_IA) return { filas, error: null, truncada: false };
+    desde += pagina.length;
+  }
+
+  return { filas, error: null, truncada: true };
+};
+
 app.get('/api/metricas-ia', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ error: 'No authorization header' });
@@ -1419,34 +1545,22 @@ app.get('/api/metricas-ia', async (req, res) => {
 
   let proveedorPrincipal = 'Ninguno (Modo Local)';
   let modeloPrincipal = 'Motor de Reglas Heurístico';
-  let limiteDiarioTokens = 0;
-  let limiteDiarioLlamadas = 0;
 
   if (groqKey) {
     proveedorPrincipal = 'Groq Cloud';
     modeloPrincipal = 'openai/gpt-oss-120b';
-    limiteDiarioTokens = 500000;
-    limiteDiarioLlamadas = 14400;
   } else if (openaiKey) {
     proveedorPrincipal = 'OpenAI';
     modeloPrincipal = 'gpt-4o-mini';
-    limiteDiarioTokens = 200000;
-    limiteDiarioLlamadas = 5000;
   } else if (geminiKey) {
     proveedorPrincipal = 'Google Gemini';
     modeloPrincipal = 'gemini-1.5-flash';
-    limiteDiarioTokens = 1000000;
-    limiteDiarioLlamadas = 1500;
   } else if (anthropicKey) {
     proveedorPrincipal = 'Anthropic';
     modeloPrincipal = 'claude-3-5-sonnet';
-    limiteDiarioTokens = 100000;
-    limiteDiarioLlamadas = 1000;
   } else if (deepseekKey) {
     proveedorPrincipal = 'DeepSeek';
     modeloPrincipal = 'deepseek-chat';
-    limiteDiarioTokens = 500000;
-    limiteDiarioLlamadas = 10000;
   }
 
   let tokensHoy = metricasIA.tokensHoy;
@@ -1455,25 +1569,24 @@ app.get('/api/metricas-ia', async (req, res) => {
   let llamadasFallbackHoy = metricasIA.llamadasFallbackHoy;
   let latenciasMs = metricasIA.latenciasMs;
   let peticionesRecientes = metricasIA.peticionesRecientes;
-  let usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }> = [];
+  let consumoPorUsuario = consumoPorUsuarioDesdePeticiones(peticionesRecientes);
+  let cuotaProveedor = metricasIA.ultimaCuotaProveedor;
   let origenMetricas: 'supabase' | 'memoria' = 'memoria';
   let diagnosticoTelemetria: string | null = null;
 
   // Cargar datos persistentes de Supabase si existen
   try {
     const inicioHoyIso = `${metricasIA.fechaActual}T00:00:00-05:00`;
-    const { data: filasHoy, error: errHoy } = await cliente
-      .from('telemetria_ia')
-      .select('*')
-      .gte('creado_en', inicioHoyIso)
-      .order('creado_en', { ascending: false })
-      .limit(200);
+    const { filas: filasHoy, error: errHoy, truncada } = await cargarTelemetriaIADeHoy(cliente, inicioHoyIso);
 
     if (errHoy) {
-      diagnosticoTelemetria = `Supabase no pudo leer telemetria_ia (${errHoy.code || 'sin código'}). Revisa la migración 0013 y la service role en Render.`;
+      diagnosticoTelemetria = `Supabase no pudo leer telemetria_ia (${errHoy.code || 'sin código'}). Ejecuta las migraciones 0013 y 20260924193346, y revisa la service role en Render.`;
       console.error('[metricas-ia] Error leyendo telemetria_ia:', { codigo: errHoy.code, mensaje: errHoy.message });
-    } else if (filasHoy && filasHoy.length > 0) {
+    } else if (filasHoy.length > 0) {
       origenMetricas = 'supabase';
+      if (truncada) {
+        diagnosticoTelemetria = `Se alcanzó el límite de ${MAX_FILAS_TELEMETRIA_IA_HOY.toLocaleString('es-CO')} consultas de hoy. El desglose necesita una consulta agregada antes de seguir creciendo.`;
+      }
       llamadasHoy = filasHoy.length;
       llamadasExitosasHoy = filasHoy.filter((f) => f.exito).length;
       llamadasFallbackHoy = filasHoy.filter((f) => !f.exito).length;
@@ -1494,19 +1607,24 @@ app.get('/api/metricas-ia', async (req, res) => {
         promptText: f.prompt_texto || undefined,
         respuestaTexto: f.respuesta_texto || undefined,
       }));
-      const porUsuario = new Map<string, { consultas: number; tokens: number }>();
-      filasHoy.forEach((f) => {
-        const usuario = f.usuario_email || 'usuario_local';
-        const actual = porUsuario.get(usuario) || { consultas: 0, tokens: 0 };
-        actual.consultas += 1;
-        actual.tokens += Number(f.total_tokens) || 0;
-        porUsuario.set(usuario, actual);
-      });
-      usuariosMasActivos = Array.from(porUsuario.entries())
-        .map(([usuarioEmail, datos]) => ({ usuarioEmail, ...datos }))
-        .sort((a, b) => b.consultas - a.consultas || b.tokens - a.tokens || a.usuarioEmail.localeCompare(b.usuarioEmail))
-        .slice(0, 5);
-    } else if (filasHoy && filasHoy.length === 0) {
+      consumoPorUsuario = consumoPorUsuarioDesdePeticiones(peticionesRecientes.length === filasHoy.length
+        ? peticionesRecientes
+        : filasHoy.map((f) => ({
+          id: f.id,
+          timestamp: f.creado_en,
+          usuarioEmail: f.usuario_email,
+          proveedor: f.proveedor,
+          modelo: f.modelo,
+          promptTokens: f.prompt_tokens,
+          completionTokens: f.completion_tokens,
+          totalTokens: f.total_tokens,
+          duracionMs: f.duracion_ms,
+          exito: f.exito,
+        })));
+      cuotaProveedor = filasHoy
+        .map((fila) => cuotaProveedorDesdeFila(fila))
+        .find((cuota): cuota is NonNullable<typeof cuota> => cuota !== null) ?? cuotaProveedor;
+    } else if (filasHoy.length === 0) {
       origenMetricas = 'supabase';
       // Si hoy aún no hay consultas, traer las más recientes para mantener el historial visible
       const { data: ultimas, error: errUltimas } = await cliente
@@ -1531,6 +1649,9 @@ app.get('/api/metricas-ia', async (req, res) => {
           promptText: f.prompt_texto || undefined,
           respuestaTexto: f.respuesta_texto || undefined,
         }));
+        cuotaProveedor = ultimas
+          .map((fila) => cuotaProveedorDesdeFila(fila))
+          .find((cuota): cuota is NonNullable<typeof cuota> => cuota !== null) ?? cuotaProveedor;
       }
     }
   } catch (err) {
@@ -1542,10 +1663,9 @@ app.get('/api/metricas-ia', async (req, res) => {
     ? Math.round(latenciasMs.reduce((a, b) => a + b, 0) / latenciasMs.length)
     : 0;
 
-  const tokensRestantes = limiteDiarioTokens > 0 ? Math.max(0, limiteDiarioTokens - tokensHoy) : 0;
-  const llamadasRestantes = limiteDiarioLlamadas > 0 ? Math.max(0, limiteDiarioLlamadas - llamadasHoy) : 0;
-  const porcentajeTokens = limiteDiarioTokens > 0 ? Number(((tokensHoy / limiteDiarioTokens) * 100).toFixed(2)) : 0;
-  const porcentajeLlamadas = limiteDiarioLlamadas > 0 ? Number(((llamadasHoy / limiteDiarioLlamadas) * 100).toFixed(2)) : 0;
+  const porcentajeCapacidadTokens = cuotaProveedor?.limiteTokensMinuto && cuotaProveedor.tokensRestantesMinuto !== null
+    ? Number((Math.max(0, 1 - cuotaProveedor.tokensRestantesMinuto / cuotaProveedor.limiteTokensMinuto) * 100).toFixed(2))
+    : null;
 
   return res.status(200).json({
     success: true,
@@ -1554,21 +1674,21 @@ app.get('/api/metricas-ia', async (req, res) => {
     modelo: modeloPrincipal,
     hayIA: Boolean(groqKey || openaiKey || geminiKey || anthropicKey || deepseekKey),
     tokensHoy,
-    tokensRestantes,
-    limiteDiarioTokens,
-    porcentajeTokens,
     llamadasHoy,
     llamadasExitosas: llamadasExitosasHoy,
     llamadasFallback: llamadasFallbackHoy,
-    llamadasRestantes,
-    limiteDiarioLlamadas,
-    porcentajeLlamadas,
+    limiteTokensProveedorMinuto: cuotaProveedor?.limiteTokensMinuto ?? null,
+    tokensProveedorRestantesMinuto: cuotaProveedor?.tokensRestantesMinuto ?? null,
+    limiteSolicitudesProveedorDia: cuotaProveedor?.limiteSolicitudesDia ?? null,
+    solicitudesProveedorRestantesDia: cuotaProveedor?.solicitudesRestantesDia ?? null,
+    porcentajeCapacidadTokens,
+    cuotaProveedorObservadaEn: cuotaProveedor?.observadaEn ?? null,
     latenciaPromedioMs: latenciaPromedio,
     costoEstimadoCop: 0,
     origenMetricas,
     diagnosticoTelemetria,
     peticionesRecientes,
-    usuariosMasActivos,
+    consumoPorUsuario,
   });
 });
 
@@ -2556,6 +2676,8 @@ interface ConsultaIAResult {
   proveedor: string;
   modelo: string;
   fallos: string[];
+  usoTokens: UsoTokensIA | null;
+  cuotaProveedor: CuotaProveedorIA | null;
 }
 
 function limpiarTextoIA(raw: string): string {
@@ -2698,9 +2820,9 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
     temperature = 0.6,
     responseFormat,
   } = params;
-  type RespuestaChat = { choices?: { message?: { content?: string } }[] };
-  type RespuestaGemini = { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-  type RespuestaClaude = { content?: { text?: string }[] };
+  type RespuestaChat = { choices?: { message?: { content?: string } }[]; usage?: Record<string, unknown> };
+  type RespuestaGemini = { candidates?: { content?: { parts?: { text?: string }[] } }[]; usageMetadata?: Record<string, unknown> };
+  type RespuestaClaude = { content?: { text?: string }[]; usage?: Record<string, unknown> };
   const groqKey = process.env.GROQ_API_KEY;
   const grokKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
   const deepseekKey = process.env.DEEPSEEK_API_KEY;
@@ -2713,6 +2835,8 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
   let texto = '';
   let proveedor = '';
   let modelo = 'desconocido';
+  let usoTokens: UsoTokensIA | null = null;
+  let cuotaProveedor: CuotaProveedorIA | null = null;
 
   // 1. Groq (modelos directos en español, sin volcar etiquetas de pensamiento)
   if (groqKey) {
@@ -2746,6 +2870,8 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
             texto = cleaned;
             proveedor = 'Groq';
             modelo = modeloGroq.id;
+            usoTokens = usoDesdeRespuestaChat(data);
+            cuotaProveedor = cuotaGroqDesdeCabeceras(res.headers);
             break;
           }
           fallos.push(`groq-${modeloGroq.id}:sin-texto`);
@@ -2785,6 +2911,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
             texto = cleaned;
             proveedor = 'xAI (Grok)';
             modelo = m;
+            usoTokens = usoDesdeRespuestaChat(data);
             break;
           }
         } else {
@@ -2820,6 +2947,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           texto = cleaned;
           proveedor = 'DeepSeek';
           modelo = 'deepseek-chat';
+          usoTokens = usoDesdeRespuestaChat(data);
         }
       } else {
         fallos.push(`deepseek:${res.status}`);
@@ -2839,10 +2967,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           model: 'gpt-4o-mini',
           messages: [
             { role: 'system', content: systemPrompt },
-            ...history.slice(-6).map((msg: any) => ({
-              role: msg.role === 'bot' || msg.role === 'assistant' ? 'assistant' : 'user',
-              content: msg.text || msg.content || '',
-            })),
+            ...historialAcotado,
             { role: 'user', content: userPrompt },
           ],
           temperature,
@@ -2858,6 +2983,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           texto = cleaned;
           proveedor = 'OpenAI';
           modelo = 'gpt-4o-mini';
+          usoTokens = usoDesdeRespuestaChat(data);
         }
       } else {
         fallos.push(`openai:${res.status}`);
@@ -2893,6 +3019,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           texto = cleaned;
           proveedor = 'Google Gemini';
           modelo = 'gemini-1.5-flash';
+          usoTokens = usoDesdeRespuestaGemini(data);
         }
       } else {
         fallos.push(`gemini:${res.status}`);
@@ -2930,6 +3057,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           texto = cleaned;
           proveedor = 'Claude Haiku';
           modelo = 'claude-3-5-haiku-20241022';
+          usoTokens = usoDesdeRespuestaClaude(data);
         }
       } else {
         fallos.push(`claude:${clRes.status}`);
@@ -2939,7 +3067,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
     }
   }
 
-  return { texto, proveedor, modelo, fallos };
+  return { texto, proveedor, modelo, fallos, usoTokens, cuotaProveedor };
 }
 
 /** Persistencia del asesor: el servidor valida identidad y Supabase aplica RLS. */
@@ -3143,7 +3271,7 @@ Reglas clave:
 
   const inicio = Date.now();
   try {
-    const { texto, proveedor, modelo, fallos } = await consultarModeloIA({
+    const { texto, proveedor, modelo, fallos, usoTokens, cuotaProveedor } = await consultarModeloIA({
       systemPrompt,
       userPrompt: preguntaParaModelo,
       history: Array.isArray(history) ? history : [],
@@ -3152,9 +3280,11 @@ Reglas clave:
     });
 
     const duracionMs = Date.now() - inicio;
-    const promptTokens = Math.ceil((preguntaParaModelo.length + systemPrompt.length) / 3.8);
-    const completionTokens = Math.ceil((texto?.length || 0) / 3.8);
-    const totalTokens = promptTokens + completionTokens;
+    // Los proveedores compatibles devuelven su conteo exacto. La estimación
+    // queda solo como respaldo para uno que no informe `usage`.
+    const promptTokens = usoTokens?.promptTokens ?? Math.ceil((preguntaParaModelo.length + systemPrompt.length) / 3.8);
+    const completionTokens = usoTokens?.completionTokens ?? Math.ceil((texto?.length || 0) / 3.8);
+    const totalTokens = usoTokens?.totalTokens ?? promptTokens + completionTokens;
 
     if (texto) {
       if (cliente) {
@@ -3168,6 +3298,7 @@ Reglas clave:
             totalTokens,
             duracionMs,
             exito: true,
+            cuotaProveedor: cuotaProveedor ?? undefined,
             promptText: prompt,
             respuestaTexto: texto,
           },
@@ -3376,10 +3507,12 @@ app.post('/api/finanzas-insights-ia', async (req, res) => {
   if (!cliente) return res.status(503).json({ error: 'No se pudo verificar tu plan para las recomendaciones con IA.' });
 
   let userId: string;
+  let usuarioEmail = 'usuario';
   try {
     const acceso = await exigirUsuario(cliente, token);
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
     userId = acceso.userId;
+    usuarioEmail = acceso.email || usuarioEmail;
 
     const plan = await estadoPlanDe(cliente, userId);
     if (!plan.beneficios.some((beneficio) => beneficio.clave === 'insights_ia' && beneficio.activo)) {
@@ -3438,7 +3571,7 @@ Reglas obligatorias:
   const userPrompt = `Expediente financiero real de la persona:\n${JSON.stringify(perfil)}\n\nGenera los insights en formato JSON.`;
 
   try {
-    const { texto, proveedor, modelo, fallos } = await consultarModeloIA({
+    const { texto, proveedor, modelo, fallos, usoTokens, cuotaProveedor } = await consultarModeloIA({
       systemPrompt,
       userPrompt,
       maxTokens: 500,
@@ -3457,17 +3590,18 @@ Reglas obligatorias:
         });
         if (errorGuardar) console.error('Error guardando el análisis personalizado:', errorGuardar.message);
 
-        const promptTokens = Math.ceil((userPrompt.length + systemPrompt.length) / 3.8);
-        const completionTokens = Math.ceil(texto.length / 3.8);
+        const promptTokens = usoTokens?.promptTokens ?? Math.ceil((userPrompt.length + systemPrompt.length) / 3.8);
+        const completionTokens = usoTokens?.completionTokens ?? Math.ceil(texto.length / 3.8);
         await registrarUsoIA({
-          usuarioEmail: 'asesor-personalizado',
+          usuarioEmail,
           proveedor,
           modelo,
           promptTokens,
           completionTokens,
-          totalTokens: promptTokens + completionTokens,
+          totalTokens: usoTokens?.totalTokens ?? promptTokens + completionTokens,
           duracionMs: 0,
           exito: true,
+          cuotaProveedor: cuotaProveedor ?? undefined,
           promptText: '[Análisis proactivo con perfil financiero completo]',
           respuestaTexto: resumen,
         }, cliente, userId);

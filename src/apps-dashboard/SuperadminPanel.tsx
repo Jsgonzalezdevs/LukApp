@@ -100,21 +100,21 @@ interface MetricasIAResponse {
   modelo: string;
   hayIA: boolean;
   tokensHoy: number;
-  tokensRestantes: number;
-  limiteDiarioTokens: number;
-  porcentajeTokens: number;
   llamadasHoy: number;
   llamadasExitosas: number;
   llamadasFallback: number;
-  llamadasRestantes: number;
-  limiteDiarioLlamadas: number;
-  porcentajeLlamadas: number;
+  limiteTokensProveedorMinuto: number | null;
+  tokensProveedorRestantesMinuto: number | null;
+  limiteSolicitudesProveedorDia: number | null;
+  solicitudesProveedorRestantesDia: number | null;
+  porcentajeCapacidadTokens: number | null;
+  cuotaProveedorObservadaEn: string | null;
   latenciaPromedioMs: number;
   costoEstimadoCop: number;
   origenMetricas: 'supabase' | 'memoria';
   diagnosticoTelemetria: string | null;
   peticionesRecientes: PeticionIA[];
-  usuariosMasActivos: Array<{ usuarioEmail: string; consultas: number; tokens: number }>;
+  consumoPorUsuario: Array<{ usuarioEmail: string; consultas: number; exitosas: number; locales: number; tokens: number }>;
 }
 
 type TabSuperadmin = 'usuarios' | 'roles' | 'facturacion' | 'ia-tokens' | 'visitantes' | 'auditoria';
@@ -179,6 +179,9 @@ const safeNum = (val: number | null | undefined): string => {
   if (val === null || val === undefined || isNaN(Number(val))) return '0';
   return Number(val).toLocaleString('es-CO');
 };
+
+const safeNumDesconocido = (val: number | null | undefined): string =>
+  val === null || val === undefined || isNaN(Number(val)) ? '—' : safeNum(val);
 
 interface BarraItem {
   id: string;
@@ -522,6 +525,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       });
       if (res.ok) {
         const data = await res.json();
+        const numeroONulo = (valor: unknown): number | null => {
+          if (valor === null || valor === undefined || valor === '') return null;
+          const numero = Number(valor);
+          return Number.isFinite(numero) ? numero : null;
+        };
         // Sanear campos numéricos: si el servidor devuelve null en cualquier
         // campo numérico (p.ej. cuando no hay llamadas registradas todavía),
         // `null.toLocaleString()` explota en el render con un TypeError.
@@ -529,21 +537,21 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
         const sano: MetricasIAResponse = {
           ...data,
           tokensHoy:              Number(data.tokensHoy)              || 0,
-          tokensRestantes:        Number(data.tokensRestantes)        || 0,
-          limiteDiarioTokens:     Number(data.limiteDiarioTokens)     || 0,
-          porcentajeTokens:       Number(data.porcentajeTokens)       || 0,
           llamadasHoy:            Number(data.llamadasHoy)            || 0,
           llamadasExitosas:       Number(data.llamadasExitosas)       || 0,
           llamadasFallback:       Number(data.llamadasFallback)       || 0,
-          llamadasRestantes:      Number(data.llamadasRestantes)      || 0,
-          limiteDiarioLlamadas:   Number(data.limiteDiarioLlamadas)   || 0,
-          porcentajeLlamadas:     Number(data.porcentajeLlamadas)     || 0,
+          limiteTokensProveedorMinuto: numeroONulo(data.limiteTokensProveedorMinuto),
+          tokensProveedorRestantesMinuto: numeroONulo(data.tokensProveedorRestantesMinuto),
+          limiteSolicitudesProveedorDia: numeroONulo(data.limiteSolicitudesProveedorDia),
+          solicitudesProveedorRestantesDia: numeroONulo(data.solicitudesProveedorRestantesDia),
+          porcentajeCapacidadTokens: numeroONulo(data.porcentajeCapacidadTokens),
+          cuotaProveedorObservadaEn: typeof data.cuotaProveedorObservadaEn === 'string' ? data.cuotaProveedorObservadaEn : null,
           latenciaPromedioMs:     Number(data.latenciaPromedioMs)     || 0,
           costoEstimadoCop:       Number(data.costoEstimadoCop)       || 0,
           origenMetricas:         data.origenMetricas === 'supabase' ? 'supabase' : 'memoria',
           diagnosticoTelemetria:  typeof data.diagnosticoTelemetria === 'string' ? data.diagnosticoTelemetria : null,
           peticionesRecientes:    Array.isArray(data.peticionesRecientes) ? data.peticionesRecientes : [],
-          usuariosMasActivos:     Array.isArray(data.usuariosMasActivos) ? data.usuariosMasActivos : [],
+          consumoPorUsuario:      Array.isArray(data.consumoPorUsuario) ? data.consumoPorUsuario : [],
         };
         setMetricasIA(sano);
       }
@@ -1397,20 +1405,22 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         {safeNum(metricasIA.tokensHoy)}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
-                        Límite diario: {safeNum(metricasIA.limiteDiarioTokens)}
+                        Uso real de respuestas exitosas de LukApp
                       </p>
                     </div>
 
                     <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm">
                       <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-                        <span>Tokens Restantes</span>
+                        <span>Tokens/min. disponibles</span>
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                       </div>
                       <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-emerald-600 dark:text-emerald-400">
-                        {safeNum(metricasIA.tokensRestantes)}
+                        {safeNumDesconocido(metricasIA.tokensProveedorRestantesMinuto)}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
-                        {100 - metricasIA.porcentajeTokens}% de cuota libre
+                        {metricasIA.limiteTokensProveedorMinuto === null
+                          ? 'Se actualiza tras una respuesta de IA'
+                          : `de ${safeNum(metricasIA.limiteTokensProveedorMinuto)} reportados por el proveedor`}
                       </p>
                     </div>
 
@@ -1436,7 +1446,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         {metricasIA.latenciaPromedioMs} <span className="text-sm font-bold text-[var(--fin-ink-soft)]">ms</span>
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
-                        Costo estimado: $0 COP
+                        {metricasIA.solicitudesProveedorRestantesDia === null
+                          ? 'Sin cuota de solicitudes disponible'
+                          : `${safeNum(metricasIA.solicitudesProveedorRestantesDia)} solicitudes disponibles hoy`}
                       </p>
                     </div>
                   </div>
@@ -1464,48 +1476,65 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                       </div>
                     </div>
 
-                    {/* Barra de progreso de tokens */}
+                    {/* Barra de capacidad de tokens observada en la última respuesta */}
                     <div className="mt-4">
                       <div className="flex justify-between text-xs font-medium text-[var(--fin-ink-soft)] mb-2">
-                        <span>Consumo de Tokens Diario</span>
-                        <span className="font-bold text-[var(--fin-ink)]">{metricasIA.porcentajeTokens}%</span>
+                        <span>Capacidad de tokens por minuto</span>
+                        <span className="font-bold text-[var(--fin-ink)]">
+                          {metricasIA.porcentajeCapacidadTokens === null
+                            ? 'Pendiente de consulta'
+                            : `${metricasIA.porcentajeCapacidadTokens}% usado`}
+                        </span>
                       </div>
                       <div className="h-3 w-full rounded-full bg-[var(--fin-soft)] overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            metricasIA.porcentajeTokens >= 90 ? 'bg-red-500' : 'bg-purple-500'
+                            (metricasIA.porcentajeCapacidadTokens ?? 0) >= 90 ? 'bg-red-500' : 'bg-purple-500'
                           }`}
-                          style={{ width: `${Math.min(metricasIA.porcentajeTokens, 100)}%` }}
+                          style={{ width: `${Math.min(metricasIA.porcentajeCapacidadTokens ?? 0, 100)}%` }}
                         />
                       </div>
                       <p className="mt-2 text-[10px] text-[var(--fin-ink-faint)]">
-                        Cuota gratuita de 500.000 tokens diarios. Se reinicia automáticamente a medianoche (hora Colombia).
+                        {metricasIA.cuotaProveedorObservadaEn
+                          ? `Última lectura del proveedor: ${formatearFechaHoraConsulta(metricasIA.cuotaProveedorObservadaEn)}. Los límites se renuevan según su ventana, no a medianoche de LukApp.`
+                          : 'La capacidad real se muestra cuando el proveedor responde la próxima consulta.'}
                       </p>
                     </div>
                   </div>
 
-                  {metricasIA.usuariosMasActivos.length > 0 && (
+                  {metricasIA.consumoPorUsuario.length > 0 && (
                     <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-sm">
                       <div className="mb-4">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-                          Usuarios que más usan el Asesor hoy
+                          Consumo por usuario hoy
                         </h3>
                         <p className="mt-0.5 text-[10px] text-[var(--fin-ink-faint)]">
-                          Ordenados por número de consultas, con los más activos primero.
+                          Tokens reales de respuestas exitosas; los respaldos locales no suman tokens.
                         </p>
                       </div>
-                      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                        {metricasIA.usuariosMasActivos.map((usuario, indice) => (
-                          <div key={usuario.usuarioEmail} className="rounded-2xl bg-[var(--fin-soft)]/60 px-3 py-3">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="truncate text-xs font-bold text-[var(--fin-ink)]" title={usuario.usuarioEmail}>{usuario.usuarioEmail}</span>
-                              <span className="text-sm font-extrabold text-purple-600 dark:text-purple-400">#{indice + 1}</span>
-                            </div>
-                            <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
-                              {usuario.consultas} {usuario.consultas === 1 ? 'consulta' : 'consultas'} · {safeNum(usuario.tokens)} tokens
-                            </p>
-                          </div>
-                        ))}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-[var(--fin-soft)]/50 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+                            <tr>
+                              <th className="px-4 py-3">Usuario</th>
+                              <th className="px-4 py-3 text-right">Consultas</th>
+                              <th className="px-4 py-3 text-right">IA</th>
+                              <th className="px-4 py-3 text-right">Local</th>
+                              <th className="px-4 py-3 text-right">Tokens reales</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[var(--fin-line)]">
+                            {metricasIA.consumoPorUsuario.map((usuario) => (
+                              <tr key={usuario.usuarioEmail}>
+                                <td className="max-w-56 truncate px-4 py-3 font-medium text-[var(--fin-ink)]" title={usuario.usuarioEmail}>{usuario.usuarioEmail}</td>
+                                <td className="px-4 py-3 text-right tabular-nums text-[var(--fin-ink-soft)]">{safeNum(usuario.consultas)}</td>
+                                <td className="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">{safeNum(usuario.exitosas)}</td>
+                                <td className="px-4 py-3 text-right tabular-nums text-amber-600 dark:text-amber-400">{safeNum(usuario.locales)}</td>
+                                <td className="px-4 py-3 text-right font-bold tabular-nums text-[var(--fin-ink)]">{safeNum(usuario.tokens)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   )}

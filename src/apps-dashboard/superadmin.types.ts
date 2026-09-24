@@ -44,15 +44,15 @@ export interface MetricasIAResponse {
   modelo: string;
   hayIA: boolean;
   tokensHoy: number;
-  tokensRestantes: number;
-  limiteDiarioTokens: number;
-  porcentajeTokens: number;
   llamadasHoy: number;
   llamadasExitosas: number;
   llamadasFallback: number;
-  llamadasRestantes: number;
-  limiteDiarioLlamadas: number;
-  porcentajeLlamadas: number;
+  limiteTokensProveedorMinuto: number | null;
+  tokensProveedorRestantesMinuto: number | null;
+  limiteSolicitudesProveedorDia: number | null;
+  solicitudesProveedorRestantesDia: number | null;
+  porcentajeCapacidadTokens: number | null;
+  cuotaProveedorObservadaEn: string | null;
   latenciaPromedioMs: number;
   costoEstimadoCop: number;
 }
