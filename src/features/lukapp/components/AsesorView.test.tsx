@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { AsesorView } from './AsesorView';
+import { AsesorView, elegirIndiceImagenLuki, PROBABILIDAD_LUKI_LOCO } from './AsesorView';
 import { etiquetaConexion } from '../lib/localDate';
 import { LEXICO_VACIO } from '../lib/aprendizaje';
 import * as supabaseData from '../data/supabase';
@@ -20,6 +20,22 @@ const props = {
 
 const responder = (body: unknown, ok = true) =>
   vi.fn().mockResolvedValue({ ok, json: async () => body } as Response);
+
+describe('AsesorView — poses de Luki', () => {
+  it('deja el gesto chistoso como un hallazgo excepcional', () => {
+    expect(PROBABILIDAD_LUKI_LOCO).toBe(0.0001);
+    expect(elegirIndiceImagenLuki(0.00005)).toBe(4);
+    expect(elegirIndiceImagenLuki(0.001)).not.toBe(4);
+  });
+
+  it('pide con prioridad la imagen que abre el asesor', () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.stubGlobal('fetch', responder({ ok: true, ia: true }));
+    render(<AsesorView {...props} />);
+
+    expect(screen.getByRole('img', { name: /Luki, la mascota de LukApp/i })).toHaveAttribute('loading', 'eager');
+  });
+});
 
 describe('AsesorView — estado de conexión', () => {
   beforeEach(() => {

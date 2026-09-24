@@ -22,4 +22,13 @@ describe('MascotaLuki', () => {
     expect(luki).toHaveAttribute('height', '347');
     expect(document.querySelector('.luki-mascota svg, .luki-mascota button')).not.toBeInTheDocument();
   });
+
+  it('prioriza la imagen que se ve al entrar a una vista', () => {
+    render(<MascotaLuki prioridad="alta" />);
+
+    const luki = screen.getByRole('img', { name: /Luki, la mascota de LukApp, saludando/i });
+    expect(luki).toHaveAttribute('loading', 'eager');
+    expect(luki).toHaveAttribute('decoding', 'sync');
+    expect(luki).toHaveAttribute('fetchpriority', 'high');
+  });
 });

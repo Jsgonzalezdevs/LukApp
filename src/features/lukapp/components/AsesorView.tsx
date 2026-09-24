@@ -87,6 +87,43 @@ interface AsesorViewProps {
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 const PROBABILIDAD_LENGUA = 0.00001; // 0,001 %
+export const PROBABILIDAD_LUKI_LOCO = 0.0001; // 0,01 %: una vez cada diez mil aperturas en promedio.
+
+const IMAGENES_LUKI_ASESOR = [
+  { src: '/brand/luki-nutria-saludo-transparente.png', alt: 'Luki, la mascota de LukApp, saludando' },
+  { src: '/brand/luki-leyendo-transparente.webp', alt: 'Luki, la mascota de LukApp, leyendo un libro' },
+  { src: '/brand/luki-escribiendo-transparente.webp', alt: 'Luki, la mascota de LukApp, tomando notas' },
+  { src: '/brand/luki-abierto-transparente.webp', alt: 'Luki, la mascota de LukApp, abriendo el espacio' },
+  { src: '/brand/luki-gesto-chistoso.webp', alt: 'Luki, la mascota de LukApp, haciendo un gesto chistoso' },
+  { src: '/brand/luki-durmiendo-transparente.webp', alt: 'Luki, la mascota de LukApp, durmiendo' },
+  { src: '/brand/luki-sorprendida-transparente.webp', alt: 'Luki, la mascota de LukApp, sorprendida' },
+  { src: '/brand/luki-pensando-transparente.webp', alt: 'Luki, la mascota de LukApp, pensando' },
+  { src: '/brand/luki-saltando-transparente.webp', alt: 'Luki, la mascota de LukApp, saltando de alegría' },
+  { src: '/brand/luki-timida-transparente.webp', alt: 'Luki, la mascota de LukApp, haciendo un gesto tímido' },
+  { src: '/brand/luki-easter-egg-lengua.webp', alt: 'Luki, la mascota de LukApp, sacando la lengua' },
+] as const;
+
+/**
+ * El gesto chistoso es el Luki "loco" que el usuario descubre por casualidad,
+ * no una pose habitual del asesor. La pose de lengua queda aún más escondida.
+ */
+export const elegirIndiceImagenLuki = (azar: number): number => {
+  if (azar < PROBABILIDAD_LENGUA) return 10;
+  if (azar < PROBABILIDAD_LENGUA + PROBABILIDAD_LUKI_LOCO) return 4;
+
+  const azarComun = (azar - PROBABILIDAD_LENGUA - PROBABILIDAD_LUKI_LOCO)
+    / (1 - PROBABILIDAD_LENGUA - PROBABILIDAD_LUKI_LOCO);
+  if (azarComun < 0.40) return 0;
+  if (azarComun < 0.48) return 1;
+  if (azarComun < 0.56) return 2;
+  if (azarComun < 0.64) return 3;
+  if (azarComun < 0.72) return 5;
+  if (azarComun < 0.78) return 6;
+  if (azarComun < 0.84) return 7;
+  if (azarComun < 0.90) return 8;
+  return 9;
+};
+
 const MENSAJE_INICIAL: Message = {
   id: 'init',
   role: 'bot',
@@ -150,19 +187,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 }) => {
   const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
   const [imagenLuki] = useState(() => {
-    const imagenes = [
-      { src: '/brand/luki-nutria-saludo-transparente.png', alt: 'Luki, la mascota de LukApp, saludando' },
-      { src: '/brand/luki-leyendo-transparente.png', alt: 'Luki, la mascota de LukApp, leyendo un libro' },
-      { src: '/brand/luki-escribiendo-transparente.png', alt: 'Luki, la mascota de LukApp, tomando notas' },
-      { src: '/brand/luki-abierto-transparente.png', alt: 'Luki, la mascota de LukApp, abriendo el espacio' },
-      { src: '/brand/luki-gesto-chistoso.png', alt: 'Luki, la mascota de LukApp, haciendo un gesto chistoso' },
-      { src: '/brand/luki-durmiendo-transparente.png', alt: 'Luki, la mascota de LukApp, durmiendo' },
-      { src: '/brand/luki-sorprendida-transparente.png', alt: 'Luki, la mascota de LukApp, sorprendida' },
-      { src: '/brand/luki-pensando-transparente.png', alt: 'Luki, la mascota de LukApp, pensando' },
-      { src: '/brand/luki-saltando-transparente.png', alt: 'Luki, la mascota de LukApp, saltando de alegría' },
-      { src: '/brand/luki-timida-transparente.png', alt: 'Luki, la mascota de LukApp, haciendo un gesto tímido' },
-      { src: '/brand/luki-easter-egg-lengua.png', alt: 'Luki, la mascota de LukApp, sacando la lengua' },
-    ] as const;
     let ultima = -1;
     try {
       ultima = Number(sessionStorage.getItem('lukapp-ultima-pose-luki'));
@@ -170,26 +194,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       // Algunos navegadores bloquean el almacenamiento; la selección sigue funcionando.
     }
 
-    const elegirPose = () => {
-      const azar = Math.random();
-      if (azar < PROBABILIDAD_LENGUA) return 10;
-      if (azar < 0.40) return 0;
-      if (azar < 0.48) return 1;
-      if (azar < 0.56) return 2;
-      if (azar < 0.64) return 3;
-      if (azar < 0.72) return 4;
-      if (azar < 0.78) return 5;
-      if (azar < 0.84) return 6;
-    if (azar < 0.90) return 7;
-    if (azar < 0.95) return 8;
-    return 9;
-    };
-
-    let indice = elegirPose();
+    let indice = elegirIndiceImagenLuki(Math.random());
     for (let intento = 0; indice === ultima && intento < 20; intento += 1) {
-      indice = elegirPose();
+      indice = elegirIndiceImagenLuki(Math.random());
     }
-    if (indice === ultima) indice = (indice + 1) % imagenes.length;
+    if (indice === ultima) indice = (indice + 1) % IMAGENES_LUKI_ASESOR.length;
     try {
       sessionStorage.setItem('lukapp-ultima-pose-luki', String(indice));
     } catch {
@@ -198,7 +207,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
     // El saludo es la identidad principal del Asesor. Las otras poses son
     // sorpresas ocasionales; la lengua queda como easter egg auténtico.
-    return imagenes[indice];
+    return IMAGENES_LUKI_ASESOR[indice];
   });
   const [messages, setMessages] = useState<Message[]>([MENSAJE_INICIAL]);
   const [conversacionId, setConversacionId] = useState<string | null>(null);
@@ -974,6 +983,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               className="h-36 w-36 shrink-0 object-contain sm:h-40 sm:w-40 md:h-44 md:w-44 lg:h-48 lg:w-48"
               src={imagenLuki.src}
               alt={imagenLuki.alt}
+              prioridad="alta"
             />
             <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
@@ -1167,8 +1177,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               <div className="flex items-end gap-3">
                 <MascotaLuki
                   className="h-10 w-10 shrink-0 object-contain"
-                  src="/brand/luki-pensando-transparente.png"
+                  src="/brand/luki-pensando-transparente.webp"
                   alt="Luki, pensando"
+                  prioridad="alta"
                 />
                 <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] rounded-bl-sm bg-[var(--fin-card)] px-4 py-3 text-[13px] text-[var(--fin-ink-soft)]">
                   <span className="flex gap-1">

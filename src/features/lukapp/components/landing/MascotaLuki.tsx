@@ -4,6 +4,8 @@ interface MascotaLukiProps {
   className?: string;
   src?: string;
   alt?: string;
+  /** La imagen principal de una vista no debe esperar al umbral de carga diferida. */
+  prioridad?: 'alta';
 }
 
 /**
@@ -15,14 +17,16 @@ export const MascotaLuki: React.FC<MascotaLukiProps> = ({
   className = '',
   src = '/brand/luki-nutria-saludo-transparente.png',
   alt = 'Luki, la mascota de LukApp, saludando',
+  prioridad,
 }) => (
   <div className={`luki-mascota ${className}`.trim()}>
     <img
       src={src}
       width="306"
       height="347"
-      loading="lazy"
-      decoding="async"
+      loading={prioridad === 'alta' ? 'eager' : 'lazy'}
+      decoding={prioridad === 'alta' ? 'sync' : 'async'}
+      fetchPriority={prioridad === 'alta' ? 'high' : 'auto'}
       className="h-full w-full bg-transparent object-contain"
       alt={alt}
     />

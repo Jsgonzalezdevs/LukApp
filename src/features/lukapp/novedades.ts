@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.5.3', fecha: '2026-09-24', texto: 'El Asesor abre sus ilustraciones de Luki al instante y con archivos mucho más livianos. La pose chistosa de Luki ahora es una rareza de verdad: aparece, en promedio, solo una vez cada diez mil aperturas.' },
+  { version: '4.5.2', fecha: '2026-09-24', texto: 'El historial del Inicio vuelve a verse limpio: los atajos de repetir y editar ya no se transparentan sobre cada movimiento. Además, al deslizar una fila el recorrido ahora es amplio, claro y regresa suavemente a su lugar.' },
   { version: '4.5.1', fecha: '2026-09-24', texto: 'El Asesor ahora evita un modelo retirado, explica con claridad si venció tu sesión, tu cupo o el servidor fallaron, y sigue disponible mientras termina una actualización segura de Premium.' },
   { version: '4.5.0', fecha: '2026-09-23', texto: 'Premium ahora se arma a tu medida: desde Superadmin puedes elegir cada prestación incluida, además de sus cupos y precios. La misma selección actualiza Cuenta, invitaciones, confirmación de pago y los accesos protegidos de toda la app.' },
   { version: '4.4.0', fecha: '2026-09-23', texto: 'LukApp se siente más ágil: desliza un movimiento para repetirlo o editarlo, aprovecha sugerencias basadas en registros iguales y recibe confirmaciones claras de dónde se actualizó tu dinero. Premium estrena Pulso Premium, con tu margen diario y acceso directo al análisis personalizado del Asesor.' },

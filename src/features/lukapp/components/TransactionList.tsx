@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Hand } from 'lucide-react';
+import { Hand, Pencil, Repeat2 } from 'lucide-react';
 import { tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
@@ -9,7 +9,8 @@ import { dayLabel } from '../lib/localDate';
 import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
 
-const UMBRAL_GESTO_PX = 72;
+const UMBRAL_GESTO_PX = 84;
+const RECORRIDO_GESTO_PX = 128;
 
 interface TransactionListProps {
   transactions: readonly Transaction[];
@@ -137,16 +138,22 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 
               return (
                 <li key={tx.id} className="relative overflow-hidden">
-                  {/* Las acciones quedan por detrás de la fila: solo aparecen
-                      cuando el dedo realmente se mueve. Así no se sacrifica
-                      ancho ni se añaden botones permanentes a cada registro. */}
+                  {/* Las acciones quedan por detrás de la fila. La fila usa una
+                      superficie opaca porque el material translúcido dejaba
+                      leer estos controles incluso antes de deslizar. */}
                   {tieneGestos ? (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 text-[12px] font-bold" aria-hidden="true">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 text-[12px] font-semibold" aria-hidden="true">
                       {onRepetir ? (
-                        <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-2.5 py-1.5 text-[var(--fin-on-accent)]">Repetir</span>
+                        <span className="flex items-center gap-1.5 text-[var(--fin-in)]">
+                          <Repeat2 className="h-4 w-4" strokeWidth={2.25} />
+                          Repetir
+                        </span>
                       ) : <span />}
                       {onEditar ? (
-                        <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1.5 text-[var(--fin-ink-soft)]">Editar</span>
+                        <span className="flex items-center gap-1.5 text-[var(--fin-ink-soft)]">
+                          Editar
+                          <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} />
+                        </span>
                       ) : <span />}
                     </div>
                   ) : null}
@@ -162,8 +169,14 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                     transition={{ duration: 0.2, delay: Math.min(idx, 8) * 0.02, ease: 'easeOut' }}
                     whileTap={onAbrir ? { scale: 0.98, backgroundColor: 'var(--fin-soft)' } : undefined}
                     drag={tieneGestos ? 'x' : false}
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.16}
+                    // Con ambos límites en cero Framer solo mostraba el rebote
+                    // elástico; por eso un deslizamiento largo apenas movía la fila.
+                    dragConstraints={{
+                      left: onEditar ? -RECORRIDO_GESTO_PX : 0,
+                      right: onRepetir ? RECORRIDO_GESTO_PX : 0,
+                    }}
+                    dragElastic={0.06}
+                    dragSnapToOrigin
                     dragDirectionLock
                     onDragEnd={(_, info) => {
                       if (info.offset.x >= UMBRAL_GESTO_PX && onRepetir) {
@@ -174,8 +187,11 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                         onEditar(tx);
                       }
                     }}
-                    className="relative z-10 flex w-full items-center gap-3 bg-[var(--fin-card)] px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
-                    style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)', touchAction: tieneGestos ? 'pan-y' : undefined }}
+                    className="relative z-10 flex w-full items-center gap-3 bg-[var(--fin-surface)] px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
+                    style={{
+                      boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)',
+                      touchAction: tieneGestos ? 'pan-y' : undefined,
+                    }}
                   >
                     {/* El icono lleva el color de la categoría. El texto no: una
  lista de veinte movimientos con veinte colores distintos
