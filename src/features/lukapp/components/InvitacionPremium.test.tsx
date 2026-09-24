@@ -13,6 +13,20 @@ const planNormal = {
   ],
 };
 
+const planConfiguradoPorSuperadmin = {
+  codigo: 'premium' as const,
+  preciosPremium: { mensualCop: 12_300, anualCop: 98_700 },
+  beneficiosPremium: [
+    { clave: 'dictado' as const, titulo: 'Registro por voz', detalle: 'registros al mes', tipoValor: 'cupo' as const, limite: 240, activo: true },
+    { clave: 'asesor_ia' as const, titulo: 'Asesor IA', detalle: 'consultas al mes', tipoValor: 'cupo' as const, limite: 50, activo: true },
+    { clave: 'extracto' as const, titulo: 'Extractos PDF', detalle: 'extractos al mes', tipoValor: 'cupo' as const, limite: 7, activo: true },
+    { clave: 'espacios_compartidos' as const, titulo: 'Espacios compartidos', detalle: 'espacios para organizarte en compañía', tipoValor: 'cupo' as const, limite: 4, activo: true },
+    { clave: 'integrantes_espacio' as const, titulo: 'Personas por espacio', detalle: 'personas que puedes invitar por espacio', tipoValor: 'cupo' as const, limite: null, activo: true },
+    { clave: 'insights_ia' as const, titulo: 'Recomendaciones con IA', detalle: 'análisis mensuales personalizados', tipoValor: 'incluido' as const, limite: null, activo: true },
+    { clave: 'pulso_premium' as const, titulo: 'Pulso Premium', detalle: 'margen diario y decisiones financieras', tipoValor: 'incluido' as const, limite: null, activo: false },
+  ],
+};
+
 const avanzarHastaInvitacion = async () => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(8_000);
@@ -61,17 +75,26 @@ describe('InvitacionPremium', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('puede abrirse al instante con los datos de la vista previa local', () => {
-    render(
-      <InvitacionPremium
-        userId="vista-previa"
-        puedeMostrarse
-        planDeVistaPrevia={planNormal}
-        onVerOpciones={vi.fn()}
-      />,
-    );
+  it('la vista previa de superadmin refleja todos los valores y prestaciones vigentes', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => planConfiguradoPorSuperadmin,
+    }));
+    render(<InvitacionPremium userId="vista-previa" puedeMostrarse vistaPrevia onVerOpciones={vi.fn()} />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
 
     expect(screen.getByRole('dialog', { name: 'Más espacio para tus finanzas, sin complicarlas.' })).toBeTruthy();
-    expect(screen.getByText('300')).toBeTruthy();
+    expect(screen.getByText('240')).toBeTruthy();
+    expect(screen.getByText('50')).toBeTruthy();
+    expect(screen.getByText('7')).toBeTruthy();
+    expect(screen.getByText('4')).toBeTruthy();
+    expect(screen.getByText('∞')).toBeTruthy();
+    expect(screen.getByText('Incluido')).toBeTruthy();
+    expect(screen.getByText(/12[.,]300/)).toBeTruthy();
+    expect(screen.getByText(/98[.,]700/)).toBeTruthy();
+    expect(screen.queryByText('Pulso Premium')).toBeNull();
   });
 });

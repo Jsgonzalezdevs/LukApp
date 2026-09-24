@@ -101,7 +101,6 @@ import { CalendarioFinancieroView } from './components/CalendarioFinancieroView'
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
 import { instalarConsolaDeVistas } from './dev/consolaVistas';
 import type { VistaDePrueba } from './dev/consolaVistas';
-import type { PlanParaInvitacion } from './components/InvitacionPremium';
 import './lukapp.css';
 
 /* Estas vistas no forman parte del Dashboard inicial. Se descargan al abrir
@@ -128,20 +127,6 @@ const ReporteFinancieroModal = lazy(() =>
 const InvitacionPremium = lazy(() =>
   import('./components/InvitacionPremium').then(({ InvitacionPremium }) => ({ default: InvitacionPremium })),
 );
-
-const PLAN_PREVIO_PREMIUM: PlanParaInvitacion = {
-  codigo: 'normal',
-  preciosPremium: { mensualCop: 9_900, anualCop: 79_900 },
-  beneficiosPremium: [
-    { clave: 'dictado', titulo: 'Registro por voz', detalle: 'registros al mes', tipoValor: 'cupo', limite: 300, activo: true },
-    { clave: 'asesor_ia', titulo: 'Asesor IA', detalle: 'consultas al mes', tipoValor: 'cupo', limite: 60, activo: true },
-    { clave: 'extracto', titulo: 'Extractos PDF', detalle: 'extractos al mes', tipoValor: 'cupo', limite: 12, activo: true },
-    { clave: 'espacios_compartidos', titulo: 'Espacios compartidos', detalle: 'espacios para organizarte en compañía', tipoValor: 'cupo', limite: null, activo: true },
-    { clave: 'integrantes_espacio', titulo: 'Personas por espacio', detalle: 'personas que puedes invitar por espacio', tipoValor: 'cupo', limite: null, activo: true },
-    { clave: 'insights_ia', titulo: 'Recomendaciones con IA', detalle: 'análisis mensuales personalizados', tipoValor: 'incluido', limite: null, activo: true },
-    { clave: 'pulso_premium', titulo: 'Pulso Premium', detalle: 'margen diario y decisiones financieras', tipoValor: 'incluido', limite: null, activo: true },
-  ],
-};
 
 /**
  * Rebuilds the parser's output shape from a stored row so editing can reuse
@@ -1593,7 +1578,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           <InvitacionPremium
             userId={userId ?? 'vista-previa-local'}
             puedeMostrarse
-            planDeVistaPrevia={PLAN_PREVIO_PREMIUM}
+            vistaPrevia
             onCerrarVistaPrevia={() => setVistaPreviaPremium(false)}
             onVerOpciones={() => {
               setVistaPreviaPremium(false);

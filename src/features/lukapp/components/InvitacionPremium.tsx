@@ -16,8 +16,8 @@ interface InvitacionPremiumProps {
   userId: string;
   puedeMostrarse: boolean;
   onVerOpciones: () => void;
-  /** Inyecta datos únicamente desde el lanzador local de vistas. */
-  planDeVistaPrevia?: PlanParaInvitacion;
+  /** La consola de superadmin muestra la configuración vigente sin la espera comercial. */
+  vistaPrevia?: boolean;
   /** Libera la vista previa al cerrar para que se pueda volver a invocar. */
   onCerrarVistaPrevia?: () => void;
 }
@@ -58,11 +58,11 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
   userId,
   puedeMostrarse,
   onVerOpciones,
-  planDeVistaPrevia,
+  vistaPrevia = false,
   onCerrarVistaPrevia,
 }) => {
-  const [plan, setPlan] = useState<PlanParaInvitacion | null>(planDeVistaPrevia ?? null);
-  const [abierta, setAbierta] = useState(Boolean(planDeVistaPrevia));
+  const [plan, setPlan] = useState<PlanParaInvitacion | null>(null);
+  const [abierta, setAbierta] = useState(false);
   const consultada = useRef(false);
   const dialogoRef = useRef<HTMLDivElement>(null);
 
@@ -75,8 +75,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
   }, [onCerrarVistaPrevia, userId]);
 
   useEffect(() => {
-    if (planDeVistaPrevia) return undefined;
-    if (!puedeMostrarse || consultada.current || !puedeInvitar(userId)) return undefined;
+    if (!puedeMostrarse || consultada.current || (!vistaPrevia && !puedeInvitar(userId))) return undefined;
     consultada.current = true;
     let cancelado = false;
 
@@ -92,22 +91,24 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
         const cuerpo = await respuesta.json().catch(() => ({}));
         if (!respuesta.ok || cancelado) return;
         const siguientePlan = cuerpo as Partial<PlanParaInvitacion>;
-        if (siguientePlan.codigo !== 'normal' || !siguientePlan.preciosPremium || !Array.isArray(siguientePlan.beneficiosPremium)) return;
+        if ((!vistaPrevia && siguientePlan.codigo !== 'normal') || !siguientePlan.preciosPremium || !Array.isArray(siguientePlan.beneficiosPremium)) return;
         setPlan(siguientePlan as PlanParaInvitacion);
-        // El intervalo se guarda al mostrarse, no solo al cerrarse: si se
-        // recarga la página, una invitación ya vista no vuelve a interrumpir.
-        posponerInvitacion(userId);
+        if (!vistaPrevia) {
+          // El intervalo se guarda al mostrarse, no solo al cerrarse: si se
+          // recarga la página, una invitación ya vista no vuelve a interrumpir.
+          posponerInvitacion(userId);
+        }
         setAbierta(true);
       } catch {
         // Una invitación comercial no debe convertirse en un aviso de error.
       }
-    }, RETRASO_MOSTRAR_MS);
+    }, vistaPrevia ? 0 : RETRASO_MOSTRAR_MS);
 
     return () => {
       cancelado = true;
       window.clearTimeout(temporizador);
     };
-  }, [planDeVistaPrevia, puedeMostrarse, userId]);
+  }, [puedeMostrarse, userId, vistaPrevia]);
 
   useEffect(() => {
     if (!abierta) return undefined;

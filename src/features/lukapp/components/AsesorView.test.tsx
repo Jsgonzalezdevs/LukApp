@@ -58,9 +58,10 @@ describe('AsesorView — estado de conexión', () => {
     expect(screen.getByText('Conectando…')).toBeTruthy();
   });
 
-  it('distingue un servidor configurado de una respuesta de IA comprobada', async () => {
+  it('solo dice “En línea” después de una respuesta real del proveedor', async () => {
     render(<AsesorView {...props} />);
-    await waitFor(() => expect(screen.getByText('Servidor conectado · IA por verificar')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'Verificar disponibilidad de IA' })).toHaveClass('bg-emerald-500/15');
   });
 
   it('dice "modo local" cuando el servidor responde que no hay IA', async () => {
@@ -96,7 +97,7 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
 
   const fetchPorRuta = (respuestaAsesor: unknown) =>
     vi.fn().mockImplementation((url: string) => {
-      if (String(url).includes('/api/salud')) {
+      if (String(url).includes('/api/asesor-ia/disponibilidad')) {
         return Promise.resolve({ ok: true, json: async () => ({ ok: true, ia: true }) });
       }
       if (String(url).includes('/api/asesor-ia')) {
@@ -121,7 +122,7 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
       fetchPorRuta({ offline: false, text: 'Listo, registrado.', provider: 'Groq (GPT-OSS 120B)' }),
     );
     render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Servidor conectado · IA por verificar')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
 
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'me compre un pancito, me costo 2500' } });
@@ -143,7 +144,7 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
       }),
     );
     render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
-    await waitFor(() => expect(screen.getByText('Servidor conectado · IA por verificar')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
 
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'como estas?' } });
@@ -262,7 +263,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
   it('no responde con reglas y reintenta sin duplicar el mensaje del usuario', async () => {
     let intentos = 0;
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => Promise.resolve({ ok: true, json: async () => {
-      if (String(url).includes('/api/salud')) return { ia: true };
+      if (String(url).includes('/api/asesor-ia/disponibilidad')) return { ia: true };
       return ++intentos === 1 ? { offline: true } : { text: 'Respuesta real del proveedor', offline: false };
     } })));
     render(<AsesorView {...props} />);
@@ -287,7 +288,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
   });
   it.each([null, { text: '   ' }, { text: '<think>oculto</think>' }, { text: 123 }])('rechaza respuestas inutilizables: %j', async cuerpo => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => Promise.resolve({
-      ok: true, json: async () => String(url).includes('/api/salud') ? { ia: true } : cuerpo,
+      ok: true, json: async () => String(url).includes('/api/asesor-ia/disponibilidad') ? { ia: true } : cuerpo,
     })));
     render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
@@ -299,7 +300,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
   it('evita consultas simultáneas y cancela la petición al salir', async () => {
     let signal: AbortSignal | undefined;
     const peticiones = vi.fn().mockImplementation((url: string, init) => {
-      if (String(url).includes('/api/salud')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
+      if (String(url).includes('/api/asesor-ia/disponibilidad')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
       if (String(url).includes('/api/asesor-ia')) signal = init.signal;
       return new Promise((_resolve, reject) => init.signal.addEventListener('abort', () => reject(new Error('abort'))));
     });
@@ -312,14 +313,14 @@ describe('AsesorView — conversación de deuda en modo local', () => {
       fireEvent.keyDown(input, { key: 'Enter' });
     });
     await waitFor(() => expect(signal).toBeDefined());
-    expect(peticiones.mock.calls.filter(([url]) => String(url).includes('/api/asesor-ia'))).toHaveLength(1);
+    expect(peticiones.mock.calls.filter(([url]) => new URL(String(url), 'http://localhost').pathname === '/api/asesor-ia')).toHaveLength(1);
     vista.unmount();
     expect(signal?.aborted).toBe(true);
   });
   it.each(['cabeceras', 'cuerpo'])('libera el chat si la IA no termina de enviar %s', async etapa => {
     vi.useFakeTimers();
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => {
-      if (String(url).includes('/api/salud')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
+      if (String(url).includes('/api/asesor-ia/disponibilidad')) return Promise.resolve({ ok: true, json: async () => ({ ia: true }) });
       return etapa === 'cabeceras' ? new Promise(() => {}) : Promise.resolve({ ok: true, json: () => new Promise(() => {}) });
     }));
     render(<AsesorView {...props} />);
@@ -353,12 +354,12 @@ describe('AsesorView — conversación de deuda en modo local', () => {
   });
   it.each([401, 403, 429, 500])('explica el error HTTP %s sin anunciar IA en línea', async (status) => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) => Promise.resolve(
-      String(url).includes('/api/salud')
+      String(url).includes('/api/asesor-ia/disponibilidad')
         ? { ok: true, json: async () => ({ ia: true }) }
         : { ok: false, status },
     )));
     render(<AsesorView {...props} />);
-    await screen.findByText('Servidor conectado · IA por verificar');
+    await screen.findByText('En línea');
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
     fireEvent.keyDown(input, { key: 'Enter' });
@@ -373,11 +374,11 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     );
     expect(screen.queryByText('En línea')).toBeNull();
   });
-  it('una respuesta de salud tardía no oculta un fallo de la IA', async () => {
-    let completarSalud!: (value: unknown) => void;
+  it('una comprobación tardía no oculta un fallo de la IA', async () => {
+    let completarComprobacion!: (value: unknown) => void;
     vi.stubGlobal('fetch', vi.fn().mockImplementation((url: string) =>
-      String(url).includes('/api/salud')
-        ? new Promise(resolve => { completarSalud = resolve; })
+      String(url).includes('/api/asesor-ia/disponibilidad')
+        ? new Promise(resolve => { completarComprobacion = resolve; })
         : Promise.resolve({ ok: true, json: async () => ({ offline: true }) }),
     ));
     render(<AsesorView {...props} />);
@@ -385,7 +386,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await screen.findByText(/ningún proveedor de IA/);
-    completarSalud({ ok: true, json: async () => ({ ia: true }) });
+    completarComprobacion({ ok: true, json: async () => ({ ia: true }) });
     await waitFor(() => expect(screen.getByText(/IA no disponible/)).toBeTruthy());
     expect(screen.queryByText('En línea')).toBeNull();
   });

@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.5.11', fecha: '2026-09-24', texto: 'Las vistas de Premium reflejan por completo la configuración de Superadmin: precios, cupos, límites ilimitados y prestaciones activas.' },
+  { version: '4.5.10', fecha: '2026-09-24', texto: 'La vista previa de la invitación Premium desde Superadmin ahora consulta los cupos y precios vigentes. Así refleja al instante los cambios que hagas al plan.' },
+  { version: '4.5.9', fecha: '2026-09-24', texto: 'El estado del Asesor ahora comprueba que la IA responda de verdad antes de decir “En línea”. Cuando está disponible, el indicador se vuelve verde; además, LukApp despierta el servidor mientras hace la verificación para que conecte más rápido.' },
   { version: '4.5.8', fecha: '2026-09-24', texto: 'El Asesor se mantiene enfocado en tus finanzas incluso cuando una pregunta mezcla otros temas, y ahora explica con claridad su alcance. También corregimos la navegación sin conexión y el acceso protegido a tus cajitas en Supabase.' },
   { version: '4.5.7', fecha: '2026-09-24', texto: 'Superadmin ahora registra los tokens reportados por cada respuesta del proveedor de IA y los desglosa por usuario. También muestra la capacidad real informada por el proveedor, sin inventar una cuota diaria fija.' },
   { version: '4.5.6', fecha: '2026-09-24', texto: 'El Asesor IA ahora ajusta automáticamente el tamaño de tu contexto financiero y conserva lo importante de tus datos recientes. Así evita que un historial grande agote la cuota del proveedor y vuelva al modo local.' },

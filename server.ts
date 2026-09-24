@@ -2670,6 +2670,8 @@ interface ConsultaIAParams {
   maxTokens?: number;
   temperature?: number;
   responseFormat?: { type: 'json_object' };
+  /** Tiempo máximo por intento de proveedor; la comprobación de disponibilidad usa uno corto. */
+  timeoutMs?: number;
 }
 
 interface ConsultaIAResult {
@@ -2820,6 +2822,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
     maxTokens = 500,
     temperature = 0.6,
     responseFormat,
+    timeoutMs = 12000,
   } = params;
   type RespuestaChat = { choices?: { message?: { content?: string } }[]; usage?: Record<string, unknown> };
   type RespuestaGemini = { candidates?: { content?: { parts?: { text?: string }[] } }[]; usageMetadata?: Record<string, unknown> };
@@ -2862,7 +2865,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
           body: JSON.stringify(bodyPayload),
-        });
+        }, timeoutMs);
         if (res.ok) {
           const data = (await res.json()) as RespuestaChat;
           const raw = data.choices?.[0]?.message?.content || '';
@@ -2903,7 +2906,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
             temperature,
             max_tokens: maxTokens,
           }),
-        });
+        }, timeoutMs);
         if (res.ok) {
           const data = (await res.json()) as RespuestaChat;
           const raw = data.choices?.[0]?.message?.content || '';
@@ -2939,7 +2942,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           ],
           max_tokens: maxTokens,
         }),
-      });
+      }, timeoutMs);
       if (res.ok) {
         const data = (await res.json()) as RespuestaChat;
         const raw = data.choices?.[0]?.message?.content || '';
@@ -2975,7 +2978,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           max_tokens: maxTokens,
           ...(responseFormat ? { response_format: responseFormat } : {}),
         }),
-      });
+      }, timeoutMs);
       if (res.ok) {
         const data = (await res.json()) as RespuestaChat;
         const raw = data.choices?.[0]?.message?.content || '';
@@ -3011,7 +3014,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           ],
           generationConfig: { maxOutputTokens: maxTokens, temperature },
         }),
-      });
+      }, timeoutMs);
       if (res.ok) {
         const data = (await res.json()) as RespuestaGemini;
         const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -3049,7 +3052,7 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           ],
           max_tokens: maxTokens,
         }),
-      });
+      }, timeoutMs);
       if (clRes.ok) {
         const data = (await clRes.json()) as RespuestaClaude;
         const raw = data.content?.[0]?.text || '';
@@ -3070,6 +3073,77 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
 
   return { texto, proveedor, modelo, fallos, usoTokens, cuotaProveedor };
 }
+
+interface DisponibilidadIAComprobada {
+  ia: boolean;
+  proveedor: string | null;
+  verificadaEn: string;
+  venceEn: number;
+}
+
+let disponibilidadIAReciente: DisponibilidadIAComprobada | null = null;
+const DURACION_DISPONIBILIDAD_IA_EN_LINEA_MS = 45_000;
+const DURACION_DISPONIBILIDAD_IA_NO_DISPONIBLE_MS = 10_000;
+
+/**
+ * Una clave configurada puede estar vencida, sin cuota o apuntar a un modelo
+ * retirado. Esta prueba pide solo una palabra y su resultado se comparte unos
+ * segundos para que abrir varios chats no consuma una consulta por persona.
+ */
+const comprobarDisponibilidadIA = async (): Promise<DisponibilidadIAComprobada> => {
+  if (disponibilidadIAReciente && disponibilidadIAReciente.venceEn > Date.now()) {
+    return disponibilidadIAReciente;
+  }
+
+  const respuesta = await consultarModeloIA({
+    systemPrompt: 'Responde únicamente LISTO. Esta es una comprobación interna de disponibilidad.',
+    userPrompt: 'Confirma que puedes responder ahora.',
+    maxTokens: 3,
+    temperature: 0,
+    timeoutMs: 4_000,
+  });
+  const ia = Boolean(respuesta.texto);
+  const ahora = new Date().toISOString();
+  disponibilidadIAReciente = {
+    ia,
+    proveedor: ia ? respuesta.proveedor : null,
+    verificadaEn: ahora,
+    venceEn: Date.now() + (ia ? DURACION_DISPONIBILIDAD_IA_EN_LINEA_MS : DURACION_DISPONIBILIDAD_IA_NO_DISPONIBLE_MS),
+  };
+  return disponibilidadIAReciente;
+};
+
+/**
+ * Confirmación autenticada y sin cuota de que un modelo contestó de verdad.
+ * No expone claves, modelos ni los motivos internos de cada proveedor.
+ */
+app.get('/api/asesor-ia/disponibilidad', rateLimiter(8, 60_000), async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!exigirConfiguracionSegura(cliente, res, 'La comprobación del Asesor IA')) return;
+  if (cliente && !token) {
+    return res.status(401).json({ error: 'Inicia sesión para verificar el Asesor IA.' });
+  }
+  if (cliente && token) {
+    const quienLlama = await exigirUsuario(cliente, token);
+    if ('status' in quienLlama) {
+      return res.status(quienLlama.status).json({ error: 'Tu sesión ya no es válida. Inicia sesión de nuevo.' });
+    }
+  }
+
+  try {
+    const disponibilidad = await comprobarDisponibilidadIA();
+    return res.status(200).json({
+      ok: true,
+      ia: disponibilidad.ia,
+      proveedor: disponibilidad.proveedor,
+      verificadaEn: disponibilidad.verificadaEn,
+    });
+  } catch (error) {
+    console.error('[asesor] No se pudo comprobar la disponibilidad de IA:', error);
+    return res.status(200).json({ ok: true, ia: false });
+  }
+});
 
 /** Persistencia del asesor: el servidor valida identidad y Supabase aplica RLS. */
 app.get('/api/asesor/conversaciones', async (req, res) => {

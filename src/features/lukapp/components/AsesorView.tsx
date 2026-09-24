@@ -33,7 +33,7 @@ import type { ParsedTransaction } from '../lib/parseTransaction';
 import type { LexicoAprendido } from '../lib/aprendizaje';
 import { hacerCatalogo, type CategoriaPersonal } from '../categorias';
 
-import { apiUrl } from '../../../lib/api';
+import { apiUrl, precalentarApi } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
@@ -270,13 +270,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     peticionIARef.current = null;
   }, []);
 
-  const cabecerasIA = async (): Promise<Record<string, string>> => {
+  const cabecerasIA = useCallback(async (): Promise<Record<string, string>> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const cliente = obtenerSupabase();
     const session = cliente ? (await cliente.auth.getSession()).data.session : null;
     if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
     return headers;
-  };
+  }, []);
 
   const cargarConversacion = async (conversacion: ConversacionIA, cerrarHistorial = true) => {
     setCargandoConversacion(true);
@@ -336,7 +336,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     };
     void cargarPersistencia();
     return () => { activo = false; };
-  }, []);
+  }, [cabecerasIA]);
 
   const guardarMensaje = async (mensaje: Message) => {
     if (!recordar || !obtenerSupabase()) return;
@@ -552,34 +552,60 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     }
   }, [promptInicial, onLimpiarPromptInicial]);
 
-  // Se pregunta por el estado al abrir el chat. La petición despierta de paso el
-  // servicio, así que para cuando escribas el primer mensaje suele estar listo.
-  useEffect(() => {
-    let vigente = true;
-    fetch(apiUrl('/api/salud'))
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        // La comprobación de salud solo confirma que el servidor tiene un
-        // proveedor configurado. La respuesta de una consulta real es la que
-        // puede confirmar que la IA está efectivamente en línea.
-        if (vigente) {
-          setConexion((actual) => {
-            // Un ping saludable confirma la configuración del servidor, no
-            // que el proveedor haya contestado. Además, una respuesta tardía
-            // no debe borrar el resultado de una consulta real.
-            if (actual !== 'despertando') return actual;
-            return d?.ia ? 'configurada' : 'local';
-          });
-        }
-      })
-      .catch(() => {
-        // Sin servidor no hay IA, pero el motor local sigue respondiendo.
-        if (vigente) setConexion('local');
+  /**
+   * No basta con que una llave exista en Render: el indicador solo se vuelve
+   * verde después de que un proveedor responde una comprobación real. El ping
+   * ligero se dispara en paralelo para que un Render dormido empiece a arrancar
+   * antes de que termine de validarse la sesión.
+   */
+  const verificarDisponibilidadIA = useCallback(async (
+    controladorExterno?: AbortController,
+    respetarEstadoPosterior = false,
+  ) => {
+    const controlador = controladorExterno ?? new AbortController();
+    const limite = window.setTimeout(() => controlador.abort(), 60_000);
+    setIntentandoDespertar(true);
+    setConexion('despertando');
+    void precalentarApi();
+
+    try {
+      const headers = await cabecerasIA();
+      if (controlador.signal.aborted) return;
+      const respuesta = await fetch(apiUrl('/api/asesor-ia/disponibilidad'), {
+        headers,
+        cache: 'no-store',
+        signal: controlador.signal,
       });
-    return () => {
-      vigente = false;
-    };
-  }, []);
+      if (!respuesta.ok) {
+        setConexion((estadoActual) => (
+          respetarEstadoPosterior && estadoActual !== 'despertando' ? estadoActual : 'local'
+        ));
+        return;
+      }
+      const datos = await respuesta.json();
+      setConexion((estadoActual) => (
+        respetarEstadoPosterior && estadoActual !== 'despertando'
+          ? estadoActual
+          : datos?.ia === true ? 'en-linea' : 'local'
+      ));
+    } catch {
+      // El respaldo local sigue siendo útil, pero nunca se presenta como IA.
+      if (!controlador.signal.aborted) {
+        setConexion((estadoActual) => (
+          respetarEstadoPosterior && estadoActual !== 'despertando' ? estadoActual : 'local'
+        ));
+      }
+    } finally {
+      window.clearTimeout(limite);
+      if (!controlador.signal.aborted) setIntentandoDespertar(false);
+    }
+  }, [cabecerasIA]);
+
+  useEffect(() => {
+    const controlador = new AbortController();
+    void verificarDisponibilidadIA(controlador, true);
+    return () => controlador.abort();
+  }, [verificarDisponibilidadIA]);
 
   // `textoDirecto` deja que un chip de sugerencia envíe su propio texto sin
   // pasar por el campo de escritura: `setInput` es asíncrono, así que
@@ -827,16 +853,27 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           lo mismo. Aquí solo queda la línea de estado, que sí aporta algo que el
           título no puede decir. */}
       <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fin-line)] bg-[var(--fin-bg)] px-1 pb-4 pt-1">
-        <p className="flex items-center gap-2 text-[13px] text-[var(--fin-ink-soft)]">
+        <button
+          type="button"
+          onClick={() => void verificarDisponibilidadIA()}
+          disabled={intentandoDespertar}
+          aria-label="Verificar disponibilidad de IA"
+          title={conexion === 'en-linea' ? 'La IA respondió y está disponible. Pulsa para verificar de nuevo.' : 'Verificar disponibilidad de IA'}
+          className={`flex max-w-full items-center gap-2 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[13px] transition-colors disabled:cursor-wait ${
+            conexion === 'en-linea'
+              ? 'bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-300'
+              : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
+          }`}
+        >
           <span
             aria-hidden="true"
             className={`inline-block h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)] ${
-              conexion === 'local' ? '' : 'animate-pulse'
+              conexion === 'despertando' ? 'animate-pulse' : ''
             }`}
             style={{ backgroundColor: colorConexion }}
           />
           <span className="truncate">{etiquetaConexion(conexion)}</span>
-        </p>
+        </button>
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
           <button
             type="button"
@@ -864,42 +901,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           >
             {recordar ? 'Memoria activa' : 'Memoria apagada'}
           </button>
-          {conexion === 'local' && (
-            <button
-              onClick={async () => {
-                if (intentandoDespertar) return;
-                setIntentandoDespertar(true);
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-                try {
-                  const res = await fetch(apiUrl('/api/salud'), { signal: controller.signal });
-                  clearTimeout(timeoutId);
-
-                  if (!res.ok) {
-                    console.log('[asesor] Servidor retornó:', res.status);
-                    setConexion('local');
-                    return;
-                  }
-
-                  const data = await res.json();
-                  console.log('[asesor] Servidor disponible, IA:', data?.ia);
-                  setConexion(data?.ia ? 'configurada' : 'local');
-                } catch (error) {
-                  console.log('[asesor] Error despertando:', error instanceof Error ? error.message : error);
-                  setConexion('local');
-                } finally {
-                  clearTimeout(timeoutId);
-                  setIntentandoDespertar(false);
-                }
-              }}
-              disabled={intentandoDespertar}
-              className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1 text-[12px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-wait"
-            >
-              {intentandoDespertar ? 'Despertando...' : 'Despertarlo'}
-            </button>
-          )}
         </div>
       </div>
 
