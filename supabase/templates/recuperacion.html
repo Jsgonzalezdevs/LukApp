@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Restablece tu contraseña | LukApp</title>
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+      table { border-collapse: collapse !important; }
+      body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #fbf9f6; }
+      a { color: #1c1917; }
+      @media screen and (max-width: 600px) {
+        .email-shell { width: 100% !important; }
+        .content { padding: 32px 24px !important; }
+        .heading { font-size: 27px !important; line-height: 34px !important; }
+        .button { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Usa este enlace seguro para crear una nueva contraseña en LukApp.</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fbf9f6">
+      <tr><td align="center" style="padding:40px 16px 32px;">
+        <table role="presentation" class="email-shell" width="560" cellspacing="0" cellpadding="0" border="0" style="width:560px;max-width:560px;">
+          <tr><td align="center" style="padding:0 0 24px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+              <td valign="bottom" style="padding-right:4px;"><div style="width:10px;height:16px;border-radius:4px 4px 2px 2px;background:#f59e0b;line-height:16px;font-size:1px;">&nbsp;</div></td>
+              <td valign="bottom" style="padding-right:4px;"><div style="width:10px;height:25px;border-radius:4px 4px 2px 2px;background:#38bdf8;line-height:25px;font-size:1px;">&nbsp;</div></td>
+              <td valign="bottom"><div style="width:10px;height:36px;border-radius:4px 4px 2px 2px;background:#16c55e;line-height:36px;font-size:1px;">&nbsp;</div></td>
+              <td style="padding-left:12px;font-family:Arial,Helvetica,sans-serif;font-size:18px;line-height:22px;font-weight:700;color:#1c1917;">LukApp</td>
+            </tr></table>
+          </td></tr>
+          <tr><td class="content" style="padding:40px 48px 44px;background:#ffffff;border:1px solid #ede9e3;border-radius:20px;">
+            <p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:16px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#78716c;">Acceso seguro</p>
+            <h1 class="heading" style="margin:0 0 18px;font-family:Arial,Helvetica,sans-serif;font-size:30px;line-height:37px;font-weight:700;letter-spacing:0;color:#1c1917;">Crea una nueva contraseña</h1>
+            <p style="margin:0 0 28px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:25px;color:#57534e;">Recibimos una solicitud para restablecer la contraseña de tu cuenta. Usa el enlace seguro para continuar.</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr><td bgcolor="#1c1917" style="border-radius:10px;">
+              <a class="button" href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:15px 22px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:20px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">Restablecer contraseña</a>
+            </td></tr></table>
+            <p style="margin:30px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:21px;color:#78716c;">El enlace vence pronto y solo puede usarse una vez. Si no solicitaste este cambio, ignora este mensaje; tu contraseña actual seguirá siendo válida.</p>
+          </td></tr>
+          <tr><td style="padding:24px 16px 0;text-align:center;">
+            <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:19px;color:#a8a29e;">LukApp · Herramientas que te ayudan a avanzar con claridad</p>
+            <p style="margin:8px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:17px;color:#a8a29e;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br /><a href="{{ .ConfirmationURL }}" style="color:#78716c;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>
