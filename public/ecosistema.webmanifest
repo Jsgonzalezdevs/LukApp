@@ -9,6 +9,7 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
+  "categories": ["finance", "productivity"],
   "background_color": "#fbf9f6",
   "theme_color": "#fbf9f6",
   "icons": [
@@ -44,9 +45,20 @@
       "short_name": "Inicio"
     },
     {
-      "name": "Cuentas",
-      "url": "/app",
-      "short_name": "Cuentas"
+      "name": "Dinero",
+      "url": "/dinero",
+      "short_name": "Dinero"
+    },
+    {
+      "name": "Asesor",
+      "url": "/asesor",
+      "short_name": "Asesor"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/ajustes/extractos",
+      "accept": { "application/pdf": [".pdf"] }
     }
   ]
 }

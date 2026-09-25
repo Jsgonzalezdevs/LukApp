@@ -18,7 +18,6 @@ const Cupo4x1000 = lazy(() => import('./landing/Cupo4x1000').then(({ Cupo4x1000 
 const FormasDeRegistrar = lazy(() => import('./landing/FormasDeRegistrar').then(({ FormasDeRegistrar }) => ({ default: FormasDeRegistrar })));
 const BandaCifras = lazy(() => import('./landing/BandaCifras').then(({ BandaCifras }) => ({ default: BandaCifras })));
 const Registro = lazy(() => import('./landing/Registro').then(({ Registro }) => ({ default: Registro })));
-const PWAInstall = lazy(() => import('./landing/PWAInstall').then(({ PWAInstall }) => ({ default: PWAInstall })));
 const SecuenciaAnimada = lazy(() => import('./landing/SecuenciaAnimada').then(({ SecuenciaAnimada }) => ({ default: SecuenciaAnimada })));
 const SeccionApplePay = lazy(() => import('./landing/SeccionApplePay').then(({ SeccionApplePay }) => ({ default: SeccionApplePay })));
 
@@ -90,7 +89,6 @@ export const LandingLukApp: React.FC<LandingProps> = ({
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [compacta, setCompacta] = useState(false);
-  const [mostrarPWA, setMostrarPWA] = useState(false);
   const [mostrarConsentimientoAnalitica, setMostrarConsentimientoAnalitica] = useState(pideConsentimientoAnalitica);
   const sesionActiva = sesion?.estado.modo === 'autenticado' || sesion?.estado.modo === 'local';
 
@@ -123,23 +121,9 @@ export const LandingLukApp: React.FC<LandingProps> = ({
     onGetStarted?.();
   };
 
-  const handlePWAClose = () => {
-    setMostrarPWA(false);
-  };
-
   const handleRegistro = () => {
     window.location.hash = 'registro';
     document.getElementById('registro')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  };
-
-  const handlePWASkip = () => {
-    setMostrarPWA(false);
-    onGetStarted?.();
-  };
-
-  const handlePWAProceed = () => {
-    setMostrarPWA(false);
-    onGetStarted?.();
   };
 
   return (
@@ -216,14 +200,6 @@ export const LandingLukApp: React.FC<LandingProps> = ({
         </SeccionDiferida>
         <SeccionDiferida>
           <FormasDeRegistrar />
-          {mostrarPWA && (
-            <PWAInstall
-              onClose={handlePWAClose}
-              onSkip={handlePWASkip}
-              onProceed={handlePWAProceed}
-            />
-          )}
-
           {sesion ? (
             <Registro sesion={sesion} onIrAEntrar={onLogin} />
           ) : (

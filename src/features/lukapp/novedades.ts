@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.7.0', fecha: '2026-09-25', texto: 'La PWA gana atajos reales, apertura de extractos PDF desde Archivos, un aviso seguro de actualización y un estado claro cuando no hay señal. También queda lista para activar recordatorios push con la app cerrada al configurar el envío seguro.' },
+  { version: '4.6.0', fecha: '2026-09-25', texto: 'Instalar LukApp ahora es mucho más directo: en los navegadores compatibles basta confirmar el aviso del sistema, sin buscar menús. En iPhone la app explica el único paso que Apple exige, sin una guía larga.' },
   { version: '4.5.11', fecha: '2026-09-24', texto: 'Las vistas de Premium reflejan por completo la configuración de Superadmin: precios, cupos, límites ilimitados y prestaciones activas.' },
   { version: '4.5.10', fecha: '2026-09-24', texto: 'La vista previa de la invitación Premium desde Superadmin ahora consulta los cupos y precios vigentes. Así refleja al instante los cambios que hagas al plan.' },
   { version: '4.5.9', fecha: '2026-09-24', texto: 'El estado del Asesor ahora comprueba que la IA responda de verdad antes de decir “En línea”. Cuando está disponible, el indicador se vuelve verde; además, LukApp despierta el servidor mientras hace la verificación para que conecte más rápido.' },

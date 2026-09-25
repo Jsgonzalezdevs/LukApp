@@ -5,6 +5,7 @@ import { PERIODO_POR_DEFECTO } from '../lib/periodo';
 import type { ConfigPeriodo, FrecuenciaPeriodo } from '../lib/periodo';
 import { VERSION_ACTUAL } from '../novedades';
 import { obtenerSupabase } from './supabase';
+import { activarNotificacionesPush, desactivarNotificacionesPush } from '../lib/notificacionesPush';
 
 /**
  * Display preferences, kept beside the theme rather than in the ledger.
@@ -242,6 +243,7 @@ export const useRecordatorioRacha = () => {
       if (res === 'granted') {
         setActivoState(true);
         guardarBooleano(CLAVE_RECORDATORIO_ACTIVO, true);
+        void activarNotificacionesPush();
         return true;
       }
       return false;
@@ -253,6 +255,7 @@ export const useRecordatorioRacha = () => {
   const desactivarRecordatorio = useCallback(() => {
     setActivoState(false);
     guardarBooleano(CLAVE_RECORDATORIO_ACTIVO, false);
+    void desactivarNotificacionesPush();
   }, []);
 
   const cambiarHora = useCallback((nuevaHora: string) => {

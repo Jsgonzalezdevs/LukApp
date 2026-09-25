@@ -2,6 +2,7 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useStat
 import './styles/premium-effects.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
+import { ActualizacionPwa } from './components/ActualizacionPwa';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forPeriod, monthTotals } from './lib/aggregate';
@@ -238,6 +239,16 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   permitirConsolaEnProduccion,
 }) => {
   const [migracionLista, setMigracionLista] = useState(false);
+  const [enLinea, setEnLinea] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const actualizar = () => setEnLinea(navigator.onLine);
+    window.addEventListener('online', actualizar);
+    window.addEventListener('offline', actualizar);
+    return () => {
+      window.removeEventListener('online', actualizar);
+      window.removeEventListener('offline', actualizar);
+    };
+  }, []);
   const repositorio = useMemo(() => {
     if (!userId) return undefined;
     if (userId === 'usuario-local-pruebas') {
@@ -896,6 +907,13 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         }
       >
         <Suspense fallback={<SkeletonInicio />}>
+        <ActualizacionPwa />
+        {!enLinea ? (
+          <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] px-4 py-3" role="status">
+            <CloudOff className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]" strokeWidth={2.5} />
+            <p className="text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">Estás sin conexión. Puedes seguir viendo lo que ya tienes; los cambios se guardan y se sincronizan al volver la señal.</p>
+          </div>
+        ) : null}
         {/* Storage that cannot remember has to say so — silently losing a month of
  entries is far worse than an ugly banner. */}
         {!almacen.persistente ? (

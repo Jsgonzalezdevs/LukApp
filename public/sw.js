@@ -5,7 +5,7 @@
 // Debe avanzar junto con la versión de la app. Al hacerlo, activate elimina
 // recursos de lanzamientos anteriores en vez de dejar una PWA instalada con
 // cachés viejos acumulados.
-const VERSION = 'v4.5.11';
+const VERSION = 'v4.7.0';
 const SHELL = `lukapp-shell-${VERSION}`;
 const ASSETS = `lukapp-assets-${VERSION}`;
 
@@ -42,8 +42,33 @@ self.addEventListener('install', (evento) => {
       .open(SHELL)
       .then((cache) => cache.add(SHELL_URL))
       .catch(() => undefined)
-      .then(() => self.skipWaiting()),
+      .then(() => undefined),
   );
+});
+
+self.addEventListener('message', (evento) => {
+  if (evento.data?.tipo === 'activar-actualizacion') self.skipWaiting();
+});
+
+self.addEventListener('push', (evento) => {
+  const datos = evento.data?.json?.() ?? {};
+  const titulo = typeof datos.titulo === 'string' ? datos.titulo : 'LukApp';
+  evento.waitUntil(self.registration.showNotification(titulo, {
+    body: typeof datos.mensaje === 'string' ? datos.mensaje : 'Tienes un recordatorio financiero.',
+    icon: '/lukapp-icon-192.png',
+    badge: '/lukapp-icon-192.png',
+    tag: typeof datos.etiqueta === 'string' ? datos.etiqueta : 'lukapp',
+    data: { url: typeof datos.url === 'string' ? datos.url : '/app' },
+  }));
+});
+
+self.addEventListener('notificationclick', (evento) => {
+  evento.notification.close();
+  const destino = evento.notification.data?.url ?? '/app';
+  evento.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientes) => {
+    const existente = clientes.find((cliente) => new URL(cliente.url).origin === self.location.origin);
+    return existente ? existente.focus() : self.clients.openWindow(destino);
+  }));
 });
 
 self.addEventListener('activate', (evento) => {

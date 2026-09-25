@@ -13,7 +13,27 @@ export const registrarServiceWorker = (): void => {
   // would serve stale modules straight through HMR.
   if (import.meta.env.DEV) return;
 
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => undefined);
-  });
+  const registrar = () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((registro) => {
+      const avisarActualizacion = () => window.dispatchEvent(new Event('lukapp:actualizacion-pwa'));
+      if (registro.waiting) avisarActualizacion();
+      registro.addEventListener('updatefound', () => {
+        const trabajador = registro.installing;
+        trabajador?.addEventListener('statechange', () => {
+          if (trabajador.state === 'installed' && navigator.serviceWorker.controller) {
+            avisarActualizacion();
+          }
+        });
+      });
+    }).catch(() => undefined);
+  };
+
+  // `main.tsx` importa este módulo después de que pueda haberse disparado
+  // `load`. Escucharlo otra vez en ese caso dejaba al worker esperando un
+  // evento que ya pasó y la PWA nunca quedaba lista fuera de desarrollo.
+  if (document.readyState === 'complete') {
+    registrar();
+  } else {
+    window.addEventListener('load', registrar, { once: true });
+  }
 };

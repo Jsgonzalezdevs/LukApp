@@ -9,6 +9,7 @@ const leer = (ruta: string) => readFileSync(resolve(raiz, ruta), 'utf8');
 const manifest = JSON.parse(leer('public/ecosistema.webmanifest'));
 const sw = leer('public/sw.js');
 const html = leer('index.html');
+const registradorSw = leer('src/features/lukapp/data/registrarSW.ts');
 const version = leer('src/version.ts').match(/VERSION = '([^']+)'/)?.[1];
 
 describe('manifest', () => {
@@ -58,6 +59,11 @@ describe('manifest', () => {
 });
 
 describe('service worker', () => {
+  it('se registra aunque el módulo llegue después del evento load', () => {
+    expect(registradorSw).toContain("document.readyState === 'complete'");
+    expect(registradorSw).toContain("window.addEventListener('load', registrar, { once: true })");
+  });
+
   it('renueva el caché con cada versión publicada de LukApp', () => {
     expect(version).toBeTruthy();
     expect(sw).toContain(`const VERSION = 'v${version}'`);

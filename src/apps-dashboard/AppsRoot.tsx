@@ -97,6 +97,8 @@ const esPwaInstalada = (): boolean =>
   window.matchMedia?.('(display-mode: standalone)').matches === true ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
+const CLAVE_INSTALACION_PWA = 'lukapp-instalacion-pwa-v2';
+
 interface AdminBackup {
   access_token: string;
   refresh_token: string;
@@ -118,7 +120,7 @@ export const AppsRoot: React.FC = () => {
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
-  const [mostrarGuiaPWA, setMostrarGuiaPWA] = useState(false);
+  const [mostrarInstalacionPwa, setMostrarInstalacionPwa] = useState(false);
   const ultimoAccesoRegistrado = useRef<string | null>(null);
 
   const { ruta, ir } = useRuta();
@@ -203,24 +205,31 @@ export const AppsRoot: React.FC = () => {
     return () => { cancelado = true; };
   }, [sesion.estado]);
 
-  // La instalación se explica cuando la persona ya entró a su cuenta: en ese
-  // momento entiende el valor de tener LukApp a mano y no se interrumpe el
-  // registro. La clave por usuario permite que cada cuenta reciba su propia
-  // bienvenida, sin repetirla en cada visita.
+  // Una invitación breve sirve mejor que un manual al entrar: en Chromium solo
+  // aparece si el navegador ya permite abrir su confirmación nativa; en iOS
+  // queda el único gesto que Apple no expone a la web. La marca v2 muestra la
+  // mejora una vez también a quien ya había cerrado la guía antigua. Como la
+  // instalación es del dispositivo, no se repite al cambiar de cuenta en él.
   useEffect(() => {
     if (sesion.estado.modo !== 'autenticado' && sesion.estado.modo !== 'local') return;
     if (esPwaInstalada()) return;
-    const clave = `lukapp-guia-pwa-v1:${sesion.estado.userId}`;
-    if (localStorage.getItem(clave)) return;
-    const id = window.setTimeout(() => setMostrarGuiaPWA(true), 1400);
+    try {
+      if (localStorage.getItem(CLAVE_INSTALACION_PWA)) return;
+    } catch {
+      // Safari puede negar almacenamiento; la invitación sigue siendo útil
+      // durante esta visita y nunca debe bloquear la app por ello.
+    }
+    const id = window.setTimeout(() => setMostrarInstalacionPwa(true), 6000);
     return () => window.clearTimeout(id);
   }, [sesion.estado]);
 
-  const cerrarGuiaPWA = () => {
-    if (sesion.estado.modo === 'autenticado' || sesion.estado.modo === 'local') {
-      localStorage.setItem(`lukapp-guia-pwa-v1:${sesion.estado.userId}`, 'vista');
+  const cerrarInstalacionPwa = () => {
+    try {
+      localStorage.setItem(CLAVE_INSTALACION_PWA, 'vista');
+    } catch {
+      // Cerrar debe funcionar incluso donde el navegador bloquea localStorage.
     }
-    setMostrarGuiaPWA(false);
+    setMostrarInstalacionPwa(false);
   };
 
   // Cargar rol de Supabase con retry logic
@@ -430,7 +439,7 @@ export const AppsRoot: React.FC = () => {
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <LukAppMain esAdmin={false} />
-        {mostrarGuiaPWA && <PWAInstall onClose={cerrarGuiaPWA} onSkip={cerrarGuiaPWA} onProceed={cerrarGuiaPWA} />}
+        {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} />}
       </div>
       </VistaConCarga>
     );

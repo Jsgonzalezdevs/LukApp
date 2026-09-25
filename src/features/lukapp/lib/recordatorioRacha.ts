@@ -49,8 +49,8 @@ export const enviarNotificacionRacha = async (
     body: esPrueba
       ? 'Así se verán tus recordatorios diarios en LukApp para no perder tu consistencia.'
       : 'Aún no has registrado tus gastos de hoy. Toca aquí para anotar en 5 segundos.',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: '/lukapp-icon-192.png',
+    badge: '/lukapp-icon-192.png',
     tag: 'recordatorio-racha',
     data: { url: '/app' },
   };

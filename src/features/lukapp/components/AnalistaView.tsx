@@ -19,6 +19,7 @@ import { planearImportacion } from '../analista/aMovimientos';
 import type { Trabajo } from '../analista/useAnalista';
 import { useAnalista } from '../analista/useAnalista';
 import { AnalistaReporte } from './AnalistaReporte';
+import { useArchivoPwa } from './useArchivoPwa';
 
 interface AnalistaViewProps {
   existentes: readonly Transaction[];
@@ -327,6 +328,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 
 export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas, onImportar, onCompletar }) => {
   const analista = useAnalista();
+  useArchivoPwa(analista.analizarArchivos);
   const [cuentaId, setCuentaId] = useState<string | null>(cuentas.length === 1 ? cuentas[0].id : null);
   const [arrastrando, setArrastrando] = useState(false);
   const [contraidos, setContraidos] = useState<Set<string>>(new Set());
