@@ -13,9 +13,12 @@ export interface Sesion {
   estado: EstadoSesion;
   error: string | null;
   ocupado: boolean;
-  entrar: (email: string, password: string) => Promise<void>;
-  registrarse: (email: string, password: string) => Promise<void>;
-  salir: () => Promise<void>;
+  entrar: (email: string, password: string) => Promise<boolean>;
+  registrarse: (email: string, password: string) => Promise<boolean>;
+  solicitarRecuperacion: (email: string) => Promise<boolean>;
+  cambiarPassword: (password: string, passwordActual?: string) => Promise<boolean>;
+  recuperandoPassword: boolean;
+  salir: () => Promise<boolean>;
   limpiarError: () => void;
 }
 
@@ -36,6 +39,7 @@ export const useSesion = (): Sesion => {
   );
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
+  const [recuperandoPassword, setRecuperandoPassword] = useState(false);
 
   useEffect(() => {
     if (!cliente) return;
@@ -47,8 +51,9 @@ export const useSesion = (): Sesion => {
 
     // Covers token refresh and sign-out from another tab, so a session that
     // expires elsewhere does not leave this tab writing into a dead client.
-    const { data: sub } = cliente.auth.onAuthStateChange((_evento, sesion) => {
+    const { data: sub } = cliente.auth.onAuthStateChange((evento, sesion) => {
       setEstado(aEstado(sesion));
+      if (evento === 'PASSWORD_RECOVERY') setRecuperandoPassword(true);
     });
 
     return () => {
@@ -58,15 +63,20 @@ export const useSesion = (): Sesion => {
   }, [cliente]);
 
   const ejecutar = useCallback(
-    async (accion: () => Promise<{ error: { message: string } | null }>) => {
-      if (!cliente) return;
+    async (accion: () => Promise<{ error: { message: string } | null }>): Promise<boolean> => {
+      if (!cliente) return false;
       setOcupado(true);
       setError(null);
       try {
         const { error: fallo } = await conTiempoLimite(accion());
-        if (fallo) setError(traducir(fallo.message));
+        if (fallo) {
+          setError(traducir(fallo.message));
+          return false;
+        }
+        return true;
       } catch (e) {
         setError(traducir(e instanceof Error ? e.message : ''));
+        return false;
       } finally {
         setOcupado(false);
       }
@@ -111,7 +121,32 @@ export const useSesion = (): Sesion => {
       [cliente, ejecutar],
     ),
 
+    solicitarRecuperacion: useCallback(
+      (email) =>
+        ejecutar(() =>
+          cliente!.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/ecosistema`,
+          }),
+        ),
+      [cliente, ejecutar],
+    ),
+
+    cambiarPassword: useCallback(
+      async (password, passwordActual) => {
+        const ok = await ejecutar(() =>
+          cliente!.auth.updateUser({
+            password,
+            ...(passwordActual ? { current_password: passwordActual } : {}),
+          }),
+        );
+        if (ok) setRecuperandoPassword(false);
+        return ok;
+      },
+      [cliente, ejecutar],
+    ),
+
     salir: useCallback(() => ejecutar(() => cliente!.auth.signOut()), [cliente, ejecutar]),
+    recuperandoPassword,
   };
 };
 
@@ -158,6 +193,8 @@ const traducir = (mensaje: string): string => {
   if (m.includes('password should be at least')) {
     return 'La contraseña debe tener al menos 6 caracteres.';
   }
+  if (m.includes('current password')) return 'La contraseña actual no es correcta.';
+  if (m.includes('same password')) return 'La nueva contraseña debe ser diferente.';
   if (m.includes('unable to validate email address')) return 'Ese correo no parece válido.';
   if (m.includes('rate limit') || m.includes('too many')) {
     return 'Demasiados intentos. Espera un momento.';

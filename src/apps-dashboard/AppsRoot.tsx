@@ -7,6 +7,7 @@ import { FinanzasApp } from '../features/finanzas/FinanzasApp';
 import { AppLauncher } from './AppLauncher';
 import { SuperadminPanel } from './SuperadminPanel';
 import { Loader2 } from 'lucide-react';
+import { CambioPasswordPanel } from '../features/finanzas/components/CambioPasswordPanel';
 
 export type AppId = 'finanzas' | 'superadmin' | null;
 
@@ -94,6 +95,12 @@ export const AppsRoot: React.FC = () => {
 
   if (sesion.estado.modo === 'anonimo') {
     return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
+  }
+
+  // Supabase restores a short-lived session from the recovery link before this
+  // render. Keep the person on the password form instead of opening their data.
+  if (sesion.recuperandoPassword) {
+    return <CambioPasswordPanel sesion={sesion} recuperacion />;
   }
 
   if (activeApp === 'finanzas') {

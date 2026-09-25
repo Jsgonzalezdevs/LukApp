@@ -30,19 +30,27 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   const [identidad, setIdentidad] = useState('');
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
+  const [recuperando, setRecuperando] = useState(false);
+  const [recuperacionEnviada, setRecuperacionEnviada] = useState(false);
 
-  const listo = identidad.trim() !== '' && password.length > 0;
+  const listo = identidad.trim() !== '' && (recuperando || password.length > 0);
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
     if (!listo) return;
-    void (modo === 'entrar'
-      ? sesion.entrar(identidad.trim(), password)
-      : sesion.registrarse(identidad.trim(), password));
+    if (recuperando) {
+      void sesion.solicitarRecuperacion(identidad.trim()).then((ok) => {
+        if (ok) setRecuperacionEnviada(true);
+      });
+      return;
+    }
+    void (modo === 'entrar' ? sesion.entrar(identidad.trim(), password) : sesion.registrarse(identidad.trim(), password));
   };
 
   const cambiarModo = (siguiente: Modo) => {
     setModo(siguiente);
+    setRecuperando(false);
+    setRecuperacionEnviada(false);
     sesion.limpiarError();
   };
 
@@ -73,7 +81,9 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             Apps Personalizadas
           </h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            {modo === 'entrar'
+            {recuperando
+              ? 'Te enviaremos un enlace seguro para crear una nueva contraseña.'
+              : modo === 'entrar'
               ? 'Accede a tu ecosistema.'
               : 'Crea tu cuenta para empezar.'}
           </p>
@@ -123,7 +133,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             htmlFor="login-identidad"
             className="block text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
           >
-            Usuario o correo
+            {recuperando ? 'Correo de la cuenta' : 'Usuario o correo'}
           </label>
           <input
             id="login-identidad"
@@ -135,7 +145,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             // of a working credential — the label above already says what goes
             // in the field, so the hint bought nothing and leaked something.
             // Standard token so password managers recognise the form and fill it.
-            autoComplete="username"
+            autoComplete={recuperando ? 'email' : 'username'}
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
@@ -143,7 +153,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             className={`mt-2 ${campo}`}
           />
 
-          <label
+          {!recuperando ? <><label
             htmlFor="login-password"
             className="mt-5 block text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
           >
@@ -175,6 +185,17 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               )}
             </button>
           </div>
+          </> : null}
+
+          {modo === 'entrar' ? (
+            <button
+              type="button"
+              onClick={() => { setRecuperando((v) => !v); setRecuperacionEnviada(false); sesion.limpiarError(); }}
+              className="mt-4 text-xs font-bold text-[var(--fin-ink-soft)] underline underline-offset-4 hover:text-[var(--fin-ink)]"
+            >
+              {recuperando ? 'Volver a iniciar sesión' : '¿Olvidaste tu contraseña?'}
+            </button>
+          ) : null}
 
           <AnimatePresence>
             {sesion.error ? (
@@ -191,6 +212,11 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               </motion.p>
             ) : null}
           </AnimatePresence>
+          {recuperacionEnviada ? (
+            <p role="status" className="mt-4 rounded-2xl bg-emerald-500/10 px-4 py-3 text-[12px] leading-relaxed text-emerald-700">
+              Si el correo corresponde a una cuenta, recibirás un enlace para cambiar la contraseña. Revisa también spam.
+            </p>
+          ) : null}
 
           <motion.button
             type="submit"
@@ -202,11 +228,11 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             {sesion.ocupado ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" strokeWidth={3} />
-                Entrando…
+                {recuperando ? 'Enviando…' : 'Entrando…'}
               </>
             ) : (
               <>
-                {modo === 'entrar' ? 'Entrar' : 'Crear cuenta'}
+                {recuperando ? 'Enviar enlace' : modo === 'entrar' ? 'Entrar' : 'Crear cuenta'}
                 <ArrowRight
                   className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                   strokeWidth={3}

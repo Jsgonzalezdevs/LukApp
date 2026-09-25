@@ -90,6 +90,39 @@ app.post('/api/crear-usuario', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
+// ENDPOINT: Restablecer contraseña (solo Superadmin)
+// ----------------------------------------------------------------------
+app.post('/api/restablecer-password', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const { userId, password } = req.body;
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  if (typeof userId !== 'string' || typeof password !== 'string' || password.length < 6) {
+    return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
+  }
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) return res.status(500).json({ error: 'Falta configurar Supabase en el servidor.' });
+
+  const adminAuthClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  try {
+    const { data: adminUser, error: adminError } = await adminAuthClient.auth.getUser(token);
+    if (adminError || !adminUser.user) return res.status(401).json({ error: 'Token inválido' });
+    const { data: adminProfile } = await adminAuthClient.from('perfiles').select('rol').eq('id', adminUser.user.id).single();
+    if (adminProfile?.rol !== 'admin') return res.status(403).json({ error: 'No tienes permisos de administrador' });
+
+    const { error } = await adminAuthClient.auth.admin.updateUserById(userId, { password });
+    if (error) throw error;
+    return res.status(200).json({ success: true });
+  } catch (error: any) {
+    console.error('Error restableciendo contraseña:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+// ----------------------------------------------------------------------
 // ENDPOINT: Analizar Extracto Bancario
 // ----------------------------------------------------------------------
 const MAX_BYTES_PDF = 4 * 1024 * 1024; // 4MB

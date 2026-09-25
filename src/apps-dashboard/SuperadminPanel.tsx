@@ -33,6 +33,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
   const [nuevoUsuario, setNuevoUsuario] = useState('');
   const [nuevaPassword, setNuevaPassword] = useState('');
   const [nuevoRol, setNuevoRol] = useState<'admin' | 'usuario'>('usuario');
+  const [usuarioAResetear, setUsuarioAResetear] = useState<Perfil | null>(null);
+  const [passwordTemporal, setPasswordTemporal] = useState('');
 
   const fetchUsuarios = async () => {
     setLoading(true);
@@ -94,6 +96,31 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
       setNuevaPassword('');
       setNuevoRol('usuario');
       fetchUsuarios(); // Recargar la lista
+    } catch (err: any) {
+      setFormError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRestablecerPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuarioAResetear) return;
+    setFormError(null);
+    setIsSubmitting(true);
+    try {
+      const cliente = obtenerSupabase();
+      const { data: { session } } = await cliente!.auth.getSession();
+      if (!session) throw new Error('No hay sesión activa');
+      const res = await fetch('/api/restablecer-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ userId: usuarioAResetear.id, password: passwordTemporal }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'No se pudo restablecer la contraseña');
+      setUsuarioAResetear(null);
+      setPasswordTemporal('');
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -213,6 +240,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
                           <div className="flex items-center justify-end gap-2">
                             <button className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-blue-500" title="Editar">
                               <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => { setFormError(null); setPasswordTemporal(''); setUsuarioAResetear(u); }} className="rounded-lg px-2 py-2 text-xs font-bold text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-purple-600" title="Restablecer contraseña">
+                              Clave
                             </button>
                             <button className="rounded-lg p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-red-500" title="Eliminar">
                               <Trash2 className="h-4 w-4" />
@@ -350,6 +380,22 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ onBack, tema, 
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {usuarioAResetear && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <form onSubmit={handleRestablecerPassword} className="w-full max-w-md rounded-3xl bg-[var(--fin-card)] p-6 shadow-2xl">
+            <h3 className="text-lg font-bold">Restablecer contraseña</h3>
+            <p className="mt-2 text-sm text-[var(--fin-ink-soft)]">Define una contraseña temporal para <strong>{usuarioAResetear.email}</strong> y comunícala por un canal seguro.</p>
+            {formError ? <p role="alert" className="mt-4 rounded-xl bg-[var(--fin-out-bg)] p-3 text-sm text-[var(--fin-out-ink)]">{formError}</p> : null}
+            <label className="mt-5 block text-xs font-bold text-[var(--fin-ink-soft)]">Contraseña temporal
+              <input type="password" value={passwordTemporal} onChange={(e) => setPasswordTemporal(e.target.value)} minLength={6} required autoComplete="new-password" className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-transparent px-4 py-2.5" />
+            </label>
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setUsuarioAResetear(null)} disabled={isSubmitting} className="rounded-xl px-5 py-2.5 text-sm font-bold text-[var(--fin-ink-soft)]">Cancelar</button>
+              <button type="submit" disabled={isSubmitting} className="rounded-xl bg-purple-600 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50">{isSubmitting ? 'Guardando…' : 'Restablecer'}</button>
+            </div>
+          </form>
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@ import { useTema } from './data/useTema';
 import { obtenerSupabase } from './data/supabase';
 import { RepositorioSupabase } from './data/repositorioSupabase';
 import { LoginPanel } from './components/LoginPanel';
+import { CambioPasswordPanel } from './components/CambioPasswordPanel';
 import { AnalistaView } from './components/AnalistaView';
 import { CajitasView } from './components/CajitasView';
 import { CategoryBreakdown } from './components/CategoryBreakdown';
@@ -66,6 +67,7 @@ export interface FinanzasAppProps {
 export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
+  const [cambioPassword, setCambioPassword] = useState(false);
 
   if (sesion.estado.modo === 'cargando') {
     return (
@@ -81,10 +83,10 @@ export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
 
   const cuenta =
     sesion.estado.modo === 'autenticado'
-      ? { email: sesion.estado.email, onSalir: () => void sesion.salir() }
+      ? { email: sesion.estado.email, onSalir: () => void sesion.salir(), onCambiarPassword: () => setCambioPassword(true) }
       : undefined;
 
-  return (
+  return <>
     <FinanzasPanel
       // Remounts on account change, so one user's data can never be left on
       // screen under another's session.
@@ -95,13 +97,14 @@ export const FinanzasApp: React.FC<FinanzasAppProps> = ({ onBack }) => {
       onCambiarTema={setTema}
       onBack={onBack}
     />
-  );
+    {cambioPassword ? <CambioPasswordPanel sesion={sesion} onClose={() => setCambioPassword(false)} /> : null}
+  </>;
 };
 
 interface FinanzasPanelProps {
   /** Null in local mode, where storage is this device's IndexedDB. */
   userId: string | null;
-  cuenta?: { email: string; onSalir: () => void };
+  cuenta?: { email: string; onSalir: () => void; onCambiarPassword: () => void };
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
   onBack?: () => void;

@@ -9,7 +9,7 @@ interface FinanzasShellProps {
   /** Rendered to the right of the title in the desktop header. */
   toolbar?: React.ReactNode;
   /** Absent in local mode, where there is no account to sign out of. */
-  cuenta?: { email: string; onSalir: () => void };
+  cuenta?: { email: string; onSalir: () => void; onCambiarPassword: () => void };
   temaToggle?: React.ReactNode;
   onBack?: () => void;
   children: React.ReactNode;
@@ -44,7 +44,7 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
       <div>
         <div className="flex items-center gap-2.5 px-2">
           {onBack && (
-            <button 
+            <button
               onClick={onBack}
               className="mr-1 flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
               aria-label="Volver al ecosistema"
@@ -91,6 +91,9 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
             >
               Cerrar sesión
             </button>
+            <button type="button" onClick={cuenta.onCambiarPassword} className="mt-1.5 ml-3 text-[11px] font-bold text-[var(--fin-ink-faint)] underline-offset-2 hover:text-[var(--fin-ink)] hover:underline">
+              Cambiar contraseña
+            </button>
           </>
         ) : null}
         <p className="mt-2 text-[11px] leading-relaxed text-[var(--fin-ink-faint)]">Privado · solo para ti</p>
@@ -115,13 +118,10 @@ export const FinanzasShell: React.FC<FinanzasShellProps> = ({
         <div className="ml-auto flex items-center gap-2">
           {temaToggle}
           {cuenta ? (
-            <button
-              type="button"
-              onClick={cuenta.onSalir}
-              className="text-[11px] font-bold text-[var(--fin-ink-faint)]"
-            >
-              Salir
-            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={cuenta.onCambiarPassword} className="text-[11px] font-bold text-[var(--fin-ink-faint)]">Clave</button>
+              <button type="button" onClick={cuenta.onSalir} className="text-[11px] font-bold text-[var(--fin-ink-faint)]">Salir</button>
+            </div>
           ) : null}
         </div>
       </header>

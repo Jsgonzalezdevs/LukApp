@@ -45,3 +45,50 @@ Las cuatro deben salir con `rowsecurity = true`.
 Por defecto Supabase exige confirmar el correo antes del primer ingreso. Si es
 solo para ti y quieres saltarte ese paso: **Authentication → Providers → Email →
 Confirm email**, desactívalo.
+
+## Recuperar o cambiar contraseña
+
+La pantalla de acceso incluye **¿Olvidaste tu contraseña?**. El enlace que
+recibe el usuario vuelve a la misma aplicación y permite definir una contraseña
+nueva; no hace falta desplegar una página adicional.
+
+En Supabase ve a **Authentication → URL Configuration** y agrega, reemplazando
+el dominio por el de producción:
+
+```
+https://TU-DOMINIO/ecosistema
+```
+
+Configura también un proveedor SMTP en **Authentication → SMTP Settings**. El
+servicio de prueba de Supabase tiene límites reducidos y no debe usarse como
+canal de recuperación en producción.
+
+## Correos con identidad LukApp
+
+Las plantillas listas para el envío están en [`templates/`](templates/):
+
+- `confirmacion.html`: **Confirm signup** — asunto sugerido: `Confirma tu correo en LukApp`.
+- `recuperacion.html`: **Reset password** — asunto sugerido: `Restablece tu contraseña de LukApp`.
+
+Para un proyecto alojado en Supabase, abre **Authentication → Email Templates**
+y pega el contenido completo de cada archivo en su flujo correspondiente. El
+proveedor que entrega el mensaje puede seguir siendo Resend, configurado como
+SMTP en **Authentication → SMTP Settings**; las plantillas se administran en
+Supabase porque es quien genera los enlaces de autenticación.
+
+Ambas usan `{{ .ConfirmationURL }}`, la variable oficial de Supabase que
+conserva el destino configurado por la aplicación (incluido `/ecosistema` para
+la recuperación). No sustituyas esa variable por una URL fija. En Resend deja
+desactivado el seguimiento de clics para estos mensajes de autenticación: si
+reescribe el enlace, la verificación puede fallar.
+
+Los usuarios con sesión activa pueden cambiar su propia contraseña desde
+Finanzas. Como alternativa de soporte, Superadmin puede establecer una
+contraseña temporal desde la lista de usuarios. Para esa última opción el
+servidor necesita, además de las variables públicas, esta variable privada:
+
+```
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+Nunca la declares con prefijo `VITE_` ni la incluyas en el bundle del navegador.
