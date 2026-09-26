@@ -6,13 +6,17 @@ import './PWAInstall.css';
 
 interface PWAInstallProps {
   onClose: () => void;
+  /** La consola de superadmin debe poder revisar la tarjeta aunque el navegador
+   * no esté ofreciendo su diálogo nativo en ese momento. */
+  forzarVistaPrevia?: boolean;
 }
 
-export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose }) => {
+export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose, forzarVistaPrevia = false }) => {
   const { opcion, instalada } = useInstalacionPwa();
   const [ocupado, setOcupado] = useState(false);
+  const [noDisponible, setNoDisponible] = useState(false);
 
-  if (instalada || !opcion) return null;
+  if (!forzarVistaPrevia && (instalada || !opcion)) return null;
 
   const esIos = opcion === 'ios';
   const instalar = async () => {
@@ -20,6 +24,7 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose }) => {
     const resultado = await solicitarInstalacionPwa();
     setOcupado(false);
     if (resultado !== 'indisponible') onClose();
+    else setNoDisponible(true);
   };
 
   return (
@@ -36,7 +41,9 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose }) => {
           <h2>{esIos ? 'Ten LukApp a un toque' : 'Instala LukApp'}</h2>
           <p>{esIos
             ? 'Quedará junto a tus demás aplicaciones.'
-            : 'Confirma una vez y quedará lista en tu dispositivo.'}</p>
+            : forzarVistaPrevia && !opcion
+              ? 'Vista previa: este navegador no ofrece la instalación nativa ahora.'
+              : 'Confirma una vez y quedará lista en tu dispositivo.'}</p>
         </div>
         <button type="button" className="pwa-invitacion-cerrar" onClick={onClose} aria-label="Ahora no">
           <X size={18} aria-hidden />
@@ -49,15 +56,18 @@ export const PWAInstall: React.FC<PWAInstallProps> = ({ onClose }) => {
           Al abrirla por primera vez, puede pedirte entrar de nuevo.
         </p>
       ) : (
-        <button
-          type="button"
-          className="pwa-invitacion-accion"
-          onClick={() => void instalar()}
-          disabled={ocupado}
-        >
-          <Download size={18} aria-hidden />
-          {ocupado ? 'Abriendo instalación…' : 'Instalar LukApp'}
-        </button>
+        <>
+          <button
+            type="button"
+            className="pwa-invitacion-accion"
+            onClick={() => void instalar()}
+            disabled={ocupado}
+          >
+            <Download size={18} aria-hidden />
+            {ocupado ? 'Abriendo instalación…' : 'Instalar LukApp'}
+          </button>
+          {noDisponible ? <p className="pwa-invitacion-ios">Este navegador no tiene disponible el diálogo de instalación en este momento.</p> : null}
+        </>
       )}
     </motion.aside>
   );

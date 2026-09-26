@@ -144,7 +144,7 @@ const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => {
 app.use('/api', rateLimiter(120, 60000));
 // Las acciones que alteran cuentas no necesitan el límite amplio del resto de
 // la API. Es una segunda barrera ante automatización y fuerza bruta.
-app.use(['/api/crear-usuario', '/api/editar-usuario', '/api/solicitudes-superadmin'], rateLimiter(12, 60000));
+app.use(['/api/crear-usuario', '/api/editar-usuario', '/api/solicitudes-superadmin', '/api/superadmin/legal/terminos'], rateLimiter(12, 60000));
 // Estos límites van antes de leer el cuerpo: así una ráfaga no fuerza a
 // deserializar PDFs, audios o prompts costosos antes de ser rechazada.
 app.use('/api/analizar-extracto', rateLimiter(6, 60000));
@@ -225,8 +225,8 @@ app.post('/api/crear-usuario', async (req, res) => {
     const errorPassword = validarContrasenaSegura(password, [usuario, email]);
     if (errorPassword) return res.status(400).json({ error: errorPassword });
 
-    // Un rol delegado puede crear usuarios normales, pero nunca elevarlos.
-    // La elevación la solicita y aprueba otro superadmin más abajo.
+    // Un rol delegado puede crear usuarios normales, pero solamente un
+    // superadmin fijo puede crear o conceder acceso de administrador.
     if (rol === 'admin') {
       const admin = await exigirAdmin(cliente, token);
       if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
@@ -242,13 +242,13 @@ app.post('/api/crear-usuario', async (req, res) => {
     if (createError) throw createError;
 
     if (rol === 'admin' && newUser.user) {
-      const { error: solicitudError } = await cliente.from('solicitudes_superadmin').insert({
-        objetivo_id: newUser.user.id,
-        solicitada_por: acceso.userId,
-      });
-      if (solicitudError) {
+      const { error: perfilError } = await cliente
+        .from('perfiles')
+        .update({ rol: 'admin' })
+        .eq('id', newUser.user.id);
+      if (perfilError) {
         await cliente.auth.admin.deleteUser(newUser.user.id);
-        throw solicitudError;
+        throw perfilError;
       }
     }
 
@@ -259,7 +259,7 @@ app.post('/api/crear-usuario', async (req, res) => {
       `Usuario: ${usuario || '-'}, Rol: ${rol || 'usuario'}`,
     );
 
-    return res.status(200).json({ success: true, user: newUser.user, solicitudPendiente: rol === 'admin' });
+    return res.status(200).json({ success: true, user: newUser.user });
   } catch (error: any) {
     console.error('Error creando usuario:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
@@ -1117,23 +1117,8 @@ app.post('/api/editar-usuario', async (req, res) => {
       : validarContrasenaSegura(cambios.password, [cambios.usuario ?? ctx.objetivoUsuario, cambios.email ?? ctx.objetivoEmail]);
     if (errorPassword) return res.status(400).json({ error: errorPassword });
 
-    if (cambios.rol === 'admin' && ctx.objetivoRol !== 'admin') {
-      const admin = await exigirAdmin(cliente, token);
-      if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
-      const { error: solicitudError } = await cliente.from('solicitudes_superadmin').insert({
-        objetivo_id: userId,
-        solicitada_por: admin.userId,
-      });
-      if (solicitudError?.code === '23505') {
-        return res.status(409).json({ error: 'Ya existe una solicitud de superadmin pendiente para esta persona.' });
-      }
-      if (solicitudError) throw solicitudError;
-      registrarAuditoria(admin.email, 'Solicitó elevar a superadmin', ctx.objetivoEmail);
-      return res.status(202).json({ success: true, solicitudPendiente: true });
-    }
-
     // Ningún permiso delegado puede modificar una cuenta superadmin ni
-    // degradarla: ambos cambios requieren un superadmin fijo.
+    // conceder o retirar ese acceso: ambos cambios requieren un superadmin fijo.
     if (ctx.objetivoRol === 'admin' || cambios.rol === 'admin') {
       const admin = await exigirAdmin(cliente, token);
       if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
@@ -1178,7 +1163,9 @@ app.post('/api/editar-usuario', async (req, res) => {
 
     registrarAuditoria(
       acceso.email,
-      'Editó usuario',
+      cambios.rol === 'admin' && ctx.objetivoRol !== 'admin'
+        ? 'Otorgó rol de administrador'
+        : 'Editó usuario',
       cambios.email || userId,
       Object.keys(cambios).join(', '),
     );
@@ -1191,7 +1178,83 @@ app.post('/api/editar-usuario', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------
-// ENDPOINTS: Aprobación cruzada de superadmins
+// ENDPOINTS: Términos y condiciones administrables
+// ----------------------------------------------------------------------
+app.get('/api/legal/terminos', async (_req, res) => {
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase.' });
+  try {
+    const { data, error } = await cliente
+      .from('documentos_legales')
+      .select('contenido, actualizado_en')
+      .eq('clave', 'terminos_y_condiciones')
+      .maybeSingle();
+    if (error) throw error;
+    res.set('Cache-Control', 'no-store, max-age=0');
+    return res.json({ contenido: data?.contenido ?? null, actualizadoEn: data?.actualizado_en ?? null });
+  } catch (error: any) {
+    console.error('Error leyendo términos y condiciones:', error);
+    return res.status(500).json({ error: 'No se pudieron cargar los términos y condiciones.' });
+  }
+});
+
+app.get('/api/superadmin/legal/terminos', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase.' });
+  try {
+    const admin = await exigirAdmin(cliente, token);
+    if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
+    const { data, error } = await cliente
+      .from('documentos_legales')
+      .select('contenido, actualizado_en')
+      .eq('clave', 'terminos_y_condiciones')
+      .maybeSingle();
+    if (error) throw error;
+    return res.json({ contenido: data?.contenido ?? null, actualizadoEn: data?.actualizado_en ?? null });
+  } catch (error: any) {
+    console.error('Error cargando términos para superadmin:', error);
+    return res.status(500).json({ error: 'No se pudieron cargar los términos y condiciones.' });
+  }
+});
+
+app.put('/api/superadmin/legal/terminos', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar Supabase.' });
+  try {
+    const admin = await exigirAdmin(cliente, token);
+    if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
+    const contenido = typeof req.body?.contenido === 'string' ? req.body.contenido.trim() : '';
+    if (contenido.length < 80) return res.status(400).json({ error: 'Escribe al menos 80 caracteres para publicar los términos.' });
+    if (contenido.length > 120000) return res.status(400).json({ error: 'Los términos superan el límite de 120.000 caracteres.' });
+
+    const actualizadoEn = new Date().toISOString();
+    const { data, error } = await cliente
+      .from('documentos_legales')
+      .upsert({
+        clave: 'terminos_y_condiciones',
+        contenido,
+        actualizado_en: actualizadoEn,
+        actualizado_por: admin.userId,
+      }, { onConflict: 'clave' })
+      .select('contenido, actualizado_en')
+      .single();
+    if (error) throw error;
+    registrarAuditoria(admin.email, 'Actualizó términos y condiciones', undefined, `${contenido.length} caracteres`);
+    return res.json({ success: true, contenido: data.contenido, actualizadoEn: data.actualizado_en });
+  } catch (error: any) {
+    console.error('Error publicando términos y condiciones:', error);
+    return res.status(500).json({ error: 'No se pudieron publicar los términos y condiciones.' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINTS: historial del flujo anterior de aprobación cruzada.
+// No se crean solicitudes nuevas: una asignación hecha por un superadmin se
+// aplica directamente en /api/editar-usuario.
 // ----------------------------------------------------------------------
 app.get('/api/solicitudes-superadmin', async (req, res) => {
   const token = req.headers.authorization?.replace('Bearer ', '');

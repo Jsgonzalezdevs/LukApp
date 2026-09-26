@@ -120,6 +120,7 @@ export const instalarConsolaDeVistas = ({ abrir, cerrar, permitirEnProduccion = 
     });
   }
   console.info(`LukApp · atajos visuales listos para ${contexto}. Escribe premium, instalar o ayuda.`);
+  console.warn('LukApp · Precaución: usa únicamente los atajos documentados. No pegues ni ejecutes código desconocido en esta consola.');
 
   return () => {
     if (window.LukAppPruebas === consola) {

@@ -30,6 +30,7 @@ import {
   Cog,
   Sparkles,
   CreditCard,
+  FileText,
 } from 'lucide-react';
 import { TemaToggle } from '../features/lukapp/components/TemaToggle';
 import type { Tema } from '../features/lukapp/data/useTema';
@@ -60,13 +61,6 @@ interface Perfil {
   rol_personalizado_id: string | null;
   created_at: string;
   ultimo_acceso_at: string | null;
-}
-
-interface SolicitudSuperadmin {
-  id: string;
-  creadaEn: string;
-  objetivo?: Pick<Perfil, 'email' | 'usuario'>;
-  solicitante?: Pick<Perfil, 'email' | 'usuario'>;
 }
 
 interface AuditLog {
@@ -117,7 +111,7 @@ interface MetricasIAResponse {
   consumoPorUsuario: Array<{ usuarioEmail: string; consultas: number; exitosas: number; locales: number; tokens: number }>;
 }
 
-type TabSuperadmin = 'usuarios' | 'roles' | 'facturacion' | 'ia-tokens' | 'visitantes' | 'auditoria';
+type TabSuperadmin = 'usuarios' | 'roles' | 'facturacion' | 'ia-tokens' | 'visitantes' | 'auditoria' | 'legal';
 
 /** Un rol personalizado con sus permisos, tal como lo devuelve /api/roles. */
 interface RolPersonalizado {
@@ -380,7 +374,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   // --- Usuarios State ---
   const [usuarios, setUsuarios] = useState<Perfil[]>([]);
   const [loadingUsuarios, setLoadingUsuarios] = useState(true);
-  const [solicitudesSuperadmin, setSolicitudesSuperadmin] = useState<SolicitudSuperadmin[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editando, setEditando] = useState<Perfil | null>(null);
@@ -396,6 +389,14 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   // '' = sin rol personalizado. Solo importa cuando nuevoRol === 'usuario';
   // si es 'admin' el selector queda deshabilitado, ya tiene todo.
   const [nuevoRolPersonalizadoId, setNuevoRolPersonalizadoId] = useState<string>('');
+
+  // Solo superadmin fijo puede publicar el documento que ve toda la app.
+  const [terminos, setTerminos] = useState('');
+  const [terminosActualizadosEn, setTerminosActualizadosEn] = useState<string | null>(null);
+  const [cargandoTerminos, setCargandoTerminos] = useState(false);
+  const [guardandoTerminos, setGuardandoTerminos] = useState(false);
+  const [errorTerminos, setErrorTerminos] = useState<string | null>(null);
+  const [mensajeTerminos, setMensajeTerminos] = useState<string | null>(null);
 
   // Impersonation
   const [impersonando, setImpersonando] = useState<Perfil | null>(null);
@@ -468,31 +469,44 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     }
   };
 
-  const fetchSolicitudesSuperadmin = async () => {
+  const cargarTerminos = async () => {
     if (rol !== 'admin') return;
+    setCargandoTerminos(true);
+    setErrorTerminos(null);
     try {
       const token = await tokenSesion();
-      const res = await fetch(apiUrl('/api/solicitudes-superadmin'), { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(apiUrl('/api/superadmin/legal/terminos'), { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudieron cargar las aprobaciones.');
-      setSolicitudesSuperadmin(data.solicitudes || []);
-    } catch (error) {
-      console.error('Error cargando solicitudes de superadmin:', error);
+      if (!res.ok) throw new Error(data.error || 'No se pudieron cargar los términos.');
+      setTerminos(data.contenido || '');
+      setTerminosActualizadosEn(data.actualizadoEn || null);
+    } catch (error: any) {
+      setErrorTerminos(error.message || 'No se pudieron cargar los términos.');
+    } finally {
+      setCargandoTerminos(false);
     }
   };
 
-  const aprobarSolicitudSuperadmin = async (id: string) => {
-    setFormError(null);
+  const publicarTerminos = async () => {
+    setErrorTerminos(null);
+    setMensajeTerminos(null);
+    setGuardandoTerminos(true);
     try {
       const token = await tokenSesion();
-      const res = await fetch(apiUrl(`/api/solicitudes-superadmin/${id}/aprobar`), {
-        method: 'POST', headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(apiUrl('/api/superadmin/legal/terminos'), {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contenido: terminos }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No se pudo aprobar la solicitud.');
-      await Promise.all([fetchSolicitudesSuperadmin(), fetchUsuarios()]);
+      if (!res.ok) throw new Error(data.error || 'No se pudieron publicar los términos.');
+      setTerminos(data.contenido);
+      setTerminosActualizadosEn(data.actualizadoEn);
+      setMensajeTerminos('Los términos y condiciones ya están publicados.');
     } catch (error: any) {
-      setFormError(error.message);
+      setErrorTerminos(error.message || 'No se pudieron publicar los términos.');
+    } finally {
+      setGuardandoTerminos(false);
     }
   };
 
@@ -634,7 +648,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       fetchVisitas();
     }
     if (tabActiva === 'roles' || (tabActiva === 'usuarios' && rol === 'admin')) fetchRoles();
-    if (tabActiva === 'usuarios' && rol === 'admin') fetchSolicitudesSuperadmin();
+    if (tabActiva === 'legal') cargarTerminos();
   }, [tabActiva, fetchVisitas, fetchVisitasHoy, rol]);
 
   useEffect(() => {
@@ -1039,6 +1053,20 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
             </button>
           )}
 
+          {rol === 'admin' && (
+            <button
+              onClick={() => setTabActiva('legal')}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                tabActiva === 'legal'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]'
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              Términos
+            </button>
+          )}
+
           {puede('ver_facturacion') && (
             <button
               onClick={() => setTabActiva('facturacion')}
@@ -1126,37 +1154,6 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   </button>
                 )}
               </div>
-
-              {rol === 'admin' && solicitudesSuperadmin.length > 0 && (
-                <section className="mb-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-                  <div className="flex items-start gap-3">
-                    <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-extrabold text-[var(--fin-ink)]">Aprobaciones de superadmin pendientes</h3>
-                      <p className="mt-0.5 text-xs text-[var(--fin-ink-soft)]">
-                        La persona que solicitó la elevación ni quien será elevado pueden aprobarla.
-                      </p>
-                      <div className="mt-3 space-y-2">
-                        {solicitudesSuperadmin.map((solicitud) => (
-                          <div key={solicitud.id} className="flex flex-col gap-2 rounded-xl bg-[var(--fin-card)] p-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-xs text-[var(--fin-ink-soft)]">
-                              <strong className="text-[var(--fin-ink)]">{solicitud.objetivo?.usuario || solicitud.objetivo?.email || 'Usuario'}</strong>
-                              {' '}solicitado por {solicitud.solicitante?.usuario || solicitud.solicitante?.email || 'un superadmin'}.
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => aprobarSolicitudSuperadmin(solicitud.id)}
-                              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700"
-                            >
-                              Aprobar
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
 
               <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm overflow-hidden">
                 <div className="border-b border-[var(--fin-line)] p-4 sm:px-6">
@@ -1351,6 +1348,52 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 )}
               </div>
             </div>
+          )}
+
+          {tabActiva === 'legal' && rol === 'admin' && (
+            <section className="mx-auto max-w-4xl rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm sm:p-7">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-extrabold tracking-tight">Términos y condiciones</h2>
+                  <p className="mt-1 max-w-2xl text-sm text-[var(--fin-ink-soft)]">
+                    Publica la versión vigente sin despliegues. Se muestra de inmediato en la página legal de LukApp.
+                  </p>
+                </div>
+                {terminosActualizadosEn && (
+                  <p className="text-xs text-[var(--fin-ink-faint)]">Publicado: {new Date(terminosActualizadosEn).toLocaleString('es-CO')}</p>
+                )}
+              </div>
+
+              {!terminosActualizadosEn && !cargandoTerminos && (
+                <div className="mt-5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-[var(--fin-ink-soft)]">
+                  Aún se muestra la versión legal incluida con LukApp. Al publicar este texto, esta será la versión visible para todas las personas.
+                </div>
+              )}
+
+              <label className="mt-6 block text-xs font-bold text-[var(--fin-ink-soft)]" htmlFor="terminos-contenido">Contenido publicado</label>
+              <textarea
+                id="terminos-contenido"
+                value={terminos}
+                onChange={(event) => setTerminos(event.target.value)}
+                disabled={cargandoTerminos || guardandoTerminos}
+                placeholder="Escribe o pega aquí los términos y condiciones completos. Se conservarán los saltos de línea."
+                className="mt-2 min-h-96 w-full rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-soft)] p-4 text-sm leading-6 text-[var(--fin-ink)] outline-none transition focus:border-purple-500 disabled:opacity-60"
+              />
+              <p className="mt-2 text-xs text-[var(--fin-ink-faint)]">{terminos.length.toLocaleString('es-CO')} / 120.000 caracteres</p>
+              {errorTerminos && <p className="mt-4 rounded-xl bg-red-500/10 p-3 text-sm font-semibold text-red-600 dark:text-red-400">{errorTerminos}</p>}
+              {mensajeTerminos && <p className="mt-4 rounded-xl bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{mensajeTerminos}</p>}
+              <div className="mt-5 flex justify-end">
+                <button
+                  type="button"
+                  onClick={publicarTerminos}
+                  disabled={cargandoTerminos || guardandoTerminos}
+                  className="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {guardandoTerminos ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  Guardar y publicar
+                </button>
+              </div>
+            </section>
           )}
 
           {/* ========================================================================= */}
@@ -2086,7 +2129,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 </select>
                 {nuevoRol === 'admin' && (
                   <p className="mt-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                    Se creará como usuario normal y quedará pendiente de aprobación por otro superadmin.
+                    Un superadmin existente otorga este acceso de inmediato. Úsalo solo para personas de confianza.
                   </p>
                 )}
               </div>

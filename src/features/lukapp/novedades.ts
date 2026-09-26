@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.7.7', fecha: '2026-09-25', texto: 'Un solo superadmin ya puede otorgar el rol de administrador directamente. Además, Superadmin incorpora una pestaña para editar y publicar al instante los Términos y Condiciones visibles en LukApp.' },
+  { version: '4.7.6', fecha: '2026-09-25', texto: 'La consola de superadmin vuelve a mostrar una advertencia de uso seguro y el atajo instalar abre siempre la vista del aviso PWA, incluso cuando el navegador no ofrece su diálogo nativo.' },
+  { version: '4.7.5', fecha: '2026-09-25', texto: 'Premium muestra ahora un único Pulso útil: reúne tu margen diario con la alerta financiera más importante y la lleva al Asesor para analizarla con IA.' },
   { version: '4.7.4', fecha: '2026-09-25', texto: 'Ver planes y precios abre ahora una pantalla propia de Premium, separada de Ajustes, con los beneficios y opciones de pago vigentes.' },
   { version: '4.7.3', fecha: '2026-09-25', texto: 'La invitación Premium ahora mantiene visibles el precio, los botones y la salida al plan Normal, incluso cuando hay muchas prestaciones activas o poca altura disponible.' },
   { version: '4.7.2', fecha: '2026-09-25', texto: 'La consola de pruebas ahora incluye el atajo instalar para abrir y revisar el aviso de instalación de LukApp como PWA.' },

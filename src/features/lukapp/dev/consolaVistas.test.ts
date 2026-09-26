@@ -20,7 +20,8 @@ describe('consola de vistas', () => {
 
     expect(abrir).toHaveBeenCalledWith('premium');
     expect(abrir).toHaveBeenCalledTimes(2);
-    expect(advertir).toHaveBeenCalledOnce();
+    expect(advertir).toHaveBeenCalledWith(expect.stringContaining('Precaución'));
+    expect(advertir).toHaveBeenCalledWith(expect.stringContaining('no-existe'));
     expect(cerrar).toHaveBeenCalledOnce();
 
     retirar();

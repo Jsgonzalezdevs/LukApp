@@ -65,7 +65,7 @@ interface InicioViewProps {
     diasRestantes: number;
     confianza: 'alta' | 'media' | 'baja';
   } | null;
-  onVerResumenPremium?: () => void;
+  onVerResumenPremium?: (insight: Insight | null) => void;
 }
 
 const formatMontoCompacto = (monto: number): string => {
@@ -340,7 +340,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
       {resumenPremium ? (
         <motion.button
           type="button"
-          onClick={onVerResumenPremium}
+          onClick={() => onVerResumenPremium?.(insightActual)}
+          aria-label="Abrir el análisis de este Pulso Premium en el Asesor"
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           whileTap={{ scale: 0.985 }}
@@ -371,11 +372,22 @@ export const InicioView: React.FC<InicioViewProps> = ({
               ? 'Calculado tras separar tus pagos y reservas conocidos.'
               : `${formatCop(resumenPremium.dineroLibreCop)} libres después de separar pagos y reservas conocidos.`}
           </span>
+          {insightActual ? (
+            <span className="mt-3 block border-t border-[var(--fin-line)] pt-2.5 text-[12px] leading-snug text-[var(--fin-ink-soft)]">
+              <span className="font-semibold text-[var(--fin-ink)]">{insightActual.titulo}:</span>{' '}
+              {insightActual.detalle}
+              <span className="ml-1 font-semibold text-[var(--fin-accent)]">Analizar con IA →</span>
+            </span>
+          ) : (
+            <span className="mt-3 block border-t border-[var(--fin-line)] pt-2.5 text-[12px] font-semibold text-[var(--fin-accent)]">
+              Toca para analizar tu margen con IA →
+            </span>
+          )}
         </motion.button>
       ) : null}
 
       <AnimatePresence>
-        {insightActual && !novedad && (
+        {insightActual && !novedad && !resumenPremium && (
           <motion.div
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}

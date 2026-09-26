@@ -840,12 +840,15 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     };
   }, [contextoFinanciero, tienePulsoPremium]);
 
-  const abrirResumenPremium = useCallback(() => {
+  const abrirResumenPremium = useCallback((insight: Insight | null) => {
     if (!resumenPremium) return;
+    const senal = insight
+      ? `Además, LukApp detectó: “${insight.titulo}: ${insight.detalle}”.`
+      : 'No hay una alerta adicional prioritaria hoy.';
     handleConsultarTipEnAsesor({
       id: 'pulso-premium',
       titulo: 'Mi Pulso Premium',
-      detalle: `Tengo ${formatCop(resumenPremium.disponibleDiarioCop)} para usar hoy durante los ${resumenPremium.diasRestantes} días restantes del período. Quiero entender qué podría cambiar ese margen y cuál sería la mejor decisión ahora.`,
+      detalle: `Tengo ${formatCop(resumenPremium.disponibleDiarioCop)} para usar hoy durante los ${resumenPremium.diasRestantes} días restantes del período. ${senal} Quiero entender qué podría cambiar ese margen y cuál sería la mejor decisión ahora.`,
       tono: 'neutral',
       seccion: null,
       origenIa: true,

@@ -122,6 +122,7 @@ export const AppsRoot: React.FC = () => {
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
   const [mostrarInstalacionPwa, setMostrarInstalacionPwa] = useState(false);
+  const [vistaPreviaInstalacionPwa, setVistaPreviaInstalacionPwa] = useState(false);
   const ultimoAccesoRegistrado = useRef<string | null>(null);
 
   const { ruta, ir } = useRuta();
@@ -231,12 +232,16 @@ export const AppsRoot: React.FC = () => {
       // Cerrar debe funcionar incluso donde el navegador bloquea localStorage.
     }
     setMostrarInstalacionPwa(false);
+    setVistaPreviaInstalacionPwa(false);
   };
 
   // El atajo solo existe en desarrollo o para superadmin. Escucharlo aquí
   // mantiene el aviso por encima de cualquier pantalla que se esté revisando.
   useEffect(() => {
-    const mostrar = () => setMostrarInstalacionPwa(true);
+    const mostrar = () => {
+      setVistaPreviaInstalacionPwa(true);
+      setMostrarInstalacionPwa(true);
+    };
     window.addEventListener(EVENTO_MOSTRAR_INSTALACION_PWA, mostrar);
     return () => window.removeEventListener(EVENTO_MOSTRAR_INSTALACION_PWA, mostrar);
   }, []);
@@ -448,7 +453,7 @@ export const AppsRoot: React.FC = () => {
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <LukAppMain esAdmin={false} />
-        {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} />}
+        {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} forzarVistaPrevia={vistaPreviaInstalacionPwa} />}
       </div>
       </VistaConCarga>
     );
