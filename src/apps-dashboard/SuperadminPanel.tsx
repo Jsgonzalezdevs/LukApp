@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ArrowLeft,
   ShieldAlert,
@@ -42,6 +42,7 @@ import { banderaDePais, diasHasta, nombreDePais, resumir } from './estadisticas'
 import { VERSION_ETIQUETA } from '../version';
 import { validarContrasenaSegura } from '../lib/seguridad';
 import { FacturacionPanel } from './FacturacionPanel';
+import { TerminosCondiciones } from '../features/lukapp/components/LegalLukApp';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -397,6 +398,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   const [guardandoTerminos, setGuardandoTerminos] = useState(false);
   const [errorTerminos, setErrorTerminos] = useState<string | null>(null);
   const [mensajeTerminos, setMensajeTerminos] = useState<string | null>(null);
+  const terminosBaseRef = useRef<HTMLDivElement>(null);
+  const [usuarioActualId, setUsuarioActualId] = useState<string | null>(null);
 
   // Impersonation
   const [impersonando, setImpersonando] = useState<Perfil | null>(null);
@@ -440,6 +443,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
   );
 
   const dias = useMemo(() => diasHasta(new Date(), rangoVisitantes), [rangoVisitantes]);
+  const editaSoloRolPropio = editando?.id === usuarioActualId;
 
   const tokenSesion = async (): Promise<string> => {
     const cliente = obtenerSupabase();
@@ -449,6 +453,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
     if (!session) throw new Error('No hay sesión activa');
     return session.access_token;
   };
+
+  useEffect(() => {
+    const cliente = obtenerSupabase();
+    void cliente?.auth.getUser().then(({ data }) => setUsuarioActualId(data.user?.id ?? null));
+  }, []);
 
   // 1. Cargar Usuarios
   const fetchUsuarios = async () => {
@@ -478,7 +487,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
       const res = await fetch(apiUrl('/api/superadmin/legal/terminos'), { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'No se pudieron cargar los términos.');
-      setTerminos(data.contenido || '');
+      const contenidoActual = typeof data.contenido === 'string' && data.contenido.trim()
+        ? data.contenido
+        : terminosBaseRef.current?.innerText.trim() ?? '';
+      setTerminos(contenidoActual);
       setTerminosActualizadosEn(data.actualizadoEn || null);
     } catch (error: any) {
       setErrorTerminos(error.message || 'No se pudieron cargar los términos.');
@@ -1352,6 +1364,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
           {tabActiva === 'legal' && rol === 'admin' && (
             <section className="mx-auto max-w-4xl rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-sm sm:p-7">
+              <div ref={terminosBaseRef} aria-hidden className="pointer-events-none absolute -left-[9999px] top-0 h-px w-px overflow-hidden opacity-0">
+                <TerminosCondiciones />
+              </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-extrabold tracking-tight">Términos y condiciones</h2>
@@ -2080,7 +2095,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
             </div>
 
             <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-              <div>
+              {!editaSoloRolPropio && <div>
                 <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Correo Electrónico</label>
                 <input
                   type="email"
@@ -2089,9 +2104,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   onChange={(e) => setNuevoEmail(e.target.value)}
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 />
-              </div>
+              </div>}
 
-              <div>
+              {!editaSoloRolPropio && <div>
                 <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Nombre / Usuario</label>
                 <input
                   type="text"
@@ -2099,9 +2114,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   onChange={(e) => setNuevoUsuario(e.target.value)}
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 />
-              </div>
+              </div>}
 
-              <div>
+              {!editaSoloRolPropio && <div>
                 <label className="text-xs font-bold text-[var(--fin-ink-soft)]">
                   {editando ? 'Nueva Contraseña (dejar en blanco para conservar)' : 'Contraseña'}
                 </label>
@@ -2112,10 +2127,14 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   placeholder={editando ? '••••••••' : 'Mínimo 12 caracteres'}
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 />
-              </div>
-              <p className="-mt-2 text-[11px] text-[var(--fin-ink-faint)]">
+              </div>}
+              {!editaSoloRolPropio && <p className="-mt-2 text-[11px] text-[var(--fin-ink-faint)]">
                 Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo. No puede coincidir con usuario ni correo.
-              </p>
+              </p>}
+
+              {editaSoloRolPropio && <p className="rounded-xl bg-amber-500/10 p-3 text-xs font-medium text-[var(--fin-ink-soft)]">
+                Esta es tu propia cuenta: desde Superadmin solo puedes cambiar su rol.
+              </p>}
 
               <div>
                 <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Rol</label>
@@ -2137,7 +2156,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               {/* Solo admin gestiona la asignación de roles personalizados
                   (ver la pestaña Roles), y solo tiene sentido si el usuario no
                   es ya Superadmin — 'admin' tiene acceso total de por sí. */}
-              {rol === 'admin' && editando && (
+              {rol === 'admin' && editando && !editaSoloRolPropio && (
                 <div>
                   <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Rol personalizado</label>
                   <select

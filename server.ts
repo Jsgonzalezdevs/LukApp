@@ -1104,6 +1104,18 @@ app.post('/api/editar-usuario', async (req, res) => {
     const ctx = await contextoDe(cliente, userId);
     if (!ctx.existe) return res.status(404).json({ error: 'Ese usuario ya no existe.' });
 
+    // Las credenciales de la cuenta actual no se modifican desde este panel.
+    // Así el único ajuste permitido sobre sí mismo es el rol, como se muestra
+    // en la interfaz de Superadmin.
+    if (acceso.userId === userId && (
+      cambios.email !== undefined ||
+      cambios.usuario !== undefined ||
+      cambios.password !== undefined ||
+      cambios.rolPersonalizadoId !== undefined
+    )) {
+      return res.status(403).json({ error: 'Tu propia cuenta solo puede cambiar de rol desde Superadmin.' });
+    }
+
     const motivo = motivoParaRechazar(cambios, {
       editorId: acceso.userId,
       objetivoId: userId,

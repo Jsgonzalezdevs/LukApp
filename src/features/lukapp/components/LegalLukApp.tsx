@@ -11,7 +11,7 @@ const ListaOrdenada: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const ListaVineta: React.FC<{ children: React.ReactNode }> = ({ children }) => <ul className="mt-3 list-disc space-y-2 pl-5">{children}</ul>;
 const Correo: React.FC = () => <a className="font-semibold text-[var(--fin-accent)] underline underline-offset-2" href="mailto:jsgonzalezdevs@gmail.com"><code>jsgonzalezdevs@gmail.com</code></a>;
 
-const TerminosCondiciones: React.FC = () => <>
+export const TerminosCondiciones: React.FC = () => <>
   <p>Bienvenido a Lukapp. Al acceder, aceptar los Terminos y Condiciones y utilizar nuestra plataforma, usted se allana a estar sujeto a los mismos. Si no está de acuerdo, le solicitamos manifestarlo al iniciar la app.</p>
 
   <p><strong className="text-[var(--fin-ink)]">Última actualización: 16 de septiembre de 2026</strong></p>

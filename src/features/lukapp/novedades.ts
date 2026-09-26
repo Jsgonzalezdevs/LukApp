@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.7.8', fecha: '2026-09-25', texto: 'El editor de Términos carga ahora el documento legal que ya está vigente en LukApp. Además, tu propia cuenta en Superadmin solo permite cambiar el rol.' },
   { version: '4.7.7', fecha: '2026-09-25', texto: 'Un solo superadmin ya puede otorgar el rol de administrador directamente. Además, Superadmin incorpora una pestaña para editar y publicar al instante los Términos y Condiciones visibles en LukApp.' },
   { version: '4.7.6', fecha: '2026-09-25', texto: 'La consola de superadmin vuelve a mostrar una advertencia de uso seguro y el atajo instalar abre siempre la vista del aviso PWA, incluso cuando el navegador no ofrece su diálogo nativo.' },
   { version: '4.7.5', fecha: '2026-09-25', texto: 'Premium muestra ahora un único Pulso útil: reúne tu margen diario con la alerta financiera más importante y la lleva al Asesor para analizarla con IA.' },
