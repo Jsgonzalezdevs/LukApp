@@ -235,14 +235,19 @@ app.post('/api/crear-usuario', async (req, res) => {
     if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'Correo y contraseña son obligatorios.' });
     }
-    const errorPassword = validarContrasenaSegura(password, [usuario, email]);
-    if (errorPassword) return res.status(400).json({ error: errorPassword });
-
     // Un rol delegado puede crear usuarios normales, pero solamente un
     // superadmin fijo puede crear o conceder acceso de administrador.
     if (rol === 'admin') {
       const admin = await exigirAdmin(cliente, token);
       if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
+    }
+
+    // La excepción de complejidad es exclusiva de cuentas administradoras y
+    // se decide en el servidor: un cliente manipulado no puede usarla para
+    // debilitar la contraseña de una cuenta normal.
+    if (rol !== 'admin') {
+      const errorPassword = validarContrasenaSegura(password, [usuario, email]);
+      if (errorPassword) return res.status(400).json({ error: errorPassword });
     }
 
     const { data: newUser, error: createError } = await cliente.auth.admin.createUser({
@@ -1146,7 +1151,8 @@ app.post('/api/editar-usuario', async (req, res) => {
     });
     if (motivo) return res.status(400).json({ error: motivo });
 
-    const errorPassword = cambios.password === undefined
+    const rolFinal = cambios.rol ?? ctx.objetivoRol;
+    const errorPassword = cambios.password === undefined || rolFinal === 'admin'
       ? null
       : validarContrasenaSegura(cambios.password, [cambios.usuario ?? ctx.objetivoUsuario, cambios.email ?? ctx.objetivoEmail]);
     if (errorPassword) return res.status(400).json({ error: errorPassword });

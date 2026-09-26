@@ -780,8 +780,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
       if (!editando) {
         if (!nuevoEmail || !nuevaPassword) throw new Error('Correo y contraseña son obligatorios');
-        const errorPassword = validarContrasenaSegura(nuevaPassword, [nuevoUsuario, nuevoEmail]);
-        if (errorPassword) throw new Error(errorPassword);
+        if (nuevoRol !== 'admin') {
+          const errorPassword = validarContrasenaSegura(nuevaPassword, [nuevoUsuario, nuevoEmail]);
+          if (errorPassword) throw new Error(errorPassword);
+        }
 
         const res = await fetch(apiUrl('/api/crear-usuario'), {
           method: 'POST',
@@ -804,8 +806,10 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
         if (nuevoEmail !== editando.email) payload.email = nuevoEmail;
         if (nuevoUsuario !== (editando.usuario ?? '')) payload.usuario = nuevoUsuario;
         if (nuevaPassword.trim() !== '') {
-          const errorPassword = validarContrasenaSegura(nuevaPassword, [nuevoUsuario, nuevoEmail]);
-          if (errorPassword) throw new Error(errorPassword);
+          if (nuevoRol !== 'admin') {
+            const errorPassword = validarContrasenaSegura(nuevaPassword, [nuevoUsuario, nuevoEmail]);
+            if (errorPassword) throw new Error(errorPassword);
+          }
           payload.password = nuevaPassword;
         }
         if (nuevoRol !== editando.rol) payload.rol = nuevoRol;
@@ -2124,12 +2128,14 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   type="password"
                   value={nuevaPassword}
                   onChange={(e) => setNuevaPassword(e.target.value)}
-                  placeholder={editando ? '••••••••' : 'Mínimo 12 caracteres'}
+                  placeholder={nuevoRol === 'admin' ? 'La contraseña que quieras' : editando ? '••••••••' : 'Mínimo 12 caracteres'}
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 />
               </div>}
               {!editaSoloRolPropio && <p className="-mt-2 text-[11px] text-[var(--fin-ink-faint)]">
-                Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo. No puede coincidir con usuario ni correo.
+                {nuevoRol === 'admin'
+                  ? 'Las cuentas Superadmin pueden usar la contraseña que quieras. Esta excepción no aplica a usuarios normales.'
+                  : 'Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo. No puede coincidir con usuario ni correo.'}
               </p>}
 
               {editaSoloRolPropio && <p className="rounded-xl bg-amber-500/10 p-3 text-xs font-medium text-[var(--fin-ink-soft)]">

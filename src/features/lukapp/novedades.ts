@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.10.0', fecha: '2026-09-26', texto: 'Superadmin ahora permite definir cualquier contraseña para cuentas con rol de administrador. Las cuentas normales mantienen los requisitos de seguridad.' },
   { version: '4.9.0', fecha: '2026-09-26', texto: 'Superadmin ahora conserva un registro de auditoría permanente: puedes consultar cambios de contraseña, usuarios, roles, términos, planes y sesiones de asesoría, incluso después de reiniciar el servidor.' },
   { version: '4.8.0', fecha: '2026-09-26', texto: 'Crear una cuenta ahora tiene su propia dirección: entra directamente a lukapp.app/registro para registrarte, mientras el acceso sigue disponible en /entrar.' },
   { version: '4.7.9', fecha: '2026-09-25', texto: 'El editor legal sigue mostrando los términos actuales incluso mientras la migración de la base de datos termina de aplicarse, sin errores en Superadmin.' },

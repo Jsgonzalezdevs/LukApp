@@ -11,9 +11,6 @@
  * avisar antes, pero estas comprobaciones se hacen aquí pase lo que pase.
  */
 
-/** El mínimo que exige Supabase Auth. Menos que esto lo rechaza igual. */
-export const LARGO_MIN_PASSWORD = 12;
-
 export interface CambiosUsuario {
   usuario?: string;
   email?: string;
@@ -45,7 +42,8 @@ export interface ContextoEdicion {
  * Devuelve texto listo para mostrar, no un código: quien llama solo tiene que
  * enseñarlo. El orden importa poco porque cada regla cubre un caso distinto,
  * pero se revisa primero lo que deja el sistema inservible (quedarse sin admin)
- * y después lo cosmético (una contraseña corta).
+ * y después lo cosmético (un nombre de usuario vacío). La política de la
+ * contraseña se evalúa en el endpoint, donde se conoce el rol final.
  */
 export const motivoParaRechazar = (
   cambios: CambiosUsuario,
@@ -64,10 +62,6 @@ export const motivoParaRechazar = (
   // uno mismo u otro: si al aplicarlo no queda ningún admin, no se aplica.
   if (quitaAdmin && ctx.totalAdmins <= 1) {
     return 'Quedarías sin ningún administrador. Nombra otro antes de quitar este.';
-  }
-
-  if (cambios.password !== undefined && cambios.password.length < LARGO_MIN_PASSWORD) {
-    return `La contraseña debe tener al menos ${LARGO_MIN_PASSWORD} caracteres.`;
   }
 
   if (cambios.usuario !== undefined && cambios.usuario.trim() === '') {

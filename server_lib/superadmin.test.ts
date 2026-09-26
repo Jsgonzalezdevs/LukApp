@@ -40,10 +40,10 @@ describe('motivoParaRechazar', () => {
     ).toBeNull();
   });
 
-  it('rechaza una contraseña más corta que el mínimo', () => {
-    expect(motivoParaRechazar({ password: '123' }, ctx())).toMatch(/al menos 12/i);
-    // Justo en el límite pasa.
-    expect(motivoParaRechazar({ password: '123456789012' }, ctx())).toBeNull();
+  it('deja la política de contraseñas al validador que conoce el rol final', () => {
+    // Un admin puede usar una contraseña libre; un usuario normal se valida
+    // en el endpoint con validarContrasenaSegura.
+    expect(motivoParaRechazar({ password: '123' }, ctx())).toBeNull();
   });
 
   it('rechaza un nombre de usuario en blanco, pero no uno ausente', () => {
