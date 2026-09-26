@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.7.4', fecha: '2026-09-25', texto: 'Ver planes y precios abre ahora una pantalla propia de Premium, separada de Ajustes, con los beneficios y opciones de pago vigentes.' },
+  { version: '4.7.3', fecha: '2026-09-25', texto: 'La invitación Premium ahora mantiene visibles el precio, los botones y la salida al plan Normal, incluso cuando hay muchas prestaciones activas o poca altura disponible.' },
   { version: '4.7.2', fecha: '2026-09-25', texto: 'La consola de pruebas ahora incluye el atajo instalar para abrir y revisar el aviso de instalación de LukApp como PWA.' },
   { version: '4.7.1', fecha: '2026-09-25', texto: 'Los comprobantes de Nequi ahora distinguen con más precisión un envío de un ingreso, toman el total y el destinatario sin mostrar QR ni referencias. También la voz conserva la frase completa y los avisos usan el nombre de tus categorías, no códigos internos.' },
   { version: '4.7.0', fecha: '2026-09-25', texto: 'La PWA gana atajos reales, apertura de extractos PDF desde Archivos, un aviso seguro de actualización y un estado claro cuando no hay señal. También queda lista para activar recordatorios push con la app cerrada al configurar el envío seguro.' },

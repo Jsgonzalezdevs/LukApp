@@ -24,6 +24,8 @@ interface CuentaViewProps {
   syncError: string | null;
   cambiosPendientes: number;
   onSincronizar: () => Promise<void>;
+  /** Reutiliza la compra sin mezclarla con los ajustes de la cuenta. */
+  soloPlan?: boolean;
 }
 
 interface EstadoPlan {
@@ -135,6 +137,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   syncError,
   cambiosPendientes,
   onSincronizar,
+  soloPlan = false,
 }) => {
   const cuentaEmail = cuenta?.email ?? null;
   const [apodo, setApodo] = useState<string | null>(null);
@@ -346,7 +349,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       : { texto: 'Todo bien', color: 'var(--fin-in)' };
 
   return (
-    <section className="flex flex-col gap-4">
+    <section className={`flex flex-col gap-4 ${soloPlan ? '[&>:not([data-plan-premium])]:hidden' : ''}`}>
       <div className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]">
           <User className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
@@ -385,7 +388,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       </div>
 
       {cuentaEmail ? (
-        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4" aria-live="polite">
+        <section data-plan-premium className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4" aria-live="polite">
           <div className="flex items-start gap-3">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-accent)]">
               <CreditCard className="h-5 w-5" strokeWidth={2.25} aria-hidden="true" />

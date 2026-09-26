@@ -363,6 +363,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     [ir],
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
+  const [mostrarPlanesPremium, setMostrarPlanesPremium] = useState(false);
   const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
   const guia = useGuiaApp();
 
@@ -1382,6 +1383,21 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         ) : null}
         </AnimatePresence>
 
+        <AnimatePresence>
+        {mostrarPlanesPremium ? (
+          <HojaPanel titulo="Planes y precios" onCerrar={() => setMostrarPlanesPremium(false)}>
+            <CuentaView
+              userId={userId}
+              cuenta={cuenta}
+              syncError={almacen.error}
+              cambiosPendientes={almacen.cambiosPendientes}
+              onSincronizar={almacen.recargar}
+              soloPlan
+            />
+          </HojaPanel>
+        ) : null}
+        </AnimatePresence>
+
         {/* ------------------------------------------------------- el buscador --- */}
         <AnimatePresence>
         {capa === 'buscar' ? (
@@ -1600,8 +1616,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onCerrarVistaPrevia={() => setVistaPreviaPremium(false)}
             onVerOpciones={() => {
               setVistaPreviaPremium(false);
-              setSection('ajustes');
-              setPanelAjustes('cuenta');
+              setMostrarPlanesPremium(true);
             }}
           />
         ) : userId && cuenta && puedeMostrarInvitacionPremium ? (
@@ -1609,8 +1624,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             userId={userId}
             puedeMostrarse={puedeMostrarInvitacionPremium}
             onVerOpciones={() => {
-              setSection('ajustes');
-              setPanelAjustes('cuenta');
+              setMostrarPlanesPremium(true);
             }}
           />
         ) : null}
