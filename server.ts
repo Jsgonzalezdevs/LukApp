@@ -281,6 +281,14 @@ const clienteAdmin = () => {
 
 type ClienteAdmin = NonNullable<ReturnType<typeof clienteAdmin>>;
 
+// Render puede desplegar el servidor antes de que Supabase ejecute la
+// migración. En ese intervalo la lectura legal debe volver al texto incluido,
+// no convertir la pantalla de Superadmin en un error 500.
+const faltaTablaDocumentosLegales = (error: { code?: string; message?: string } | null): boolean =>
+  error?.code === '42P01'
+  || error?.code === 'PGRST205'
+  || /documentos_legales.*does not exist|could not find.*documentos_legales/i.test(error?.message ?? '');
+
 /**
  * La API que puede consumir IA o procesar documentos es privada por defecto.
  * Un servidor sin Supabase no debe convertirse, por un error de despliegue, en
@@ -1201,9 +1209,9 @@ app.get('/api/legal/terminos', async (_req, res) => {
       .select('contenido, actualizado_en')
       .eq('clave', 'terminos_y_condiciones')
       .maybeSingle();
-    if (error) throw error;
+    if (error && !faltaTablaDocumentosLegales(error)) throw error;
     res.set('Cache-Control', 'no-store, max-age=0');
-    return res.json({ contenido: data?.contenido ?? null, actualizadoEn: data?.actualizado_en ?? null });
+    return res.json({ contenido: data?.contenido ?? null, actualizadoEn: data?.actualizado_en ?? null, migracionPendiente: Boolean(error) });
   } catch (error: any) {
     console.error('Error leyendo términos y condiciones:', error);
     return res.status(500).json({ error: 'No se pudieron cargar los términos y condiciones.' });
@@ -1223,8 +1231,8 @@ app.get('/api/superadmin/legal/terminos', async (req, res) => {
       .select('contenido, actualizado_en')
       .eq('clave', 'terminos_y_condiciones')
       .maybeSingle();
-    if (error) throw error;
-    return res.json({ contenido: data?.contenido ?? null, actualizadoEn: data?.actualizado_en ?? null });
+    if (error && !faltaTablaDocumentosLegales(error)) throw error;
+    return res.json({ contenido: data?.contenido ?? null, actualizadoEn: data?.actualizado_en ?? null, migracionPendiente: Boolean(error) });
   } catch (error: any) {
     console.error('Error cargando términos para superadmin:', error);
     return res.status(500).json({ error: 'No se pudieron cargar los términos y condiciones.' });
@@ -1254,6 +1262,9 @@ app.put('/api/superadmin/legal/terminos', async (req, res) => {
       }, { onConflict: 'clave' })
       .select('contenido, actualizado_en')
       .single();
+    if (error && faltaTablaDocumentosLegales(error)) {
+      return res.status(503).json({ error: 'Falta aplicar la migración de términos y condiciones en Supabase antes de publicar.' });
+    }
     if (error) throw error;
     registrarAuditoria(admin.email, 'Actualizó términos y condiciones', undefined, `${contenido.length} caracteres`);
     return res.json({ success: true, contenido: data.contenido, actualizadoEn: data.actualizado_en });
