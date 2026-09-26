@@ -10,6 +10,7 @@ import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 import { apiUrl } from '../lib/api';
 import { PWAInstall } from '../features/lukapp/components/landing/PWAInstall';
+import { EVENTO_MOSTRAR_INSTALACION_PWA } from '../features/lukapp/dev/consolaVistas';
 
 const LegalLukApp = lazy(() => import('../features/lukapp/components/LegalLukApp').then(({ LegalLukApp }) => ({ default: LegalLukApp })));
 
@@ -231,6 +232,14 @@ export const AppsRoot: React.FC = () => {
     }
     setMostrarInstalacionPwa(false);
   };
+
+  // El atajo solo existe en desarrollo o para superadmin. Escucharlo aquí
+  // mantiene el aviso por encima de cualquier pantalla que se esté revisando.
+  useEffect(() => {
+    const mostrar = () => setMostrarInstalacionPwa(true);
+    window.addEventListener(EVENTO_MOSTRAR_INSTALACION_PWA, mostrar);
+    return () => window.removeEventListener(EVENTO_MOSTRAR_INSTALACION_PWA, mostrar);
+  }, []);
 
   // Cargar rol de Supabase con retry logic
   useEffect(() => {

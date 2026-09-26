@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.7.2', fecha: '2026-09-25', texto: 'La consola de pruebas ahora incluye el atajo instalar para abrir y revisar el aviso de instalación de LukApp como PWA.' },
+  { version: '4.7.1', fecha: '2026-09-25', texto: 'Los comprobantes de Nequi ahora distinguen con más precisión un envío de un ingreso, toman el total y el destinatario sin mostrar QR ni referencias. También la voz conserva la frase completa y los avisos usan el nombre de tus categorías, no códigos internos.' },
   { version: '4.7.0', fecha: '2026-09-25', texto: 'La PWA gana atajos reales, apertura de extractos PDF desde Archivos, un aviso seguro de actualización y un estado claro cuando no hay señal. También queda lista para activar recordatorios push con la app cerrada al configurar el envío seguro.' },
   { version: '4.6.0', fecha: '2026-09-25', texto: 'Instalar LukApp ahora es mucho más directo: en los navegadores compatibles basta confirmar el aviso del sistema, sin buscar menús. En iPhone la app explica el único paso que Apple exige, sin una guía larga.' },
   { version: '4.5.11', fecha: '2026-09-24', texto: 'Las vistas de Premium reflejan por completo la configuración de Superadmin: precios, cupos, límites ilimitados y prestaciones activas.' },

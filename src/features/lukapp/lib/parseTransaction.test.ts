@@ -364,6 +364,16 @@ describe('parseTransaction — description', () => {
     expect(enviado.kind).toBe('gasto');
     expect(enviado.amount).toBe(85000);
   });
+
+  it('lee un comprobante de Nequi como envío y conserva el destinatario, no el QR', () => {
+    const movimiento = parseTransaction(
+      '[OCR] Comprobante de pago Envío realizado ¡Escanea este QR con Nequi para verificar tu envío al instante! Para Julián González ¿Cuánto? $ 9.000,00 Número Nequi 318 786 5403 Fecha 25 de septiembre de 2026 Referencia M24388321',
+    );
+    expect(movimiento.kind).toBe('gasto');
+    expect(movimiento.category).toBe('transferencia');
+    expect(movimiento.amount).toBe(9000);
+    expect(movimiento.description).toBe('Envío a Julián González');
+  });
 });
 
 describe('parseTransaction — confidence', () => {

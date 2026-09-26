@@ -47,6 +47,20 @@ describe('Captura desde dictado', () => {
     expect(screen.getByText(/No escuché un monto; propuse el de un movimiento anterior/)).toBeInTheDocument();
   });
 
+  it('resume un comprobante leído sin mostrar su texto técnico ni el QR', () => {
+    render(
+      <Captura
+        parsed={parseTransaction('[OCR] Comprobante de pago Envío realizado Escanea este QR con Nequi Para Julián González Valor $9.000 Referencia M24388321')}
+        onSave={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Comprobante leído: Gasto detectado/)).toBeInTheDocument();
+    expect(screen.queryByText('Tu dictado')).not.toBeInTheDocument();
+    expect(screen.queryByText(/M24388321/)).not.toBeInTheDocument();
+  });
+
   it('mantiene las categorías en una sola fila para no tapar el teclado', () => {
     render(
       <Captura

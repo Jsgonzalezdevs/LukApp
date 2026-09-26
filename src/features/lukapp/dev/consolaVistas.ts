@@ -18,7 +18,11 @@ export interface ConsolaDeVistas {
   abrir: (vista: string) => void;
   cerrar: () => void;
   ayuda: () => void;
+  instalarPwa: () => void;
 }
+
+/** Evento interno para que el lanzador, que vive sobre la app, abra el aviso. */
+export const EVENTO_MOSTRAR_INSTALACION_PWA = 'lukapp:mostrar-instalacion-pwa';
 
 declare global {
   interface Window {
@@ -37,7 +41,7 @@ const DESCRIPCIONES: Record<VistaDePrueba, string> = {
 };
 
 /** Cada alias se ejecuta al escribir esa única palabra en la consola. */
-const ATAJOS_DE_UNA_PALABRA: Record<string, VistaDePrueba | 'cerrar' | 'ayuda'> = {
+const ATAJOS_DE_UNA_PALABRA: Record<string, VistaDePrueba | 'cerrar' | 'ayuda' | 'instalar-pwa'> = {
   premium: 'premium',
   aviso: 'aviso',
   captura: 'captura',
@@ -46,6 +50,7 @@ const ATAJOS_DE_UNA_PALABRA: Record<string, VistaDePrueba | 'cerrar' | 'ayuda'> 
   buscar: 'buscar',
   cerrar: 'cerrar',
   ayuda: 'ayuda',
+  instalar: 'instalar-pwa',
 };
 
 const esVistaDePrueba = (vista: string): vista is VistaDePrueba =>
@@ -68,11 +73,15 @@ export const instalarConsolaDeVistas = ({ abrir, cerrar, permitirEnProduccion = 
   const ayuda = () => {
     console.info(`LukApp · vistas disponibles para ${contexto}`);
     console.table(
-      VISTAS_DE_PRUEBA.map((vista) => ({
+      [...VISTAS_DE_PRUEBA.map((vista) => ({
         atajo: vista === 'captura-multiple' ? 'multiple' : vista,
         comando: `window.LukAppPruebas.abrir('${vista}')`,
         muestra: DESCRIPCIONES[vista],
-      })),
+      })), {
+        atajo: 'instalar',
+        comando: 'window.LukAppPruebas.instalarPwa()',
+        muestra: 'Aviso para instalar la PWA.',
+      }],
     );
     console.info("Para cerrar cualquier vista: cerrar  ·  También puedes usar window.LukAppPruebas.cerrar()");
   };
@@ -87,6 +96,7 @@ export const instalarConsolaDeVistas = ({ abrir, cerrar, permitirEnProduccion = 
     },
     cerrar,
     ayuda,
+    instalarPwa: () => window.dispatchEvent(new Event(EVENTO_MOSTRAR_INSTALACION_PWA)),
   };
 
   window.LukAppPruebas = consola;
@@ -103,12 +113,13 @@ export const instalarConsolaDeVistas = ({ abrir, cerrar, permitirEnProduccion = 
       get: () => {
         if (destino === 'cerrar') cerrar();
         else if (destino === 'ayuda') ayuda();
+        else if (destino === 'instalar-pwa') consola.instalarPwa();
         else consola.abrir(destino);
         return undefined;
       },
     });
   }
-  console.info(`LukApp · atajos visuales listos para ${contexto}. Escribe premium, aviso o ayuda.`);
+  console.info(`LukApp · atajos visuales listos para ${contexto}. Escribe premium, instalar o ayuda.`);
 
   return () => {
     if (window.LukAppPruebas === consola) {

@@ -172,6 +172,7 @@ const bytesUtf8 = (texto: string): number => new TextEncoder().encode(texto).byt
 
 const CONTEXTO_BASE =
   'Transcribe literalmente este dictado financiero en español de Colombia. ' +
+  'Devuelve toda la frase audible, sin resumirla ni cortar su final. ' +
   'Conserva cifras, negaciones, nombres de cuentas y la dirección del dinero ' +
   '(de, desde, a, hacia; pagué, gasté, compré, retiré, transferí, aboné, recibí). ' +
   'No inventes ni completes lo que no se oye: conserva los montos compuestos ' +
@@ -210,7 +211,7 @@ const normalizarTermino = (valor: unknown): string | null => {
 // variante fonética y la frase de saldo que la acompaña, sin alterar el resto
 // del dictado libre de la persona.
 const normalizarDictadoFinanciero = (texto: string): string => {
-  const conNequi = texto.replace(/\b(?:neki|neky)\b/gi, 'Nequi');
+  const conNequi = texto.replace(/\b(?:neki|neky|niki)\b/gi, 'Nequi');
 
   return conNequi.replace(
     /\bcodifica(?:\s+lo)?\s+que\s+tengo(?=\s+(?:en|dentro\s+de)\s+(?:(?:el|la)\s+)?nequi\b)/gi,

@@ -216,7 +216,10 @@ export const Captura: React.FC<CapturaProps> = ({
 
   const amountCop = digitos === '' ? null : Number(digitos);
   const esGasto = kind === 'gasto';
-  const alertaRevision = parsed.signals.amountSource === 'none' && parsed.amount !== null
+  const esComprobanteOCR = parsed.raw.startsWith('[OCR]');
+  const alertaRevision = esComprobanteOCR
+    ? null
+    : parsed.signals.amountSource === 'none' && parsed.amount !== null
     ? 'No escuché un monto; propuse el de un movimiento anterior. Confírmalo o cámbialo.'
     : parsed.signals.amountSource === 'none'
       ? 'No pude identificar el monto. Escríbelo antes de guardar.'
@@ -436,7 +439,7 @@ export const Captura: React.FC<CapturaProps> = ({
           confirmación. El texto parcial del overlay es solo una ayuda mientras
           se habla y puede equivocarse; aquí se enseña exactamente la versión
           que produjo los campos de abajo. */}
-      {parsed.raw.trim() ? (
+      {parsed.raw.trim() && !esComprobanteOCR ? (
         <section
           className="mt-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3.5 py-3"
           aria-label="Transcripción del dictado"
@@ -476,14 +479,14 @@ export const Captura: React.FC<CapturaProps> = ({
           Escaneando comprobante con IA… {Math.round(progresoFoto * 100)}%
         </div>
       ) : null}
-      {!escaneandoFoto && resultadoImagen ? (
+      {!escaneandoFoto && (resultadoImagen || esComprobanteOCR) ? (
         <div className={`mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border py-2 px-3 text-[12.5px] font-semibold ${
-          resultadoImagen === 'ingreso'
+          (resultadoImagen ?? parsed.kind) === 'ingreso'
             ? 'border-[var(--fin-in)]/25 bg-[var(--fin-in)]/10 text-[var(--fin-in)]'
             : 'border-[var(--fin-out)]/25 bg-[var(--fin-out)]/10 text-[var(--fin-out)]'
         }`}>
           <Check className="h-4 w-4" />
-          Imagen analizada: {resultadoImagen === 'ingreso' ? 'Ingreso detectado' : 'Gasto detectado'} · Revisa antes de guardar
+          Comprobante leído: {(resultadoImagen ?? parsed.kind) === 'ingreso' ? 'Ingreso detectado' : 'Gasto detectado'} · Revisa antes de guardar
         </div>
       ) : null}
       {parsed.cuotasTotal && parsed.cuotaCop ? (

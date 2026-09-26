@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { instalarConsolaDeVistas } from './consolaVistas';
+import { EVENTO_MOSTRAR_INSTALACION_PWA, instalarConsolaDeVistas } from './consolaVistas';
 
 describe('consola de vistas', () => {
   afterEach(() => {
@@ -26,5 +26,18 @@ describe('consola de vistas', () => {
     retirar();
     expect(window.LukAppPruebas).toBeUndefined();
     expect(Object.prototype.hasOwnProperty.call(window, 'premium')).toBe(false);
+  });
+
+  it('incluye el aviso de instalación PWA entre los atajos de consola', () => {
+    const mostrarInstalacion = vi.fn();
+    window.addEventListener(EVENTO_MOSTRAR_INSTALACION_PWA, mostrarInstalacion);
+    const retirar = instalarConsolaDeVistas({ abrir: vi.fn(), cerrar: vi.fn() });
+
+    Reflect.get(window, 'instalar');
+    window.LukAppPruebas?.instalarPwa();
+
+    expect(mostrarInstalacion).toHaveBeenCalledTimes(2);
+    retirar();
+    window.removeEventListener(EVENTO_MOSTRAR_INSTALACION_PWA, mostrarInstalacion);
   });
 });

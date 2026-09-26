@@ -897,7 +897,7 @@ export const parseTransaction = (
     }
   }
 
-  if (kindSource === 'default' && raw.startsWith('[OCR]')) {
+  if (raw.startsWith('[OCR]')) {
     const ocrNormalizado = normalizarTextoOCR(raw);
     const esIngresoEnComprobante = /\b(?:transferencia|pago|abono|deposito|dinero|saldo) recibid[oa]\b|\bingreso\b|\bcredito aplicado\b|\bsaldo a favor\b/.test(
       ocrNormalizado,
@@ -907,8 +907,8 @@ export const parseTransaction = (
     );
     if (esIngresoEnComprobante || esEgresoEnComprobante) {
       kind = esIngresoEnComprobante ? 'ingreso' : 'gasto';
-      // Es una señal explícita del documento, con la misma fuerza que una
-      // palabra de dirección pronunciada por la persona.
+      // La dirección impresa por el comprobante tiene prioridad sobre una
+      // palabra aislada que Tesseract haya confundido con un verbo de voz.
       kindSource = 'keyword';
     }
   }
@@ -1159,6 +1159,14 @@ export const parseTransaction = (
     categorySource = sortedCandidates[0][1].source;
   }
 
+  // Nequi y otras billeteras imprimen "pago" y "envío" en la misma plantilla.
+  // Eso describe el canal, no una compra de comida u "otros": el comprobante
+  // debe abrir como transferencia y dejar a la persona cambiarlo si hace falta.
+  if (raw.startsWith('[OCR]') && /\b(?:comprobante|envio|transferencia|nequi|daviplata|bancolombia)\b/.test(normalizarTextoOCR(raw))) {
+    category = kind === 'ingreso' ? 'ingreso' : 'transferencia';
+    categorySource = 'keyword';
+  }
+
   // El total y las cuotas pueden consumir tokens cercanos al comercio. Cuando
   // viene de un comprobante de tarjeta usamos el comercio ya aislado como
   // segunda fuente, para que “Platzi” no se pierda entre cifras y fechas.
@@ -1304,12 +1312,15 @@ export const parseTransaction = (
     }
   } else {
     // OCR specific destinatario extraction
-    const destMatch = raw.match(/(?:para|destino|hacia)\s*:?\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20}(?:\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20})?)/i);
-    if (destMatch && destMatch[1]) {
+    const destinos = Array.from(raw.matchAll(/(?:para|destino|hacia)\s*:?\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20}(?:\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20})?)/gi));
+    for (const destMatch of destinos) {
+      if (!destMatch[1]) continue;
       const candidateDest = destMatch[1].trim();
       const lowerDest = candidateDest.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      if (!['nequi', 'bancolombia', 'daviplata', 'comprobante', 'movimiento', 'envio', 'envío', 'realizado', 'exitoso', 'valor', 'fecha', 'cuenta'].includes(lowerDest)) {
+      const palabrasDestino = lowerDest.split(/\s+/);
+      if (!palabrasDestino.some((palabra) => ['nequi', 'bancolombia', 'daviplata', 'comprobante', 'movimiento', 'envio', 'realizado', 'exitoso', 'valor', 'fecha', 'cuenta', 'verificar', 'instante', 'envio'].includes(palabra))) {
         destinatario = candidateDest.charAt(0).toUpperCase() + candidateDest.slice(1);
+        break;
       }
     }
   }
