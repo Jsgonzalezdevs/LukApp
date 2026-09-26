@@ -305,6 +305,12 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       if (!cliente) throw new Error('No se pudo conectar con el servidor.');
       const { error } = await cliente.auth.updateUser({ password: nuevaPassword });
       if (error) throw new Error(error.message || 'No se pudo cambiar la contraseña.');
+      await conToken(async (token) => {
+        await fetch(apiUrl('/api/mi-cuenta/contrasena-cambiada'), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }).catch(() => {});
       setNuevaPassword('');
       setConfirmarPassword('');
       setCambiandoPassword(false);

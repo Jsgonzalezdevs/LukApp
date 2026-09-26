@@ -131,6 +131,7 @@ export const AppsRoot: React.FC = () => {
     !esPwaInstalada() &&
     activeApp === 'finanzas' &&
     (segmentosDe(ruta).length === 0 || ruta === '/' || ruta === '/finanzas');
+  const enRegistro = segmentosDe(ruta).join('/') === 'registro';
   const enLegal = ruta === '/legal' || ruta === '/terminos';
 
   // Además del `start_url` del manifiesto, esto repara instalaciones hechas
@@ -408,13 +409,17 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  // Si es anónimo: en portada muestra SIEMPRE LandingLukApp; en /entrar muestra LoginPanel
+  // La portada, el acceso y el alta tienen rutas propias para poder enlazarlas
+  // directamente sin duplicar los formularios ni sus estilos.
   if (sesion.estado.modo === 'anonimo') {
     if (enPortada) {
       const entrar = () => {
         ir(`${BASE_LUKAPP}/entrar`);
       };
-      return <LandingLukApp onGetStarted={entrar} onLogin={entrar} sesion={sesion} />;
+      const registrarse = () => {
+        ir(`${BASE_LUKAPP}/registro`);
+      };
+      return <LandingLukApp onGetStarted={registrarse} onLogin={entrar} />;
     }
     return (
       <VistaConCarga>
@@ -422,6 +427,7 @@ export const AppsRoot: React.FC = () => {
         sesion={sesion}
         tema={tema}
         onCambiarTema={setTema}
+        modoInicial={enRegistro ? 'registrarse' : 'entrar'}
         onVolverInicio={() => ir('/')}
       />
       </VistaConCarga>
@@ -433,7 +439,7 @@ export const AppsRoot: React.FC = () => {
   // LukApp; no añade seguridad y tampoco es necesario para la PWA.
   if (enPortada) {
     const abrirApp = () => ir(`${BASE_LUKAPP}/app`);
-    return <LandingLukApp onGetStarted={abrirApp} onLogin={abrirApp} sesion={sesion} />;
+    return <LandingLukApp onGetStarted={abrirApp} onLogin={abrirApp} />;
   }
 
   if (esConfirmacionPago) {

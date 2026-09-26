@@ -2014,7 +2014,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 <div>
                   <h2 className="text-2xl font-extrabold tracking-tight">Registro de Auditoría</h2>
                   <p className="mt-1 text-xs text-[var(--fin-ink-soft)]">
-                    Trazabilidad de acciones de superadmin (creación, edición, borrado e inicios de asesoría).
+                    Historial permanente de seguridad: contraseñas, usuarios, roles, términos, planes y asesorías.
                   </p>
                 </div>
                 <button
@@ -2034,7 +2034,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 ) : logsAuditoria.length === 0 ? (
                   <div className="flex h-40 flex-col items-center justify-center text-center text-xs text-[var(--fin-ink-faint)]">
                     <History className="h-8 w-8 mb-2 opacity-40" />
-                    <p>Sin registros de auditoría aún en esta sesión de servidor.</p>
+                    <p>Todavía no hay eventos importantes para mostrar.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

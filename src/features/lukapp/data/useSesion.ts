@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { obtenerSupabase } from './supabase';
 import { sincronizarDesdeSupabase } from './usePreferencias';
-import { precalentarApi } from '../../../lib/api';
+import { apiUrl, precalentarApi } from '../../../lib/api';
 
 export type EstadoSesion =
   | { modo: 'local'; userId: string; email: string }
@@ -210,6 +210,13 @@ export const useSesion = (): Sesion => {
           if (fallo) {
             setError(traducir(fallo.message));
             return false;
+          }
+          const { data } = await cliente.auth.getSession();
+          if (data.session?.access_token) {
+            await fetch(apiUrl('/api/mi-cuenta/contrasena-cambiada'), {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${data.session.access_token}` },
+            }).catch(() => {});
           }
           return true;
         } catch (e) {

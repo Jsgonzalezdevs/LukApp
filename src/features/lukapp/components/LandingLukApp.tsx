@@ -3,7 +3,6 @@ import { ArrowRight, Menu, X } from 'lucide-react';
 import { BrandWordmark } from './BrandWordmark';
 import { Hero } from './landing/Hero';
 import { MascotaLuki } from './landing/MascotaLuki';
-import type { Sesion } from '../data/useSesion';
 import { BarraProgreso, Ticker } from './landing/adornos';
 import { Reveal } from './landing/primitivas';
 import '../styles/LandingLukApp.css';
@@ -17,7 +16,6 @@ const Funciones = lazy(() => import('./landing/Funciones').then(({ Funciones }) 
 const Cupo4x1000 = lazy(() => import('./landing/Cupo4x1000').then(({ Cupo4x1000 }) => ({ default: Cupo4x1000 })));
 const FormasDeRegistrar = lazy(() => import('./landing/FormasDeRegistrar').then(({ FormasDeRegistrar }) => ({ default: FormasDeRegistrar })));
 const BandaCifras = lazy(() => import('./landing/BandaCifras').then(({ BandaCifras }) => ({ default: BandaCifras })));
-const Registro = lazy(() => import('./landing/Registro').then(({ Registro }) => ({ default: Registro })));
 const SecuenciaAnimada = lazy(() => import('./landing/SecuenciaAnimada').then(({ SecuenciaAnimada }) => ({ default: SecuenciaAnimada })));
 const SeccionApplePay = lazy(() => import('./landing/SeccionApplePay').then(({ SeccionApplePay }) => ({ default: SeccionApplePay })));
 
@@ -65,12 +63,6 @@ const FRASES_TICKER = [
 interface LandingProps {
   onGetStarted?: () => void;
   onLogin?: () => void;
-  /**
-   * Opcional para que la portada se pueda montar suelta (una vista de
-   * inspección, un test) sin tener que fabricar una sesión. Sin ella no se
-   * pinta el formulario de registro, que es lo único que la necesita.
-   */
-  sesion?: Sesion;
 }
 
 const ENLACES = [
@@ -79,19 +71,16 @@ const ENLACES = [
   { href: '#apple-pay', texto: 'Apple Pay', titulo: 'Configurar Apple Pay con LukApp' },
   { href: '#funciones', texto: 'Funciones', titulo: 'Conocer las funciones de LukApp' },
   { href: '#cuatro-por-mil', texto: '4×1000', titulo: 'Calcular el 4x1000' },
-  { href: '#registro', texto: 'Crear cuenta', titulo: 'Crear una cuenta en LukApp' }
+  { href: '/registro', texto: 'Crear cuenta', titulo: 'Crear una cuenta en LukApp' }
 ];
 
 export const LandingLukApp: React.FC<LandingProps> = ({
   onGetStarted,
-  onLogin,
-  sesion
+  onLogin
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [compacta, setCompacta] = useState(false);
   const [mostrarConsentimientoAnalitica, setMostrarConsentimientoAnalitica] = useState(pideConsentimientoAnalitica);
-  const sesionActiva = sesion?.estado.modo === 'autenticado' || sesion?.estado.modo === 'local';
-
   /* La barra se encoge al bajar. `passive` porque el handler no llama a
      preventDefault y sin eso Chrome bloquea el hilo de scroll en móvil. */
   useEffect(() => {
@@ -101,29 +90,8 @@ export const LandingLukApp: React.FC<LandingProps> = ({
     return () => window.removeEventListener('scroll', alScroll);
   }, []);
 
-  useEffect(() => {
-    if (window.location.hash !== '#registro') return;
-    let intentos = 0;
-    let id: number;
-    const ubicarRegistro = () => {
-      const registro = document.getElementById('registro');
-      if (registro) {
-        registro.scrollIntoView({ block: 'start', behavior: 'auto' });
-        return;
-      }
-      if (intentos++ < 20) id = window.setTimeout(ubicarRegistro, 50);
-    };
-    ubicarRegistro();
-    return () => window.clearTimeout(id);
-  }, []);
-
   const handleGetStarted = () => {
     onGetStarted?.();
-  };
-
-  const handleRegistro = () => {
-    window.location.hash = 'registro';
-    document.getElementById('registro')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
 
   return (
@@ -162,7 +130,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
                   setMenuOpen(false);
                 }}
               >
-                {sesionActiva ? 'Ir a mi app' : 'Acceder'}
+                Acceder
               </button>
             </div>
             <button
@@ -200,21 +168,17 @@ export const LandingLukApp: React.FC<LandingProps> = ({
         </SeccionDiferida>
         <SeccionDiferida>
           <FormasDeRegistrar />
-          {sesion ? (
-            <Registro sesion={sesion} onIrAEntrar={onLogin} />
-          ) : (
-            <section className="final-cta">
-              <Reveal>
-                <MascotaLuki />
-                <h2>¿Listo?</h2>
-                <p>Toma el control de tu dinero desde hoy.</p>
-                <button className="btn-primary-lg" onClick={handleRegistro}>
-                  Comenzar ahora
-                  <ArrowRight size={18} strokeWidth={2} aria-hidden />
-                </button>
-              </Reveal>
-            </section>
-          )}
+          <section className="final-cta">
+            <Reveal>
+              <MascotaLuki />
+              <h2>¿Listo?</h2>
+              <p>Toma el control de tu dinero desde hoy.</p>
+              <button className="btn-primary-lg" onClick={handleGetStarted}>
+                Comenzar ahora
+                <ArrowRight size={18} strokeWidth={2} aria-hidden />
+              </button>
+            </Reveal>
+          </section>
         </SeccionDiferida>
       </main>
 

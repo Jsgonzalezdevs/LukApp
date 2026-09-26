@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.9.0', fecha: '2026-09-26', texto: 'Superadmin ahora conserva un registro de auditoría permanente: puedes consultar cambios de contraseña, usuarios, roles, términos, planes y sesiones de asesoría, incluso después de reiniciar el servidor.' },
+  { version: '4.8.0', fecha: '2026-09-26', texto: 'Crear una cuenta ahora tiene su propia dirección: entra directamente a lukapp.app/registro para registrarte, mientras el acceso sigue disponible en /entrar.' },
   { version: '4.7.9', fecha: '2026-09-25', texto: 'El editor legal sigue mostrando los términos actuales incluso mientras la migración de la base de datos termina de aplicarse, sin errores en Superadmin.' },
   { version: '4.7.8', fecha: '2026-09-25', texto: 'El editor de Términos carga ahora el documento legal que ya está vigente en LukApp. Además, tu propia cuenta en Superadmin solo permite cambiar el rol.' },
   { version: '4.7.7', fecha: '2026-09-25', texto: 'Un solo superadmin ya puede otorgar el rol de administrador directamente. Además, Superadmin incorpora una pestaña para editar y publicar al instante los Términos y Condiciones visibles en LukApp.' },

@@ -185,21 +185,34 @@ export interface AuditLog {
 
 const auditLogs: AuditLog[] = [];
 
-const registrarAuditoria = (
+const registrarAuditoria = async (
+  cliente: ClienteAdmin,
   adminEmail: string,
   action: string,
   targetUser?: string,
   details?: string,
+  actorId?: string,
 ) => {
-  auditLogs.unshift({
+  const registro: AuditLog = {
     id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     timestamp: new Date().toISOString(),
     adminEmail,
     action,
     targetUser,
     details,
-  });
+  };
+  auditLogs.unshift(registro);
   if (auditLogs.length > 500) auditLogs.pop();
+
+  const { error } = await cliente.from('registro_auditoria').insert({
+    creado_en: registro.timestamp,
+    actor_id: actorId ?? null,
+    actor_email: adminEmail,
+    accion: action,
+    objetivo: targetUser ?? null,
+    detalle: details ?? null,
+  });
+  if (error) console.error('[auditoria] No se pudo persistir el registro:', error.message);
 };
 
 // ----------------------------------------------------------------------
@@ -252,11 +265,12 @@ app.post('/api/crear-usuario', async (req, res) => {
       }
     }
 
-    registrarAuditoria(
+    await registrarAuditoria(cliente,
       acceso.email || 'admin',
       'Creó usuario',
       email,
       `Usuario: ${usuario || '-'}, Rol: ${rol || 'usuario'}`,
+      acceso.userId,
     );
 
     return res.status(200).json({ success: true, user: newUser.user });
@@ -1181,13 +1195,14 @@ app.post('/api/editar-usuario', async (req, res) => {
       }
     }
 
-    registrarAuditoria(
+    await registrarAuditoria(cliente,
       acceso.email,
       cambios.rol === 'admin' && ctx.objetivoRol !== 'admin'
         ? 'Otorgó rol de administrador'
         : 'Editó usuario',
       cambios.email || userId,
       Object.keys(cambios).join(', '),
+      acceso.userId,
     );
 
     return res.status(200).json({ success: true });
@@ -1266,7 +1281,7 @@ app.put('/api/superadmin/legal/terminos', async (req, res) => {
       return res.status(503).json({ error: 'Falta aplicar la migración de términos y condiciones en Supabase antes de publicar.' });
     }
     if (error) throw error;
-    registrarAuditoria(admin.email, 'Actualizó términos y condiciones', undefined, `${contenido.length} caracteres`);
+    await registrarAuditoria(cliente, admin.email, 'Actualizó términos y condiciones', undefined, `${contenido.length} caracteres`, admin.userId);
     return res.json({ success: true, contenido: data.contenido, actualizadoEn: data.actualizado_en });
   } catch (error: any) {
     console.error('Error publicando términos y condiciones:', error);
@@ -1319,7 +1334,7 @@ app.post('/api/solicitudes-superadmin/:id/aprobar', async (req, res) => {
       p_solicitud_id: req.params.id, p_aprobador_id: acceso.userId,
     });
     if (error) return res.status(409).json({ error: error.message });
-    registrarAuditoria(acceso.email, 'Aprobó nuevo superadmin', req.params.id);
+    await registrarAuditoria(cliente, acceso.email, 'Aprobó nuevo superadmin', req.params.id, undefined, acceso.userId);
     return res.json({ success: true });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'No se pudo aprobar la solicitud.' });
@@ -1363,11 +1378,12 @@ app.post('/api/eliminar-usuario', async (req, res) => {
     const { error } = await cliente.auth.admin.deleteUser(userId);
     if (error) throw error;
 
-    registrarAuditoria(
+    await registrarAuditoria(cliente,
       acceso.email,
       'Eliminó usuario',
       userId,
       `Rol: ${ctx.objetivoRol}`,
+      acceso.userId,
     );
 
     return res.status(200).json({ success: true });
@@ -1411,13 +1427,30 @@ app.post('/api/mi-cuenta/eliminar', async (req, res) => {
     const { error } = await cliente.auth.admin.deleteUser(acceso.userId);
     if (error) throw error;
 
-    registrarAuditoria(acceso.email, 'Eliminó su propia cuenta', acceso.userId);
+    await registrarAuditoria(cliente, acceso.email, 'Eliminó su propia cuenta', acceso.userId, undefined, acceso.userId);
 
     return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error('Error eliminando cuenta propia:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
+});
+
+// La contraseña nunca llega a la API ni se almacena en el historial. El
+// navegador la actualiza directamente con Supabase y esta ruta deja constancia
+// del evento una vez que el cambio fue aceptado.
+app.post('/api/mi-cuenta/contrasena-cambiada', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configuración de Supabase' });
+
+  const acceso = await exigirUsuario(cliente, token);
+  if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+  await registrarAuditoria(cliente, acceso.email, 'Cambió su contraseña', acceso.email, undefined, acceso.userId);
+  return res.status(200).json({ success: true });
 });
 
 // ----------------------------------------------------------------------
@@ -1474,11 +1507,12 @@ app.post('/api/impersonar-usuario', async (req, res) => {
       return res.status(500).json({ error: 'No se pudo extraer el token del link generado.' });
     }
 
-    registrarAuditoria(
+    await registrarAuditoria(cliente,
       acceso.email,
       'Inició sesión de asesoría (Impersonación)',
       userTarget.user.email,
       `ID: ${userId}`,
+      acceso.userId,
     );
 
     return res.status(200).json({
@@ -1506,7 +1540,24 @@ app.get('/api/auditoria-logs', async (req, res) => {
   const acceso = await exigirPermiso(cliente, token, 'ver_auditoria');
   if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
 
-  return res.status(200).json({ success: true, logs: auditLogs });
+  const { data, error } = await cliente
+    .from('registro_auditoria')
+    .select('id, creado_en, actor_email, accion, objetivo, detalle')
+    .order('creado_en', { ascending: false })
+    .limit(500);
+  if (error) {
+    console.error('[auditoria] No se pudo leer el historial persistente:', error.message);
+    return res.status(200).json({ success: true, logs: auditLogs, persistente: false });
+  }
+  const logs: AuditLog[] = (data ?? []).map((registro) => ({
+    id: registro.id,
+    timestamp: registro.creado_en,
+    adminEmail: registro.actor_email,
+    action: registro.accion,
+    targetUser: registro.objetivo ?? undefined,
+    details: registro.detalle ?? undefined,
+  }));
+  return res.status(200).json({ success: true, logs, persistente: true });
 });
 
 // ----------------------------------------------------------------------
@@ -1850,7 +1901,7 @@ app.post('/api/crear-rol', async (req, res) => {
     if (errPermisos) return res.status(500).json({ error: errPermisos.message });
   }
 
-  registrarAuditoria(acceso.email, 'Creó rol', nombre, `Permisos: ${permisosLimpios.join(', ') || 'ninguno'}`);
+  await registrarAuditoria(cliente, acceso.email, 'Creó rol', nombre, `Permisos: ${permisosLimpios.join(', ') || 'ninguno'}`, acceso.userId);
   return res.status(200).json({ success: true, id });
 });
 
@@ -1895,7 +1946,7 @@ app.post('/api/editar-rol', async (req, res) => {
     }
   }
 
-  registrarAuditoria(acceso.email, 'Editó rol', nombre || id);
+  await registrarAuditoria(cliente, acceso.email, 'Editó rol', nombre || id, undefined, acceso.userId);
   return res.status(200).json({ success: true });
 });
 
@@ -1918,7 +1969,7 @@ app.post('/api/eliminar-rol', async (req, res) => {
   const { error } = await cliente.from('roles').delete().eq('id', id);
   if (error) return res.status(500).json({ error: error.message });
 
-  registrarAuditoria(acceso.email, 'Eliminó rol', id);
+  await registrarAuditoria(cliente, acceso.email, 'Eliminó rol', id, undefined, acceso.userId);
   return res.status(200).json({ success: true });
 });
 
@@ -2334,7 +2385,7 @@ app.put('/api/superadmin/planes/:codigo', async (req, res) => {
       throw error;
     }
     const plan = Array.isArray(data) ? data[0] : data;
-    registrarAuditoria(acceso.email, 'Actualizó plan Freemium', codigo);
+    await registrarAuditoria(cliente, acceso.email, 'Actualizó plan Freemium', codigo, undefined, acceso.userId);
     return res.status(200).json({ plan });
   } catch (error: any) {
     console.error('Error actualizando plan:', error);
@@ -2366,7 +2417,7 @@ app.post('/api/superadmin/suscripciones/otorgar', async (req, res) => {
       p_nota: nota || null,
     });
     if (error) throw error;
-    registrarAuditoria(acceso.email, 'Otorgó Premium de cortesía', userId, `Hasta ${venceEn}`);
+    await registrarAuditoria(cliente, acceso.email, 'Otorgó Premium de cortesía', userId, `Hasta ${venceEn}`, acceso.userId);
     return res.status(201).json({ suscripcion });
   } catch (error: any) {
     console.error('Error otorgando Premium:', error);
@@ -2397,7 +2448,7 @@ app.patch('/api/superadmin/suscripciones/:id', async (req, res) => {
       p_nota: nota || null,
     });
     if (error) throw error;
-    registrarAuditoria(acceso.email, 'Actualizó vigencia de Premium', String(id), `Hasta ${venceEn}`);
+    await registrarAuditoria(cliente, acceso.email, 'Actualizó vigencia de Premium', String(id), `Hasta ${venceEn}`, acceso.userId);
     return res.status(200).json({ suscripcion });
   } catch (error: any) {
     console.error('Error actualizando vigencia de Premium:', error);
@@ -2426,7 +2477,7 @@ app.post('/api/superadmin/suscripciones/:id/cancelar', async (req, res) => {
       p_nota: nota || null,
     });
     if (error) throw error;
-    registrarAuditoria(acceso.email, 'Retiró Premium', String(id), 'El acceso fue retirado desde Facturación; el cobro histórico se conserva.');
+    await registrarAuditoria(cliente, acceso.email, 'Retiró Premium', String(id), 'El acceso fue retirado desde Facturación; el cobro histórico se conserva.', acceso.userId);
     return res.status(200).json({ suscripcion });
   } catch (error: any) {
     console.error('Error cancelando Premium:', error);

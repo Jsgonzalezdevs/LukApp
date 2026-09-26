@@ -13,6 +13,7 @@ const esPwaInstalada = (): boolean =>
   window.matchMedia?.('(display-mode: standalone)').matches === true ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true
 
+const abrirRegistro = () => window.location.assign('/registro')
 const abrirAcceso = () => window.location.assign('/entrar')
 
 const CargandoAplicacion = () => (
@@ -32,7 +33,7 @@ export const RaizAplicacion = () => {
     (window.location.pathname === '/' || window.location.pathname === '/finanzas')
 
   if (esPortadaPublica) {
-    return <LandingLukApp onGetStarted={abrirAcceso} onLogin={abrirAcceso} />
+    return <LandingLukApp onGetStarted={abrirRegistro} onLogin={abrirAcceso} />
   }
 
   return (
