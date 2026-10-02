@@ -127,7 +127,7 @@ export const elegirIndiceImagenLuki = (azar: number): number => {
 const MENSAJE_INICIAL: Message = {
   id: 'init',
   role: 'bot',
-  text: '¡Hola! Soy tu asesor financiero personal. Puedo ayudarte a consultar tus gastos, revisar tu balance, o darte consejos sobre cómo vas este mes. ¿En qué te ayudo hoy?',
+  text: '¡Hola! Soy Luki, tu amigo contador. Me alegra verte por aquí. Podemos charlar un momento o revisar tus gastos, balance y metas con calma. ¿Cómo vas?',
 };
 
 /** Chips para arrancar una conversación vacía — el punto de entrada más usado. */

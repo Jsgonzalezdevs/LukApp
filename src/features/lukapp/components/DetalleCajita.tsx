@@ -133,8 +133,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       setMontoTexto('');
       setDestinoId('');
       setErrorTransferencia(null);
-    } catch {
-      setErrorTransferencia('Error en la transferencia. Intenta de nuevo.');
+    } catch (error) {
+      const mensaje = error instanceof Error ? error.message : 'No fue posible completar la transferencia.';
+      setErrorTransferencia(mensaje);
     }
   };
 

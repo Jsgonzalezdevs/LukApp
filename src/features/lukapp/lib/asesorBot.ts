@@ -356,9 +356,9 @@ export function responderAsesor(
 
     return {
       text: getRandom([
-        `${saludo} Por aquí estoy, revisando tus números. ¿En qué te ayudo hoy?`,
-        `${saludo} Listo para hacer cuentas. ¿Qué quieres que revisemos?`,
-        `${saludo} Siempre es buen momento para organizar la plata. ¡Dime qué necesitas!`,
+        `${saludo} Qué bueno leerte. Soy Luki, tu amigo contador; ¿cómo vas hoy?`,
+        `${saludo} Aquí estoy contigo. Cuando quieras revisamos tus números, pero primero cuéntame: ¿cómo estás?`,
+        `${saludo} Me alegra verte por aquí. ¿Qué tal va tu día?`,
       ]),
       newContext,
     };
@@ -366,7 +366,7 @@ export function responderAsesor(
 
   if (norm.match(/quien (eres|sos)|que eres|como te llamas/)) {
     return {
-      text: 'Soy el Asesor de Focus. Soy una red de reglas lógicas y análisis semántico que funciona 100% offline en tu celular. No soy GPT, ¡pero me esfuerzo igual para cuidar tu bolsillo!',
+      text: 'Soy Luki, tu amigo contador en LukApp. Estoy para conversar contigo y ayudarte a entender y organizar tu plata con consejos claros para Colombia. Cuando se trate de decisiones importantes, te daré contexto para que las tomes con calma.',
       newContext,
     };
   }
@@ -1052,8 +1052,8 @@ export function responderAsesor(
     {
       regex: /como (te sientes|estas)/i,
       responses: [
-        '¡Funcionando al 100% de mi capacidad de procesamiento local! Listo para analizar tus transacciones.',
-        'Muy bien, con todos mis circuitos enfocados en cuidar tu presupuesto. ¿Cómo estás tú?',
+        'Muy bien, gracias por preguntar. Me alegra acompañarte un rato. ¿Cómo estás tú?',
+        'Todo bien por aquí, y mejor ahora que hablamos. Cuéntame, ¿cómo te ha ido hoy?',
       ],
     },
     {

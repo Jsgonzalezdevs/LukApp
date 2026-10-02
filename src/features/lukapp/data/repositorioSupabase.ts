@@ -53,6 +53,11 @@ export class RepositorioSupabase implements Repositorio {
     if (error.message.includes('objetivo_cop_check')) {
       throw new Error('El objetivo de la meta debe ser mayor que cero.');
     }
+    if (error.message.includes('transacciones_kind_check')) {
+      throw new Error(
+        'La base de datos todavía no admite transferencias en el historial. Aplica la migración 20260830183300_permitir_transferencias_en_historial.sql y vuelve a intentar.',
+      );
+    }
     if (error.message.includes('_kind_check') || error.message.includes('_rol_check')) {
       throw new Error('Ese valor no es uno de los permitidos.');
     }

@@ -235,7 +235,7 @@ describe('AsesorView — conversaciones guardadas', () => {
     render(<AsesorView {...props} />);
 
     expect(screen.queryByText('¿Cómo iba mi presupuesto?')).toBeNull();
-    expect(screen.getByText(/Soy tu asesor financiero personal/)).toBeTruthy();
+    expect(screen.getByText(/Soy Luki, tu amigo contador/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
     fireEvent.click(await screen.findByText('Mi presupuesto de septiembre'));
@@ -252,7 +252,7 @@ describe('AsesorView — conversaciones guardadas', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Nueva conversación' }));
     expect(screen.queryByText('¿Cómo iba mi presupuesto?')).toBeNull();
-    expect(screen.getByText(/Soy tu asesor financiero personal/)).toBeTruthy();
+    expect(screen.getByText(/Soy Luki, tu amigo contador/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ver conversaciones anteriores' }));
     expect(screen.getByText('Mi presupuesto de septiembre')).toBeTruthy();

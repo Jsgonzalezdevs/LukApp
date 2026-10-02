@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   cuotaGroqDesdeCabeceras,
+  LIMITE_TOKENS_DIARIOS_REFERENCIA_GROQ_GRATIS,
   usoDesdeRespuestaChat,
   usoDesdeRespuestaClaude,
   usoDesdeRespuestaGemini,
 } from './usoProveedorIA';
 
 describe('uso del proveedor de IA', () => {
+  it('expone la referencia diaria publicada para el plan gratuito de Groq', () => {
+    expect(LIMITE_TOKENS_DIARIOS_REFERENCIA_GROQ_GRATIS).toBe(200_000);
+  });
+
   it('conserva el uso real entregado por Groq', () => {
     expect(usoDesdeRespuestaChat({
       usage: { prompt_tokens: 76, completion_tokens: 20, total_tokens: 96 },

@@ -11,6 +11,13 @@ export interface CuotaProveedorIA {
   solicitudesRestantesDia: number | null;
 }
 
+/**
+ * Groq no envía el TPD en las cabeceras: solo RPD y TPM. Esta referencia es
+ * la cuota pública del plan gratuito para los modelos que usa LukApp; se
+ * etiqueta como referencia para no confundirla con una lectura de la cuenta.
+ */
+export const LIMITE_TOKENS_DIARIOS_REFERENCIA_GROQ_GRATIS = 200_000;
+
 const numeroNoNegativo = (valor: unknown): number | null => {
   if (valor === null || valor === undefined || valor === '') return null;
   const numero = typeof valor === 'number' ? valor : Number(valor);

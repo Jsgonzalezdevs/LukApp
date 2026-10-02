@@ -326,7 +326,13 @@ describe('responderAsesor — saludos y charla', () => {
 
   it('responde a una pregunta de identidad', () => {
     const r = preguntar('quien eres');
-    expect(r.text).toMatch(/asesor|reglas|offline/i);
+    expect(r.text).toMatch(/luki|amigo contador/i);
+  });
+
+  it('contesta con cercanía cuando le preguntan cómo está', () => {
+    const r = preguntar('como estas?');
+    expect(r.text).toMatch(/gracias por preguntar|me alegra|todo bien/i);
+    expect(r.text).not.toMatch(/centrémonos|enfoquemos/i);
   });
 
   it('cae en una respuesta de charla para algo que no reconoce como finanzas', () => {

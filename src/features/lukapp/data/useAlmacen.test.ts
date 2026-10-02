@@ -661,6 +661,26 @@ describe('useAlmacen', () => {
     expect(saldoDeCajita(movs, destinoId)).toBe(120_000);
   });
 
+  it('permite transferir exactamente todo el saldo de la cuenta de origen', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+
+    await act(async () => {
+      await result.current.crearCajita({ nombre: 'Nequi', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'billetera', metaCop: null, tasaEaPct: null, saldoInicialCop: 500_000 });
+      await result.current.crearCajita({ nombre: 'Ahorro', icon: 'PiggyBank', tipo: 'cajita', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+    });
+
+    const origenId = result.current.datos.cajitas.find((c) => c.nombre === 'Nequi')!.id;
+    const destinoId = result.current.datos.cajitas.find((c) => c.nombre === 'Ahorro')!.id;
+
+    await act(async () => {
+      await result.current.transferirEntreCuentas({ origenId, destinoId, montoCop: 500_000 });
+    });
+
+    expect(saldoDeCajita(result.current.datos.cajitaMovimientos, origenId)).toBe(0);
+    expect(saldoDeCajita(result.current.datos.cajitaMovimientos, destinoId)).toBe(500_000);
+  });
+
   it('muestra la transferencia en el historial sin contarla como gasto ni ingreso', async () => {
     const repo = new RepositorioMemoria();
     const { result } = await montar(repo);

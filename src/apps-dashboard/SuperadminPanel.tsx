@@ -95,6 +95,7 @@ interface MetricasIAResponse {
   modelo: string;
   hayIA: boolean;
   tokensHoy: number;
+  limiteTokensDiariosReferencia: number | null;
   llamadasHoy: number;
   llamadasExitosas: number;
   llamadasFallback: number;
@@ -563,6 +564,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
         const sano: MetricasIAResponse = {
           ...data,
           tokensHoy:              Number(data.tokensHoy)              || 0,
+          limiteTokensDiariosReferencia: numeroONulo(data.limiteTokensDiariosReferencia),
           llamadasHoy:            Number(data.llamadasHoy)            || 0,
           llamadasExitosas:       Number(data.llamadasExitosas)       || 0,
           llamadasFallback:       Number(data.llamadasFallback)       || 0,
@@ -1464,10 +1466,12 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                         <Zap className="h-4 w-4 text-amber-500" />
                       </div>
                       <p className="mt-3 text-3xl font-extrabold tabular-nums tracking-tight text-[var(--fin-ink)]">
-                        {safeNum(metricasIA.tokensHoy)}
+                        {safeNum(metricasIA.tokensHoy)}{metricasIA.limiteTokensDiariosReferencia !== null ? ` / ${safeNum(metricasIA.limiteTokensDiariosReferencia)}` : ''}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--fin-ink-soft)]">
-                        Uso real de respuestas exitosas de LukApp
+                        {metricasIA.limiteTokensDiariosReferencia === null
+                          ? 'Uso real de respuestas exitosas de LukApp'
+                          : `${Math.min(100, Math.round(metricasIA.tokensHoy / metricasIA.limiteTokensDiariosReferencia * 100))}% de la referencia diaria del plan gratuito de Groq`}
                       </p>
                     </div>
 
@@ -1561,6 +1565,11 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                           ? `Última lectura del proveedor: ${formatearFechaHoraConsulta(metricasIA.cuotaProveedorObservadaEn)}. Los límites se renuevan según su ventana, no a medianoche de LukApp.`
                           : 'La capacidad real se muestra cuando el proveedor responde la próxima consulta.'}
                       </p>
+                      {metricasIA.limiteTokensDiariosReferencia !== null && (
+                        <p className="mt-2 text-[10px] text-[var(--fin-ink-faint)]">
+                          Referencia diaria: {safeNum(metricasIA.limiteTokensDiariosReferencia)} tokens para el plan gratuito de Groq con este modelo. Si tu cuenta tiene otro plan, confirma su cuota exacta en Groq; sus cabeceras no reportan TPD.
+                        </p>
+                      )}
                     </div>
                   </div>
 
