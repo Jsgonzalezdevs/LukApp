@@ -58,6 +58,16 @@ const leerDatoDeSuplantacion = (clave: string): string | null => {
   }
 };
 
+const leerJsonDeSuplantacion = <T,>(clave: string): T | null => {
+  const dato = leerDatoDeSuplantacion(clave);
+  if (!dato) return null;
+  try {
+    return JSON.parse(dato) as T;
+  } catch {
+    return null;
+  }
+};
+
 // `AppId` incluye `null`, y un objeto no puede tener `null` como llave -- por
 // eso esto es una función y no un `Record<AppId, string>`.
 const routeFor = (app: AppId): string => {
@@ -140,24 +150,20 @@ export const AppsRoot: React.FC = () => {
     if (esPwaInstalada() && ruta === '/') ir('/app');
   }, [ir, ruta]);
 
-  // Admin impersonation banner
-  const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() => {
-    try {
-      const raw = leerDatoDeSuplantacion(ADMIN_BACKUP_KEY);
-      return raw ? (JSON.parse(raw) as AdminBackup) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [adminBackup, setAdminBackup] = useState<AdminBackup | null>(() =>
+    leerJsonDeSuplantacion<AdminBackup>(ADMIN_BACKUP_KEY),
+  );
+  const [impersonatedUser, setImpersonatedUser] = useState<{ usuario: string | null; email: string } | null>(() =>
+    leerJsonDeSuplantacion<{ usuario: string | null; email: string }>(IMPERSONATED_USER_KEY),
+  );
 
-  const [impersonatedUser, setImpersonatedUser] = useState<{ usuario: string | null; email: string } | null>(() => {
-    try {
-      const raw = leerDatoDeSuplantacion(IMPERSONATED_USER_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  // La raíz ya está montada cuando el panel cambia la sesión. Sin esta
+  // sincronización, la asesoría empieza bien pero el aviso y su salida no
+  // aparecen hasta recargar la página.
+  const sincronizarAsesoria = useCallback(() => {
+    setAdminBackup(leerJsonDeSuplantacion<AdminBackup>(ADMIN_BACKUP_KEY));
+    setImpersonatedUser(leerJsonDeSuplantacion<{ usuario: string | null; email: string }>(IMPERSONATED_USER_KEY));
+  }, []);
 
   const volverAlAdmin = useCallback(async () => {
     if (!adminBackup) return;
@@ -490,6 +496,7 @@ export const AppsRoot: React.FC = () => {
           permisos={permisos}
           onBack={() => setActiveApp(null)}
           onNavigateTo={(app) => setActiveApp(app as any)}
+          onIniciarAsesoria={sincronizarAsesoria}
           tema={tema}
           onCambiarTema={setTema}
         />

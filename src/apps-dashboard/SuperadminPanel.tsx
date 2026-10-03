@@ -50,6 +50,8 @@ interface SuperadminPanelProps {
   permisos: string[];
   onBack: () => void;
   onNavigateTo?: (app: string) => void;
+  /** Actualiza la raíz con el respaldo recién guardado para mostrar la salida. */
+  onIniciarAsesoria?: () => void;
   tema: Tema;
   onCambiarTema: (tema: Tema) => void;
 }
@@ -354,7 +356,7 @@ const RespuestaIA: React.FC<{ texto: string }> = ({ texto }) => {
   );
 };
 
-export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos, onBack, onNavigateTo, tema, onCambiarTema }) => {
+export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos, onBack, onNavigateTo, onIniciarAsesoria, tema, onCambiarTema }) => {
   // 'admin' puede todo sin mirar `permisos` -- la misma garantía que
   // exigirPermiso en el backend: el rol fijo nunca depende de una lista bien
   // poblada. `puede` es la única función que el resto del componente debe
@@ -762,6 +764,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
         }),
       );
 
+      onIniciarAsesoria?.();
       setImpersonando(null);
       onNavigateTo?.('finanzas');
     } catch (err: any) {

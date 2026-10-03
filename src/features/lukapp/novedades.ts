@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.10.4', fecha: '2026-10-02', texto: 'Al asesorar a una persona desde Superadmin, el aviso ahora muestra siempre el botón para volver de inmediato a tu cuenta.' },
   { version: '4.10.3', fecha: '2026-10-02', texto: 'Ahora puedes transferir el saldo completo de una cuenta con una explicación clara si la base de datos requiere una actualización.' },
   { version: '4.10.2', fecha: '2026-09-26', texto: 'Superadmin ahora compara los tokens usados hoy con la referencia diaria del plan gratuito de Groq, para ver de un vistazo cuánto margen queda.' },
   { version: '4.10.1', fecha: '2026-09-26', texto: 'Luki ahora conversa con más cercanía: te saluda y responde a tus preguntas cotidianas como un amigo contador, sin perder la precisión de sus consejos financieros.' },
