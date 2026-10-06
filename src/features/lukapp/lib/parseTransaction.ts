@@ -902,7 +902,7 @@ export const parseTransaction = (
     const esIngresoEnComprobante = /\b(?:transferencia|pago|abono|deposito|dinero|saldo) recibid[oa]\b|\bingreso\b|\bcredito aplicado\b|\bsaldo a favor\b/.test(
       ocrNormalizado,
     );
-    const esEgresoEnComprobante = /\b(?:envio|transferencia|pago) realizad[oa]\b|\bcompra aprobada\b|\bdebito\b|\bcobro exitoso\b|\btotal a pagar\b|\bgracias por su compra\b/.test(
+    const esEgresoEnComprobante = /\b(?:envio|transferencia|pago) realizad[oa]\b|\benviado(?:\s+a)?\b|\bde\s+d[oó]nde\s+sali[oó]\b|\bcompra aprobada\b|\bdebito\b|\bcobro exitoso\b|\btotal a pagar\b|\bgracias por su compra\b/.test(
       ocrNormalizado,
     );
     if (esIngresoEnComprobante || esEgresoEnComprobante) {
@@ -1312,10 +1312,10 @@ export const parseTransaction = (
     }
   } else {
     // OCR specific destinatario extraction
-    const destinos = Array.from(raw.matchAll(/(?:para|destino|hacia)\s*:?\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20}(?:\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20})?)/gi));
+    const destinos = Array.from(raw.matchAll(/(?:para|destino|hacia|enviado(?:\s+a)?)\s*:?\s*([a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20}(?:\s+[a-zA-ZáéíóúÁÉÍÓÚñÑ]{2,20}){0,5})/gi));
     for (const destMatch of destinos) {
       if (!destMatch[1]) continue;
-      const candidateDest = destMatch[1].trim();
+      const candidateDest = destMatch[1].split(/\s+(?:celular|tel[eé]fono|cuenta|valor|fecha|referencia|nuevo\s+saldo)\b/i)[0].trim();
       const lowerDest = candidateDest.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const palabrasDestino = lowerDest.split(/\s+/);
       if (!palabrasDestino.some((palabra) => ['nequi', 'bancolombia', 'daviplata', 'comprobante', 'movimiento', 'envio', 'realizado', 'exitoso', 'valor', 'fecha', 'cuenta', 'verificar', 'instante', 'envio'].includes(palabra))) {

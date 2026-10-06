@@ -374,6 +374,16 @@ describe('parseTransaction — description', () => {
     expect(movimiento.amount).toBe(9000);
     expect(movimiento.description).toBe('Envío a Julián González');
   });
+
+  it('lee el comprobante bancario como salida y conserva el nombre completo del destinatario', () => {
+    const movimiento = parseTransaction(
+      '[OCR] Transferencia exitosa Valor transferencia $ 6.500 ¿A quién le llegó la plata? Enviado a Julián Santiago González Reina Celular 3187865403 ¿De dónde salió? Cuenta de Ahorros Ahorros *1718',
+    );
+    expect(movimiento.kind).toBe('gasto');
+    expect(movimiento.category).toBe('transferencia');
+    expect(movimiento.amount).toBe(6500);
+    expect(movimiento.description).toBe('Envío a Julián Santiago González Reina');
+  });
 });
 
 describe('parseTransaction — confidence', () => {
