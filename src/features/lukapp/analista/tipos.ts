@@ -57,6 +57,8 @@ export interface Recomendacion {
 }
 
 export interface AnalisisResultado {
+  /** Entidad identificada en el documento; null cuando no se pudo comprobar. */
+  entidad: string | null;
   periodo: { desde: string; hasta: string; etiqueta: string };
   /** The narrative read of the period, in a few sentences. */
   veredicto: string;

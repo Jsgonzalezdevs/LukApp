@@ -2874,7 +2874,7 @@ async function analizarExtractoConIA(textoCrudo: string): Promise<AnalisisResult
     temperature: 0,
     maxTokens: 8_000,
     responseFormat: { type: 'json_object' },
-    systemPrompt: `Eres un lector preciso de extractos bancarios colombianos. Devuelve JSON, sin Markdown. Solo extrae filas que estén explícitas en el PDF. Nunca inventes comercio, fecha, monto, categoría ni referencia. Cada movimiento debe tener fecha YYYY-MM-DD, descripcion literal y legible, montoCop entero positivo, tipo gasto o ingreso, categoria entre: ${CATEGORIES.join(', ')}, confianza alta/media/baja, exclusion null/traslado-propio/pago-tarjeta/reverso/saldo-informativo, contraparte y detalle. detalle debe explicar brevemente por qué se asignó esa categoría y qué concepto del extracto se reconoció. Incluye periodo {desde,hasta,etiqueta}, veredicto, advertencias y movimientos.`,
+    systemPrompt: `Eres un lector preciso de extractos bancarios colombianos. Devuelve JSON, sin Markdown. Solo extrae filas que estén explícitas en el PDF. Nunca inventes comercio, fecha, monto, categoría ni referencia. Identifica la entidad financiera visible en el documento como entidad; si no aparece con certeza, usa null. Cada movimiento debe tener fecha YYYY-MM-DD, descripcion literal y legible, montoCop entero positivo, tipo gasto o ingreso, categoria entre: ${CATEGORIES.join(', ')}, confianza alta/media/baja, exclusion null/traslado-propio/pago-tarjeta/reverso/saldo-informativo, contraparte y detalle. detalle debe explicar brevemente por qué se asignó esa categoría y qué concepto del extracto se reconoció. Incluye entidad, periodo {desde,hasta,etiqueta}, veredicto, advertencias y movimientos.`,
     userPrompt: `Lee este texto extraído de un PDF bancario. Identifica la entidad aunque no esté en una lista previa y conserva cada movimiento por separado. Si una fecha o monto no se lee con seguridad, no lo inventes: omite la fila y explica la duda en advertencias.\n\n${textoLimitado}`,
   });
   if (!respuesta.texto) return null;
@@ -2916,6 +2916,7 @@ async function analizarExtractoConIA(textoCrudo: string): Promise<AnalisisResult
   const periodo = objeto.periodo && typeof objeto.periodo === 'object' ? objeto.periodo as Record<string, unknown> : {};
   const advertencias = Array.isArray(objeto.advertencias) ? objeto.advertencias.filter((a): a is string => typeof a === 'string').slice(0, 8) : [];
   return {
+    entidad: typeof objeto.entidad === 'string' ? objeto.entidad.trim().slice(0, 80) || null : null,
     periodo: { desde: esFechaExtracto(periodo.desde) ? periodo.desde : '', hasta: esFechaExtracto(periodo.hasta) ? periodo.hasta : '', etiqueta: typeof periodo.etiqueta === 'string' ? periodo.etiqueta.slice(0, 80) : 'Extracto bancario' },
     veredicto: typeof objeto.veredicto === 'string' ? objeto.veredicto.slice(0, 500) : `Se reconocieron ${movimientos.length} movimientos para tu revisión.`,
     metricas: [{ etiqueta: 'Total ingresos', valorCop: ingresos, nota: null }, { etiqueta: 'Total gastos', valorCop: gastos, nota: null }, { etiqueta: 'Balance del período', valorCop: ingresos - gastos, nota: null }],

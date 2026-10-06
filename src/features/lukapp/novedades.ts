@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.10.8', fecha: '2026-10-06', texto: 'Los extractos ahora muestran el banco identificado y exigen elegir la cuenta correspondiente antes de importar movimientos.' },
   { version: '4.10.7', fecha: '2026-10-06', texto: 'El editor de Términos en Superadmin ahora evita el zoom automático de Safari al escribir desde iPhone.' },
   { version: '4.10.6', fecha: '2026-10-06', texto: 'Ahora puedes desbloquear desde LukApp los extractos PDF protegidos: la contraseña se pide solo para ese archivo, se usa para abrirlo y no se guarda.' },
   { version: '4.10.5', fecha: '2026-10-06', texto: 'Al revisar un mes anterior desde Inicio, el selector conserva visible el período actual para que puedas volver sin actualizar la página.' },

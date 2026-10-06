@@ -148,6 +148,9 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             {trabajo.resultado.periodo.etiqueta}
             {importado > 0 ? ` · ${importado} importado${importado === 1 ? '' : 's'}` : ''}
           </p>
+          <p className="mt-0.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+            {trabajo.resultado.entidad ? `Banco identificado: ${trabajo.resultado.entidad}` : 'Banco no identificado con certeza'}
+          </p>
         </div>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-[var(--fin-ink-faint)] transition-transform ${contraido ? '' : 'rotate-180'}`}
@@ -289,8 +292,9 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : (
               <button
                 type="button"
-                disabled={plan.nuevos.length + aceptados.size === 0 || movimientosDudosos.length > 0}
+                disabled={!cuentaId || plan.nuevos.length + aceptados.size === 0 || movimientosDudosos.length > 0}
                 onClick={() => {
+                  if (!cuentaId) return;
                   const extra = plan.posibles
                     .filter((p) => aceptados.has(p.clave))
                     .map((p) => p.transaccion);
@@ -302,6 +306,8 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
               >
                 {movimientosDudosos.length > 0
                   ? 'Revisión necesaria antes de importar'
+                  : !cuentaId
+                  ? 'Elige la cuenta para importar'
                   : plan.nuevos.length + aceptados.size === 0
                   ? 'Nada nuevo por importar'
                   : `Importar ${plan.nuevos.length + aceptados.size} movimiento${
@@ -505,7 +511,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
 
       <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
         <label className="block text-[15px] font-semibold text-[var(--fin-ink)]" htmlFor="cuenta-extracto">
-          ¿A qué cuenta pertenece este extracto?
+          ¿A qué cuenta de LukApp pertenece este extracto?
         </label>
         <select
           id="cuenta-extracto"
@@ -513,11 +519,11 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           onChange={(e) => setCuentaId(e.target.value || null)}
           className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-base text-[var(--fin-ink)]"
         >
-          <option value="">No asignar todavía</option>
+          <option value="" disabled>Selecciona una cuenta</option>
           {cuentas.map((cuenta) => <option key={cuenta.id} value={cuenta.id}>{cuenta.nombre}</option>)}
         </select>
         <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
-          Los movimientos nuevos actualizarán el saldo. Los que ya anotaste se pueden completar sin duplicarlos.
+          Debes elegir la cuenta antes de importar: sus movimientos actualizarán ese saldo. Los que ya anotaste se pueden completar sin duplicarlos.
         </p>
       </section>
 

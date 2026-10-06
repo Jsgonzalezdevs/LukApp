@@ -68,6 +68,7 @@ export const analizarConPlantilla = (texto: string): AnalisisResultado | null =>
   ];
 
   return {
+    entidad: NOMBRE_BANCO[banco],
     periodo: periodo ?? { desde: '', hasta: '', etiqueta: NOMBRE_BANCO[banco] },
     veredicto,
     metricas: [

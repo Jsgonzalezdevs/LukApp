@@ -26,6 +26,7 @@ describe('analizarConPlantilla', () => {
   it('produce un resultado completo para un extracto soportado', () => {
     const resultado = analizarConPlantilla(NEQUI);
     expect(resultado).not.toBeNull();
+    expect(resultado?.entidad).toBe('Nequi');
     expect(resultado?.movimientos).toHaveLength(3);
     expect(resultado?.periodo).toEqual({
       desde: '2026-06-01',

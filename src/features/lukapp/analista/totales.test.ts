@@ -114,6 +114,7 @@ describe('rebanadasDelAnalisis', () => {
 
 describe('metricasCoherentes', () => {
   const base = (movimientos: MovimientoExtraido[], gastoDeclarado: number): AnalisisResultado => ({
+    entidad: 'Nequi',
     periodo: { desde: '2026-07-01', hasta: '2026-07-31', etiqueta: 'julio 2026' },
     veredicto: '',
     metricas: [{ etiqueta: 'Gasto total', valorCop: gastoDeclarado, nota: null }],
