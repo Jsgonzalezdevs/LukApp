@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  AlertCircle,
   Check,
   Plus,
   Share2,
@@ -35,6 +36,8 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
 
   const {
     espacios,
+    error,
+    limpiarError,
     crearEspacio,
     agregarGasto,
     borrarGasto,
@@ -49,6 +52,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
 
   const [modalGastoAbierto, setModalGastoAbierto] = useState(false);
   const [modalNuevoEspacioAbierto, setModalNuevoEspacioAbierto] = useState(false);
+  const [creandoEspacio, setCreandoEspacio] = useState(false);
   const [mensajeCopiado, setMensajeCopiado] = useState(false);
 
   // Formulario de nuevo gasto
@@ -102,13 +106,9 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
     if (!nuevoNombre.trim()) return;
     haptic.trigger('medium');
     audio.play('click');
-    const nuevo = await crearEspacio(
-      nuevoNombre.trim(),
-      nuevoIcono,
-      '#8b5cf6',
-      nombrePareja.trim() || 'Compañero/a',
-      emojiPareja,
-    );
+    setCreandoEspacio(true);
+    const nuevo = await crearEspacio(nuevoNombre.trim(), nuevoIcono, '#8b5cf6', nombrePareja.trim() || 'Compañero/a', emojiPareja);
+    setCreandoEspacio(false);
     if (!nuevo) return;
     setEspacioIdActivo(nuevo.id);
     setNuevoNombre('');
@@ -224,13 +224,20 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
 
           <button
             type="button"
-            onClick={() => setModalNuevoEspacioAbierto(true)}
+            onClick={() => { limpiarError(); setModalNuevoEspacioAbierto(true); }}
             className="flex items-center gap-1.5 rounded-full border border-dashed border-[var(--fin-line)] px-3.5 py-2 text-[13px] font-medium text-[var(--fin-ink-soft)] hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)] whitespace-nowrap transition-colors"
           >
             <Plus className="h-4 w-4" />
             <span>Nuevo espacio</span>
           </button>
         </div>
+
+        {error && !modalNuevoEspacioAbierto && (
+          <div role="alert" className="mb-2 flex gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[13px] leading-5 text-rose-800">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
 
         {espacioActivo ? (
           <div className="flex-1 flex flex-col gap-4 mt-2">
@@ -544,6 +551,12 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 </div>
 
                 <form onSubmit={handleCrearEspacio} className="mt-4 flex flex-col gap-3.5">
+                  {error && (
+                    <div role="alert" className="flex gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[13px] leading-5 text-rose-800">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p>{error}</p>
+                    </div>
+                  )}
                   <div>
                     <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       Nombre del espacio
@@ -552,7 +565,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                       type="text"
                       placeholder="Ej. Viaje a Cancún, Arriendo, Cenas..."
                       value={nuevoNombre}
-                      onChange={(e) => setNuevoNombre(e.target.value)}
+                      onChange={(e) => { limpiarError(); setNuevoNombre(e.target.value); }}
                       required
                       autoFocus
                       className="mt-1 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[16px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
@@ -626,9 +639,10 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                     </button>
                     <RippleButton
                       type="submit"
+                      disabled={creandoEspacio}
                       className="rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-5 py-2.5 text-[14px] font-bold shadow-md hover:opacity-90"
                     >
-                      Crear espacio
+                      {creandoEspacio ? 'Creando…' : 'Crear espacio'}
                     </RippleButton>
                   </div>
                 </form>
