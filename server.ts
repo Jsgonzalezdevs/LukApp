@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { PDFParse } from 'pdf-parse';
+import { PasswordException, PDFParse } from 'pdf-parse';
 import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { validarContrasenaSegura } from './src/lib/seguridad.ts';
@@ -2514,9 +2514,12 @@ app.post('/api/analizar-extracto', async (req, res) => {
     userId = acceso.userId;
   }
 
-  const { pdfBase64 } = req.body;
+  const { pdfBase64, contrasena } = req.body;
   if (typeof pdfBase64 !== 'string' || pdfBase64.length === 0) {
     return res.status(400).json({ ok: false, codigo: 'pdf-invalido', mensaje: 'No llegó el contenido del PDF.' });
+  }
+  if (contrasena !== undefined && (typeof contrasena !== 'string' || contrasena.length > 512)) {
+    return res.status(400).json({ ok: false, codigo: 'pdf-invalido', mensaje: 'La contraseña del PDF no es válida.' });
   }
 
   const bytesReales = Math.floor((pdfBase64.length * 3) / 4);
@@ -2529,17 +2532,30 @@ app.post('/api/analizar-extracto', async (req, res) => {
   }
 
   let textoCrudo: string;
+  let parser: PDFParse | null = null;
   try {
-    const parser = new PDFParse({ data: new Uint8Array(Buffer.from(pdfBase64, 'base64')) });
+    parser = new PDFParse({
+      data: new Uint8Array(Buffer.from(pdfBase64, 'base64')),
+      ...(contrasena ? { password: contrasena } : {}),
+    });
     const resultado = await parser.getText();
     textoCrudo = resultado.text;
-    await parser.destroy();
-  } catch {
+  } catch (error) {
+    const esErrorDeContrasena = error instanceof PasswordException || (error instanceof Error && error.name === 'PasswordException');
+    if (esErrorDeContrasena) {
+      return res.status(422).json({
+        ok: false,
+        codigo: contrasena ? 'pdf-contrasena-invalida' : 'pdf-contrasena-requerida',
+        mensaje: contrasena ? 'La contraseña no abre este extracto. Revísala e inténtalo de nuevo.' : 'Este extracto está protegido. Escribe su contraseña para desbloquearlo aquí mismo.',
+      });
+    }
     return res.status(422).json({
       ok: false,
       codigo: 'pdf-invalido',
       mensaje: 'No se pudo leer el texto del PDF. Puede estar corrupto o protegido con contraseña.',
     });
+  } finally {
+    await parser?.destroy();
   }
 
   if (!textoCrudo.trim()) {

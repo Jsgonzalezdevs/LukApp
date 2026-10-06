@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '4.10.6', fecha: '2026-10-06', texto: 'Ahora puedes desbloquear desde LukApp los extractos PDF protegidos: la contraseña se pide solo para ese archivo, se usa para abrirlo y no se guarda.' },
   { version: '4.10.5', fecha: '2026-10-06', texto: 'Al revisar un mes anterior desde Inicio, el selector conserva visible el período actual para que puedas volver sin actualizar la página.' },
   { version: '4.10.4', fecha: '2026-10-02', texto: 'Al asesorar a una persona desde Superadmin, el aviso ahora muestra siempre el botón para volver de inmediato a tu cuenta.' },
   { version: '4.10.3', fecha: '2026-10-02', texto: 'Ahora puedes transferir el saldo completo de una cuenta con una explicación clara si la base de datos requiere una actualización.' },

@@ -324,6 +324,66 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   );
 };
 
+interface TrabajoConContrasenaProps {
+  trabajo: Trabajo;
+  onDesbloquear: (id: string, contrasena: string) => void;
+  onQuitar: (id: string) => void;
+}
+
+const TrabajoConContrasena: React.FC<TrabajoConContrasenaProps> = ({ trabajo, onDesbloquear, onQuitar }) => {
+  const [contrasena, setContrasena] = useState('');
+
+  const enviar = (evento: React.FormEvent) => {
+    evento.preventDefault();
+    if (!contrasena) return;
+    // Se vacía antes de enviarla: nunca queda asociada al trabajo ni se reutiliza
+    // en otros extractos. Cada PDF pide su propia clave cuando la necesita.
+    const clave = contrasena;
+    setContrasena('');
+    onDesbloquear(trabajo.id, clave);
+  };
+
+  return (
+    <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] p-5">
+      <div className="flex items-start gap-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn-ink)]" strokeWidth={3} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">{trabajo.archivo.name}</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+            {trabajo.error?.mensaje} La usamos solo para abrir este PDF; no se guarda en LukApp.
+          </p>
+          <form onSubmit={enviar} className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <label className="sr-only" htmlFor={`contrasena-extracto-${trabajo.id}`}>Contraseña del extracto</label>
+            <input
+              id={`contrasena-extracto-${trabajo.id}`}
+              type="password"
+              value={contrasena}
+              onChange={(evento) => setContrasena(evento.target.value)}
+              autoComplete="off"
+              placeholder="Contraseña del extracto"
+              className="min-w-0 flex-1 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-base text-[var(--fin-ink)]"
+            />
+            <button
+              type="submit"
+              disabled={!contrasena}
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-40"
+            >
+              Desbloquear PDF
+            </button>
+          </form>
+          <button
+            type="button"
+            onClick={() => onQuitar(trabajo.id)}
+            className="mt-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] underline underline-offset-2"
+          >
+            Quitar extracto
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+};
+
 // -----------------------------------------------------------------------------
 
 export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas, onImportar, onCompletar }) => {
@@ -345,6 +405,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
   };
 
   const enCurso = analista.trabajos.filter((t) => t.fase === 'subiendo');
+  const esperandoContrasena = analista.trabajos.filter((t) => t.fase === 'esperando-contrasena');
   const conError = analista.trabajos.filter((t) => t.fase === 'error');
   const listos = analista.trabajos.filter((t) => t.fase === 'listo');
 
@@ -436,7 +497,8 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           <span>
             La IA lee extractos de bancos colombianos y te muestra cada movimiento, categoría,
             comercio y referencia para revisión antes de importarlo. Las plantillas locales siguen
-            disponibles como respaldo para Nequi, Nu, Bancolombia y Davivienda.
+            disponibles como respaldo para Nequi, Nu, Bancolombia y Davivienda. Si un PDF tiene
+            contraseña, te la pediremos aquí mismo para desbloquear solo ese extracto; no la guardamos.
           </span>
         </p>
       </section>
@@ -467,6 +529,19 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
               key={trabajo.id}
               trabajo={trabajo}
               segundos={segundosDe(trabajo, analista.ahora)}
+            />
+          ))}
+        </ul>
+      ) : null}
+
+      {esperandoContrasena.length > 0 ? (
+        <ul className="flex flex-col gap-3">
+          {esperandoContrasena.map((trabajo) => (
+            <TrabajoConContrasena
+              key={trabajo.id}
+              trabajo={trabajo}
+              onDesbloquear={analista.desbloquear}
+              onQuitar={analista.quitarTrabajo}
             />
           ))}
         </ul>

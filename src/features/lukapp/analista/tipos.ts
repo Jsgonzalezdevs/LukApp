@@ -77,6 +77,8 @@ export type CodigoError =
   | 'sin-autorizacion'
   | 'cupo-agotado'
   | 'pdf-invalido'
+  | 'pdf-contrasena-requerida'
+  | 'pdf-contrasena-invalida'
   | 'pdf-muy-grande'
   | 'banco-no-soportado'
   | 'sin-movimientos'

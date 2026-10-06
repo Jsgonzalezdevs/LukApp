@@ -11,7 +11,7 @@ const RUTA_ANALIZAR = apiUrl('/api/analizar-extracto');
 // 4 MB ceiling is the deliberate product limit rather than a platform one.
 const MAX_BYTES = 4 * 1024 * 1024;
 
-export type FaseTrabajo = 'subiendo' | 'listo' | 'error';
+export type FaseTrabajo = 'subiendo' | 'esperando-contrasena' | 'listo' | 'error';
 
 export interface Trabajo {
   id: string;
@@ -33,6 +33,8 @@ export interface UseAnalista {
   guardarToken?: (token: string) => void;
   /** Validates and launches one job per file. Files are processed concurrently. */
   analizarArchivos: (archivos: readonly File[]) => void;
+  /** La contraseña solo vive durante esta solicitud; nunca se guarda en el trabajo. */
+  desbloquear: (id: string, contrasena: string) => void;
   reintentar: (id: string) => void;
   quitarTrabajo: (id: string) => void;
 }
@@ -120,7 +122,7 @@ export const useAnalista = (): UseAnalista => {
   }, []);
 
   const procesarArchivo = useCallback(
-    (id: string, archivo: File, tokenActual?: string) => {
+    (id: string, archivo: File, tokenActual?: string, contrasena?: string) => {
       void (async () => {
         let pdfBase64: string;
         try {
@@ -152,7 +154,7 @@ export const useAnalista = (): UseAnalista => {
           const respuesta = await fetch(RUTA_ANALIZAR, {
             method: 'POST',
             headers,
-            body: JSON.stringify({ pdfBase64 }),
+            body: JSON.stringify({ pdfBase64, ...(contrasena ? { contrasena } : {}) }),
           });
 
           // A 404 here does not mean "no such statement" — the endpoint itself
@@ -175,7 +177,10 @@ export const useAnalista = (): UseAnalista => {
 
           if (!cuerpo.ok) {
             actualizarTrabajo(id, {
-              fase: 'error',
+              fase:
+                cuerpo.codigo === 'pdf-contrasena-requerida' || cuerpo.codigo === 'pdf-contrasena-invalida'
+                  ? 'esperando-contrasena'
+                  : 'error',
               error: { codigo: cuerpo.codigo, mensaje: cuerpo.mensaje },
             });
             return;
@@ -255,9 +260,19 @@ export const useAnalista = (): UseAnalista => {
     [token, procesarArchivo, actualizarTrabajo],
   );
 
+  const desbloquear = useCallback(
+    (id: string, contrasena: string) => {
+      const trabajo = trabajosRef.current.find((t) => t.id === id);
+      if (!trabajo || !contrasena) return;
+      actualizarTrabajo(id, { fase: 'subiendo', error: null, resultado: null, inicio: Date.now() });
+      procesarArchivo(id, trabajo.archivo, token, contrasena);
+    },
+    [token, procesarArchivo, actualizarTrabajo],
+  );
+
   const quitarTrabajo = useCallback((id: string) => {
     setTrabajos((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  return { trabajos, ahora, token, guardarToken, analizarArchivos, reintentar, quitarTrabajo };
+  return { trabajos, ahora, token, guardarToken, analizarArchivos, desbloquear, reintentar, quitarTrabajo };
 };
