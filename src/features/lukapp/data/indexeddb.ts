@@ -77,7 +77,10 @@ export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> =
   const tieneDatos = Object.values(datos).some((lista) => lista.length > 0);
   if (!tieneDatos) return false;
 
-  await Promise.all([
+  // La migración es un respaldo oportunista. Una fila antigua puede quedar
+  // fuera de las políticas de la cuenta actual; no debe bloquear el resto de
+  // LukApp ni impedir crear espacios compartidos.
+  const resultados = await Promise.allSettled([
     destino.guardarTransacciones(datos.transacciones),
     ...datos.cajitas.map((c) => destino.guardarCajita(c)),
     destino.guardarCajitaMovimientos(datos.cajitaMovimientos),
@@ -87,6 +90,10 @@ export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> =
     ...datos.presupuestos.map((p) => destino.guardarPresupuesto(p)),
     ...datos.recurrentes.map((r) => destino.guardarRecurrente(r)),
   ]);
+  const rechazados = resultados.filter((resultado): resultado is PromiseRejectedResult => resultado.status === 'rejected');
+  if (rechazados.length > 0) {
+    console.warn('Algunos datos locales no se pudieron migrar; se conservaron en este dispositivo.', rechazados.length);
+  }
   return true;
 };
 
