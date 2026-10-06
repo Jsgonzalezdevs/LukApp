@@ -1401,7 +1401,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 onChange={(event) => setTerminos(event.target.value)}
                 disabled={cargandoTerminos || guardandoTerminos}
                 placeholder="Escribe o pega aquí los términos y condiciones completos. Se conservarán los saltos de línea."
-                className="mt-2 min-h-96 w-full rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-soft)] p-4 text-sm leading-6 text-[var(--fin-ink)] outline-none transition focus:border-purple-500 disabled:opacity-60"
+                className="mt-2 min-h-96 w-full rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-soft)] p-4 text-base leading-6 text-[var(--fin-ink)] outline-none transition focus:border-purple-500 disabled:opacity-60"
               />
               <p className="mt-2 text-xs text-[var(--fin-ink-faint)]">{terminos.length.toLocaleString('es-CO')} / 120.000 caracteres</p>
               {errorTerminos && <p className="mt-4 rounded-xl bg-red-500/10 p-3 text-sm font-semibold text-red-600 dark:text-red-400">{errorTerminos}</p>}
