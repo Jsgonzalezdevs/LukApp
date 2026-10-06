@@ -29,6 +29,7 @@ interface InicioViewProps {
   etiquetaPeriodo: string;
   onCambiarMes: () => void;
   clavePeriodo?: string;
+  maxClavePeriodo?: string;
   onCambiarPeriodo?: (clave: string) => void;
   periodoAdyacente?: (clave: string, delta: number) => string;
   etiquetaPeriodoDeClave?: (clave: string) => string;
@@ -85,6 +86,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   etiquetaPeriodo,
   onCambiarMes,
   clavePeriodo,
+  maxClavePeriodo,
   onCambiarPeriodo,
   periodoAdyacente,
   etiquetaPeriodoDeClave,
@@ -216,7 +218,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               <AnimatePresence>
               {periodoAbierto ? (
                 <motion.div initial={{ opacity: 0, scaleY: 0.72, y: -5 }} animate={{ opacity: 1, scaleY: 1, y: 0 }} exit={{ opacity: 0, scaleY: 0.72, y: -5 }} transition={{ type: 'spring', stiffness: 720, damping: 32, mass: 0.42 }} style={{ transformOrigin: 'top center' }} className="absolute left-0 top-full z-40 mt-2 min-w-[190px] overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-[var(--fin-soft)] via-[var(--fin-card)] to-[var(--fin-bg)] p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
-                  {Array.from({ length: 13 }, (_, i) => periodoAdyacente(clavePeriodo, -i)).map((clave) => (
+                  {Array.from({ length: 13 }, (_, i) => periodoAdyacente(maxClavePeriodo ?? clavePeriodo, -i)).map((clave) => (
                     <button key={clave} type="button" onClick={() => { onCambiarPeriodo(clave); setPeriodoAbierto(false); }} className={`block w-full rounded-[14px] px-3 py-2.5 text-left text-[13px] font-semibold capitalize transition-all ${clave === clavePeriodo ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-[0_5px_14px_rgba(168,85,247,0.28)]' : 'text-[var(--fin-ink)] hover:bg-white/10'}`}>
                       {etiquetaPeriodoDeClave(clave)}
                     </button>
