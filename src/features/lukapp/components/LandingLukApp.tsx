@@ -28,6 +28,12 @@ const SeccionDiferida: React.FC<{ children: React.ReactNode; altura?: string }> 
 
   useEffect(() => {
     if (activa || !ref.current) return;
+    // En navegadores antiguos la portada debe seguir completa: la sección se
+    // carga de una vez en vez de depender de una API de observación opcional.
+    if (!('IntersectionObserver' in window)) {
+      setActiva(true);
+      return;
+    }
     const observador = new IntersectionObserver(
       ([entrada]) => {
         if (entrada.isIntersecting) {

@@ -24,4 +24,18 @@ describe('BarreraErrores', () => {
     expect(reintentar).toHaveBeenCalledOnce();
     errorDeReact.mockRestore();
   });
+
+  it('permite ofrecer una salida útil para una zona pública', () => {
+    const errorDeReact = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <BarreraErrores contenidoAlterno={<a href="/registro">Crear cuenta gratis</a>}>
+        <VistaQueFalla />
+      </BarreraErrores>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Crear cuenta gratis' })).toHaveAttribute('href', '/registro');
+    expect(screen.queryByRole('heading', { name: 'Algo no salió como esperábamos' })).not.toBeInTheDocument();
+    errorDeReact.mockRestore();
+  });
 });

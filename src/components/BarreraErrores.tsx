@@ -4,6 +4,9 @@ interface BarreraErroresProps {
   children: ReactNode;
   /** Inyectable para comprobar la recuperación sin recargar la ventana de pruebas. */
   onReintentar?: () => void;
+  /** Una vista sencilla para zonas públicas que deben seguir siendo útiles si
+   * una animación o integración visual no puede cargarse en ese navegador. */
+  contenidoAlterno?: ReactNode;
 }
 
 interface BarreraErroresState {
@@ -39,6 +42,7 @@ export class BarreraErrores extends Component<BarreraErroresProps, BarreraErrore
 
   render(): ReactNode {
     if (!this.state.huboError) return this.props.children;
+    if (this.props.contenidoAlterno) return this.props.contenidoAlterno;
 
     return (
       <main className="flex min-h-dvh items-center justify-center bg-[var(--fin-bg)] px-5 text-center">
