@@ -544,7 +544,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const handleSave = async (draft: ConfirmDraft, esPrueba = false) => {
     const id = nuevoId('tx');
     try {
-      await almacen.agregarTransaccion({
+      const correcto = await almacen.agregarTransaccion({
       id,
       kind: draft.kind,
       amountCop: draft.amountCop,
@@ -557,10 +557,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       cuotaCop: draft.cuotaCop ?? null,
       createdAt: new Date().toISOString(),
       });
+      if (!correcto) return false;
     } catch (error) {
       console.error('Error al guardar el movimiento:', error);
-      setGuardado({ id: 'error', texto: 'No se pudo guardar el movimiento', aviso: 'Revisa la conexión e inténtalo de nuevo.' });
-      return;
+      setGuardado({ id: 'error', texto: 'No se pudo guardar el movimiento', aviso: 'Revisa la conexión e inténtalo de nuevo.', permitirDeshacer: false, esError: true });
+      return false;
     }
     // Jump back to the period the entry landed in, so a save is never invisible
     // because the user was browsing an older period.
@@ -582,6 +583,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         ? `Más de lo normal — sueles gastar ${formatCop(anomalia.promedio)} aquí.`
         : null,
     });
+    return true;
   };
 
   const handleUpdate = async (draft: ConfirmDraft) => {
@@ -590,7 +592,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     // que ya tenía. Nunca se borra por accidente.
     const occurredOn = draft.occurredOn ?? editando.occurredOn;
     try {
-      await almacen.actualizarTransaccion({
+      const correcto = await almacen.actualizarTransaccion({
       ...editando,
       kind: draft.kind,
       amountCop: draft.amountCop,
@@ -599,10 +601,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       cuentaId: draft.cuentaId,
       occurredOn,
       });
+      if (!correcto) return false;
     } catch (error) {
       console.error('Error al actualizar el movimiento:', error);
-      setGuardado({ id: 'error', texto: 'No se pudo actualizar el movimiento', aviso: 'Revisa la conexión e inténtalo de nuevo.' });
-      return;
+      setGuardado({ id: 'error', texto: 'No se pudo actualizar el movimiento', aviso: 'Revisa la conexión e inténtalo de nuevo.', permitirDeshacer: false, esError: true });
+      return false;
     }
     // Si el día se movió a otro período, la fila desaparecería del período en
     // pantalla. Saltar al período donde quedó evita que la edición parezca
@@ -610,6 +613,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     // al período de hoy.
     setMonth(claveDePeriodo(occurredOn, periodoAjustes.periodo));
     setEditando(null);
+    return true;
   };
 
   const [filtro, setFiltro] = useState<Filtro>(FILTRO_VACIO);
@@ -745,7 +749,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   const confirmarComandoVoz = async (comando: ComandoVozConfirmado) => {
     if (comando.tipo === 'transferencia') {
-      await almacen.transferirEntreCuentas(comando);
+      if (await almacen.transferirEntreCuentas(comando) === false) return;
       setGuardado({
         id: 'operacion-voz',
         texto: `Transferiste ${formatCop(comando.montoCop)}`,
@@ -753,7 +757,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         permitirDeshacer: false,
       });
     } else if (comando.tipo === 'abono') {
-      await almacen.abonarDeuda(comando);
+      if (await almacen.abonarDeuda(comando) === false) return;
       setGuardado({
         id: 'operacion-voz',
         texto: `Abonaste ${formatCop(comando.montoCop)}`,
@@ -761,20 +765,21 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         permitirDeshacer: false,
       });
     } else if (comando.tipo === 'saldo') {
-      await almacen.fijarSaldo(comando.cajitaId, comando.saldoCop, 'Saldo actualizado por voz');
+      if (await almacen.fijarSaldo(comando.cajitaId, comando.saldoCop, 'Saldo actualizado por voz') === false) return;
       setGuardado({
         id: 'operacion-voz',
         texto: `${nombreDeCuenta(comando.cajitaId)} quedó en ${formatCop(comando.saldoCop)}`,
         permitirDeshacer: false,
       });
     } else {
-      await almacen.registrarMovimiento({
+      const correcto = await almacen.registrarMovimiento({
         cajitaId: comando.cajitaId,
         kind: 'rendimiento',
         deltaCop: comando.montoCop,
         occurredOn: comando.occurredOn,
         nota: 'Rendimiento registrado por voz',
       });
+      if (correcto === false) return;
       setGuardado({
         id: 'operacion-voz',
         texto: `Rendimiento de ${formatCop(comando.montoCop)}`,
@@ -1085,9 +1090,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 alertasActivas={presupuestoAjustes.alertasActivas}
                 onCambiarAlertasActivas={presupuestoAjustes.setAlertasActivas}
                 onFijar={(categoria, montoCop) =>
-                  void almacen.fijarPresupuesto(categoria, montoCop)
+                  almacen.fijarPresupuesto(categoria, montoCop)
                 }
-                onQuitar={(categoria) => void almacen.quitarPresupuesto(categoria)}
+                onQuitar={(categoria) => almacen.quitarPresupuesto(categoria)}
                 onNuevaTransaccion={(categoria) =>
                   setPending({ ...movimientoEnBlanco(), category: categoria })
                 }
@@ -1174,9 +1179,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                     transacciones={transacciones}
                     esFavorita={cajitaSeleccionada.id === cuentaFavoritaId}
                     onAlternarFavorita={(id) => setCuentaFavorita(cuentaFavoritaId === id ? null : id)}
-                    onFijarSaldo={(cajitaId: string, saldo: number) => void almacen.fijarSaldo(cajitaId, saldo)}
-                    onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
-                    onEliminar={(id: string) => void almacen.borrarCajita(id)}
+                    onFijarSaldo={(cajitaId: string, saldo: number) => almacen.fijarSaldo(cajitaId, saldo)}
+                    onActualizar={(cajita) => almacen.actualizarCajita(cajita)}
+                    onEliminar={(id: string) => almacen.borrarCajita(id)}
                     onTransferir={(origenId, destinoId, montoCop) =>
                       almacen.transferirEntreCuentas({ origenId, destinoId, montoCop })
                     }
@@ -1191,15 +1196,15 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 cajitas={cajitas}
                 movimientos={cajitaMovimientos}
                 transacciones={transacciones}
-                onCrear={(datos) => void almacen.crearCajita(datos)}
-                onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+                onCrear={(datos) => almacen.crearCajita(datos)}
+                onFijarSaldo={(cajitaId, saldo) => almacen.fijarSaldo(cajitaId, saldo)}
                 onMovimiento={(cajitaId, kind, deltaCop, categoria, detalles) =>
-                  void almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria, ...detalles })
+                  almacen.registrarMovimiento({ cajitaId, kind, deltaCop, categoria, ...detalles })
                 }
-                onEliminar={(id) => void almacen.borrarCajita(id)}
-                onActualizar={(cajita) => void almacen.actualizarCajita(cajita)}
+                onEliminar={(id) => almacen.borrarCajita(id)}
+                onActualizar={(cajita) => almacen.actualizarCajita(cajita)}
                 cuentas={cuentasParaElegir}
-                onAbonar={(datos) => void almacen.abonarDeuda(datos)}
+                onAbonar={(datos) => almacen.abonarDeuda(datos)}
               />
             ) : (
               <CajitasView
@@ -1207,15 +1212,15 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 cajitas={cajitas}
                 transacciones={transacciones}
                 movimientos={cajitaMovimientos}
-                onCrear={(datos) => void almacen.crearCajita(datos)}
-                onFijarSaldo={(cajitaId, saldo) => void almacen.fijarSaldo(cajitaId, saldo)}
+                onCrear={(datos) => almacen.crearCajita(datos)}
+                onFijarSaldo={(cajitaId, saldo) => almacen.fijarSaldo(cajitaId, saldo)}
                 onMovimiento={(cajitaId, kind, deltaCop) =>
-                  void almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
+                  almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
                 }
-                onEliminar={(id) => void almacen.borrarCajita(id)}
+                onEliminar={(id) => almacen.borrarCajita(id)}
                 destinos={destinosDeTransferencia}
                 cuentasBancarias={cuentasParaElegir}
-                onTransferir={(d) => void almacen.transferirEntreCuentas(d)}
+                onTransferir={(d) => almacen.transferirEntreCuentas(d)}
               />
             )}
           </HojaPanel>
@@ -1238,10 +1243,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               <CategoriasEditor
                 categorias={categorias}
                 transacciones={transacciones}
-                onCrear={(datos) => void almacen.crearCategoria(datos)}
-                onActualizar={(c) => void almacen.actualizarCategoria(c)}
-                onArchivar={(id) => void almacen.archivarCategoria(id)}
-                onBorrar={(id) => void almacen.borrarCategoria(id)}
+                onCrear={(datos) => almacen.crearCategoria(datos)}
+                onActualizar={(c) => almacen.actualizarCategoria(c)}
+                onArchivar={(id) => almacen.archivarCategoria(id)}
+                onBorrar={(id) => almacen.borrarCategoria(id)}
               />
             ) : panelAjustes === 'topes' ? (
               <PresupuestosView
@@ -1255,9 +1260,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 alertasActivas={presupuestoAjustes.alertasActivas}
                 onCambiarAlertasActivas={presupuestoAjustes.setAlertasActivas}
                 onFijar={(categoria, montoCop) =>
-                  void almacen.fijarPresupuesto(categoria, montoCop)
+                  almacen.fijarPresupuesto(categoria, montoCop)
                 }
-                onQuitar={(categoria) => void almacen.quitarPresupuesto(categoria)}
+                onQuitar={(categoria) => almacen.quitarPresupuesto(categoria)}
                 onNuevaTransaccion={(categoria) =>
                   setPending({ ...movimientoEnBlanco(), category: categoria })
                 }
@@ -1270,9 +1275,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 cajitas={cajitas}
                 movimientos={cajitaMovimientos}
                 metasInteligentes={contextoFinanciero.metasInteligentes}
-                onCrear={(datos) => void almacen.crearMeta(datos)}
-                onActualizar={(meta) => void almacen.actualizarMeta(meta)}
-                onEliminar={(id) => void almacen.borrarMeta(id)}
+                onCrear={(datos) => almacen.crearMeta(datos)}
+                onActualizar={(meta) => almacen.actualizarMeta(meta)}
+                onEliminar={(id) => almacen.borrarMeta(id)}
               />
             ) : panelAjustes === 'recurrentes' ? (
               <RecurrentesView
@@ -1281,9 +1286,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 cuentas={cuentasParaElegir}
                 mes={mesCalendarioActivo}
                 hoy={today}
-                onCrear={(d) => void almacen.crearRecurrente(d)}
-                onBorrar={(id) => void almacen.borrarRecurrente(id)}
-                onConfirmar={(p) => void almacen.confirmarRecurrente(p)}
+                onCrear={(d) => almacen.crearRecurrente(d)}
+                onBorrar={(id) => almacen.borrarRecurrente(id)}
+                onConfirmar={(p) => almacen.confirmarRecurrente(p)}
               />
             ) : panelAjustes === 'compartido' ? (
               <EspaciosCompartidosView
@@ -1327,8 +1332,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               <AnalistaView
                 existentes={transacciones}
                 cuentas={cuentasParaElegir}
-                onImportar={(nuevos) => void almacen.importarTransacciones(nuevos)}
-                onCompletar={(movimiento) => void almacen.actualizarTransaccion(movimiento)}
+                onImportar={(nuevos) => almacen.importarTransacciones(nuevos)}
+                onCompletar={(movimiento) => almacen.actualizarTransaccion(movimiento)}
               />
             ) : panelAjustes === 'atajos' ? (
               <PanelAtajos />
@@ -1351,12 +1356,12 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               <ContactosView
                 transacciones={transacciones}
                 contactos={almacen.datos.contactos}
-                onUnir={(a, b, nombre) => void almacen.unirContactos(a, b, nombre)}
-                onSeparar={(a, b, nombre) => void almacen.separarContactos(a, b, nombre)}
-                onRenombrar={(c) => void almacen.actualizarContacto(c)}
-                onDeshacer={(id) => void almacen.borrarContacto(id)}
+                onUnir={(a, b, nombre) => almacen.unirContactos(a, b, nombre)}
+                onSeparar={(a, b, nombre) => almacen.separarContactos(a, b, nombre)}
+                onRenombrar={(c) => almacen.actualizarContacto(c)}
+                onDeshacer={(id) => almacen.borrarContacto(id)}
                 onApodar={(clave, nombre, apodo, quitar) =>
-                  void almacen.apodarParte(clave, nombre, apodo, quitar)
+                  almacen.apodarParte(clave, nombre, apodo, quitar)
                 }
               />
             ) : panelAjustes === 'contraseña' ? (
@@ -1376,7 +1381,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 datos={almacen.datos}
                 cajitasBalances={cajitasBalances}
                 hoy={today}
-                onRestaurar={(d) => void almacen.restaurar(d)}
+                onRestaurar={almacen.restaurar}
                 onGenerarInforme={() => {
                   setPanelAjustes(null);
                   setMostrarReporte(true);
@@ -1448,7 +1453,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onSave={(draft) => {
               const eraPrueba = esPrimeraPrueba;
               setEsPrimeraPrueba(false);
-              handleSave(draft, eraPrueba);
+              return handleSave(draft, eraPrueba);
             }}
             onCancel={() => {
               setEsPrimeraPrueba(false);
@@ -1467,28 +1472,18 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             parsedList={multiPending}
             cajitas={cajitas}
             cuentaPorDefecto={cuentaPorDefecto}
-            onSaveAll={(drafts) => {
-              drafts.forEach((draft) => {
-                const id = nuevoId('tx');
-                void almacen.agregarTransaccion({
-                  id,
-                  kind: draft.kind,
-                  amountCop: draft.amountCop,
-                  category: draft.category,
-                  description: draft.description,
-                  occurredOn: draft.occurredOn || bogotaDate(),
-                  cuentaId: draft.cuentaId,
-                  rawTranscript: draft.rawTranscript,
-                  createdAt: new Date().toISOString(),
-                });
-              });
+            onSaveAll={async (drafts) => {
+              const movimientos = drafts.map((draft) => ({
+                id: nuevoId('tx'), kind: draft.kind, amountCop: draft.amountCop,
+                category: draft.category, description: draft.description,
+                occurredOn: draft.occurredOn || bogotaDate(), cuentaId: draft.cuentaId,
+                rawTranscript: draft.rawTranscript, cuotasTotal: draft.cuotasTotal ?? null,
+                cuotaCop: draft.cuotaCop ?? null, createdAt: new Date().toISOString(),
+              }));
+              if (!await almacen.importarTransacciones(movimientos)) return;
               setMonth(claveDePeriodo(bogotaDate(), periodoAjustes.periodo));
               setMultiPending(null);
-              setGuardado({
-                id: 'multi',
-                texto: `✨ Se guardaron ${drafts.length} movimientos`,
-                aviso: 'Todos los registros quedaron anotados correctamente.',
-              });
+              setGuardado({ id: 'multi', texto: `Se guardaron ${drafts.length} movimientos`, permitirDeshacer: false });
             }}
             onCancel={() => setMultiPending(null)}
           />
@@ -1507,9 +1502,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               setDetalle(null);
               setAnalizando(tx);
             }}
-            onBorrar={(id) => {
-              setDetalle(null);
-              void almacen.borrarTransaccion(id);
+            onBorrar={async (id) => {
+              const correcto = await almacen.borrarTransaccion(id);
+              if (correcto) setDetalle(null);
+              return correcto;
             }}
           />
         ) : null}
@@ -1555,9 +1551,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
         <AvisoGuardado
           guardado={guardado}
-          onDeshacer={(id) => {
-            void almacen.borrarTransaccion(id);
-            setGuardado(null);
+          estado={!almacen.persistente ? 'temporal' : !userId || userId === 'usuario-local-pruebas' ? 'local' : almacen.cambiosPendientes > 0 ? 'pendiente' : 'sincronizado'}
+          onDeshacer={async (id) => {
+            const correcto = await almacen.borrarTransaccion(id);
+            if (correcto) setGuardado(null);
+            return correcto;
           }}
           onCerrar={() => setGuardado(null)}
         />
@@ -1567,10 +1565,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
  aparecer el día que alguien borre su único movimiento. */}
         {!onboarding.terminado ? (
           <Onboarding
-            onTerminar={({ nombre, banco, claseCuenta, saldoCop }) => {
+            onTerminar={async ({ nombre, banco, claseCuenta, saldoCop }) => {
               if (nombre) onboarding.guardarNombre(nombre);
               if (banco) {
-                void almacen.crearCajita({
+                const correcto = await almacen.crearCajita({
                   nombre: banco,
                   icon: 'wallet',
                   tipo: 'cuenta',
@@ -1579,8 +1577,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                   tasaEaPct: null,
                   saldoInicialCop: saldoCop ?? 0,
                 });
+                if (correcto === false) return false;
               }
               onboarding.terminar();
+              return true;
             }}
           />
         ) : null}

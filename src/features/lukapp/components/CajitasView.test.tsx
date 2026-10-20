@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CajitasView } from './CajitasView';
 
@@ -307,4 +307,16 @@ describe('CajitasView — contar las cajitas en el resumen', () => {
 
     expect(screen.queryByLabelText('Contar las cajitas en el resumen')).toBeNull();
   });
+  it('conserva el nombre y el formulario cuando crear la cuenta falla', async () => {
+    const onCrear = vi.fn().mockResolvedValue(false);
+    render(<CajitasView tipo="cuenta" cajitas={[]} movimientos={[]} transacciones={[]} onCrear={onCrear} onFijarSaldo={vi.fn()} onMovimiento={vi.fn()} onEliminar={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/i }));
+    const nombre = screen.getByPlaceholderText(/Nequi|Bancolombia/i);
+    fireEvent.change(nombre, { target: { value: 'Cuenta que debo conservar' } });
+    fireEvent.click(screen.getByRole('button', { name: /Crear cuenta|Guardar/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(nombre).toHaveValue('Cuenta que debo conservar');
+    expect(onCrear).toHaveBeenCalledTimes(1);
+  });
+
 });

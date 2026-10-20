@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -29,8 +30,8 @@ interface DeudasViewProps {
     metaCop: number | null;
     tasaEaPct: number | null;
     saldoInicialCop: number;
-  }) => void;
-  onFijarSaldo: (cajitaId: string, saldo: number) => void;
+  }) => ResultadoGuardado;
+  onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
   onMovimiento: (
     cajitaId: string,
     kind: CajitaMovKind,
@@ -42,13 +43,13 @@ interface DeudasViewProps {
       interesPct?: number | null;
       cuotaManejoCop?: number | null;
     },
-  ) => void;
-  onEliminar: (cajitaId: string) => void;
+  ) => ResultadoGuardado;
+  onEliminar: (cajitaId: string) => ResultadoGuardado;
   /** La configuración de una tarjeta vive junto con sus compras y abonos. */
-  onActualizar?: (cajita: Cajita) => void;
+  onActualizar?: (cajita: Cajita) => ResultadoGuardado;
   /** Live asset balances a payment can come out of. Never debts or cards. */
   cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
-  onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => void;
+  onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => ResultadoGuardado;
 }
 
 type Accion = 'compra' | 'abono' | 'saldo';
@@ -84,6 +85,7 @@ const DeudaCard: React.FC<{
   cuentas,
   onAbonar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [accion, setAccion] = useState<Accion | null>(null);
   const [texto, setTexto] = useState('');
   const [categoria, setCategoria] = useState<Category>('otros');
@@ -122,11 +124,12 @@ const DeudaCard: React.FC<{
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
   const valor = leer(texto);
 
-  const enviar = (e: React.FormEvent) => {
+  const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (valor === null || accion === null) return;
 
-    if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
+    let operacion: () => ResultadoGuardado;
+    if (accion === 'saldo') operacion = () => onFijarSaldo(cajita.id, valor);
     // A purchase adds to what you owe; a payment takes away from it — and comes
     // out of a real account, which is why it goes through its own action.
     else if (accion === 'compra') {
@@ -147,14 +150,14 @@ const DeudaCard: React.FC<{
       // histórico de movimientos; los metadatos solo viajan cuando la persona
       // realmente configuró cuotas, interés o manejo.
       const hayDetalles = esFinanciada || interes !== '' || cuotaManejo !== '';
-      if (hayDetalles) onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, detalles);
-      else onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
+      operacion = () => hayDetalles ? onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, detalles) : onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
     }
     else {
       if (cuentaId === '') return;
-      onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });
+      operacion = () => onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });
     }
 
+    if (!await guardado.ejecutar(operacion)) return;
     setAccion(null);
     setTexto('');
   };
@@ -165,7 +168,7 @@ const DeudaCard: React.FC<{
     setTexto(misma ? '' : siguiente === 'saldo' ? formatAmountInput(saldoCop) : '');
   };
 
-  const guardarTarjeta = (e: React.FormEvent) => {
+  const guardarTarjeta = async (e: React.FormEvent) => {
     e.preventDefault();
     const nombre = nombreTarjeta.trim();
     if (!onActualizar || !nombre) return;
@@ -173,19 +176,20 @@ const DeudaCard: React.FC<{
       const dia = Number.parseInt(valor, 10);
       return Number.isInteger(dia) && dia >= 1 && dia <= 31 ? dia : null;
     };
-    onActualizar({
+    if (!await guardado.ejecutar(() => onActualizar!({
       ...cajita,
       nombre,
       limiteCreditoCop: parseAmountInput(limiteTarjeta),
       diaCorte: leerDia(diaCorte),
       diaPago: leerDia(diaPago),
       pagoMinimoCop: parseAmountInput(pagoMinimo),
-    });
+    }))) return;
     setEditandoTarjeta(false);
   };
 
   return (
     <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="flex items-start gap-3">
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)]"
@@ -241,7 +245,7 @@ const DeudaCard: React.FC<{
               <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de corte<input value={diaCorte} onChange={(e) => setDiaCorte(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
               <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de pago<input value={diaPago} onChange={(e) => setDiaPago(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
             </div> : null}
-          <button type="submit" className="mt-3 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[14px] font-semibold text-[var(--fin-on-accent)]">Guardar cambios</button>
+          <button type="submit" disabled={guardado.ocupado} className="mt-3 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[14px] font-semibold text-[var(--fin-on-accent)]">Guardar cambios</button>
         </form>
       ) : null}
 
@@ -407,7 +411,7 @@ const DeudaCard: React.FC<{
 
           <RippleButton
             type="submit"
-            disabled={valor === null || (accion === 'abono' && cuentaId === '')}
+            disabled={guardado.ocupado || valor === null || (accion === 'abono' && cuentaId === '')}
             rippleColor="rgba(255,255,255,0.5)"
             className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
           >
@@ -490,6 +494,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   cuentas,
   onAbonar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<CajitaTipo>(soloTipo ?? 'tarjeta');
@@ -501,19 +506,19 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   );
   const total = filas.reduce((t, f) => t + f.saldoCop, 0);
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     const limpio = nombre.trim();
     if (!limpio) return;
 
-    onCrear({
+    if (!await guardado.ejecutar(() => onCrear({
       nombre: limpio,
       icon,
       tipo,
       metaCop: null,
       tasaEaPct: null,
       saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
-    });
+    }))) return;
     setNombre('');
     setSaldoTexto('');
     setTipo(soloTipo ?? 'tarjeta');
@@ -525,6 +530,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
     // las tarjetas de deudas en su propia grilla ancha.
     // `w-full` por consistencia -- ver el comentario en TendenciasView.tsx.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
@@ -640,7 +646,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             <div className="mt-5 flex gap-2">
               <RippleButton
                 type="submit"
-                disabled={nombre.trim() === ''}
+                disabled={guardado.ocupado || nombre.trim() === ''}
                 rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >

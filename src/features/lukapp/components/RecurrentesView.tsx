@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Plus, Repeat, Trash2 } from 'lucide-react';
@@ -15,9 +16,9 @@ interface RecurrentesViewProps {
   cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
   mes: string;
   hoy: string;
-  onCrear: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => void;
-  onBorrar: (id: string) => void;
-  onConfirmar: (pendiente: Pendiente) => void;
+  onCrear: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => ResultadoGuardado;
+  onBorrar: (id: string) => ResultadoGuardado;
+  onConfirmar: (pendiente: Pendiente) => ResultadoGuardado;
 }
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
@@ -43,6 +44,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   onConfirmar,
 }) => {
   const catalogo = useCatalogo();
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [monto, setMonto] = useState('');
@@ -58,19 +60,19 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   const vivos = recurrentes.filter((r) => r.archivedAt === null);
   const total = totalMensual(vivos);
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     const valor = parseAmountInput(monto);
     const diaNum = Number(dia);
     if (nombre.trim() === '' || valor === null || valor <= 0) return;
-    onCrear({
+    if (!await guardado.ejecutar(() => onCrear({
       nombre: nombre.trim(),
       kind,
       amountCop: valor,
       categoria,
       cuentaId: cuentaId || null,
       diaDelMes: Math.min(31, Math.max(1, diaNum || 1)),
-    });
+    }))) return;
     setCreando(false);
     setNombre('');
     setMonto('');
@@ -81,6 +83,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
     // columna angosta, la lista de recurrentes en su propia grilla ancha.
     // `w-full` por consistencia -- ver el comentario en TendenciasView.tsx.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">

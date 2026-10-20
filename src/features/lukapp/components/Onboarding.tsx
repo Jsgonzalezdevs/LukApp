@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
@@ -12,7 +13,7 @@ interface OnboardingProps {
     banco: string | null;
     claseCuenta: ClaseCuenta | null;
     saldoCop: number | null;
-  }) => void;
+  }) => ResultadoGuardado;
 }
 
 interface FuenteDinero {
@@ -55,6 +56,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
   onTerminar,
 }) => {
   const [paso, setPaso] = useState(0);
+  const guardado = useGuardadoFinanciero();
   const [nombre, setNombre] = useState('');
   const [fuente, setFuente] = useState<FuenteDinero | null>(null);
   const [otroBanco, setOtroBanco] = useState('');
@@ -69,12 +71,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({
 
   const siguiente = () => setPaso((p) => Math.min(p + 1, pasos.length - 1));
   const cerrar = () =>
-    onTerminar({
+    guardado.ejecutar(() => onTerminar({
       nombre: nombre.trim(),
       banco: bancoFinal,
       claseCuenta: claseCuentaFinal,
       saldoCop,
-    });
+    }));
 
   const pasos = [
     {
@@ -248,6 +250,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           </p>
 
           <div className="mt-5">{actual.cuerpo}</div>
+          {guardado.error ? <p role="alert" className="mt-3 text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
 
           <button
             type="button"
@@ -258,11 +261,11 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               }
               cerrar();
             }}
-            disabled={continuarDeshabilitado}
+            disabled={guardado.ocupado || continuarDeshabilitado}
             className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            {actual.boton}
+            {guardado.ocupado ? 'Guardando…' : actual.boton}
             {!ultimo ? (
               <ArrowRight className="h-4 w-4 opacity-60" strokeWidth={2.5} aria-hidden="true" />
             ) : null}

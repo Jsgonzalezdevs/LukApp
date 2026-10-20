@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Plus, Target, Trash2 } from 'lucide-react';
@@ -19,9 +20,9 @@ interface MetasViewProps {
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
   metasInteligentes?: readonly MetaInteligente[];
-  onCrear: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => void;
-  onActualizar: (meta: Meta) => void;
-  onEliminar: (id: string) => void;
+  onCrear: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => ResultadoGuardado;
+  onActualizar: (meta: Meta) => ResultadoGuardado;
+  onEliminar: (id: string) => ResultadoGuardado;
 }
 
 const Progreso: React.FC<{ progreso: ProgresoMeta }> = ({ progreso }) => (
@@ -59,6 +60,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
   onActualizar,
   onEliminar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
@@ -73,20 +75,20 @@ export const MetasView: React.FC<MetasViewProps> = ({
   const filas = metasInteligentes ?? metasConProgreso(metas, saldos, hoy);
   const vivas = cajitas.filter((c) => c.archivedAt === null);
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     const limpio = nombre.trim();
     const objetivo = parseAmountInput(objetivoTexto);
     if (!limpio || objetivo === null) return;
 
-    onCrear({
+    if (!await guardado.ejecutar(() => onCrear({
       nombre: limpio,
       icon,
       objetivoCop: objetivo,
       fechaObjetivo: fecha || null,
       cajitaId: cajitaId || null,
       ahorradoCop: 0,
-    });
+    }))) return;
     setNombre('');
     setObjetivoTexto('');
     setFecha('');
@@ -94,9 +96,9 @@ export const MetasView: React.FC<MetasViewProps> = ({
     setCreando(false);
   };
 
-  const guardarAhorro = (meta: Meta) => {
+  const guardarAhorro = async (meta: Meta) => {
     const valor = parseAmountInput(ahorroTexto);
-    if (valor !== null) onActualizar({ ...meta, ahorradoCop: valor });
+    if (valor === null || !await guardado.ejecutar(() => onActualizar({ ...meta, ahorradoCop: valor }))) return;
     setEditandoAhorro(null);
     setAhorroTexto('');
   };
@@ -107,6 +109,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
     // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
     // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <AnimatePresence initial={false}>
         {creando ? (
@@ -221,7 +224,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
             <div className="mt-5 flex gap-2">
               <RippleButton
                 type="submit"
-                disabled={nombre.trim() === '' || parseAmountInput(objetivoTexto) === null}
+                disabled={guardado.ocupado || nombre.trim() === '' || parseAmountInput(objetivoTexto) === null}
                 rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >

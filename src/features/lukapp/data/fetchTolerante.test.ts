@@ -143,3 +143,19 @@ describe('esTokenDelFuturo', () => {
     expect(esTokenDelFuturo('{"message":"JWSError JWSInvalidSignature"}')).toBe(false);
   });
 });
+
+
+describe('límite de espera de Supabase', () => {
+  it('libera el guardado si el servidor no termina de responder', async () => {
+    vi.useFakeTimers();
+    try {
+      const base = vi.fn(() => new Promise<Response>(() => {}));
+      const solicitar = crearFetchTolerante(base as typeof fetch, { limiteMs: 50 });
+      const resultado = solicitar('/x');
+      const comprobacion = expect(resultado).rejects.toThrow('Network: se agotó el tiempo');
+      await vi.advanceTimersByTimeAsync(50);
+      await comprobacion;
+      expect(base).toHaveBeenCalledTimes(1);
+    } finally { vi.useRealTimers(); }
+  });
+});

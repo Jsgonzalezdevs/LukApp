@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { parseTransaction } from '../lib/parseTransaction';
 import { Captura } from './Captura';
@@ -92,4 +92,19 @@ describe('Captura desde dictado', () => {
 
     expect(onCancel).not.toHaveBeenCalled();
   });
+  it('espera el guardado y evita dos envíos mientras la respuesta está pendiente', async () => {
+    let terminar!: (correcto: boolean) => void;
+    const onSave = vi.fn(() => new Promise<boolean>((resolver) => { terminar = resolver; }));
+    render(<Captura parsed={parseTransaction('comida 2500')} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    const boton = screen.getByRole('button', { name: 'Guardando…' });
+    expect(boton).toBeDisabled();
+    fireEvent.click(boton);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    await act(async () => { terminar(false); });
+    expect(screen.getByRole('dialog', { name: 'Anotar un movimiento' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo guardar.');
+  });
+
 });

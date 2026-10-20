@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -24,8 +25,8 @@ import { useArchivoPwa } from './useArchivoPwa';
 interface AnalistaViewProps {
   existentes: readonly Transaction[];
   cuentas: readonly { id: string; nombre: string }[];
-  onImportar: (nuevos: Transaction[]) => void;
-  onCompletar: (movimiento: Transaction) => void;
+  onImportar: (nuevos: Transaction[]) => ResultadoGuardado;
+  onCompletar: (movimiento: Transaction) => ResultadoGuardado;
 }
 
 const nuevoId = (): string =>
@@ -63,7 +64,7 @@ const TrabajoEnCurso: React.FC<TrabajoEnCursoProps> = ({ trabajo, segundos }) =>
 interface TrabajoConErrorProps {
   trabajo: Trabajo;
   onReintentar: (id: string) => void;
-  onQuitar: (id: string) => void;
+  onQuitar: (id: string) => ResultadoGuardado;
 }
 
 const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar, onQuitar }) => (
@@ -102,9 +103,9 @@ interface TrabajoListoProps {
   trabajo: Trabajo;
   existentes: readonly Transaction[];
   cuentaId: string | null;
-  onImportar: (nuevos: Transaction[]) => void;
-  onCompletar: (movimiento: Transaction) => void;
-  onQuitar: (id: string) => void;
+  onImportar: (nuevos: Transaction[]) => ResultadoGuardado;
+  onCompletar: (movimiento: Transaction) => ResultadoGuardado;
+  onQuitar: (id: string) => ResultadoGuardado;
   contraido: boolean;
   onToggle: (id: string) => void;
 }
@@ -119,6 +120,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   contraido,
   onToggle,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [importado, setImportado] = useState(0);
   const [verPosibles, setVerPosibles] = useState(false);
   const [aceptados, setAceptados] = useState<ReadonlySet<string>>(new Set());
@@ -132,6 +134,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 
   return (
     <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <button
         type="button"
         onClick={() => onToggle(trabajo.id)}
@@ -255,13 +258,13 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                           <button
                             type="button"
                             onClick={() =>
-                              onCompletar({
+                              guardado.ejecutar(() => onCompletar({
                                 ...p.yaTengo,
                                 description: p.movimiento.descripcion,
                                 category: p.movimiento.categoria as Category,
                                 cuentaId: p.yaTengo.cuentaId ?? cuentaId,
                                 rawTranscript: `${p.yaTengo.rawTranscript} · extracto: ${p.movimiento.descripcion}`.trim(),
-                              })
+                              }))
                             }
                             className="mt-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-in-bg)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-in)]"
                           >
@@ -292,15 +295,14 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : (
               <button
                 type="button"
-                disabled={!cuentaId || plan.nuevos.length + aceptados.size === 0 || movimientosDudosos.length > 0}
-                onClick={() => {
+                disabled={guardado.ocupado || !cuentaId || plan.nuevos.length + aceptados.size === 0 || movimientosDudosos.length > 0}
+                onClick={async () => {
                   if (!cuentaId) return;
                   const extra = plan.posibles
                     .filter((p) => aceptados.has(p.clave))
                     .map((p) => p.transaccion);
                   const total = [...plan.nuevos, ...extra];
-                  onImportar(total);
-                  setImportado(total.length);
+                  if (await guardado.ejecutar(() => onImportar(total))) setImportado(total.length);
                 }}
                 className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
@@ -333,7 +335,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
 interface TrabajoConContrasenaProps {
   trabajo: Trabajo;
   onDesbloquear: (id: string, contrasena: string) => void;
-  onQuitar: (id: string) => void;
+  onQuitar: (id: string) => ResultadoGuardado;
 }
 
 const TrabajoConContrasena: React.FC<TrabajoConContrasenaProps> = ({ trabajo, onDesbloquear, onQuitar }) => {

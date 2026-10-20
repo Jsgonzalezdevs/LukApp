@@ -80,6 +80,17 @@ const montar = () => {
 
 beforeEach(() => enLinea(true));
 
+describe('RepositorioConCola — protección de la copia local', () => {
+  it('hace visible que una respuesta vacía no reemplazó el historial conocido', async () => {
+    enLinea(true);
+    const local = new RepositorioMemoria({ cajitas: [cajita('conocida')] });
+    const cola = new ColaCambios('prueba-respuesta-vacia');
+    const repo = new RepositorioConCola(local, new RepositorioMemoria(), cola);
+    expect((await repo.cargarTodo()).cajitas[0].id).toBe('conocida');
+    expect(repo.errorSincronizacion).toContain('historial vacío');
+  });
+});
+
 describe('RepositorioConCola — con conexión', () => {
   it('escribe en local y remoto, y no encola nada', async () => {
     const { repo, remoto, cola } = montar();

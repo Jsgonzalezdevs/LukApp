@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PiggyBank, Plus } from 'lucide-react';
@@ -41,10 +42,10 @@ interface CajitasViewProps {
     diaPago?: number | null;
     pagoMinimoCop?: number | null;
     saldoInicialCop: number;
-  }) => void;
-  onFijarSaldo: (cajitaId: string, saldo: number) => void;
-  onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
-  onEliminar: (cajitaId: string) => void;
+  }) => ResultadoGuardado;
+  onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
+  onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => ResultadoGuardado;
+  onEliminar: (cajitaId: string) => ResultadoGuardado;
   /**
    * Whether savings count toward the summary. Only meaningful on the savings
    * screen — accounts are what the summary is *for*, so there is nothing to
@@ -54,7 +55,7 @@ interface CajitasViewProps {
   destinos?: readonly { id: string; nombre: string }[];
   /** Bank accounts only — where a withdrawal lands. */
   cuentasBancarias?: readonly { id: string; nombre: string }[];
-  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => void;
+  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => ResultadoGuardado;
   mostrarEnResumen?: boolean;
   onMostrarEnResumen?: (valor: boolean) => void;
 }
@@ -74,6 +75,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   mostrarEnResumen = true,
   onMostrarEnResumen,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [claseCuenta, setClaseCuenta] = useState<ClaseCuenta>('banco');
@@ -93,14 +95,14 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const nombreTipo = esTarjeta ? 'tarjeta de crédito' : esCuenta ? 'cuenta' : 'cajita';
   const total = resumenes.reduce((t, r) => t + r.saldoCop, 0);
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     const limpio = nombre.trim();
     if (!limpio) return;
 
     // Comma is the decimal separator on a Colombian keyboard; accept both.
     const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
-    onCrear({
+    if (!await guardado.ejecutar(() => onCrear({
       nombre: limpio,
       icon,
       tipo,
@@ -112,7 +114,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       diaPago: esTarjeta ? parseDia(pagoTexto) : null,
       pagoMinimoCop: esTarjeta ? parseAmountInput(minimoTexto) : null,
       saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
-    });
+    }))) return;
     setNombre('');
     setClaseCuenta('banco');
     setIcon(CAJITA_ICONS[0]);
@@ -132,6 +134,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
     // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         {/* Total across every live pocket */}
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
@@ -368,7 +371,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             <div className="mt-5 flex gap-2">
               <RippleButton
                 type="submit"
-                disabled={nombre.trim() === ''}
+                disabled={guardado.ocupado || nombre.trim() === ''}
                 rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >

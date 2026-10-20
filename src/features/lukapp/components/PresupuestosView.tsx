@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Pencil, Plus, Receipt, Sparkles, Trash2, TrendingUp } from 'lucide-react';
@@ -20,8 +21,8 @@ interface PresupuestosViewProps {
   onCambiarUmbralAlerta: (valor: number) => void;
   alertasActivas: boolean;
   onCambiarAlertasActivas: (valor: boolean) => void;
-  onFijar: (categoria: string, montoCop: number) => void;
-  onQuitar: (categoria: string) => void;
+  onFijar: (categoria: string, montoCop: number) => ResultadoGuardado;
+  onQuitar: (categoria: string) => ResultadoGuardado;
   /** Abre el formulario manual con la categoría ya elegida. Opcional: sin esto
    * la tarjeta flotante simplemente no ofrece ese atajo. */
   onNuevaTransaccion?: (categoria: string) => void;
@@ -79,6 +80,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
 }) => {
   const catalogo = useCatalogo();
   /** La categoría cuyo formulario de creación está abierto, o null. */
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState<string | null>(null);
   const [monto, setMonto] = useState('');
   /** Cuál fila tiene la tarjeta de acciones abierta. Solo una a la vez: abrir
@@ -121,12 +123,12 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
     setAbierto(null);
   };
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     if (creando === null) return;
     const valor = parseAmountInput(monto);
     if (valor === null || valor <= 0) return;
-    onFijar(creando, valor);
+    if (!await guardado.ejecutar(() => onFijar(creando, valor))) return;
     setCreando(null);
     setMonto('');
   };
@@ -137,18 +139,19 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
     setAbierto(null);
   };
 
-  const guardarEdicion = (e: React.FormEvent) => {
+  const guardarEdicion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editando === null) return;
     const valor = parseAmountInput(monto);
     if (valor === null || valor <= 0) return;
-    onFijar(editando, valor);
+    if (!await guardado.ejecutar(() => onFijar(editando, valor))) return;
     setEditando(null);
     setMonto('');
   };
 
   return (
     <section className="flex flex-col gap-4">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <label className="flex cursor-pointer items-center gap-3">
           <span

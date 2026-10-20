@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Trash2, X, Sparkles } from 'lucide-react';
 import type { ParsedTransaction } from '../lib/parseTransaction';
@@ -14,7 +14,7 @@ interface MultiCapturaModalProps {
   parsedList: ParsedTransaction[];
   cajitas?: readonly Cajita[];
   cuentaPorDefecto?: string | null;
-  onSaveAll: (drafts: ConfirmDraft[]) => void;
+  onSaveAll: (drafts: ConfirmDraft[]) => void | Promise<void>;
   onCancel: () => void;
 }
 
@@ -29,6 +29,8 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
 
+  const [guardando, setGuardando] = useState(false);
+  const guardandoRef = useRef(false);
   const [items, setItems] = useState<ParsedTransaction[]>(parsedList);
 
   const eliminarItem = (index: number) => {
@@ -42,7 +44,10 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
     }
   };
 
-  const guardarTodos = () => {
+  const guardarTodos = async () => {
+    if (guardandoRef.current) return;
+    guardandoRef.current = true;
+    setGuardando(true);
     haptic.trigger('medium');
     audio.play('click');
 
@@ -59,7 +64,7 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
       };
     });
 
-    onSaveAll(drafts);
+    try { await onSaveAll(drafts); } finally { guardandoRef.current = false; setGuardando(false); }
   };
 
   const totalGastos = items
@@ -196,11 +201,12 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
           <RippleButton
             type="button"
             onClick={guardarTodos}
+            disabled={guardando}
             rippleColor="rgba(255,255,255,0.4)"
             className="flex-[2] flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] py-3 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/25 transition-all hover:bg-[var(--fin-accent-hover)]"
           >
             <Check className="h-4 w-4" strokeWidth={3} />
-            Guardar los {items.length} movimientos
+            {guardando ? 'Guardando…' : `Guardar los ${items.length} movimientos`}
           </RippleButton>
         </div>
       </motion.div>

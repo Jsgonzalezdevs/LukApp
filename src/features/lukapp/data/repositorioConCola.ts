@@ -1,10 +1,13 @@
+import { nuevoId } from '../lib/id';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
-import type { Instantanea, Repositorio } from './repositorio';
+import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
+import { RepositorioMemoria } from './repositorio';
+import { RepositorioIndexedDB } from './indexeddb';
 import { ColaCambios } from './colaCambios';
 import type { MetodoDeEscritura } from './colaCambios';
 
@@ -19,7 +22,6 @@ import type { MetodoDeEscritura } from './colaCambios';
  * distingue las dos cosas.
  */
 const esErrorDeRed = (e: unknown): boolean => {
-  if (e instanceof TypeError) return true; // "Failed to fetch" en todos los navegadores
   if (e instanceof Error) {
     const m = e.message.toLowerCase();
     return m.includes('failed to fetch') || m.includes('network') || m.includes('load failed');
@@ -52,6 +54,7 @@ const esErrorDeRed = (e: unknown): boolean => {
 export interface RepositorioConSincronizacion {
   cambiosPendientes(): Promise<number>;
   sincronizar(): Promise<void>;
+  readonly errorSincronizacion?: string | null;
 }
 
 export const tieneSincronizacion = (
@@ -73,6 +76,17 @@ export class RepositorioConCola implements Repositorio {
   private readonly local: Repositorio;
   private readonly remoto: Repositorio;
   private readonly cola: ColaCambios;
+  private operaciones: Promise<unknown> = Promise.resolve();
+  errorSincronizacion: string | null = null;
+
+  private enOrden<T>(trabajo: () => Promise<T>): Promise<T> {
+    const ejecutar = () => this.local instanceof RepositorioIndexedDB
+      ? this.local.conExclusion(trabajo)
+      : trabajo();
+    const resultado = this.operaciones.then(ejecutar, ejecutar);
+    this.operaciones = resultado.catch(() => undefined);
+    return resultado;
+  }
 
   constructor(local: Repositorio, remoto: Repositorio, cola: ColaCambios) {
     this.local = local;
@@ -100,20 +114,30 @@ export class RepositorioConCola implements Repositorio {
    * rato más largo de lo normal.
    */
   async sincronizar(): Promise<void> {
+    return this.enOrden(() => this.sincronizarPendientes());
+  }
+
+  private async sincronizarPendientes(): Promise<void> {
+    this.errorSincronizacion = null;
     if (!navigator.onLine) return;
     for (const cambio of await this.cola.listar()) {
       try {
         await this.llamarRemoto(cambio.metodo, cambio.args);
         await this.cola.quitar(cambio.clave);
-      } catch {
+      } catch (error) {
+        this.errorSincronizacion = error instanceof Error ? error.message : 'No se pudo sincronizar. Inténtalo de nuevo.';
         return;
       }
     }
   }
 
   async cargarTodo(): Promise<Instantanea> {
+    return this.enOrden(() => this.leerTodo());
+  }
+
+  private async leerTodo(): Promise<Instantanea> {
     if (navigator.onLine) {
-      await this.sincronizar();
+      await this.sincronizarPendientes();
       if ((await this.cola.contar()) === 0) {
         try {
           const fresco = await this.remoto.cargarTodo();
@@ -123,7 +147,10 @@ export class RepositorioConCola implements Repositorio {
           // cuando el cliente apunta al proyecto equivocado; para una app de
           // dinero es preferible conservar los datos y dejar visible el estado
           // conocido que reemplazarlo silenciosamente por ceros.
-          if (tieneDatos(local) && !tieneDatos(fresco)) return local;
+          if (tieneDatos(local) && !tieneDatos(fresco)) {
+            this.errorSincronizacion = 'El servidor devolvió un historial vacío. Conservamos la copia de este dispositivo; revisa tu sesión antes de reemplazarla.';
+            return local;
+          }
           await this.espejarEnLocal(fresco);
           return fresco;
         } catch (e) {
@@ -139,17 +166,7 @@ export class RepositorioConCola implements Repositorio {
 
   /** Copia todo lo del servidor al caché local, para que quede si se cae la señal. */
   private async espejarEnLocal(datos: Instantanea): Promise<void> {
-    await this.local.vaciar();
-    await Promise.all([
-      this.local.guardarTransacciones(datos.transacciones),
-      this.local.guardarCajitaMovimientos(datos.cajitaMovimientos),
-      ...datos.cajitas.map((c) => this.local.guardarCajita(c)),
-      ...datos.metas.map((m) => this.local.guardarMeta(m)),
-      ...datos.categorias.map((c) => this.local.guardarCategoria(c)),
-      ...datos.contactos.map((c) => this.local.guardarContacto(c)),
-      ...datos.presupuestos.map((p) => this.local.guardarPresupuesto(p)),
-      ...datos.recurrentes.map((r) => this.local.guardarRecurrente(r)),
-    ]);
+    await this.local.aplicarCambios({ reemplazar: datos });
   }
 
   private async llamarRemoto(metodo: MetodoDeEscritura, args: unknown[]): Promise<void> {
@@ -157,36 +174,43 @@ export class RepositorioConCola implements Repositorio {
     await fn.apply(this.remoto, args);
   }
 
-  private async llamarLocal(metodo: MetodoDeEscritura, args: unknown[]): Promise<void> {
-    const fn = this.local[metodo] as (...a: unknown[]) => Promise<void>;
-    await fn.apply(this.local, args);
+  private async escribir(metodo: MetodoDeEscritura, args: unknown[]): Promise<void> {
+    return this.enOrden(async () => {
+      const anterior = await this.local.cargarTodo();
+      const simulacion = new RepositorioMemoria(anterior);
+      const fn = simulacion[metodo] as (...a: unknown[]) => Promise<void>;
+      await fn.apply(simulacion, args);
+      const siguiente = await simulacion.cargarTodo();
+      const habiaPendientes = (await this.cola.contar()) > 0;
+      let clave: IDBValidKey;
+      if (this.local instanceof RepositorioIndexedDB) {
+        clave = await this.local.confirmarPendiente(siguiente, metodo, args);
+      } else {
+        clave = await this.cola.encolar(metodo, args);
+        try { await this.local.aplicarCambios({ reemplazar: siguiente }); }
+        catch (error) { await this.cola.quitar(clave); throw error; }
+      }
+      if (habiaPendientes || !navigator.onLine) return;
+      try {
+        await this.llamarRemoto(metodo, args);
+      } catch (error) {
+        if (esErrorDeRed(error)) return;
+        if (this.local instanceof RepositorioIndexedDB) {
+          await this.local.descartarPendiente(anterior, clave);
+        } else {
+          await this.local.aplicarCambios({ reemplazar: anterior });
+          await this.cola.quitar(clave);
+        }
+        throw error;
+      }
+      // Si falla la confirmación local, el envío sigue pendiente e idempotente.
+      try { await this.cola.quitar(clave); }
+      catch { this.errorSincronizacion = 'El cambio llegó al servidor; falta confirmar la sincronización en este dispositivo.'; }
+    });
   }
 
-  /**
-   * El corazón de esta clase. Escribe en `local` primero — eso nunca falla
-   * por falta de señal — y solo entonces intenta `remoto`.
-   *
-   * Si ya hay algo en la cola, este cambio se pone detrás y ni se intenta
-   * enviar todavía: mandarlo antes que lo que sigue esperando rompería el
-   * orden en que la persona hizo las cosas.
-   */
-  private async escribir(metodo: MetodoDeEscritura, args: unknown[]): Promise<void> {
-    await this.llamarLocal(metodo, args);
-
-    if ((await this.cola.contar()) > 0) {
-      await this.cola.encolar(metodo, args);
-      return;
-    }
-    if (!navigator.onLine) {
-      await this.cola.encolar(metodo, args);
-      return;
-    }
-    try {
-      await this.llamarRemoto(metodo, args);
-    } catch (e) {
-      if (!esErrorDeRed(e)) throw e;
-      await this.cola.encolar(metodo, args);
-    }
+  async aplicarCambios(cambios: CambiosFinancieros): Promise<void> {
+    await this.escribir('aplicarCambios', [{ ...cambios, idOperacion: cambios.idOperacion ?? nuevoId('operacion') }]);
   }
 
   async guardarTransacciones(transacciones: readonly Transaction[]): Promise<void> {
@@ -217,14 +241,14 @@ export class RepositorioConCola implements Repositorio {
     movimientos: readonly CajitaMovimiento[],
     transaccion?: Transaction | null,
   ): Promise<void> {
-    await this.escribir('guardarMovimientosConTransaccion', [movimientos, transaccion]);
+    await this.aplicarCambios({ guardar: { cajitaMovimientos: [...movimientos], transacciones: transaccion ? [transaccion] : [] } });
   }
 
   async borrarMovimientoConTransaccion(
     movimientoId: string,
     transaccionId: string,
   ): Promise<void> {
-    await this.escribir('borrarMovimientoConTransaccion', [movimientoId, transaccionId]);
+    await this.aplicarCambios({ borrar: { cajitaMovimientos: [movimientoId], transacciones: [transaccionId] } });
   }
 
   async guardarMeta(meta: Meta): Promise<void> {
@@ -282,6 +306,6 @@ export class RepositorioConCola implements Repositorio {
    * siguen, en orden, y sube todo junto cuando vuelva la señal.
    */
   async vaciar(): Promise<void> {
-    await this.escribir('vaciar', []);
+    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [] } });
   }
 }

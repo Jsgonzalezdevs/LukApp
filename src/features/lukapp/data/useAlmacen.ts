@@ -28,7 +28,6 @@ import type { Instantanea, Repositorio } from './repositorio';
 import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
-import { conReintentos } from '../../../lib/errorHandling';
 import { mensajeDeErrorPersistencia } from '../lib/mensajeErrorPersistencia';
 
 export interface Almacen {
@@ -50,10 +49,10 @@ export interface Almacen {
    */
   cambiosPendientes: number;
 
-  agregarTransaccion: (tx: Transaction) => Promise<void>;
-  importarTransacciones: (txs: readonly Transaction[]) => Promise<void>;
-  actualizarTransaccion: (tx: Transaction) => Promise<void>;
-  borrarTransaccion: (id: string) => Promise<void>;
+  agregarTransaccion: (tx: Transaction) => Promise<boolean>;
+  importarTransacciones: (txs: readonly Transaction[]) => Promise<boolean>;
+  actualizarTransaccion: (tx: Transaction) => Promise<boolean>;
+  borrarTransaccion: (id: string) => Promise<boolean>;
 
   crearCajita: (datos: {
     nombre: string;
@@ -68,9 +67,9 @@ export interface Almacen {
     pagoMinimoCop?: number | null;
     /** What is already in the pocket. Recorded as its opening movement. */
     saldoInicialCop: number;
-  }) => Promise<void>;
-  actualizarCajita: (cajita: Cajita) => Promise<void>;
-  borrarCajita: (id: string) => Promise<void>;
+  }) => Promise<boolean | void>;
+  actualizarCajita: (cajita: Cajita) => Promise<boolean | void>;
+  borrarCajita: (id: string) => Promise<boolean | void>;
 
   registrarMovimiento: (datos: {
     cajitaId: string;
@@ -84,7 +83,7 @@ export interface Almacen {
     cuotaCop?: number | null;
     interesPct?: number | null;
     cuotaManejoCop?: number | null;
-  }) => Promise<void>;
+  }) => Promise<boolean | void>;
   /**
    * Pays down a debt with money from a real account.
    *
@@ -99,7 +98,7 @@ export interface Almacen {
     cuentaId: string;
     montoCop: number;
     occurredOn?: string;
-  }) => Promise<void>;
+  }) => Promise<boolean | void>;
   /**
    * Moves money between two balances of your own.
    *
@@ -113,54 +112,54 @@ export interface Almacen {
     destinoId: string;
     montoCop: number;
     occurredOn?: string;
-  }) => Promise<void>;
+  }) => Promise<boolean | void>;
   /** "I have X in this pocket" — records the delta needed to reach X. */
-  fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<void>;
-  borrarMovimiento: (id: string) => Promise<void>;
+  fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<boolean | void>;
+  borrarMovimiento: (id: string) => Promise<boolean | void>;
 
-  crearMeta: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<void>;
-  actualizarMeta: (meta: Meta) => Promise<void>;
-  borrarMeta: (id: string) => Promise<void>;
+  crearMeta: (datos: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<boolean | void>;
+  actualizarMeta: (meta: Meta) => Promise<boolean | void>;
+  borrarMeta: (id: string) => Promise<boolean | void>;
 
   crearCategoria: (
     datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>,
-  ) => Promise<void>;
-  actualizarCategoria: (categoria: CategoriaPersonal) => Promise<void>;
+  ) => Promise<boolean | void>;
+  actualizarCategoria: (categoria: CategoriaPersonal) => Promise<boolean | void>;
   /** Archives it. The movements filed under it keep pointing here. */
-  archivarCategoria: (id: string) => Promise<void>;
+  archivarCategoria: (id: string) => Promise<boolean | void>;
   /**
    * Removes the row outright. Only offered for a category nothing uses — with
    * movements attached, archiving is the only honest option, since the key
    * would otherwise survive with nothing left to explain it.
    */
-  borrarCategoria: (id: string) => Promise<void>;
+  borrarCategoria: (id: string) => Promise<boolean | void>;
 
   /**
    * Says two spellings are one person. Idempotent, and merges whatever contacts
    * already held either name so answering twice cannot create a third row.
    */
-  unirContactos: (a: string, b: string, nombre: string) => Promise<void>;
+  unirContactos: (a: string, b: string, nombre: string) => Promise<boolean | void>;
   /** Says they are NOT the same, so the question is never asked again. */
-  separarContactos: (a: string, b: string, nombre: string) => Promise<void>;
-  actualizarContacto: (contacto: Contacto) => Promise<void>;
+  separarContactos: (a: string, b: string, nombre: string) => Promise<boolean | void>;
+  actualizarContacto: (contacto: Contacto) => Promise<boolean | void>;
   /** Undoes a merge: the spellings go back to standing on their own. */
-  borrarContacto: (id: string) => Promise<void>;
+  borrarContacto: (id: string) => Promise<boolean | void>;
   /**
    * Le pone (o le quita) un apodo a una contraparte, exista ya como contacto o
    * no. La mayoría de las filas de la lista nunca se unieron con nada, así que
    * exigir un contacto guardado dejaría los apodos para unas pocas.
    */
-  apodarParte: (clave: string, nombre: string, apodo: string, quitar?: boolean) => Promise<void>;
+  apodarParte: (clave: string, nombre: string, apodo: string, quitar?: boolean) => Promise<boolean | void>;
 
   /** Fija el tope de una categoría. Vuelve a fijarlo si ya tenía uno. */
-  fijarPresupuesto: (categoria: string, montoCop: number) => Promise<void>;
-  quitarPresupuesto: (categoria: string) => Promise<void>;
+  fijarPresupuesto: (categoria: string, montoCop: number) => Promise<boolean | void>;
+  quitarPresupuesto: (categoria: string) => Promise<boolean | void>;
 
-  crearRecurrente: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => Promise<void>;
-  actualizarRecurrente: (recurrente: Recurrente) => Promise<void>;
-  borrarRecurrente: (id: string) => Promise<void>;
+  crearRecurrente: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => Promise<boolean | void>;
+  actualizarRecurrente: (recurrente: Recurrente) => Promise<boolean | void>;
+  borrarRecurrente: (id: string) => Promise<boolean | void>;
   /** Convierte un pendiente en un movimiento real, con la fecha que le tocaba. */
-  confirmarRecurrente: (pendiente: Pendiente) => Promise<void>;
+  confirmarRecurrente: (pendiente: Pendiente) => Promise<boolean | void>;
 
   /**
    * Reemplaza TODO por lo que traiga un respaldo.
@@ -168,7 +167,7 @@ export interface Almacen {
    * Vacía primero y escribe después, en ese orden: mezclar lo viejo con lo
    * nuevo dejaría duplicados imposibles de distinguir de movimientos reales.
    */
-  restaurar: (datos: Instantanea) => Promise<void>;
+  restaurar: (datos: Instantanea) => Promise<boolean>;
 }
 
 const mensajeDeError = (e: unknown): string => mensajeDeErrorPersistencia(e);
@@ -182,7 +181,12 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     [repositorioInyectado],
   );
 
-  const [datos, setDatos] = useState<Instantanea>(instantaneaVacia());
+  const [datos, actualizarEstado] = useState<Instantanea>(instantaneaVacia());
+  const datosActuales = useRef(datos);
+  const setDatos = useCallback((siguientes: Instantanea) => {
+    datosActuales.current = siguientes;
+    actualizarEstado(siguientes);
+  }, []);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [persistente, setPersistente] = useState(elegido.persistente);
@@ -206,6 +210,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
    * vez (guardar un movimiento que además ajusta el saldo de una cuenta).
    */
   const escrituras = useRef(0);
+  const requiereReconciliar = useRef(false);
 
   /**
    * Cada escritura invalida las lecturas que ya estaban en camino.
@@ -228,7 +233,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     if (!tieneSincronizacion(repo)) return;
     try {
       const n = await repo.cambiosPendientes();
-      if (montado.current) setCambiosPendientes(n);
+      if (montado.current) {
+        setCambiosPendientes(n);
+        if (repo.errorSincronizacion) setError(repo.errorSincronizacion);
+      }
     } catch {
       // No es grave: el número solo se queda desactualizado un momento.
     }
@@ -275,7 +283,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     // leer, así que este es también el momento natural de refrescar cuántos
     // cambios quedaron pendientes después de ese intento.
     await actualizarPendientes();
-  }, [repo, actualizarPendientes]);
+  }, [repo, actualizarPendientes, setDatos]);
 
   useEffect(() => {
     let cancelado = false;
@@ -399,6 +407,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           await repo.guardarCajita(efectivoPredeterminado);
         }
 
+        if (cancelado || !montado.current || escrituras.current > 0 || revisionDeDatos.current !== revisionAlEmpezar) return;
         setDatos(cargado);
         setError(null);
         setPersistente(elegido.persistente);
@@ -420,7 +429,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     return () => {
       cancelado = true;
     };
-  }, [elegido.persistente, repo, actualizarPendientes]);
+  }, [elegido.persistente, repo, actualizarPendientes, setDatos]);
 
   /**
    * Applies a change to the screen first, then writes it.
@@ -431,82 +440,79 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
    */
   const aplicar = useCallback(
     async (siguiente: Instantanea, escribir: () => Promise<void>) => {
-      const anterior = datos;
-      // Invalida primero una lectura que hubiera salido justo antes de este
-      // cambio. Si llega tarde, ya no podrá reemplazar este estado nuevo.
-      revisionDeDatos.current += 1;
+      const anterior = datosActuales.current;
+      const revision = ++revisionDeDatos.current;
       setDatos(siguiente);
-      // Se apunta ANTES de escribir y se descuenta en el finally, pase lo que
-      // pase. Mientras esté por encima de cero, `recargar` se abstiene: una
-      // respuesta del servidor pedida antes de esta escritura no la conoce, y
-      // aplicarla borraría de la pantalla algo que sí se guardó.
       escrituras.current += 1;
+      let correcto = false;
       try {
-        // Retry logic: reintentar hasta 3 veces con backoff exponencial
-        // Esto asegura que cambios offline se guarden cuando se recupere conexión
-        await conReintentos(
-          () => escribir(),
-          3,
-          (intento) => {
-            if (import.meta.env.DEV) {
-              console.warn(`Reintentando guardado (intento ${intento}/3)...`);
-            }
-          },
-        );
-      } catch (e) {
-        if (!montado.current) return;
-        setError(mensajeDeError(e));
-        try {
-          setDatos(await repo.cargarTodo());
-        } catch {
-          setDatos(anterior);
+        await escribir();
+        correcto = true;
+        if (montado.current) setError(null);
+      } catch (errorGuardado) {
+        requiereReconciliar.current = true;
+        if (montado.current) {
+          setError(mensajeDeError(errorGuardado));
+          try {
+            const recuperados = await repo.cargarTodo();
+            if (revisionDeDatos.current === revision) setDatos(recuperados);
+          } catch {
+            if (revisionDeDatos.current === revision) setDatos(anterior);
+          }
         }
       } finally {
         escrituras.current -= 1;
       }
-      // Si la escritura no pudo subir y quedó en cola, o si al reintentar el
-      // resto de la cola alguna terminó de subir, el número visible cambia
-      // aquí mismo — no hay que esperar a la siguiente vez que vuelvas a la
-      // app para verlo.
       await actualizarPendientes();
+      if (escrituras.current === 0 && requiereReconciliar.current) {
+        const revisionAlLeer = revisionDeDatos.current;
+        try {
+          const recuperados = await repo.cargarTodo();
+          if (montado.current && escrituras.current === 0 && revisionDeDatos.current === revisionAlLeer) {
+            setDatos(recuperados);
+            requiereReconciliar.current = false;
+          }
+        } catch { /* Conserva el error y reintenta al recuperar la conexión. */ }
+      }
+      return correcto;
     },
-    [datos, repo, actualizarPendientes],
+    [repo, actualizarPendientes, setDatos],
   );
 
   const agregarTransaccion = useCallback(
     async (tx: Transaction) => {
-      await aplicar({ ...datos, transacciones: [tx, ...datos.transacciones] }, () =>
+      return aplicar({ ...datosActuales.current, transacciones: [tx, ...datosActuales.current.transacciones] }, () =>
         repo.guardarTransacciones([tx]),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const importarTransacciones = useCallback(
     async (txs: readonly Transaction[]) => {
-      if (txs.length === 0) return;
-      await aplicar({ ...datos, transacciones: [...txs, ...datos.transacciones] }, () =>
+      if (txs.length === 0) return true;
+      return aplicar({ ...datosActuales.current, transacciones: [...txs, ...datosActuales.current.transacciones] }, () =>
         repo.guardarTransacciones(txs),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const actualizarTransaccion = useCallback(
     async (tx: Transaction) => {
       const pares = emparejarComprasTarjeta(
-        datos.cajitaMovimientos,
-        datos.transacciones,
-        idsPasivos(datos.cajitas),
+        datosActuales.current.cajitaMovimientos,
+        datosActuales.current.transacciones,
+        idsPasivos(datosActuales.current.cajitas),
       );
       const movimientoId = pares.get(tx.id);
       const movimientoAnterior = movimientoId
-        ? datos.cajitaMovimientos.find((mov) => mov.id === movimientoId)
+        ? datosActuales.current.cajitaMovimientos.find((mov) => mov.id === movimientoId)
         : undefined;
       const sigueSiendoCompraDePasivo =
         tx.kind === 'gasto' &&
         tx.cuentaId !== null &&
-        idsPasivos(datos.cajitas).has(tx.cuentaId);
+        idsPasivos(datosActuales.current.cajitas).has(tx.cuentaId);
       const movimientoActualizado = movimientoAnterior && sigueSiendoCompraDePasivo
         ? {
             ...movimientoAnterior,
@@ -522,52 +528,51 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           }
         : null;
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          transacciones: datos.transacciones.map((t) => (t.id === tx.id ? tx : t)),
+          ...datosActuales.current,
+          transacciones: datosActuales.current.transacciones.map((t) => (t.id === tx.id ? tx : t)),
           cajitaMovimientos: movimientoAnterior
             ? movimientoActualizado
-              ? datos.cajitaMovimientos.map((mov) =>
+              ? datosActuales.current.cajitaMovimientos.map((mov) =>
                   mov.id === movimientoAnterior.id ? movimientoActualizado : mov,
                 )
-              : datos.cajitaMovimientos.filter((mov) => mov.id !== movimientoAnterior.id)
-            : datos.cajitaMovimientos,
+              : datosActuales.current.cajitaMovimientos.filter((mov) => mov.id !== movimientoAnterior.id)
+            : datosActuales.current.cajitaMovimientos,
         },
         async () => {
           if (movimientoActualizado) {
             await repo.guardarMovimientosConTransaccion([movimientoActualizado], tx);
             return;
           }
-          if (movimientoAnterior) await repo.borrarCajitaMovimiento(movimientoAnterior.id);
-          await repo.guardarTransacciones([tx]);
+          await repo.aplicarCambios({ guardar: { transacciones: [tx] }, borrar: movimientoAnterior ? { cajitaMovimientos: [movimientoAnterior.id] } : undefined });
         },
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const borrarTransaccion = useCallback(
     async (id: string) => {
       const movimientoId = emparejarComprasTarjeta(
-        datos.cajitaMovimientos,
-        datos.transacciones,
-        idsPasivos(datos.cajitas),
+        datosActuales.current.cajitaMovimientos,
+        datosActuales.current.transacciones,
+        idsPasivos(datosActuales.current.cajitas),
       ).get(id);
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          transacciones: datos.transacciones.filter((t) => t.id !== id),
+          ...datosActuales.current,
+          transacciones: datosActuales.current.transacciones.filter((t) => t.id !== id),
           cajitaMovimientos: movimientoId
-            ? datos.cajitaMovimientos.filter((mov) => mov.id !== movimientoId)
-            : datos.cajitaMovimientos,
+            ? datosActuales.current.cajitaMovimientos.filter((mov) => mov.id !== movimientoId)
+            : datosActuales.current.cajitaMovimientos,
         },
         () => movimientoId
           ? repo.borrarMovimientoConTransaccion(movimientoId, id)
           : repo.borrarTransaccion(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const crearCajita = useCallback(
@@ -598,7 +603,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     }) => {
       const baseNombre = nombre.trim();
       const repetidas = new Set(
-        datos.cajitas
+        datosActuales.current.cajitas
           .filter((c) => c.archivedAt === null)
           .map((c) => c.nombre.trim().toLocaleLowerCase('es')),
       );
@@ -646,45 +651,44 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
             ]
           : [];
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          cajitas: [...datos.cajitas, cajita],
-          cajitaMovimientos: [...datos.cajitaMovimientos, ...apertura],
+          ...datosActuales.current,
+          cajitas: [...datosActuales.current.cajitas, cajita],
+          cajitaMovimientos: [...datosActuales.current.cajitaMovimientos, ...apertura],
         },
-        async () => {
-          await repo.guardarCajita(cajita);
-          await repo.guardarCajitaMovimientos(apertura);
-        },
+        () => repo.aplicarCambios({ guardar: { cajitas: [cajita], cajitaMovimientos: apertura } }),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const actualizarCajita = useCallback(
     async (cajita: Cajita) => {
-      await aplicar(
-        { ...datos, cajitas: datos.cajitas.map((c) => (c.id === cajita.id ? cajita : c)) },
+      return aplicar(
+        { ...datosActuales.current, cajitas: datosActuales.current.cajitas.map((c) => (c.id === cajita.id ? cajita : c)) },
         () => repo.guardarCajita(cajita),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const borrarCajita = useCallback(
     async (id: string) => {
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          cajitas: datos.cajitas.filter((c) => c.id !== id),
-          cajitaMovimientos: datos.cajitaMovimientos.filter((m) => m.cajitaId !== id),
+          ...datosActuales.current,
+          cajitas: datosActuales.current.cajitas.filter((c) => c.id !== id),
+          cajitaMovimientos: datosActuales.current.cajitaMovimientos.filter((m) => m.cajitaId !== id),
+          transacciones: datosActuales.current.transacciones.map((t) => t.cuentaId === id ? { ...t, cuentaId: null } : t),
+          recurrentes: datosActuales.current.recurrentes.map((r) => r.cuentaId === id ? { ...r, cuentaId: null } : r),
           // Mirrors the repository's cascade: the goal survives, the link does not.
-          metas: datos.metas.map((m) => (m.cajitaId === id ? { ...m, cajitaId: null } : m)),
+          metas: datosActuales.current.metas.map((m) => (m.cajitaId === id ? { ...m, cajitaId: null } : m)),
         },
         () => repo.borrarCajita(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const registrarMovimiento = useCallback(
@@ -751,16 +755,16 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
             }
           : null;
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          cajitaMovimientos: [...datos.cajitaMovimientos, movimiento],
-          transacciones: compra ? [compra, ...datos.transacciones] : datos.transacciones,
+          ...datosActuales.current,
+          cajitaMovimientos: [...datosActuales.current.cajitaMovimientos, movimiento],
+          transacciones: compra ? [compra, ...datosActuales.current.transacciones] : datosActuales.current.transacciones,
         },
         () => repo.guardarMovimientosConTransaccion([movimiento], compra),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const abonarDeuda = useCallback(
@@ -778,7 +782,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       const monto = Math.abs(montoCop);
       if (monto === 0) return;
 
-      const nombreDe = (id: string) => datos.cajitas.find((c) => c.id === id)?.nombre ?? '';
+      const nombreDe = (id: string) => datosActuales.current.cajitas.find((c) => c.id === id)?.nombre ?? '';
       const fecha = occurredOn ?? bogotaDate();
       const creado = new Date().toISOString();
 
@@ -801,11 +805,11 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       };
 
       const par = [enLaDeuda, enLaCuenta];
-      await aplicar({ ...datos, cajitaMovimientos: [...datos.cajitaMovimientos, ...par] }, () =>
+      return aplicar({ ...datosActuales.current, cajitaMovimientos: [...datosActuales.current.cajitaMovimientos, ...par] }, () =>
         repo.guardarCajitaMovimientos(par),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const transferirEntreCuentas = useCallback(
@@ -825,7 +829,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // rows in the history that cancel out and explain nothing.
       if (monto === 0 || origenId === destinoId) return;
 
-      const nombreDe = (id: string) => datos.cajitas.find((c) => c.id === id)?.nombre ?? '';
+      const nombreDe = (id: string) => datosActuales.current.cajitas.find((c) => c.id === id)?.nombre ?? '';
       const base = {
         occurredOn: occurredOn ?? bogotaDate(),
         categoria: null,
@@ -867,16 +871,16 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         createdAt: base.createdAt,
       };
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          cajitaMovimientos: [...datos.cajitaMovimientos, ...par],
-          transacciones: [transferencia, ...datos.transacciones],
+          ...datosActuales.current,
+          cajitaMovimientos: [...datosActuales.current.cajitaMovimientos, ...par],
+          transacciones: [transferencia, ...datosActuales.current.transacciones],
         },
         () => repo.guardarMovimientosConTransaccion(par, transferencia),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const fijarSaldo = useCallback(
@@ -885,47 +889,47 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // attributed to it. Against the raw sum, the adjustment would fight every
       // recorded transaction and the correction would never land where asked.
       const actual = saldoDeCajita(
-        datos.cajitaMovimientos,
+        datosActuales.current.cajitaMovimientos,
         cajitaId,
-        datos.transacciones,
-        idsPasivos(datos.cajitas),
+        datosActuales.current.transacciones,
+        idsPasivos(datosActuales.current.cajitas),
       );
       const delta = ajusteHacia(actual, saldoObjetivo);
       // Nothing changed: recording a zero-delta row would clutter the history
       // with movements that say nothing happened.
       if (delta === 0) return;
 
-      await registrarMovimiento({
+      return registrarMovimiento({
         cajitaId,
         kind: 'ajuste',
         deltaCop: delta,
         nota: nota ?? 'Saldo actualizado',
       });
     },
-    [datos.cajitaMovimientos, datos.cajitas, datos.transacciones, registrarMovimiento],
+    [registrarMovimiento],
   );
 
   const borrarMovimiento = useCallback(
     async (id: string) => {
       const transaccionId = [...emparejarComprasTarjeta(
-        datos.cajitaMovimientos,
-        datos.transacciones,
-        idsPasivos(datos.cajitas),
+        datosActuales.current.cajitaMovimientos,
+        datosActuales.current.transacciones,
+        idsPasivos(datosActuales.current.cajitas),
       )].find(([, movimientoId]) => movimientoId === id)?.[0];
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          cajitaMovimientos: datos.cajitaMovimientos.filter((m) => m.id !== id),
+          ...datosActuales.current,
+          cajitaMovimientos: datosActuales.current.cajitaMovimientos.filter((m) => m.id !== id),
           transacciones: transaccionId
-            ? datos.transacciones.filter((tx) => tx.id !== transaccionId)
-            : datos.transacciones,
+            ? datosActuales.current.transacciones.filter((tx) => tx.id !== transaccionId)
+            : datosActuales.current.transacciones,
         },
         () => transaccionId
           ? repo.borrarMovimientoConTransaccion(id, transaccionId)
           : repo.borrarCajitaMovimiento(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const crearMeta = useCallback(
@@ -936,28 +940,28 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         createdAt: new Date().toISOString(),
         completedAt: null,
       };
-      await aplicar({ ...datos, metas: [...datos.metas, meta] }, () => repo.guardarMeta(meta));
+      return aplicar({ ...datosActuales.current, metas: [...datosActuales.current.metas, meta] }, () => repo.guardarMeta(meta));
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const actualizarMeta = useCallback(
     async (meta: Meta) => {
-      await aplicar(
-        { ...datos, metas: datos.metas.map((m) => (m.id === meta.id ? meta : m)) },
+      return aplicar(
+        { ...datosActuales.current, metas: datosActuales.current.metas.map((m) => (m.id === meta.id ? meta : m)) },
         () => repo.guardarMeta(meta),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const borrarMeta = useCallback(
     async (id: string) => {
-      await aplicar({ ...datos, metas: datos.metas.filter((m) => m.id !== id) }, () =>
+      return aplicar({ ...datosActuales.current, metas: datosActuales.current.metas.filter((m) => m.id !== id) }, () =>
         repo.borrarMeta(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const crearCategoria = useCallback(
@@ -968,42 +972,42 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         createdAt: new Date().toISOString(),
         archivedAt: null,
       };
-      await aplicar({ ...datos, categorias: [...datos.categorias, categoria] }, () =>
+      return aplicar({ ...datosActuales.current, categorias: [...datosActuales.current.categorias, categoria] }, () =>
         repo.guardarCategoria(categoria),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const guardarCategoria = useCallback(
     async (categoria: CategoriaPersonal) => {
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          categorias: datos.categorias.map((c) => (c.id === categoria.id ? categoria : c)),
+          ...datosActuales.current,
+          categorias: datosActuales.current.categorias.map((c) => (c.id === categoria.id ? categoria : c)),
         },
         () => repo.guardarCategoria(categoria),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const archivarCategoria = useCallback(
     async (id: string) => {
-      const actual = datos.categorias.find((c) => c.id === id);
+      const actual = datosActuales.current.categorias.find((c) => c.id === id);
       if (!actual) return;
-      await guardarCategoria({ ...actual, archivedAt: new Date().toISOString() });
+      return guardarCategoria({ ...actual, archivedAt: new Date().toISOString() });
     },
-    [datos.categorias, guardarCategoria],
+    [guardarCategoria],
   );
 
   const borrarCategoria = useCallback(
     async (id: string) => {
-      await aplicar({ ...datos, categorias: datos.categorias.filter((c) => c.id !== id) }, () =>
+      return aplicar({ ...datosActuales.current, categorias: datosActuales.current.categorias.filter((c) => c.id !== id) }, () =>
         repo.borrarCategoria(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const unirContactos = useCallback(
@@ -1015,10 +1019,10 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // Any existing contact holding either name is absorbed, not left beside
       // the new one — otherwise the same person ends up split across two rows
       // by the very action meant to join them.
-      const tocados = datos.contactos.filter(
+      const tocados = datosActuales.current.contactos.filter(
         (c) => c.alias.includes(claveA) || c.alias.includes(claveB),
       );
-      const resto = datos.contactos.filter((c) => !tocados.includes(c));
+      const resto = datosActuales.current.contactos.filter((c) => !tocados.includes(c));
 
       const unido: Contacto = {
         id: tocados[0]?.id ?? nuevoId('contacto'),
@@ -1034,12 +1038,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         archivedAt: null,
       };
 
-      await aplicar({ ...datos, contactos: [...resto, unido] }, async () => {
-        await repo.guardarContacto(unido);
-        for (const viejo of tocados.slice(1)) await repo.borrarContacto(viejo.id);
-      });
+      return aplicar({ ...datosActuales.current, contactos: [...resto, unido] }, () => repo.aplicarCambios({ guardar: { contactos: [unido] }, borrar: { contactos: tocados.slice(1).map((c) => c.id) } }));
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const separarContactos = useCallback(
@@ -1050,7 +1051,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
 
       // Recorded on a contact for A. A rejection has to live somewhere durable,
       // and the contact row is the only thing that outlives a reload.
-      const existente = datos.contactos.find((c) => c.alias.includes(claveA));
+      const existente = datosActuales.current.contactos.find((c) => c.alias.includes(claveA));
       const contacto: Contacto = existente
         ? { ...existente, separadoDe: [...new Set([...existente.separadoDe, claveB])] }
         : {
@@ -1066,17 +1067,17 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
             archivedAt: null,
           };
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
+          ...datosActuales.current,
           contactos: existente
-            ? datos.contactos.map((c) => (c.id === contacto.id ? contacto : c))
-            : [...datos.contactos, contacto],
+            ? datosActuales.current.contactos.map((c) => (c.id === contacto.id ? contacto : c))
+            : [...datosActuales.current.contactos, contacto],
         },
         () => repo.guardarContacto(contacto),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const apodarParte = useCallback(
@@ -1084,7 +1085,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       const limpio = normalizarNombre(apodo);
       if (limpio === '') return;
 
-      const existente = datos.contactos.find((c) => c.alias.includes(clave));
+      const existente = datosActuales.current.contactos.find((c) => c.alias.includes(clave));
       const base: Contacto = existente ?? {
         id: nuevoId('contacto'),
         nombre,
@@ -1102,26 +1103,26 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           : [...new Set([...base.apodos, limpio])],
       };
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
+          ...datosActuales.current,
           contactos: existente
-            ? datos.contactos.map((c) => (c.id === contacto.id ? contacto : c))
-            : [...datos.contactos, contacto],
+            ? datosActuales.current.contactos.map((c) => (c.id === contacto.id ? contacto : c))
+            : [...datosActuales.current.contactos, contacto],
         },
         () => repo.guardarContacto(contacto),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const borrarContacto = useCallback(
     async (id: string) => {
-      await aplicar({ ...datos, contactos: datos.contactos.filter((c) => c.id !== id) }, () =>
+      return aplicar({ ...datosActuales.current, contactos: datosActuales.current.contactos.filter((c) => c.id !== id) }, () =>
         repo.borrarContacto(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const fijarPresupuesto = useCallback(
@@ -1130,7 +1131,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // rechazaría de todos modos.
       if (montoCop <= 0) return;
 
-      const previo = datos.presupuestos.find((p) => p.categoria === categoria);
+      const previo = datosActuales.current.presupuestos.find((p) => p.categoria === categoria);
       const presupuesto: Presupuesto = {
         categoria,
         montoCop,
@@ -1139,18 +1140,18 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         createdAt: previo?.createdAt ?? new Date().toISOString(),
       };
 
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
+          ...datosActuales.current,
           presupuestos: [
-            ...datos.presupuestos.filter((p) => p.categoria !== categoria),
+            ...datosActuales.current.presupuestos.filter((p) => p.categoria !== categoria),
             presupuesto,
           ],
         },
         () => repo.guardarPresupuesto(presupuesto),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const crearRecurrente = useCallback(
@@ -1161,80 +1162,70 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         createdAt: new Date().toISOString(),
         archivedAt: null,
       };
-      await aplicar({ ...datos, recurrentes: [...datos.recurrentes, recurrente] }, () =>
+      return aplicar({ ...datosActuales.current, recurrentes: [...datosActuales.current.recurrentes, recurrente] }, () =>
         repo.guardarRecurrente(recurrente),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const actualizarRecurrente = useCallback(
     async (recurrente: Recurrente) => {
-      await aplicar(
+      return aplicar(
         {
-          ...datos,
-          recurrentes: datos.recurrentes.map((r) => (r.id === recurrente.id ? recurrente : r)),
+          ...datosActuales.current,
+          recurrentes: datosActuales.current.recurrentes.map((r) => (r.id === recurrente.id ? recurrente : r)),
         },
         () => repo.guardarRecurrente(recurrente),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const borrarRecurrente = useCallback(
     async (id: string) => {
-      await aplicar({ ...datos, recurrentes: datos.recurrentes.filter((r) => r.id !== id) }, () =>
+      return aplicar({ ...datosActuales.current, recurrentes: datosActuales.current.recurrentes.filter((r) => r.id !== id) }, () =>
         repo.borrarRecurrente(id),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const confirmarRecurrente = useCallback(
     async (pendiente: Pendiente) => {
       const tx = comoTransaccion(pendiente, nuevoId('tx'), new Date().toISOString());
-      await aplicar({ ...datos, transacciones: [...datos.transacciones, tx] }, () =>
+      return aplicar({ ...datosActuales.current, transacciones: [...datosActuales.current.transacciones, tx] }, () =>
         repo.guardarTransacciones([tx]),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const restaurar = useCallback(
     async (nuevos: Instantanea) => {
-      await aplicar(nuevos, async () => {
-        await repo.vaciar();
-        await repo.guardarTransacciones(nuevos.transacciones);
-        for (const c of nuevos.cajitas) await repo.guardarCajita(c);
-        await repo.guardarCajitaMovimientos(nuevos.cajitaMovimientos);
-        for (const m of nuevos.metas) await repo.guardarMeta(m);
-        for (const c of nuevos.categorias) await repo.guardarCategoria(c);
-        for (const c of nuevos.contactos) await repo.guardarContacto(c);
-        for (const p of nuevos.presupuestos) await repo.guardarPresupuesto(p);
-        for (const r of nuevos.recurrentes) await repo.guardarRecurrente(r);
-      });
+      return aplicar(nuevos, () => repo.aplicarCambios({ reemplazar: nuevos, idOperacion: nuevoId('operacion') }));
     },
     [aplicar, repo],
   );
 
   const quitarPresupuesto = useCallback(
     async (categoria: string) => {
-      await aplicar(
-        { ...datos, presupuestos: datos.presupuestos.filter((p) => p.categoria !== categoria) },
+      return aplicar(
+        { ...datosActuales.current, presupuestos: datosActuales.current.presupuestos.filter((p) => p.categoria !== categoria) },
         () => repo.borrarPresupuesto(categoria),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   const actualizarContacto = useCallback(
     async (contacto: Contacto) => {
-      await aplicar(
-        { ...datos, contactos: datos.contactos.map((c) => (c.id === contacto.id ? contacto : c)) },
+      return aplicar(
+        { ...datosActuales.current, contactos: datosActuales.current.contactos.map((c) => (c.id === contacto.id ? contacto : c)) },
         () => repo.guardarContacto(contacto),
       );
     },
-    [aplicar, datos, repo],
+    [aplicar, repo],
   );
 
   return {

@@ -15,7 +15,7 @@ interface PanelRespaldoProps {
   datos: Instantanea;
   hoy: string;
   cajitasBalances?: Record<string, number>;
-  onRestaurar: (datos: Instantanea) => void;
+  onRestaurar: (datos: Instantanea) => boolean | Promise<boolean>;
   onGenerarInforme: () => void;
 }
 
@@ -44,6 +44,8 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
   onGenerarInforme,
 }) => {
   const archivoRef = useRef<HTMLInputElement>(null);
+  const [restaurando, setRestaurando] = useState(false);
+  const restaurandoRef = useRef(false);
   const [porRestaurar, setPorRestaurar] = useState<{ datos: Instantanea; resumen: string } | null>(
     null,
   );
@@ -179,16 +181,24 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
             <div className="mt-2.5 flex gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  onRestaurar(porRestaurar.datos);
-                  setPorRestaurar(null);
+                disabled={restaurando}
+                onClick={async () => {
+                  if (restaurandoRef.current) return;
+                  restaurandoRef.current = true;
+                  setRestaurando(true);
+                  try {
+                    if (await onRestaurar(porRestaurar.datos)) setPorRestaurar(null);
+                    else setError('No se pudo restaurar. Conservamos el archivo seleccionado para que puedas intentarlo de nuevo.');
+                  } catch { setError('No se pudo restaurar. Tus datos anteriores se conservan.'); }
+                  finally { restaurandoRef.current = false; setRestaurando(false); }
                 }}
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2.5 text-[15px] font-semibold text-white"
               >
-                Sí, reemplazar todo
+                {restaurando ? 'Restaurando…' : 'Sí, reemplazar todo'}
               </button>
               <button
                 type="button"
+                disabled={restaurando}
                 onClick={() => setPorRestaurar(null)}
                 className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
               >

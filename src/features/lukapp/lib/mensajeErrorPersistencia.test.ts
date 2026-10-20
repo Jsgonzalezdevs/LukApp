@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { mensajeDeErrorPersistencia } from './mensajeErrorPersistencia';
 
 describe('mensajeDeErrorPersistencia', () => {
-  it('explica que un error de red se conserva localmente', () => {
-    expect(mensajeDeErrorPersistencia(new Error('fetch failed'), true)).toMatch(/guardado en este dispositivo/);
+  it('no promete un guardado local que el repositorio no ha confirmado', () => {
+    expect(mensajeDeErrorPersistencia(new Error('fetch failed'), true)).toMatch(/No se pudo confirmar el guardado/);
   });
   it('distingue una sesión vencida', () => {
     expect(mensajeDeErrorPersistencia(new Error('JWT expired'), true)).toMatch(/sesión venció/);

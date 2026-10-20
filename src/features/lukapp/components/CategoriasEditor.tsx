@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Lock, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
@@ -18,10 +19,10 @@ import { RippleButton } from './RippleButton';
 export interface CategoriasEditorProps {
   categorias: readonly CategoriaPersonal[];
   transacciones: readonly Transaction[];
-  onCrear: (datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => void;
-  onActualizar: (categoria: CategoriaPersonal) => void;
-  onArchivar: (id: string) => void;
-  onBorrar: (id: string) => void;
+  onCrear: (datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => ResultadoGuardado;
+  onActualizar: (categoria: CategoriaPersonal) => ResultadoGuardado;
+  onArchivar: (id: string) => ResultadoGuardado;
+  onBorrar: (id: string) => ResultadoGuardado;
 }
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
@@ -132,7 +133,7 @@ const SelectorColor: React.FC<{ valor: string; onCambiar: (v: string) => void }>
 
 const Formulario: React.FC<{
   inicial?: CategoriaPersonal;
-  onGuardar: (datos: { nombre: string; icon: string; emoji: string; color: string }) => void;
+  onGuardar: (datos: { nombre: string; icon: string; emoji: string; color: string }) => ResultadoGuardado;
   onCancelar: () => void;
 }> = ({ inicial, onGuardar, onCancelar }) => {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');
@@ -153,6 +154,7 @@ const Formulario: React.FC<{
     }
   };
 
+  const guardado = useGuardadoFinanciero();
   const cambiarIconoManual = (valor: string) => {
     setManual(true);
     setIcon(valor);
@@ -169,13 +171,14 @@ const Formulario: React.FC<{
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (!listo) return;
-        onGuardar({ nombre: nombre.trim(), icon, emoji: emoji || '🏷️', color });
+        await guardado.ejecutar(() => onGuardar({ nombre: nombre.trim(), icon, emoji: emoji || '🏷️', color }));
       }}
       className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 border border-[var(--fin-line)]"
     >
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="flex items-center gap-3">
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[26px] shadow-xs"
@@ -278,9 +281,10 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
         {creando ? (
           <div className="mt-2">
             <Formulario
-              onGuardar={(datos) => {
-                onCrear(datos);
+              onGuardar={async (datos) => {
+                if (await onCrear(datos) === false) return false;
                 setCreando(false);
+                return true;
               }}
               onCancelar={() => setCreando(false)}
             />
@@ -303,9 +307,10 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
               <li key={cat.id}>
                 <Formulario
                   inicial={cat}
-                  onGuardar={(datos) => {
-                    onActualizar({ ...cat, ...datos });
+                  onGuardar={async (datos) => {
+                    if (await onActualizar({ ...cat, ...datos }) === false) return false;
                     setEditando(null);
+                    return true;
                   }}
                   onCancelar={() => setEditando(null)}
                 />

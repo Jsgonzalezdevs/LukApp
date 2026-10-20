@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownCircle, ArrowUpCircle, Plus, Tag, X } from 'lucide-react';
@@ -12,8 +13,8 @@ interface DetalleContactoProps {
   nombre: string;
   /** Cómo le dices tú. Ausente cuando la fila no es un contacto guardado. */
   apodos?: readonly string[];
-  onAgregarApodo?: (apodo: string) => void;
-  onQuitarApodo?: (apodo: string) => void;
+  onAgregarApodo?: (apodo: string) => ResultadoGuardado;
+  onQuitarApodo?: (apodo: string) => ResultadoGuardado;
   /** Las grafías normalizadas que son esta persona. */
   alias: readonly string[];
   transacciones: readonly Transaction[];
@@ -37,6 +38,7 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
   onCerrar,
 }) => {
   useBloqueoScroll(true);
+  const guardado = useGuardadoFinanciero();
   const [nuevoApodo, setNuevoApodo] = useState('');
   const catalogo = useCatalogo();
 
@@ -158,11 +160,12 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
               </ul>
             ) : null}
 
+            {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (nuevoApodo.trim() === '') return;
-                onAgregarApodo(nuevoApodo);
+                if (!await guardado.ejecutar(() => onAgregarApodo!(nuevoApodo))) return;
                 setNuevoApodo('');
               }}
               className="mt-2 flex items-center gap-2"

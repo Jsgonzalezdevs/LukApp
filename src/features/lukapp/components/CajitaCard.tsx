@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Trash2 } from 'lucide-react';
@@ -19,14 +20,14 @@ import { AnimatedNumber } from './AnimatedNumber';
 interface CajitaCardProps {
   resumen: ResumenCajita;
   movimientos: readonly CajitaMovimiento[];
-  onFijarSaldo: (cajitaId: string, saldo: number) => void;
-  onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => void;
+  onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
+  onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => ResultadoGuardado;
   /** Other balances of the user's own that money can be moved to. */
   destinos?: readonly { id: string; nombre: string }[];
   /** Bank accounts only — where a withdrawal actually lands. */
   cuentasBancarias?: readonly { id: string; nombre: string }[];
-  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => void;
-  onEliminar: (cajitaId: string) => void;
+  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => ResultadoGuardado;
+  onEliminar: (cajitaId: string) => ResultadoGuardado;
 }
 
 type Accion = 'saldo' | 'deposito' | 'retiro' | 'rendimiento' | 'transferir';
@@ -68,6 +69,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
   const { cajita, saldoCop, pct } = resumen;
+  const guardado = useGuardadoFinanciero();
   const [accion, setAccion] = useState<Accion | null>(null);
   const otras = destinos.filter((d) => d.id !== cajita.id);
   // A withdrawal lands in a bank account; a transfer can go anywhere of yours.
@@ -110,28 +112,31 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
   const valorActual = leer(texto);
 
-  const enviar = (e: React.FormEvent) => {
+  const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     const valor = leer(texto);
     if (valor === null || accion === null) return;
 
-    if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
+    let operacion: () => ResultadoGuardado;
+    if (accion === 'saldo') operacion = () => onFijarSaldo(cajita.id, valor);
     else if (accion === 'transferir') {
       if (destinoId === '' || !onTransferir) return;
-      onTransferir({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
+      operacion = () => onTransferir!({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
     } else if (accion === 'retiro') {
       // Money leaving a pocket does not evaporate — it lands somewhere. Sending
       // it without saying where left the pocket right and every account wrong.
       if (destinoId === '' || !onTransferir) return;
-      onTransferir({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
-    } else onMovimiento(cajita.id, accion, Math.abs(valor));
+      operacion = () => onTransferir!({ origenId: cajita.id, destinoId, montoCop: Math.abs(valor) });
+    } else { const tipo = accion; operacion = () => onMovimiento(cajita.id, tipo, Math.abs(valor)); }
 
+    if (!await guardado.ejecutar(operacion)) return;
     setAccion(null);
     setTexto('');
   };
 
   return (
     <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="flex items-start gap-3">
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]"
@@ -334,7 +339,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
 
               <button
                 type="submit"
-                disabled={
+                disabled={guardado.ocupado ||
                   valorActual === null ||
                   ((accion === 'transferir' || accion === 'retiro') && destinoId === '')
                 }

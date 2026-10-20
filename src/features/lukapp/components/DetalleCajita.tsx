@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Star, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
@@ -17,10 +18,10 @@ interface DetalleCajitaProps {
   cajita: Cajita;
   movimientos: readonly CajitaMovimiento[];
   transacciones: readonly Transaction[];
-  onFijarSaldo: (cajitaId: string, saldo: number) => void;
-  onActualizar: (cajita: Cajita) => void;
-  onEliminar: (id: string) => void;
-  onTransferir?: (origenId: string, destinoId: string, montoCop: number) => void;
+  onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
+  onActualizar: (cajita: Cajita) => ResultadoGuardado;
+  onEliminar: (id: string) => ResultadoGuardado;
+  onTransferir?: (origenId: string, destinoId: string, montoCop: number) => ResultadoGuardado;
   destinos?: readonly { id: string; nombre: string }[];
   esFavorita?: boolean;
   onAlternarFavorita?: (id: string) => void;
@@ -61,6 +62,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   const [montoTexto, setMontoTexto] = useState('');
   const [errorTransferencia, setErrorTransferencia] = useState<string | null>(null);
   const [editandoCuenta, setEditandoCuenta] = useState(false);
+  const guardado = useGuardadoFinanciero();
   const [nombre, setNombre] = useState(cajita.nombre);
   const [icon, setIcon] = useState(cajita.icon);
   const [metaTexto, setMetaTexto] = useState(formatAmountInput(cajita.metaCop));
@@ -75,12 +77,12 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
 
   const pasivo = ES_PASIVO[cajita.tipo];
 
-  const guardarEdicion = (e: React.FormEvent) => {
+  const guardarEdicion = async (e: React.FormEvent) => {
     e.preventDefault();
     const limpio = nombre.trim();
     if (!limpio) return;
     const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
-    onActualizar({
+    if (!await guardado.ejecutar(() => onActualizar({
       ...cajita,
       nombre: limpio,
       icon,
@@ -91,7 +93,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       diaCorte: cajita.tipo === 'tarjeta' ? parseDia(corteTexto) : null,
       diaPago: cajita.tipo === 'tarjeta' ? parseDia(pagoTexto) : null,
       pagoMinimoCop: cajita.tipo === 'tarjeta' ? parseAmountInput(minimoTexto) : null,
-    });
+    }))) return;
     setEditandoCuenta(false);
   };
 
@@ -106,10 +108,10 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
     setEditandoSaldo(true);
   };
 
-  const guardarSaldo = () => {
+  const guardarSaldo = async () => {
     const nuevo = parseSaldoInput(nuevoSaldoTexto);
     if (nuevo === null) return;
-    onFijarSaldo(cajita.id, nuevo);
+    if (!await guardado.ejecutar(() => onFijarSaldo(cajita.id, nuevo))) return;
     setEditandoSaldo(false);
     setNuevoSaldoTexto('');
   };
@@ -128,7 +130,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       return;
     }
     try {
-      await onTransferir(cajita.id, destinoId, monto);
+      if (!await guardado.ejecutar(() => onTransferir!(cajita.id, destinoId, monto))) return;
       setTransfiriendo(false);
       setMontoTexto('');
       setDestinoId('');
@@ -153,6 +155,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
 
   return (
     <div className="flex flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       {/* Cabecera con icono y nombre */}
       <div className="flex items-center gap-4">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]">

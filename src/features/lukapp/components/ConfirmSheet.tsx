@@ -44,7 +44,7 @@ export interface ConfirmDraft {
 
 interface ConfirmSheetProps {
   parsed: ParsedTransaction;
-  onSave: (draft: ConfirmDraft) => void;
+  onSave: (draft: ConfirmDraft) => boolean | void | Promise<boolean | void>;
   onCancel: () => void;
   /**
    * Editing reuses this whole form rather than duplicating it. The only
@@ -97,6 +97,9 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
   fechaMax,
   transacciones,
 }) => {
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardado, setErrorGuardado] = useState(false);
+  const guardandoRef = useRef(false);
   const editando = modo === 'editar';
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
@@ -145,27 +148,40 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
     ? catalogo.lista
     : [...catalogo.lista, catalogo.de(category)];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (guardandoRef.current) return;
     if (amountCop === null) {
       amountRef.current?.focus();
       return;
     }
-    haptic.trigger('success');
-    audio.play('success');
-    onSave({
-      kind,
-      amountCop,
-      category,
-      description: description.trim() || catalogo.de(category).nombre,
-      cuentaId,
-      rawTranscript: parsed.raw,
-      // Solo viaja si el selector está en juego (edición) o si el motor de texto extrajo una fecha
-      occurredOn:
-        (fechaInicial !== undefined || parsed.dateOverride) && fecha !== ''
-          ? fecha
-          : parsed.dateOverride,
-    });
+    guardandoRef.current = true;
+    setGuardando(true);
+    setErrorGuardado(false);
+    try {
+      const correcto = await onSave({
+        kind,
+        amountCop,
+        category,
+        description: description.trim() || catalogo.de(category).nombre,
+        cuentaId,
+        rawTranscript: parsed.raw,
+        // Solo viaja si el selector está en juego (edición) o si el motor de texto extrajo una fecha
+        occurredOn:
+          (fechaInicial !== undefined || parsed.dateOverride) && fecha !== ''
+            ? fecha
+            : parsed.dateOverride,
+      });
+      setErrorGuardado(correcto === false);
+      haptic.trigger(correcto === false ? 'error' : 'success');
+      audio.play(correcto === false ? 'error' : 'success');
+    } catch {
+      setErrorGuardado(true);
+      haptic.trigger('error');
+    } finally {
+      guardandoRef.current = false;
+      setGuardando(false);
+    }
   };
 
   return (
@@ -461,15 +477,16 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           </p>
         ) : null}
 
+        {errorGuardado ? <p role="alert" className="mt-4 text-sm text-[var(--fin-out)]">No se pudo guardar. Tus datos siguen aquí para que puedas intentarlo de nuevo.</p> : null}
         {/* Actions */}
         <RippleButton
           type="submit"
-          disabled={amountCop === null}
+          disabled={guardando || amountCop === null}
           rippleColor="rgba(255,255,255,0.5)"
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-all hover:bg-[var(--fin-accent-hover)] active:scale-[0.98] disabled:opacity-30"
         >
           <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden="true" />
-          {editando ? COPY.confirm.saveEditar : COPY.confirm.save}
+          {guardando ? 'Guardando…' : editando ? COPY.confirm.saveEditar : COPY.confirm.save}
         </RippleButton>
       </motion.form>
     </motion.div>

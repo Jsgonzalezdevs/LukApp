@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Pencil, Sparkles, Trash2, X } from 'lucide-react';
@@ -15,7 +16,7 @@ interface DetalleMovimientoProps {
   onCerrar: () => void;
   onEditar: (tx: Transaction) => void;
   onAnalizar: (tx: Transaction) => void;
-  onBorrar: (id: string) => void;
+  onBorrar: (id: string) => ResultadoGuardado;
 }
 
 /**
@@ -39,6 +40,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
   onAnalizar,
   onBorrar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const catalogo = useCatalogo();
   const entrada = catalogo.de(tx.category);
   const esIngreso = tx.kind === 'ingreso';
@@ -48,7 +50,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
   const acciones = esTransferencia ? [] : [
     { icono: Sparkles, texto: 'Analizar', alTocar: () => onAnalizar(tx) },
     { icono: Pencil, texto: 'Editar', alTocar: () => onEditar(tx) },
-    { icono: Trash2, texto: 'Borrar', alTocar: () => onBorrar(tx.id), peligro: true },
+    { icono: Trash2, texto: 'Borrar', alTocar: () => guardado.ejecutar(() => onBorrar(tx.id)), peligro: true },
   ];
 
   return (
@@ -123,6 +125,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
           </p>
         ) : (
         <div className="mt-5 grid grid-cols-3 gap-2">
+          {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
           {acciones.map((accion) => (
             <button
               key={accion.texto}

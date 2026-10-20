@@ -19,6 +19,7 @@ import type { Recurrente } from '../lib/recurrentes';
  */
 export interface Repositorio {
   cargarTodo(): Promise<Instantanea>;
+  aplicarCambios(cambios: CambiosFinancieros): Promise<void>;
 
   guardarTransacciones(transacciones: readonly Transaction[]): Promise<void>;
   borrarTransaccion(id: string): Promise<void>;
@@ -69,6 +70,14 @@ export interface Instantanea {
   recurrentes: Recurrente[];
 }
 
+/** Un mismo cambio de dinero se confirma entero o no se confirma. */
+export interface CambiosFinancieros {
+  idOperacion?: string;
+  guardar?: Partial<Instantanea>;
+  borrar?: Partial<Record<keyof Instantanea, string[]>>;
+  reemplazar?: Instantanea;
+}
+
 export const instantaneaVacia = (): Instantanea => ({
   transacciones: [],
   cajitas: [],
@@ -90,6 +99,18 @@ export class RepositorioMemoria implements Repositorio {
 
   constructor(inicial?: Partial<Instantanea>) {
     this.datos = { ...instantaneaVacia(), ...inicial };
+  }
+
+  async aplicarCambios(cambios: CambiosFinancieros): Promise<void> {
+    const siguientes = structuredClone(cambios.reemplazar ?? this.datos);
+    for (const clave of Object.keys(siguientes) as (keyof Instantanea)[]) {
+      const idDe = (fila: { id?: string; categoria?: string | null }) => clave === 'presupuestos' ? fila.categoria : fila.id;
+      const eliminados = new Set(cambios.borrar?.[clave] ?? []);
+      const filas = new Map(siguientes[clave].filter((fila) => !eliminados.has(idDe(fila)!)).map((fila) => [idDe(fila), fila]));
+      for (const fila of cambios.guardar?.[clave] ?? []) filas.set(idDe(fila), structuredClone(fila));
+      Object.assign(siguientes, { [clave]: [...filas.values()] });
+    }
+    this.datos = siguientes;
   }
 
   async cargarTodo(): Promise<Instantanea> {
@@ -140,6 +161,8 @@ export class RepositorioMemoria implements Repositorio {
     // Movements outlive nothing: a pocket's history is meaningless without it,
     // and leaving them behind would silently skew any later balance rebuild.
     this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter((m) => m.cajitaId !== id);
+    this.datos.transacciones = this.datos.transacciones.map((t) => t.cuentaId === id ? { ...t, cuentaId: null } : t);
+    this.datos.recurrentes = this.datos.recurrentes.map((r) => r.cuentaId === id ? { ...r, cuentaId: null } : r);
     this.datos.metas = this.datos.metas.map((meta) =>
       meta.cajitaId === id ? { ...meta, cajitaId: null } : meta,
     );

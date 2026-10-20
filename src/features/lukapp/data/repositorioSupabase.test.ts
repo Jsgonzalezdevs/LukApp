@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Cajita, CajitaTipo } from './modelos';
 import { ES_PASIVO } from './modelos';
@@ -14,7 +14,7 @@ const clienteCon = (cajitas: Record<string, unknown>[]) => {
   const cliente = {
     from: (tabla: string) => ({
       select: () => ({
-        eq: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : vacio),
+        eq: () => ({ order: () => ({ range: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : vacio) }) }),
       }),
       upsert: (filas: Record<string, unknown> | Record<string, unknown>[]) => {
         guardado.push(...(Array.isArray(filas) ? filas : [filas]));
@@ -120,10 +120,9 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
     ({
       from: (tabla: string) => ({
         select: () => ({
-          eq: () =>
-            Promise.resolve(
+          eq: () => ({ order: () => ({ range: () => Promise.resolve(
               tabla === 'categorias' ? { data: null, error: { message: mensaje } } : { data: [], error: null },
-            ),
+            ) }) }),
         }),
       }),
     }) as unknown as SupabaseClient;
@@ -218,25 +217,9 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
     });
   });
 
-  it('compensa el movimiento si falla la transacción remota', async () => {
-    const borrados: { tabla: string; id: string }[] = [];
-    const cliente = {
-      from: (tabla: string) => ({
-        upsert: () =>
-          Promise.resolve(
-            tabla === 'transacciones'
-              ? { error: { message: 'violates check constraint "transacciones_cuotas_validas"' } }
-              : { error: null },
-          ),
-        delete: () => ({
-          eq: (_col: string, val: string) => {
-            borrados.push({ tabla, id: val });
-            return Promise.resolve({ error: null });
-          },
-        }),
-      }),
-    } as unknown as SupabaseClient;
-
+  it('envía todos los rastros en una llamada atómica y comunica el rechazo', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: { message: 'importe rechazado' } });
+    const cliente = { rpc } as unknown as SupabaseClient;
     const mov = {
       id: 'm1', cajitaId: 'c1', kind: 'compra' as const, deltaCop: 50000,
       categoria: null, occurredOn: '2026-09-01', nota: '', createdAt: '2026-09-01T00:00:00.000Z',
@@ -251,26 +234,32 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
       new RepositorioSupabase(cliente, 'u1').guardarMovimientosConTransaccion([mov], tx),
     ).rejects.toThrow();
 
-    // Debe haber borrado el movimiento de la cajita para no dejarlo registrado a medias
-    expect(borrados).toContainEqual({ tabla: 'cajita_movimientos', id: 'm1' });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][1].cambios.guardar).toMatchObject({
+      cajita_movimientos: [{ id: 'm1', user_id: 'u1' }],
+      transacciones: [{ id: 't1', user_id: 'u1' }],
+    });
   });
 
-  it('elimina primero el rastro redundante y después la transacción canónica', async () => {
-    const orden: string[] = [];
-    const cliente = {
-      from: (tabla: string) => ({
-        delete: () => ({
-          eq: async (_col: string, id: string) => {
-            orden.push(`${tabla}:${id}`);
-            return { error: null };
-          },
-        }),
-      }),
-    } as unknown as SupabaseClient;
-
-    await new RepositorioSupabase(cliente, 'u1')
-      .borrarMovimientoConTransaccion('mov-1', 'tx-1');
-
-    expect(orden).toEqual(['cajita_movimientos:mov-1', 'transacciones:tx-1']);
+  it('borra el movimiento y la transacción en la misma operación', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const cliente = { rpc } as unknown as SupabaseClient;
+    await new RepositorioSupabase(cliente, 'u1').borrarMovimientoConTransaccion('mov-1', 'tx-1');
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][1].cambios.borrar).toEqual({ cajita_movimientos: ['mov-1'], transacciones: ['tx-1'] });
   });
+
+  it('lee todo el historial aunque el servidor entregue páginas menores que las solicitadas', async () => {
+    const filas = Array.from({ length: 7 }, (_, i) => ({ id: `t${i}`, kind: 'ingreso', amount_cop: 1000, category: 'ingreso', description: '', occurred_on: '2026-10-20', cuenta_id: null, raw_transcript: '', created_at: '2026-10-20T00:00:00Z' }));
+    const rangos: number[] = [];
+    const cliente = { from: (tabla: string) => ({ select: () => ({ eq: () => ({ order: () => ({ range: async (desde: number) => {
+      if (tabla !== 'transacciones') return { data: [], count: 0, error: null };
+      rangos.push(desde);
+      return { data: filas.slice(desde, desde + 2), count: filas.length, error: null };
+    } }) }) }) }) } as unknown as SupabaseClient;
+    const datos = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+    expect(datos.transacciones).toHaveLength(7);
+    expect(rangos).toEqual([0, 2, 4, 6]);
+  });
+
 });

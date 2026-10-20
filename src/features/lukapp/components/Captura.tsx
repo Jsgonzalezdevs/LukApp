@@ -35,7 +35,7 @@ interface CapturaProps {
   transacciones?: readonly Transaction[];
   categorias?: readonly CategoriaPersonal[];
   lexico?: LexicoAprendido;
-  onSave: (draft: ConfirmDraft) => void;
+  onSave: (draft: ConfirmDraft) => boolean | void | Promise<boolean | void>;
   onCancel: () => void;
   /** Se llama al tocar el botón de la foto del recibo. */
   onFoto?: () => void;
@@ -68,6 +68,9 @@ export const Captura: React.FC<CapturaProps> = ({
   esPrimeraPrueba = false,
   onReintentarVoz,
 }) => {
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardado, setErrorGuardado] = useState(false);
+  const guardandoRef = useRef(false);
   const [digitos, setDigitos] = useState(() =>
     parsed.amount === null ? '' : String(Math.round(parsed.amount)),
   );
@@ -259,12 +262,13 @@ export const Captura: React.FC<CapturaProps> = ({
     setDigitos((prev) => (prev + nuevos).replace(/^0+(?=\d)/, '').slice(0, 12));
   };
 
-  const ejecutarGuardado = (idCuentaFinal: string | null) => {
-    if (amountCop === null || amountCop === 0) return;
+  const ejecutarGuardado = async (idCuentaFinal: string | null) => {
+    if (amountCop === null || amountCop === 0 || guardandoRef.current) return;
+    guardandoRef.current = true;
+    setGuardando(true);
+    setErrorGuardado(false);
     try {
-      haptic.trigger('success');
-      audio.play('success');
-      onSave({
+      const correcto = await onSave({
         kind,
         amountCop,
         category,
@@ -275,10 +279,17 @@ export const Captura: React.FC<CapturaProps> = ({
         cuotasTotal: parsed.cuotasTotal,
         cuotaCop: parsed.cuotaCop,
       });
+      setErrorGuardado(correcto === false);
+      haptic.trigger(correcto === false ? 'error' : 'success');
+      audio.play(correcto === false ? 'error' : 'success');
     } catch (error) {
+      setErrorGuardado(true);
       console.error('Error al guardar:', error);
       haptic.trigger('error');
       audio.play('error');
+    } finally {
+      guardandoRef.current = false;
+      setGuardando(false);
     }
   };
 
@@ -728,6 +739,7 @@ export const Captura: React.FC<CapturaProps> = ({
           onBorrar={() => setDigitos((prev) => prev.slice(0, -1))}
         />
 
+          {errorGuardado ? <p role="alert" className="text-sm text-[var(--fin-out)]">No se pudo guardar. Tus datos siguen aquí para que puedas intentarlo de nuevo.</p> : null}
         <div className="flex items-center gap-2">
           {onFoto ? (
             <button
@@ -751,12 +763,12 @@ export const Captura: React.FC<CapturaProps> = ({
           <RippleButton
             type="button"
             onClick={guardar}
-            disabled={amountCop === null || amountCop === 0}
+            disabled={guardando || amountCop === null || amountCop === 0}
             rippleColor="rgba(255,255,255,0.5)"
             className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] text-[17px] font-semibold text-[var(--fin-on-accent)] transition-opacity disabled:opacity-30"
           >
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            Guardar
+            {guardando ? 'Guardando…' : 'Guardar'}
           </RippleButton>
         </div>
       </div>

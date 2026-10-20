@@ -48,6 +48,37 @@ describe('useAlmacen', () => {
     expect((await repo.cargarTodo()).transacciones).toHaveLength(1);
   });
 
+
+  it('conserva dos registros hechos antes del siguiente render', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    await act(async () => {
+      const agregar = result.current.agregarTransaccion;
+      expect(await agregar(tx({ id: 'primera' }))).toBe(true);
+      expect(await agregar(tx({ id: 'segunda' }))).toBe(true);
+    });
+    expect(result.current.datos.transacciones.map((t) => t.id).sort()).toEqual(['primera', 'segunda']);
+    expect((await repo.cargarTodo()).transacciones).toHaveLength(2);
+  });
+
+
+  it('reconcilia la pantalla si un guardado falla mientras otro termina correctamente', async () => {
+    const repo = new RepositorioMemoria();
+    const escribir = repo.guardarTransacciones.bind(repo);
+    let rechazar!: (error: Error) => void;
+    const bloqueo = new Promise<never>((_, rechazo) => { rechazar = rechazo; });
+    vi.spyOn(repo, 'guardarTransacciones').mockImplementation((filas) => filas[0].id === 'rechazada' ? bloqueo : escribir(filas));
+    const { result } = await montar(repo);
+    await act(async () => {
+      const primera = result.current.agregarTransaccion(tx({ id: 'rechazada' }));
+      expect(await result.current.agregarTransaccion(tx({ id: 'aceptada' }))).toBe(true);
+      rechazar(new Error('No se pudo guardar la primera'));
+      expect(await primera).toBe(false);
+    });
+    expect(result.current.datos.transacciones.map((fila) => fila.id)).toEqual(['aceptada']);
+    expect((await repo.cargarTodo()).transacciones.map((fila) => fila.id)).toEqual(['aceptada']);
+  });
+
   it('updates a transaction in place', async () => {
     const repo = new RepositorioMemoria({ transacciones: [tx()] });
     const { result } = await montar(repo);
@@ -175,7 +206,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.agregarTransaccion(tx({ id: 'fantasma' }));
+      expect(await result.current.agregarTransaccion(tx({ id: 'fantasma' }))).toBe(false);
     });
 
     expect(result.current.error).toBe('disco lleno');
@@ -953,7 +984,7 @@ describe('useAlmacen — recargar', () => {
     const { result } = await montar(repo);
 
     // Se guarda algo, pero la escritura se queda colgada a propósito.
-    let guardando: Promise<void>;
+    let guardando: Promise<boolean>;
     act(() => {
       guardando = result.current.agregarTransaccion(tx({ id: 'recien-anotada' }));
     });
