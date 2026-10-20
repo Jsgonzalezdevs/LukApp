@@ -1,7 +1,9 @@
+import { ProximosPagosInicio } from './ProximosPagosInicio';
+import { construirObligacionesFuturas, type ObligacionFutura } from '../lib/obligacionesFuturas';
 import { preparacionInicio } from '../lib/preparacionInicio';
 import { PrimerosPasos } from './PrimerosPasos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ChevronDown,
   Eye,
@@ -41,6 +43,8 @@ interface InicioViewProps {
   gastosCop: number;
   ingresosCop: number;
   onVerMes: () => void;
+  onVerPagos?: () => void;
+  obligaciones?: readonly ObligacionFutura[];
   movimientos: readonly Transaction[];
   conSenal?: ReadonlySet<string>;
   onAbrirMovimiento: (tx: Transaction) => void;
@@ -99,6 +103,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   gastosCop,
   ingresosCop,
   onVerMes,
+  onVerPagos,
+  obligaciones,
   movimientos,
   conSenal,
   onAbrirMovimiento,
@@ -123,6 +129,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   resumenPremium = null,
   onVerResumenPremium,
 }) => {
+  const quieto = useReducedMotion();
+  const pagos = useMemo(() => obligaciones ?? construirObligacionesFuturas(entrada), [obligaciones, entrada]);
   const preparacion = preparacionInicio(entrada);
   const [novedadExpandida, setNovedadExpandida] = useState(false);
   const catalogo = useCatalogo();
@@ -133,6 +141,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   const [periodoAbierto, setPeriodoAbierto] = useState(false);
 
   const carouselRef = useRef<HTMLDivElement>(null);
+  const recientesRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   const handleScroll = () => {
@@ -205,12 +214,12 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
   // Movimientos visibles (filtrados por categoría si se seleccionó una)
   const movimientosAMostrar = useMemo(() => {
-    if (!categoriaFiltro) return movimientos;
-    return movimientos.filter((m) => m.category === categoriaFiltro);
+    const elegidos = categoriaFiltro ? movimientos.filter((m) => m.category === categoriaFiltro) : movimientos;
+    return [...elegidos].sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
   }, [movimientos, categoriaFiltro]);
 
   return (
-    <div className="flex flex-col pb-6">
+    <div className="flex flex-col pb-32">
       {/* ── 1. Cabecera superior minimalista ─────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div onClick={() => clavePeriodo && onCambiarPeriodo && setPeriodoAbierto((abierto) => !abierto)} className="relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs">
@@ -299,52 +308,223 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       </div>
 
-      {/* ── 2. Novedad / Tip de IA sutiles y no invasivos ────────────────── */}
-      <AnimatePresence>
-        {novedad && (
-          <motion.div
-            initial={{ opacity: 0, x: -18, y: -3 }}
-            animate={{ opacity: 1, x: 0, y: 0 }}
-            exit={{ opacity: 0, x: -12, y: -3 }}
-            transition={{ type: 'spring', stiffness: 620, damping: 34, mass: 0.45 }}
-            onClick={() => setNovedadExpandida((actual) => !actual)}
-            role="button"
-            tabIndex={0}
-            aria-expanded={novedadExpandida}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setNovedadExpandida((actual) => !actual);
-              }
-            }}
-            className="novedad-banner mt-3 flex cursor-pointer items-start justify-between rounded-[var(--fin-r-card)] px-3.5 py-3 text-[13px]"
+      {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
+      <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[12px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
+          {preparacion.saldosCompletos ? 'Dinero disponible' : 'Saldo por completar'}
+        </span>
+
+        <div className="mt-1.5">
+          <button
+            type="button"
+            onClick={onVerMes}
+            aria-label="Ver el resumen de mi dinero"
+            className="text-[44px] sm:text-[52px] font-extrabold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
+            style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
           >
-            <span className={`flex min-w-0 items-start gap-2.5 ${novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}`}>
-              <span className="novedad-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]">
-                <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden="true" />
-              </span>
-              <span className={novedadExpandida ? 'pt-0.5' : 'truncate pt-0.5'}>
-                <strong className="novedad-version">v{novedad.version}</strong> {novedad.texto}
-              </span>
+            {preparacion.saldosCompletos ? <AnimatedNumber
+              value={patrimonioCop}
+              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
+            /> : <span aria-label="Saldo todavía sin confirmar">—</span>}
+          </button>
+        </div>
+        <p className="mt-1 text-[12px] text-[var(--fin-ink-faint)]">
+          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
+        </p>
+
+        <details className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-sm">
+          <summary className="cursor-pointer font-medium text-[var(--fin-ink-soft)]">Ver saldos y resultado del período</summary>
+        {/* Desglose bancos y efectivo si existen */}
+        {preparacion.saldosCompletos && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
+          <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
+            <span>
+              Bancos:{' '}
+              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
+                {modoPrivacidad ? '$ ••••••' : formatCop(saldoCuentasSinEfectivoCop)}
+              </strong>
             </span>
-            {onCerrarNovedad && (
-              <button
-                type="button"
-                onClick={(evento) => {
-                  evento.stopPropagation();
-                  onCerrarNovedad();
-                }}
-                aria-label="Cerrar novedades"
-                className="novedad-close flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <span className="text-[var(--fin-line)]">•</span>
+            <span>
+              Efectivo:{' '}
+              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
+                {modoPrivacidad ? '$ ••••••' : formatCop(saldoEfectivoCop)}
+              </strong>
+            </span>
+          </div>
+        ) : null}
+
+        {/* Pastilla de Ingresos y Gastos del periodo en toda la mitad */}
+        <div className="mt-3.5 flex justify-center">
+          <button
+            type="button"
+            onClick={onVerMes}
+            title="Ver desglose del periodo"
+            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
+          >
+            <span style={{ color: 'var(--fin-out)' }}>
+              ↓ {modoPrivacidad ? '••••' : formatMontoCompacto(gastosCop)}
+            </span>
+            <span className="text-[var(--fin-line)]">|</span>
+            <span style={{ color: 'var(--fin-in)' }}>
+              ↑ {modoPrivacidad ? '••••' : formatMontoCompacto(ingresosCop)}
+            </span>
+          </button>
+        </div>
+        </details>
+      </div>
 
       <PrimerosPasos estado={preparacion} onCuenta={onConfigurarCuenta} onAnotar={onAnotar} />
+
+      <ProximosPagosInicio obligaciones={pagos} hoy={entrada.hoy} privacidad={modoPrivacidad} onVerPagos={onVerPagos ?? onVerMes} />
+
+      {/* ── 6. Si se activó filtro por categoría ─────────────────────────── */}
+      {categoriaFiltro && (
+        <div className="my-2 flex items-center justify-between rounded-full bg-[var(--fin-soft)] px-4 py-1.5 text-[13px]">
+          <span className="text-[var(--fin-ink-soft)]">
+            Mostrando solo: <strong className="text-[var(--fin-ink)] capitalize">{categoriaFiltro}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setCategoriaFiltro(null)}
+            className="flex items-center gap-1 font-semibold text-[var(--fin-ink)] hover:underline"
+          >
+            <span>Ver todos</span>
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* ── 7. Lista de transacciones (Siempre visible) ──────────────────── */}
+      <section ref={recientesRef} tabIndex={-1} aria-label="Movimientos recientes" className="mt-5">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-[var(--fin-ink)]">Movimientos recientes</h2>
+          <button type="button" onClick={onBuscar} className="rounded-lg px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">Ver historial completo</button>
+        </div>
+        <p className="mb-3 text-xs text-[var(--fin-ink-faint)]">{etiquetaPeriodo} · hasta 5 movimientos</p>
+        {movimientosAMostrar.length === 0 ? <p className="py-4 text-center text-sm text-[var(--fin-ink-soft)]">{categoriaFiltro ? `No hay movimientos de ${catalogo.de(categoriaFiltro).nombre} en ${etiquetaPeriodo}.` : preparacion.primerMovimiento ? `No hay movimientos en ${etiquetaPeriodo}.` : 'Aquí aparecerán tus gastos e ingresos cuando guardes el primero.'}</p> : <TransactionList
+          transactions={movimientosAMostrar.slice(0, 5)}
+          conSenal={conSenal}
+          onAbrir={onAbrirMovimiento}
+          onRepetir={onRepetirMovimiento}
+          onEditar={onEditarMovimiento}
+          modoPrivacidad={modoPrivacidad}
+        />}
+      </section>
+
+      {/* ── 5. Botón suave de acción rápida [ + Anotar nuevo gasto ] ─────── */}
+      {onAnotar && preparacion.primerMovimiento && (
+        <div className="flex justify-center my-3">
+          <button
+            type="button"
+            onClick={onAnotar}
+            className="flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] px-5 py-2.5 text-[13.5px] font-semibold text-[var(--fin-ink)] transition-all active:scale-95 shadow-xs"
+          >
+            <Plus className="h-4 w-4 text-[var(--fin-ink-soft)]" />
+            <span>Anotar nuevo gasto</span>
+          </button>
+        </div>
+      )}
+
+      {preparacion.primerMovimiento ? <details className="mt-5 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+        <summary className="cursor-pointer font-semibold text-[var(--fin-ink)]">Análisis y categorías del período</summary>
+      {preparacion.saldosCompletos && preparacion.primerMovimiento && mostrarDecisiones !== false ? (
+        <DecisionFinanciera
+          liquidez={liquidez}
+          entrada={entrada}
+          movimientos={movimientos}
+          privacidad={modoPrivacidad}
+        />
+      ) : null}
+
+      {/* ── 4. Carrusel de Gráficas de Categorías (Gráfico de Barras con Alturas Contrastadas) ─ */}
+      {maxTotal > 0 ? <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div
+          ref={carouselRef}
+          onScroll={handleScroll}
+          data-scroll-horizontal="true"
+          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[195px] pt-3 pb-4 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+        >
+          {todasCategorias.map((cat, idx) => {
+            const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
+            const MIN_H = 62;
+            const MAX_H = 165;
+            // Escala directa y muy contrastada: si una vale 176k y la otra 34k, la diferencia de altura es dramática y clara
+            const cardHeight = cat.total > 0 
+              ? Math.round(MIN_H + ratio * (MAX_H - MIN_H))
+              : MIN_H;
+
+            const seleccionada = categoriaFiltro === cat.clave;
+            const colorCat = cat.info.color;
+
+            return (
+              <motion.button
+                type="button"
+                aria-pressed={seleccionada}
+                aria-label={`Ver movimientos de ${cat.info.nombre}`}
+                key={cat.clave}
+                initial={quieto ? false : { height: MIN_H, opacity: 0, y: 10 }}
+                animate={{ height: cardHeight, opacity: 1, y: 0 }}
+                transition={{
+                  duration: quieto ? 0 : undefined,
+                  type: quieto ? 'tween' : 'spring',
+                  stiffness: 140,
+                  damping: 18,
+                  delay: quieto ? 0 : Math.min(0.2, idx * 0.02),
+                }}
+                whileHover={quieto ? undefined : { y: -4 }}
+                whileTap={quieto ? undefined : { scale: 0.96 }}
+                onClick={() => {
+                  setCategoriaFiltro(categoriaFiltro === cat.clave ? null : cat.clave);
+                  recientesRef.current?.focus();
+                }}
+                style={{ height: cardHeight }}
+                className={`relative flex-shrink-0 w-[80px] sm:w-[88px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2 sm:p-2.5 cursor-pointer transition-all shadow-[0_6px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.35)] ${
+                  seleccionada
+                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/20 shadow-md scale-102'
+                    : 'border-[var(--fin-line)] hover:border-[var(--fin-ink-ghost)]'
+                }`}
+              >
+                {/* Emoji superior con contenedor tintado */}
+                <div
+                  className="flex h-8 w-8 items-center justify-center rounded-2xl text-[18px] sm:text-[20px] drop-shadow-xs transition-transform shrink-0"
+                  style={{
+                    backgroundColor: tint(colorCat, 0.16),
+                  }}
+                >
+                  {cat.emoji}
+                </div>
+
+                {/* Monto y nombre inferior */}
+                <div className="flex flex-col items-center w-full min-w-0">
+                  <span className="text-[12px] sm:text-[13px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
+                    {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
+                  </span>
+                  <span className="mt-0.5 text-[9.5px] sm:text-[10px] font-semibold leading-tight text-[var(--fin-ink-soft)] line-clamp-2 max-w-[68px] sm:max-w-[76px] text-center capitalize">
+                    {cat.info.nombre}
+                  </span>
+                </div>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* Indicador de scroll sutil y discreto */}
+        {todasCategorias.length > 4 && (
+          <div className="mt-1.5 flex justify-center">
+            <div className="h-1 w-12 rounded-full bg-[var(--fin-line)] overflow-hidden">
+              <div
+                className="h-full rounded-full bg-[var(--fin-ink-soft)]/60 transition-all duration-150"
+                style={{
+                  width: '35%',
+                  transform: `translateX(${scrollProgress * 185}%)`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      : null}
 
       {resumenPremium && preparacion.saldosCompletos && preparacion.primerMovimiento ? (
         <motion.button
@@ -446,203 +626,52 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </AnimatePresence>
 
-      {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
-      <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[12px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
-          {preparacion.saldosCompletos ? 'Dinero disponible' : 'Saldo por completar'}
-        </span>
+      </details> : null}
 
-        <div className="mt-1.5">
-          <button
-            type="button"
-            onClick={onVerMes}
-            className="text-[44px] sm:text-[52px] font-extrabold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
-            style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
+      {/* ── 2. Novedad / Tip de IA sutiles y no invasivos ────────────────── */}
+      <AnimatePresence>
+        {novedad && (
+          <motion.div
+            initial={{ opacity: 0, x: -18, y: -3 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: -12, y: -3 }}
+            transition={{ type: 'spring', stiffness: 620, damping: 34, mass: 0.45 }}
+            onClick={() => setNovedadExpandida((actual) => !actual)}
+            role="button"
+            tabIndex={0}
+            aria-expanded={novedadExpandida}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setNovedadExpandida((actual) => !actual);
+              }
+            }}
+            className="novedad-banner mt-3 flex cursor-pointer items-start justify-between rounded-[var(--fin-r-card)] px-3.5 py-3 text-[13px]"
           >
-            {preparacion.saldosCompletos ? <AnimatedNumber
-              value={patrimonioCop}
-              format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
-            /> : <span aria-label="Saldo todavía sin confirmar">—</span>}
-          </button>
-        </div>
-        <p className="mt-1 text-[12px] text-[var(--fin-ink-faint)]">
-          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
-        </p>
-
-        {/* Desglose bancos y efectivo si existen */}
-        {preparacion.saldosCompletos && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
-          <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
-            <span>
-              Bancos:{' '}
-              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
-                {modoPrivacidad ? '$ ••••••' : formatCop(saldoCuentasSinEfectivoCop)}
-              </strong>
+            <span className={`flex min-w-0 items-start gap-2.5 ${novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}`}>
+              <span className="novedad-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]">
+                <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden="true" />
+              </span>
+              <span className={novedadExpandida ? 'pt-0.5' : 'truncate pt-0.5'}>
+                <strong className="novedad-version">v{novedad.version}</strong> {novedad.texto}
+              </span>
             </span>
-            <span className="text-[var(--fin-line)]">•</span>
-            <span>
-              Efectivo:{' '}
-              <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
-                {modoPrivacidad ? '$ ••••••' : formatCop(saldoEfectivoCop)}
-              </strong>
-            </span>
-          </div>
-        ) : null}
-
-        {/* Pastilla de Ingresos y Gastos del periodo en toda la mitad */}
-        <div className="mt-3.5 flex justify-center">
-          <button
-            type="button"
-            onClick={onVerMes}
-            title="Ver desglose del periodo"
-            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
-          >
-            <span style={{ color: 'var(--fin-out)' }}>
-              ↓ {modoPrivacidad ? '••••' : formatMontoCompacto(gastosCop)}
-            </span>
-            <span className="text-[var(--fin-line)]">|</span>
-            <span style={{ color: 'var(--fin-in)' }}>
-              ↑ {modoPrivacidad ? '••••' : formatMontoCompacto(ingresosCop)}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {preparacion.saldosCompletos && preparacion.primerMovimiento && mostrarDecisiones !== false ? (
-        <DecisionFinanciera
-          liquidez={liquidez}
-          entrada={entrada}
-          movimientos={movimientos}
-          privacidad={modoPrivacidad}
-        />
-      ) : null}
-
-      {/* ── 4. Carrusel de Gráficas de Categorías (Gráfico de Barras con Alturas Contrastadas) ─ */}
-      {maxTotal > 0 ? <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div
-          ref={carouselRef}
-          onScroll={handleScroll}
-          data-scroll-horizontal="true"
-          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[195px] pt-3 pb-4 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
-        >
-          {todasCategorias.map((cat, idx) => {
-            const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
-            const MIN_H = 62;
-            const MAX_H = 165;
-            // Escala directa y muy contrastada: si una vale 176k y la otra 34k, la diferencia de altura es dramática y clara
-            const cardHeight = cat.total > 0 
-              ? Math.round(MIN_H + ratio * (MAX_H - MIN_H))
-              : MIN_H;
-
-            const seleccionada = categoriaFiltro === cat.clave;
-            const colorCat = cat.info.color;
-
-            return (
-              <motion.div
-                key={cat.clave}
-                initial={{ height: MIN_H, opacity: 0, y: 10 }}
-                animate={{ height: cardHeight, opacity: 1, y: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 140,
-                  damping: 18,
-                  delay: Math.min(0.2, idx * 0.02),
+            {onCerrarNovedad && (
+              <button
+                type="button"
+                onClick={(evento) => {
+                  evento.stopPropagation();
+                  onCerrarNovedad();
                 }}
-                whileHover={{ y: -4 }}
-                whileTap={{ scale: 0.96 }}
-                onClick={() => {
-                  setCategoriaFiltro(categoriaFiltro === cat.clave ? null : cat.clave);
-                }}
-                style={{ height: cardHeight }}
-                className={`relative flex-shrink-0 w-[80px] sm:w-[88px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2 sm:p-2.5 cursor-pointer transition-all shadow-[0_6px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.35)] ${
-                  seleccionada
-                    ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/20 shadow-md scale-102'
-                    : 'border-[var(--fin-line)] hover:border-[var(--fin-ink-ghost)]'
-                }`}
+                aria-label="Cerrar novedades"
+                className="novedad-close flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]"
               >
-                {/* Emoji superior con contenedor tintado */}
-                <div
-                  className="flex h-8 w-8 items-center justify-center rounded-2xl text-[18px] sm:text-[20px] drop-shadow-xs transition-transform shrink-0"
-                  style={{
-                    backgroundColor: tint(colorCat, 0.16),
-                  }}
-                >
-                  {cat.emoji}
-                </div>
-
-                {/* Monto y nombre inferior */}
-                <div className="flex flex-col items-center w-full min-w-0">
-                  <span className="text-[12px] sm:text-[13px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
-                    {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
-                  </span>
-                  <span className="mt-0.5 text-[9.5px] sm:text-[10px] font-semibold leading-tight text-[var(--fin-ink-soft)] line-clamp-2 max-w-[68px] sm:max-w-[76px] text-center capitalize">
-                    {cat.info.nombre}
-                  </span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Indicador de scroll sutil y discreto */}
-        {todasCategorias.length > 4 && (
-          <div className="mt-1.5 flex justify-center">
-            <div className="h-1 w-12 rounded-full bg-[var(--fin-line)] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-[var(--fin-ink-soft)]/60 transition-all duration-150"
-                style={{
-                  width: '35%',
-                  transform: `translateX(${scrollProgress * 185}%)`,
-                }}
-              />
-            </div>
-          </div>
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </motion.div>
         )}
-      </div>
-
-      : null}
-
-      {/* ── 5. Botón suave de acción rápida [ + Anotar nuevo gasto ] ─────── */}
-      {onAnotar && preparacion.primerMovimiento && (
-        <div className="flex justify-center my-3">
-          <button
-            type="button"
-            onClick={onAnotar}
-            className="flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] px-5 py-2.5 text-[13.5px] font-semibold text-[var(--fin-ink)] transition-all active:scale-95 shadow-xs"
-          >
-            <Plus className="h-4 w-4 text-[var(--fin-ink-soft)]" />
-            <span>Anotar nuevo gasto</span>
-          </button>
-        </div>
-      )}
-
-      {/* ── 6. Si se activó filtro por categoría ─────────────────────────── */}
-      {categoriaFiltro && (
-        <div className="my-2 flex items-center justify-between rounded-full bg-[var(--fin-soft)] px-4 py-1.5 text-[13px]">
-          <span className="text-[var(--fin-ink-soft)]">
-            Mostrando solo: <strong className="text-[var(--fin-ink)] capitalize">{categoriaFiltro}</strong>
-          </span>
-          <button
-            type="button"
-            onClick={() => setCategoriaFiltro(null)}
-            className="flex items-center gap-1 font-semibold text-[var(--fin-ink)] hover:underline"
-          >
-            <span>Ver todos</span>
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* ── 7. Lista de transacciones (Siempre visible) ──────────────────── */}
-      <div className="mt-4">
-        {movimientosAMostrar.length === 0 ? <p className="py-4 text-center text-sm text-[var(--fin-ink-soft)]">{preparacion.primerMovimiento ? `No hay movimientos en ${etiquetaPeriodo}.` : 'Aquí aparecerán tus gastos e ingresos cuando guardes el primero.'}</p> : <TransactionList
-          transactions={movimientosAMostrar}
-          conSenal={conSenal}
-          onAbrir={onAbrirMovimiento}
-          onRepetir={onRepetirMovimiento}
-          onEditar={onEditarMovimiento}
-          modoPrivacidad={modoPrivacidad}
-        />}
-      </div>
+      </AnimatePresence>
 
       {/* Modal de racha */}
       {mostrarRachaModal && (

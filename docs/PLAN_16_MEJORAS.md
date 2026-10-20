@@ -6,7 +6,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | --- | --- | --- |
 | 1 | Guardado completo, cola durable, estados de sincronización, errores visibles y deshacer seguro; probar fallos, reapertura y operaciones seguidas. | Verificado, V5.0.0 |
 | 2 | Primera cuenta y primer registro guiados; distinguir datos incompletos de saldo cero; revisar el inicio vacío. | Verificado, V5.1.0 |
-| 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Pendiente |
+| 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Verificado, V6.0.0 |
 | 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Pendiente |
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Pendiente |
 | 6 | Iconos, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Pendiente |
@@ -46,7 +46,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 
 ## Siguiente paso
 
-Implementar y revisar el paso 3 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+Implementar y revisar el paso 4 con su propia versión; el objetivo completo de 16 pasos continúa activo.
 
 ## Cierre del paso 2: V5.1.0
 
@@ -56,3 +56,12 @@ Implementar y revisar el paso 3 con su propia versión; el objetivo completo de 
 - La bienvenida conserva saldos omitidos como pendientes y descarta la fuente o los dígitos cuando se elige omitirlos. No solicita saldo sin una cuenta de destino.
 - Revisión visual local: confirmar $0 en Efectivo, recargar, comprobar avance 1 de 2 y abrir la captura desde la guía. Evidencia `/tmp/lukapp-v5-1-primeros-pasos.png`.
 - Suite final: 124 archivos y 1.429 pruebas aprobadas. TypeScript y Vite aprobados; lint conserva seis advertencias previas y diff sin errores.
+
+## Cierre del paso 3: V6.0.0
+
+- El disponible aparece antes de avisos y recomendaciones; saldos e ingresos/gastos quedan en un desplegable nativo. El análisis y las categorías son otro desplegable cerrado inicialmente, después de la información diaria.
+- Próximos pagos muestra hasta tres obligaciones por fecha, excluye confirmadas, distingue programado/estimado y señala fechas pendientes. No crea pagos; abre directamente el calendario financiero.
+- Movimientos recientes ordena una copia y muestra los cinco últimos del período, con acceso al historial completo. Filtrar una categoría enfoca el listado; los controles de categorías ahora son botones accesibles por teclado.
+- Se conserva espacio al final para evitar que las barras flotantes impidan alcanzar el último contenido. Los desplegables permanecen en el flujo del documento, sin superponer listas o remonte de la página.
+- Revisión visual local: jerarquía del inicio, abrir/cerrar el desglose y navegación efectiva al calendario. Evidencia `/tmp/lukapp-v6-inicio.png`.
+- Suite completa: 125 archivos y 1.433 pruebas aprobadas. Tras el ajuste final de accesibilidad, las seis pruebas de inicio/pagos y la compilación volvieron a pasar. TypeScript y diff aprobados; lint conserva seis advertencias previas.

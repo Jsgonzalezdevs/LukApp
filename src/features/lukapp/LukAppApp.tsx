@@ -1007,6 +1007,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             gastosCop={totals.gastos}
             ingresosCop={totals.ingresos}
             onVerMes={() => setSection('mes')}
+            onVerPagos={() => setSection('calendario')}
+            obligaciones={contextoFinanciero.obligaciones}
             movimientos={delMes}
             conSenal={conSenal}
             onAbrirMovimiento={setDetalle}
