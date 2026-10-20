@@ -1025,6 +1025,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             novedad={novedades.hayNovedad ? NOVEDADES[0] : null}
             onCerrarNovedad={() => novedades.marcarVista()}
             onAnotar={() => setPending(movimientoEnBlanco())}
+            onConfigurarCuenta={(id) => { setPanelDineroCajitaId(id); setPanelDinero('cuenta'); }}
             liquidez={contextoFinanciero.liquidez}
             entrada={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
             mostrarDecisiones={mostrarDecisiones}
@@ -1174,6 +1175,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 const cajitaSeleccionada = cajitas.find((c) => c.id === panelDineroCajitaId);
                 return cajitaSeleccionada ? (
                   <DetalleCajita
+                    key={cajitaSeleccionada.id}
                     cajita={cajitaSeleccionada}
                     movimientos={cajitaMovimientos}
                     transacciones={transacciones}
@@ -1575,7 +1577,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                   claseCuenta,
                   metaCop: null,
                   tasaEaPct: null,
-                  saldoInicialCop: saldoCop ?? 0,
+                  saldoInicialCop: saldoCop,
                 });
                 if (correcto === false) return false;
               }

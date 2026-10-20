@@ -3,6 +3,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import type { Transaction } from '../types';
 import { RepositorioMemoria } from './repositorio';
 import type { Repositorio } from './repositorio';
+import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { saldoDeCajita } from '../lib/cajitas';
 import type { Cajita } from './modelos';
 import { useAlmacen } from './useAlmacen';
@@ -77,6 +78,25 @@ describe('useAlmacen', () => {
     });
     expect(result.current.datos.transacciones.map((fila) => fila.id)).toEqual(['aceptada']);
     expect((await repo.cargarTodo()).transacciones.map((fila) => fila.id)).toEqual(['aceptada']);
+  });
+
+  it('distingue saldo desconocido de cero confirmado después de reabrir', async () => {
+    const repo = new RepositorioMemoria();
+    const vista = await montar(repo);
+    await act(async () => {
+      await vista.result.current.crearCajita({ nombre: 'Pendiente', icon: 'wallet', tipo: 'cuenta', metaCop: null, tasaEaPct: null, saldoInicialCop: null });
+      await vista.result.current.crearCajita({ nombre: 'Vacía', icon: 'wallet', tipo: 'cuenta', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+    });
+    const datos = await repo.cargarTodo();
+    const pendiente = datos.cajitas.find((c) => c.nombre === 'Pendiente')!;
+    const vacia = datos.cajitas.find((c) => c.nombre === 'Vacía')!;
+    expect(tieneSaldoConfirmado(pendiente.id, datos.cajitaMovimientos)).toBe(false);
+    expect(tieneSaldoConfirmado(vacia.id, datos.cajitaMovimientos)).toBe(true);
+    await act(async () => { expect(await vista.result.current.fijarSaldo(pendiente.id, 0)).toBe(true); });
+    vista.unmount();
+    const reabierta = await montar(repo);
+    expect(tieneSaldoConfirmado(pendiente.id, reabierta.result.current.datos.cajitaMovimientos)).toBe(true);
+    expect(saldoDeCajita(reabierta.result.current.datos.cajitaMovimientos, pendiente.id)).toBe(0);
   });
 
   it('updates a transaction in place', async () => {
@@ -754,6 +774,7 @@ describe('useAlmacen', () => {
     await act(async () => { await result.current.crearCajita({ nombre: 'Efectivo', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'efectivo', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 }); });
     const id = result.current.datos.cajitas[0].id;
 
+    const antes = await repo.cargarTodo();
     await act(async () => {
       await result.current.transferirEntreCuentas({
         origenId: id,
@@ -762,7 +783,7 @@ describe('useAlmacen', () => {
       });
     });
 
-    expect(result.current.datos.cajitaMovimientos).toEqual([]);
+    expect(result.current.datos.cajitaMovimientos).toEqual(antes.cajitaMovimientos);
   });
 
   it('ignora una transferencia de cero', async () => {
@@ -783,11 +804,12 @@ describe('useAlmacen', () => {
     const a = result.current.datos.cajitas[0].id;
     const b = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
 
+    const antes = await repo.cargarTodo();
     await act(async () => {
       await result.current.transferirEntreCuentas({ origenId: a, destinoId: b, montoCop: 0 });
     });
 
-    expect(result.current.datos.cajitaMovimientos).toEqual([]);
+    expect(result.current.datos.cajitaMovimientos).toEqual(antes.cajitaMovimientos);
   });
 
   it('deja dicho en el historial de dónde vino y a dónde fue', async () => {
@@ -815,7 +837,7 @@ describe('useAlmacen', () => {
     });
 
     const notas = result.current.datos.cajitaMovimientos.map((m) => m.nota).sort();
-    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Bancolombia']);
+    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Bancolombia', 'Saldo inicial']);
   });
 
   it('el id de una cuenta creada es un UUID válido', async () => {

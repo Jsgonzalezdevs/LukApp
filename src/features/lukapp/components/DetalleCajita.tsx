@@ -1,3 +1,4 @@
+import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Star, Trash2, X } from 'lucide-react';
@@ -54,7 +55,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   esFavorita = false,
   onAlternarFavorita,
 }) => {
-  const [editandoSaldo, setEditandoSaldo] = useState(false);
+  const saldoPendiente = cajita.tipo === 'cuenta' && !tieneSaldoConfirmado(cajita.id, movimientos);
+  const [editandoSaldo, setEditandoSaldo] = useState(saldoPendiente);
   const [nuevoSaldoTexto, setNuevoSaldoTexto] = useState('');
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState(false);
@@ -286,7 +288,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"
         style={{ backdropFilter: 'var(--fin-glass-filter)', boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.6)' }}
       >
-        <p className="text-[12px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">Saldo actual</p>
+        <p className="text-[12px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">{saldoPendiente ? 'Confirma tu saldo actual' : 'Saldo actual'}</p>
 
         {!editandoSaldo ? (
           <>
@@ -300,7 +302,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 className="text-[44px] font-bold tabular-nums leading-none text-[var(--fin-ink)]"
                 style={{ letterSpacing: 'var(--fin-track-cifra)' }}
               >
-                {formatCop(saldo)}
+                {saldoPendiente ? 'Sin confirmar' : formatCop(saldo)}
               </span>
               <span className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[12px] font-medium text-[var(--fin-ink-soft)]">
                 <Pencil className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
@@ -325,7 +327,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 if (e.key === 'Escape') setEditandoSaldo(false);
               }}
               onFocus={(e) => e.target.select()}
-              placeholder="0"
+              placeholder="Escribe 0 si está vacía"
+              aria-label="Saldo actual de la cuenta"
+              disabled={guardado.ocupado}
               autoFocus
               className="w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-accent)] bg-[var(--fin-bg)] px-4 py-3.5 text-[32px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none"
               style={{ letterSpacing: 'var(--fin-track-cifra)' }}
@@ -344,7 +348,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               <button
                 type="button"
                 onClick={guardarSaldo}
-                disabled={parseSaldoInput(nuevoSaldoTexto) === null}
+                disabled={guardado.ocupado || parseSaldoInput(nuevoSaldoTexto) === null}
                 aria-label="Guardar saldo"
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 text-[14px] font-semibold text-[var(--fin-on-accent)] transition-opacity disabled:opacity-40"
               >
@@ -516,7 +520,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               inputMode="numeric"
               value={montoTexto}
               onChange={(e) => setMontoTexto(conPuntos(e.target.value))}
-              placeholder="0"
+              placeholder="Escribe 0 si está vacía"
+              aria-label="Saldo actual de la cuenta"
+              disabled={guardado.ocupado}
               autoFocus
               className={claseCampo}
             />

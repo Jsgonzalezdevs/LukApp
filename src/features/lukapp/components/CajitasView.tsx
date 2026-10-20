@@ -8,7 +8,7 @@ import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, ClaseCuenta } from '../data/modelos';
 import { CAJITA_ICONS, CLASE_CUENTA_LABELS } from '../data/modelos';
 import { resumenDeCajitas } from '../lib/cajitas';
-import { formatAmountInput, conPuntos, formatCop, parseAmountInput } from '../lib/formatCop';
+import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
 import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
@@ -41,7 +41,7 @@ interface CajitasViewProps {
     diaCorte?: number | null;
     diaPago?: number | null;
     pagoMinimoCop?: number | null;
-    saldoInicialCop: number;
+    saldoInicialCop: number | null;
   }) => ResultadoGuardado;
   onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
   onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => ResultadoGuardado;
@@ -113,7 +113,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       diaCorte: esTarjeta ? parseDia(corteTexto) : null,
       diaPago: esTarjeta ? parseDia(pagoTexto) : null,
       pagoMinimoCop: esTarjeta ? parseAmountInput(minimoTexto) : null,
-      saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
+      saldoInicialCop: esCuenta ? parseSaldoInput(saldoTexto) : (parseAmountInput(saldoTexto) ?? 0),
     }))) return;
     setNombre('');
     setClaseCuenta('banco');
@@ -264,7 +264,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               />
             </div>
             <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : COPY.cajitas.saldoInicialHint}
+              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : esCuenta ? 'Escribe 0 si está vacía. Si dejas este campo en blanco, el saldo quedará pendiente de confirmar.' : COPY.cajitas.saldoInicialHint}
             </p>
 
             {esTarjeta ? (

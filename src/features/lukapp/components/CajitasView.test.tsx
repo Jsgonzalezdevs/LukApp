@@ -82,6 +82,15 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     expect(screen.queryByText('$400.000')).not.toBeInTheDocument();
   });
 
+  it.each([['', null], ['0', 0], ['15.000', 15000]])('al crear una cuenta distingue el saldo %s del saldo desconocido', async (texto, esperado) => {
+    const { onCrear } = montar('cuenta', []);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Mi banco' } });
+    fireEvent.change(screen.getByLabelText('¿Cuánto tienes en esta cuenta?'), { target: { value: texto } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+    await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({ saldoInicialCop: esperado })));
+  });
+
   it('ya no pregunta "¿Qué es?" — la pantalla en la que estás lo responde', () => {
     montar('cuenta', []);
 

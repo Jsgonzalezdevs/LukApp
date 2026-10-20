@@ -1,3 +1,4 @@
+import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -80,6 +81,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const [abierto, setAbierto] = useState(false);
   const [confirmandoBorrado, setConfirmandoBorrado] = useState(false);
 
+  const saldoPendiente = cajita.tipo === 'cuenta' && !tieneSaldoConfirmado(cajita.id, movimientos);
   const esCuenta = cajita.tipo === 'cuenta';
   const T = esCuenta ? COPY.cuentas : COPY.cajitas;
   const ACCIONES = esCuenta ? ACCIONES_CUENTA : ACCIONES_CAJITA;
@@ -95,7 +97,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
     setAccion(misma ? null : siguiente);
     // "Update balance" starts from what the app currently believes, so the user
     // edits a number instead of retyping one they did not change.
-    setTexto(misma ? '' : siguiente === 'saldo' ? formatAmountInput(saldoCop) : '');
+    setTexto(misma ? '' : siguiente === 'saldo' && !saldoPendiente ? formatAmountInput(saldoCop) : '');
 
     // The two actions offer different lists — a withdrawal lands in a bank
     // account, a transfer can go anywhere of yours — so the selection is
@@ -153,7 +155,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             {cajita.nombre}
           </h3>
           <p className="text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
-            <AnimatedNumber value={saldoCop} format={formatCop} />
+            {saldoPendiente ? <span className="text-lg">Saldo pendiente</span> : <AnimatedNumber value={saldoCop} format={formatCop} />}
           </p>
         </div>
 

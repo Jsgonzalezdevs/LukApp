@@ -1,3 +1,5 @@
+import { preparacionInicio } from '../lib/preparacionInicio';
+import { PrimerosPasos } from './PrimerosPasos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -57,6 +59,7 @@ interface InicioViewProps {
   novedad?: Novedad | null;
   onCerrarNovedad?: () => void;
   onAnotar?: () => void;
+  onConfigurarCuenta?: (id: string | null) => void;
   liquidez: ContextoFinanciero['liquidez'];
   entrada: import('../lib/motorFinanciero').EntradaMotorFinanciero;
   mostrarDecisiones?: boolean;
@@ -113,12 +116,14 @@ export const InicioView: React.FC<InicioViewProps> = ({
   novedad,
   onCerrarNovedad,
   onAnotar,
+  onConfigurarCuenta,
   liquidez,
   entrada,
   mostrarDecisiones,
   resumenPremium = null,
   onVerResumenPremium,
 }) => {
+  const preparacion = preparacionInicio(entrada);
   const [novedadExpandida, setNovedadExpandida] = useState(false);
   const catalogo = useCatalogo();
   const { isDismissed, dismiss } = useDismissedInsights();
@@ -157,7 +162,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
     return () => clearInterval(timer);
   }, [insightsVisibles.length]);
 
-  const insightActual = insightsVisibles[insightsVisibles.length > 1 ? indiceRotacion : 0] ?? null;
+  const insightActual = preparacion.saldosCompletos && preparacion.primerMovimiento ? (insightsVisibles[insightsVisibles.length > 1 ? indiceRotacion : 0] ?? null) : null;
 
   const handleAccionInsight = (insight: Insight & { onTocar?: () => void }) => {
     if (onConsultarAsesor) {
@@ -194,7 +199,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
         return a.info.nombre.localeCompare(b.info.nombre);
       });
 
-    const maxVal = Math.max(...lista.map((c) => c.total), 1);
+    const maxVal = Math.max(...lista.map((c) => c.total), 0);
     return { todasCategorias: lista, maxTotal: maxVal };
   }, [movimientos, catalogo]);
 
@@ -339,7 +344,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </AnimatePresence>
 
-      {resumenPremium ? (
+      <PrimerosPasos estado={preparacion} onCuenta={onConfigurarCuenta} onAnotar={onAnotar} />
+
+      {resumenPremium && preparacion.saldosCompletos && preparacion.primerMovimiento ? (
         <motion.button
           type="button"
           onClick={() => onVerResumenPremium?.(insightActual)}
@@ -442,7 +449,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
       {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
       <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[12px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
-          Dinero disponible
+          {preparacion.saldosCompletos ? 'Dinero disponible' : 'Saldo por completar'}
         </span>
 
         <div className="mt-1.5">
@@ -452,18 +459,18 @@ export const InicioView: React.FC<InicioViewProps> = ({
             className="text-[44px] sm:text-[52px] font-extrabold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
             style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
           >
-            <AnimatedNumber
+            {preparacion.saldosCompletos ? <AnimatedNumber
               value={patrimonioCop}
               format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
-            />
+            /> : <span aria-label="Saldo todavía sin confirmar">—</span>}
           </button>
         </div>
         <p className="mt-1 text-[12px] text-[var(--fin-ink-faint)]">
-          Saldo total menos ahorros reservados y obligaciones.
+          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
         </p>
 
         {/* Desglose bancos y efectivo si existen */}
-        {saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
+        {preparacion.saldosCompletos && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
           <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
             <span>
               Bancos:{' '}
@@ -500,7 +507,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
       </div>
 
-      {mostrarDecisiones !== false ? (
+      {preparacion.saldosCompletos && preparacion.primerMovimiento && mostrarDecisiones !== false ? (
         <DecisionFinanciera
           liquidez={liquidez}
           entrada={entrada}
@@ -510,7 +517,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
       ) : null}
 
       {/* ── 4. Carrusel de Gráficas de Categorías (Gráfico de Barras con Alturas Contrastadas) ─ */}
-      <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {maxTotal > 0 ? <div className="my-4 -mx-4 px-4 sm:mx-0 sm:px-0">
         <div
           ref={carouselRef}
           onScroll={handleScroll}
@@ -592,8 +599,10 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </div>
 
+      : null}
+
       {/* ── 5. Botón suave de acción rápida [ + Anotar nuevo gasto ] ─────── */}
-      {onAnotar && (
+      {onAnotar && preparacion.primerMovimiento && (
         <div className="flex justify-center my-3">
           <button
             type="button"
@@ -625,14 +634,14 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
       {/* ── 7. Lista de transacciones (Siempre visible) ──────────────────── */}
       <div className="mt-4">
-        <TransactionList
+        {movimientosAMostrar.length === 0 ? <p className="py-4 text-center text-sm text-[var(--fin-ink-soft)]">{preparacion.primerMovimiento ? `No hay movimientos en ${etiquetaPeriodo}.` : 'Aquí aparecerán tus gastos e ingresos cuando guardes el primero.'}</p> : <TransactionList
           transactions={movimientosAMostrar}
           conSenal={conSenal}
           onAbrir={onAbrirMovimiento}
           onRepetir={onRepetirMovimiento}
           onEditar={onEditarMovimiento}
           modoPrivacidad={modoPrivacidad}
-        />
+        />}
       </div>
 
       {/* Modal de racha */}

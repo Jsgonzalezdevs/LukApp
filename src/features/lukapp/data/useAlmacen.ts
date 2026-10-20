@@ -1,3 +1,4 @@
+import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CATEGORIES, type Category, type Transaction } from '../types';
 import { bogotaDate } from '../lib/localDate';
@@ -66,7 +67,7 @@ export interface Almacen {
     diaPago?: number | null;
     pagoMinimoCop?: number | null;
     /** What is already in the pocket. Recorded as its opening movement. */
-    saldoInicialCop: number;
+    saldoInicialCop: number | null;
   }) => Promise<boolean | void>;
   actualizarCajita: (cajita: Cajita) => Promise<boolean | void>;
   borrarCajita: (id: string) => Promise<boolean | void>;
@@ -599,7 +600,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       diaCorte?: number | null;
       diaPago?: number | null;
       pagoMinimoCop?: number | null;
-      saldoInicialCop: number;
+      saldoInicialCop: number | null;
     }) => {
       const baseNombre = nombre.trim();
       const repetidas = new Set(
@@ -636,7 +637,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       // that a balance is the sum of its movements, and this is what the yield
       // calculation walks to know since when the money has been earning.
       const apertura: CajitaMovimiento[] =
-        saldoInicialCop > 0
+        saldoInicialCop !== null && (saldoInicialCop > 0 || tipo === 'cuenta')
           ? [
               {
                 id: nuevoId('mov'),
@@ -895,9 +896,8 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         idsPasivos(datosActuales.current.cajitas),
       );
       const delta = ajusteHacia(actual, saldoObjetivo);
-      // Nothing changed: recording a zero-delta row would clutter the history
-      // with movements that say nothing happened.
-      if (delta === 0) return;
+      // Confirmar por primera vez un cero sí aporta información: antes era desconocido.
+      if (delta === 0 && (datosActuales.current.cajitas.find((c) => c.id === cajitaId)?.tipo !== 'cuenta' || tieneSaldoConfirmado(cajitaId, datosActuales.current.cajitaMovimientos))) return true;
 
       return registrarMovimiento({
         cajitaId,

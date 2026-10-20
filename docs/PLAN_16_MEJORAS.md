@@ -5,7 +5,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | Paso | Alcance y criterio de aceptación | Estado |
 | --- | --- | --- |
 | 1 | Guardado completo, cola durable, estados de sincronización, errores visibles y deshacer seguro; probar fallos, reapertura y operaciones seguidas. | Verificado, V5.0.0 |
-| 2 | Primera cuenta y primer registro guiados; distinguir datos incompletos de saldo cero; revisar el inicio vacío. | Pendiente |
+| 2 | Primera cuenta y primer registro guiados; distinguir datos incompletos de saldo cero; revisar el inicio vacío. | Verificado, V5.1.0 |
 | 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Pendiente |
 | 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Pendiente |
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Pendiente |
@@ -46,4 +46,13 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 
 ## Siguiente paso
 
-Implementar y revisar el paso 2 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+Implementar y revisar el paso 3 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+
+## Cierre del paso 2: V5.1.0
+
+- El inicio muestra una guía con dos avances reales: confirmar los saldos de las cuentas y guardar el primer movimiento. Los accesos abren la cuenta pendiente o la captura real.
+- Saldo omitido y saldo cero son distintos: la apertura admite `null`; confirmar cero deja un movimiento de referencia durable sin modificar el saldo. Los registros previos se conservan; una cuenta antigua sin referencia pide confirmación.
+- Se ocultan las recomendaciones, simulaciones y gráficos vacíos mientras faltan saldos o el primer registro. Un período sin movimientos se distingue de un libro sin historial.
+- La bienvenida conserva saldos omitidos como pendientes y descarta la fuente o los dígitos cuando se elige omitirlos. No solicita saldo sin una cuenta de destino.
+- Revisión visual local: confirmar $0 en Efectivo, recargar, comprobar avance 1 de 2 y abrir la captura desde la guía. Evidencia `/tmp/lukapp-v5-1-primeros-pasos.png`.
+- Suite final: 124 archivos y 1.429 pruebas aprobadas. TypeScript y Vite aprobados; lint conserva seis advertencias previas y diff sin errores.

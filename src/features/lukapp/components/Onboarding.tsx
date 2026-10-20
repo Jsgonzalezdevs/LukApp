@@ -75,7 +75,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
       nombre: nombre.trim(),
       banco: bancoFinal,
       claseCuenta: claseCuentaFinal,
-      saldoCop,
+      saldoCop: bancoFinal ? saldoCop : null,
     }));
 
   const pasos = [
@@ -142,8 +142,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({
     },
     {
       titulo: bancoFinal ? `¿Cuánto tienes en ${bancoFinal}?` : '¿Cuánto tienes?',
-      ayuda:
-        'El saldo que ves en la app del banco. Si no lo sabes, sigue: lo arreglas cuando quieras.',
+      ayuda: bancoFinal
+        ? 'El saldo actual que ves en tu banco. Escribe 0 si está vacía o déjalo pendiente si no lo sabes.'
+        : 'No elegiste un banco. Podrás confirmar el saldo de Efectivo desde el inicio.',
       cuerpo: (
         <div className="flex flex-col gap-4">
           <p
@@ -154,7 +155,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               color: digitos === '' ? 'var(--fin-ink-ghost)' : 'var(--fin-ink)',
             }}
           >
-            ${digitos === '' ? '0' : formatAmountInput(saldoCop)}
+            {digitos === '' ? 'Sin confirmar' : `$${formatAmountInput(saldoCop)}`}
           </p>
           <TecladoNumerico
             onDigito={(d) => setDigitos((prev) => (prev + d).replace(/^0+(?=\d)/, '').slice(0, 12))}
@@ -163,7 +164,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
         </div>
       ),
       boton: 'Continuar',
-      salida: 'Después',
+      salida: 'Dejar saldo pendiente',
     },
     {
       titulo: nombre.trim() ? `Listo, ${nombre.trim()}.` : 'Todo listo.',
@@ -177,7 +178,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
                 {bancoFinal} · {ETIQUETA_CLASE[claseCuentaFinal]}
               </p>
               <p className="mt-1 tabular-nums text-[15px] text-[var(--fin-ink-soft)]">
-                Saldo inicial: ${formatAmountInput(saldoCop)}
+                {saldoCop === null ? 'Saldo pendiente de confirmar' : `Saldo inicial: $${formatAmountInput(saldoCop)}`}
               </p>
               <button
                 type="button"
@@ -191,7 +192,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
             <>
               <p className="text-[17px] font-semibold text-[var(--fin-ink)]">No crearás cuentas todavía</p>
               <p className="mt-1 text-[14px] text-[var(--fin-ink-soft)]">
-                LukApp empezará completamente vacía y podrás agregar una cuenta desde Dinero.
+                Efectivo ya está disponible, con saldo pendiente de confirmar. Puedes agregar un banco o una billetera desde Dinero.
               </p>
             </>
           )}
@@ -256,6 +257,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
             type="button"
             onClick={() => {
               if (!ultimo) {
+                if (indice === 1 && !bancoFinal) { setPaso(3); return; }
                 siguiente();
                 return;
               }
@@ -277,9 +279,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               if (ultimo) {
                 setPaso((p) => Math.max(0, p - 1));
               } else {
+                if (indice === 1) { setFuente(null); setOtroBanco(''); setDigitos(''); setPaso(3); return; }
+                if (indice === 2) setDigitos('');
                 siguiente();
               }
             }}
+            disabled={guardado.ocupado}
             className="mt-1 w-full rounded-[var(--fin-r-control)] py-2.5 text-[15px] text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
           >
             {actual.salida}
