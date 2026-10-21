@@ -19,7 +19,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Verificado, V9.5.0 |
 | 14 | Aportes/retiros/valoraciones/rendimientos y multimoneda con importe original, tasa y fecha; separar disponible e invertido. | Verificado, V9.6.0 |
 | 15 | Recepción de comprobantes por correo con procedencia y deduplicación; evaluar e implementar la vía bancaria viable. | Verificado, V9.7.0 (correo listo para activar; banca evaluada) |
-| 16 | Modo opcional para independientes/negocios: cuentas por cobrar/pagar, abonos, devengo/caja, cotizaciones y facturas. | Pendiente |
+| 16 | Modo opcional para independientes/negocios: cuentas por cobrar/pagar, abonos, devengo/caja, cotizaciones y facturas. | Verificado, V9.8.0 |
 
 ## Evidencia del paso 1
 
@@ -189,3 +189,12 @@ Implementar y revisar el paso 15: recepción de comprobantes por correo y la ví
 - La recepción real necesita configurar en Render `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET` y `COMPROBANTES_EMAIL_DOMINIO`, verificar el dominio MX de recepción en Resend y registrar `email.received` hacia `/api/comprobantes-correo/webhook`. No se ingresaron secretos ni se registró dominio durante este cambio.
 - Para banca, el camino verificable es Open Finance/Account Information con consentimiento específico: Bancolombia documenta cuentas, saldos y transacciones pero requiere habilitación y cotización; Credibanco ofrece agregación con alta de proveedor y cumplimiento. La SFC expidió el Decreto 0368 de 2026 y empezó mesas técnicas, pero la implementación gradual depende de estándares y calendario regulatorios; por ello LukApp conserva PDF/CSV como camino disponible y no promete conexión bancaria automática. Fuentes: [SFC, Decreto 0368 y despliegue gradual](https://www.superfinanciera.gov.co/publicaciones/10116081/finanzas-abiertas-obligatorias-impulsaran-el-desarrollo-y-la-inclusion-financiera-en-el-pais/), [Bancolombia, Account Information](https://api-portal-external.apps.bancolombia.com/documentacion/categorizacion/publicos/open-finance/account-information), [Credibanco, Open Finance](https://www.credibanco.com/soluciones-de-open-finance/).
 - Pruebas específicas del webhook y flujo de análisis: 4 aprobadas. TypeScript, Vite, lint enfocado y `git diff --check` aprobados. Revisión visual pendiente de una cuenta con sesión y secretos de Resend configurados; en desarrollo local sin cuenta se muestra un mensaje de inicio de sesión.
+
+## Cierre del paso 16: V9.8.0
+
+- Más > Independientes y negocios permite registrar cotizaciones, cuentas por cobrar (facturas emitidas) y cuentas por pagar (facturas recibidas), con contraparte, concepto, fechas, total y abonos parciales que no pueden exceder el saldo pendiente.
+- Una cotización aceptada puede convertirse en cuenta por cobrar sin borrar el original; queda enlazada y no se vuelve a ofrecer la conversión. El resumen separa base de devengo y caja, muestra saldos abiertos y no suma esta contabilidad gerencial a los reportes personales para evitar duplicados.
+- Los registros se sincronizan por Supabase con RLS por cuenta, o se guardan localmente en el modo sin sesión. Migración `20261021153000_modo_negocio.sql` aplicada al proyecto `trrlknwvplhbntxzprud`; verifiqué las columnas y no hay hallazgos nuevos de seguridad asociados.
+- El módulo organiza documentos y saldos, pero no emite factura electrónica DIAN ni sustituye un sistema contable; los abonos de negocio no mueven automáticamente las cuentas personales y la pantalla indica registrar también el movimiento real en Dinero.
+- Pruebas de lógica cubren límites de abono, base de devengo/caja y conversión de cotización. Suite completa: 140 archivos y 1.497 pruebas aprobadas. TypeScript, Vite, lint de los archivos tocados y `git diff --check` aprobados.
+- Revisión visual local en `/ajustes/negocio`: jerarquía del resumen, selector Devengo/Caja, formulario y estado vacío legibles; emojis 💼🧾💸 visibles. No se guardaron documentos de prueba.

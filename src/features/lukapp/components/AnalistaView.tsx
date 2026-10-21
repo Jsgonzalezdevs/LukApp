@@ -38,6 +38,7 @@ const nuevoId = (): string =>
   typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : `tx-${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
+const instanteIsoActual = (): string => new Date().toISOString();
 
 const segundosDe = (trabajo: Trabajo, ahora: number): number =>
   Math.max(0, Math.floor((ahora - trabajo.inicio) / 1000));
@@ -441,7 +442,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                     movimientosDudosos,
                     posiblesConfirmados: plan.posibles.filter((fila) => aceptados.has(fila.clave)),
                     transferenciasExcluidas: plan.excluidos.filter((fila) => fila.exclusion === 'traslado-propio'),
-                    ahora: new Date().toISOString(),
+                    ahora: instanteIsoActual(),
                   });
                   if (await guardado.ejecutar(() => onImportar(total, revisiones))) {
                     setImportado(total.length);

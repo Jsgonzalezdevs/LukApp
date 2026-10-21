@@ -32,6 +32,7 @@ const ICONOS: Record<PanelAjustes, string> = {
   'dividir-cuenta': '🍽️',
   vaquitas: '🐮',
   extractos: '📥',
+  negocio: '💼',
   revisiones: '🧭',
   atajos: '💳',
   gmf: '🏛️',
@@ -46,6 +47,7 @@ const ICONOS: Record<PanelAjustes, string> = {
  * que leer las filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
   { titulo: 'Preferencias', paneles: ['categorias', 'periodo', 'atajos'] },
+  { titulo: 'Tu trabajo', paneles: ['negocio'] },
   { titulo: 'Tus datos', paneles: ['revisiones', 'nombres', 'respaldo'] },
   { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },
 ];
