@@ -1,3 +1,5 @@
+import { panelDeSegmentos, rutaDePanel } from './lib/navegacionFunciones';
+import { ResultadosFunciones } from './components/ResultadosFunciones';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles/premium-effects.css';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -616,6 +618,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     return true;
   };
 
+  const [capa, setCapa] = useState<Capa>(null);
   const [filtro, setFiltro] = useState<Filtro>(FILTRO_VACIO);
   // Built here as well as in the provider: the filter runs outside the tree the
   // provider wraps, and searching by category name needs the same resolution the
@@ -628,23 +631,18 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   // through the calendar to find one movement, which is the job a search box
   // exists to remove.
   const visibles = useMemo(
-    () => (sinFiltro ? delMes : filtrarMovimientos(transacciones, filtro, catalogoActual)),
-    [sinFiltro, delMes, transacciones, filtro, catalogoActual],
+    () => (sinFiltro ? (capa === 'buscar' ? transacciones : delMes) : filtrarMovimientos(transacciones, filtro, catalogoActual)),
+    [sinFiltro, capa, delMes, transacciones, filtro, catalogoActual],
   );
 
   // ---------------------------------------------------------------- capas ---
   // Las cosas que se abren ENCIMA de la pantalla, no en vez de ella. Antes casi
   // todas eran secciones con su propio puesto en el menú; ahora son capas, que
   // es lo que siempre fueron: sitios de los que uno sale, no en los que vive.
-  const [capa, setCapa] = useState<Capa>(null);
-  const panelAjustes: PanelAjustes | null =
-    section === 'ajustes' && segmentos[1]
-      ? (PANELES_AJUSTES.find((p) => p.id === segmentos[1])?.id as PanelAjustes) ?? null
-      : null;
+  const panelAjustes = panelDeSegmentos(segmentos);
   const setPanelAjustes = useCallback(
-    (panel: PanelAjustes | null) =>
-      ir(panel ? `${BASE_LUKAPP}/ajustes/${panel}` : `${BASE_LUKAPP}/ajustes`),
-    [ir],
+    (panel: PanelAjustes | null) => ir(panel ? `${BASE_LUKAPP}${rutaDePanel(panel, section)}` : `${BASE_LUKAPP}/${section === 'inicio' ? 'app' : section}`),
+    [ir, section],
   );
   // Qué grupo de "Dinero" se abrió. La lista de Dinero es solo el resumen; las
   // acciones de verdad (crear, transferir, aportar, abonar) siguen viviendo en
@@ -652,6 +650,19 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   // más limpia sin que se pierda nada de lo que la app sabía hacer.
   const [panelDinero, setPanelDinero] = useState<'cuenta' | 'cajita' | 'deuda' | 'tarjeta' | null>(null);
   const [panelDineroCajitaId, setPanelDineroCajitaId] = useState<string | null>(null);
+  const cuentaDeImportacion = useRef<string | null>(null);
+  useEffect(() => {
+    if (panelAjustes === 'extractos') {
+      cuentaDeImportacion.current = new URLSearchParams(window.location.search).get('cuenta');
+      return;
+    }
+    const anterior = cuentaDeImportacion.current;
+    cuentaDeImportacion.current = null;
+    if (anterior && panelAjustes === null && section === 'dinero' && cajitas.some((c) => c.id === anterior)) {
+      setPanelDineroCajitaId(anterior);
+      setPanelDinero('cuenta');
+    }
+  }, [panelAjustes, section, ruta, cajitas]);
   const [detalle, setDetalle] = useState<Transaction | null>(null);
   const [guardado, setGuardado] = useState<Guardado | null>(null);
   const [vistaPreviaPremium, setVistaPreviaPremium] = useState(false);
@@ -1039,6 +1050,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* ------------------------------------------------------- 2. Dinero --- */}
         {section === 'dinero' ? (
           <DineroView
+            onAbrirHerramienta={setPanelAjustes}
             transacciones={transacciones}
             cajitas={cajitas}
             movimientos={cajitaMovimientos}
@@ -1068,6 +1080,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* ---------------------------------------------------------- 3. Mes --- */}
         {section === 'mes' ? (
           <MesView
+            onAbrirHerramienta={setPanelAjustes}
             clave={month}
             config={periodoAjustes.periodo}
             maxClave={maxMonth}
@@ -1129,6 +1142,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* ------------------------------------------------------ 5. Ajustes --- */}
         {section === 'ajustes' ? (
           <AjustesView
+            onBuscarFunciones={() => setCapa('buscar')}
             onAbrir={setPanelAjustes}
             temaToggle={<TemaToggle tema={tema} onCambiar={onCambiarTema} />}
             cuenta={cuenta}
@@ -1179,6 +1193,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                   <DetalleCajita
                     key={cajitaSeleccionada.id}
                     cajita={cajitaSeleccionada}
+                    onImportar={() => { setPanelDinero(null); ir(`${BASE_LUKAPP}${rutaDePanel('extractos')}?cuenta=${encodeURIComponent(cajitaSeleccionada.id)}`); }}
                     movimientos={cajitaMovimientos}
                     transacciones={transacciones}
                     esFavorita={cajitaSeleccionada.id === cuentaFavoritaId}
@@ -1239,7 +1254,11 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {panelAjustes !== null ? (
           <HojaPanel
             titulo={PANELES_AJUSTES.find((p) => p.id === panelAjustes)?.label ?? ''}
-            onCerrar={() => setPanelAjustes(null)}
+            onCerrar={() => {
+              const cuenta = new URLSearchParams(window.location.search).get('cuenta');
+              if (panelAjustes === 'extractos' && cuenta && cajitas.some((c) => c.id === cuenta)) { setPanelDineroCajitaId(cuenta); setPanelDinero('cuenta'); }
+              setPanelAjustes(null);
+            }}
           >
             {panelAjustes === 'forecast' ? (
               <ForecastResumen forecast={contextoFinanciero.forecast} />
@@ -1334,6 +1353,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               <VaquitasModal isOpen={true} onClose={() => setPanelAjustes(null)} userId={userId} />
             ) : panelAjustes === 'extractos' ? (
               <AnalistaView
+                cuentaInicialId={new URLSearchParams(window.location.search).get('cuenta')}
                 existentes={transacciones}
                 cuentas={cuentasParaElegir}
                 onImportar={(nuevos) => almacen.importarTransacciones(nuevos)}
@@ -1423,18 +1443,20 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           >
             <div className="flex flex-col gap-5">
               <BuscadorMovimientos
+                incluirFunciones
+                complementoConsulta={<ResultadosFunciones texto={filtro.texto} onAbrir={(destino) => { setCapa(null); setFiltro(FILTRO_VACIO); ir(`${BASE_LUKAPP}${destino}`); }} />}
                 filtro={filtro}
                 onCambiar={setFiltro}
                 resultados={visibles}
                 cuentas={cuentasParaElegir}
               />
-              <TransactionList
+              {visibles.length === 0 ? <p role="status" className="text-sm text-[var(--fin-ink-soft)]">No hay movimientos que coincidan con esta búsqueda.</p> : <TransactionList
                 transactions={visibles}
                 conSenal={conSenal}
                 onAbrir={setDetalle}
                 onRepetir={repetirMovimiento}
                 onEditar={setEditando}
-              />
+              />}
             </div>
           </HojaPanel>
         ) : null}

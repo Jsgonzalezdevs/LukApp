@@ -1,3 +1,5 @@
+import type { PanelAjustes } from '../sections';
+import { AccesosFunciones } from './AccesosFunciones';
 import React from 'react';
 import { Star } from 'lucide-react';
 import type { Transaction } from '../types';
@@ -11,6 +13,7 @@ import { resumenTarjeta } from '../lib/tarjetas';
 import { monthKey, bogotaDate } from '../lib/localDate';
 
 interface DineroViewProps {
+  onAbrirHerramienta?: (panel: PanelAjustes) => void;
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
@@ -32,27 +35,14 @@ const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string }> = [
   { tipos: ['deuda'], titulo: 'Deudas' },
 ];
 
-/**
- * "Dinero": dónde está tu plata.
- *
- * Junta cinco sitios que antes estaban separados —Cuentas, Ahorro › Cajitas,
- * Ahorro › Metas, Deudas y Configuración › Ajustes— en una sola lista.
- *
- * Las metas dejaron de ser una pantalla entera (334 líneas) y son una barrita
- * debajo del nombre. Una meta no es una cosa aparte: es el objetivo de una
- * cajita, y el modelo de datos ya lo decía así (`Cajita.metaCop` existe desde
- * siempre). Tenerla como sección propia obligaba a mirar en dos sitios para
- * saber una sola cosa.
- *
- * Las deudas usan el mismo modelo con el signo al revés (`ES_PASIVO`), así que
- * aquí son el mismo tipo de fila, solo que el saldo se pinta en rojo.
- */
+/** Cuentas, ahorros y pasivos, con accesos a metas, importación y herramientas compartidas. */
 export const DineroView: React.FC<DineroViewProps> = ({
   transacciones,
   cajitas,
   movimientos,
   mostrarAhorro,
   onAbrir,
+  onAbrirHerramienta,
   onAbrirTarjetas,
   onCrear,
   modoPrivacidad = false,
@@ -88,6 +78,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
         Saldo total menos ahorros reservados y obligaciones.
       </p>
 
+      {onAbrirHerramienta ? <AccesosFunciones paneles={['metas', 'extractos']} onAbrir={onAbrirHerramienta} /> : null}
       {vivas.length === 0 ? (
         <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-5 py-8 text-center">
           <p className="text-[17px] font-semibold text-[var(--fin-ink)]">Empieza por tu banco</p>
@@ -229,6 +220,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
           </button>
         </div>
       ) : null}
+      {onAbrirHerramienta ? <details className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] p-4"><summary className="cursor-pointer font-semibold text-[var(--fin-ink)]">Compartir gastos e impuestos</summary><div className="mt-3"><AccesosFunciones paneles={['compartido', 'vaquitas', 'dividir-cuenta', 'gmf']} onAbrir={onAbrirHerramienta} /></div></details> : null}
     </div>
   );
 };

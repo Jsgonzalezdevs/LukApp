@@ -23,6 +23,7 @@ import { AnalistaReporte } from './AnalistaReporte';
 import { useArchivoPwa } from './useArchivoPwa';
 
 interface AnalistaViewProps {
+  cuentaInicialId?: string | null;
   existentes: readonly Transaction[];
   cuentas: readonly { id: string; nombre: string }[];
   onImportar: (nuevos: Transaction[]) => ResultadoGuardado;
@@ -394,10 +395,10 @@ const TrabajoConContrasena: React.FC<TrabajoConContrasenaProps> = ({ trabajo, on
 
 // -----------------------------------------------------------------------------
 
-export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas, onImportar, onCompletar }) => {
+export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas, cuentaInicialId, onImportar, onCompletar }) => {
   const analista = useAnalista();
   useArchivoPwa(analista.analizarArchivos);
-  const [cuentaId, setCuentaId] = useState<string | null>(cuentas.length === 1 ? cuentas[0].id : null);
+  const [cuentaId, setCuentaId] = useState<string | null>(() => cuentas.some((c) => c.id === cuentaInicialId) ? cuentaInicialId! : cuentas.length === 1 ? cuentas[0].id : null);
   const [arrastrando, setArrastrando] = useState(false);
   const [contraidos, setContraidos] = useState<Set<string>>(new Set());
   const inputArchivo = useRef<HTMLInputElement>(null);

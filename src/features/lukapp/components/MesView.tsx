@@ -1,3 +1,5 @@
+import type { PanelAjustes } from '../sections';
+import { AccesosFunciones } from './AccesosFunciones';
 import React, { useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Download, Lock, Sparkles } from 'lucide-react';
 import type { Transaction } from '../types';
@@ -15,6 +17,7 @@ import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
 
 interface MesViewProps {
+  onAbrirHerramienta?: (panel: PanelAjustes) => void;
   /** El período activo -- 'YYYY-MM' si la frecuencia es mensual sin desfase
    * (como siempre), o la clave que le corresponda a cualquier otra frecuencia. */
   clave: string;
@@ -61,6 +64,7 @@ export const MesView: React.FC<MesViewProps> = ({
   hoy,
   onCambiarPeriodo,
   onAbrirCalendario,
+  onAbrirHerramienta,
   shift,
   totals,
   gastos,
@@ -133,6 +137,7 @@ export const MesView: React.FC<MesViewProps> = ({
           <ChevronRight className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
+      {onAbrirHerramienta ? <AccesosFunciones paneles={['recurrentes', 'forecast']} onAbrir={onAbrirHerramienta} /> : null}
 
       {habilitado ? (
         <RippleButton

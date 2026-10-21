@@ -31,6 +31,8 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
     const focoAnterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const selectoresFoco = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const alPulsarTecla = (evento: KeyboardEvent) => {
+      const dialogos = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (dialogos[dialogos.length - 1] !== dialogoRef.current) return;
       if (evento.key === 'Escape') {
         evento.preventDefault();
         cierreRef.current();
@@ -55,7 +57,10 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
     requestAnimationFrame(() => dialogoRef.current?.querySelector<HTMLElement>(selectoresFoco)?.focus());
     return () => {
       document.removeEventListener('keydown', alPulsarTecla);
-      focoAnterior?.focus();
+      const abiertos = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+      const superior = abiertos[abiertos.length - 1];
+      if (superior) superior.querySelector<HTMLElement>(selectoresFoco)?.focus();
+      else focoAnterior?.focus();
     };
   }, []);
 

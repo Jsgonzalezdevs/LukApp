@@ -3,26 +3,7 @@
 // react/only-export-components.
 import { BarChart3, Home, Menu, UserCircle, Wallet } from 'lucide-react';
 
-/**
- * Los cuatro sitios a los que se puede ir. Cuatro, no once.
- *
- * Antes esto declaraba 11 secciones, y encima había 8 sub-pestañas, una hoja
- * "Más" con 6 cosas dentro y un menú lateral que en el computador mostraba
- * unas cosas distintas que el celular. Cuatro sistemas de navegación para las
- * mismas funciones. Nada de eso se borró: se reagrupó por lo que la gente
- * quiere hacer, en vez de por cómo están guardados los datos.
- *
- *   Inicio    — cuánto tengo y qué pasó. Es donde se vive.
- *   Dinero    — dónde está la plata: cuentas, ahorros, deudas y tarjetas.
- *   Mes       — todo lo que se calcula: gráficas, topes, comparaciones.
- *   Ajustes   — todo lo que se configura una vez y no se vuelve a tocar.
- *
- * Sin colores. Antes cada entrada tenía su propio tono (rosa, turquesa,
- * violeta...) repartidos sin ningún criterio: no había forma de explicar por
- * qué Deudas era rosa. El color en esta app significa una sola cosa —verde
- * entró, rojo salió— y gastarlo en decorar el menú le quitaba ese significado.
- * Lo que está activo se ve porque está en blanco fuerte, no porque tenga color.
- */
+/** Una navegación común en móvil y escritorio; las herramientas se abren en su sección. */
 export const SECTIONS = [
   { id: 'inicio', icon: Home, label: 'Inicio' },
   { id: 'dinero', icon: Wallet, label: 'Dinero' },
@@ -34,18 +15,9 @@ export const SECTIONS = [
 export type SectionId = (typeof SECTIONS)[number]['id'] | 'calendario';
 
 export const sectionLabel = (section: SectionId): string =>
-  SECTIONS.find((s) => s.id === section)?.label ?? '';
+  section === 'calendario' ? 'Calendario financiero' : SECTIONS.find((s) => s.id === section)?.label ?? '';
 
-/**
- * Las cosas que se abren DENTRO de Ajustes, cada una como una hoja a pantalla
- * completa. Antes eran pestañas marcadas `hidden lg:grid`, y eso escondía un
- * problema serio: en el celular la barra de pestañas no se pintaba nunca, así
- * que Categorías, el 4x1000, el Respaldo y el Informe eran literalmente
- * inalcanzables desde un teléfono. Como filas de una lista sí existen en todas
- * partes.
- *
- * El orden no es alfabético, es por frecuencia: lo que más se toca, arriba.
- */
+/** Catálogo compartido por accesos, búsqueda y títulos; conserva los identificadores anteriores. */
 export const PANELES_AJUSTES = [
   { id: 'forecast', label: 'Proyección financiera', ayuda: 'Mira cómo podría verse tu liquidez' },
   { id: 'categorias', label: 'Categorías', ayuda: 'Crea las tuyas o cambia las que hay' },

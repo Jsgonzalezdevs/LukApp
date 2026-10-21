@@ -133,7 +133,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
         className="flex h-[var(--fin-nav-h)] w-full max-w-[720px] items-center justify-around px-2"
       >
         {SECTIONS.map((item) => {
-          const activa = item.id === section;
+          const activa = item.id === section || (section === 'calendario' && item.id === 'mes');
           return (
             <button
               key={item.id}

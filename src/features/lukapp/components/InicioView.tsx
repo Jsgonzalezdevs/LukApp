@@ -291,7 +291,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           <button
             type="button"
             onClick={onBuscar}
-            aria-label="Buscar un movimiento"
+            aria-label="Buscar movimientos y funciones"
             className="flex h-8.5 w-8.5 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >
             <Search className="h-4 w-4" strokeWidth={2.2} />

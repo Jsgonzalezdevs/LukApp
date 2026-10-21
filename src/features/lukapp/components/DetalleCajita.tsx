@@ -16,6 +16,7 @@ const parseDia = (texto: string): number | null => {
 };
 
 interface DetalleCajitaProps {
+  onImportar?: () => void;
   cajita: Cajita;
   movimientos: readonly CajitaMovimiento[];
   transacciones: readonly Transaction[];
@@ -45,6 +46,7 @@ interface DetalleCajitaProps {
  */
 export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   cajita,
+  onImportar,
   movimientos,
   transacciones,
   onFijarSaldo,
@@ -373,6 +375,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           </>
         ) : null}
       </section>
+
+      {cajita.tipo === 'cuenta' && onImportar ? <button type="button" onClick={onImportar} className="mt-3 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-left font-semibold text-[var(--fin-ink)]">Importar extracto de esta cuenta</button> : null}
 
       {/* Marcar como cuenta favorita / principal */}
       {cajita.tipo === 'cuenta' && onAlternarFavorita && (

@@ -259,8 +259,8 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
               audio.play('click');
               onBuscar();
             }}
-            aria-label="Buscar un movimiento"
-            title="Buscar movimientos"
+            aria-label="Buscar movimientos y funciones"
+            title="Buscar movimientos y funciones"
             className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Search className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />

@@ -5,6 +5,7 @@ import type { PanelAjustes } from '../sections';
 import { useRecordatorioRacha } from '../data/usePreferencias';
 
 interface AjustesViewProps {
+  onBuscarFunciones?: () => void;
   onAbrir: (panel: PanelAjustes) => void;
   temaToggle?: React.ReactNode;
   cuenta?: { email: string; onSalir: () => void };
@@ -48,8 +49,7 @@ const ICONOS: Record<PanelAjustes, string> = {
 /** Los bloques en que se parte la lista. Agrupar por tema hace que no haya
  * que leer las filas para encontrar una. */
 const BLOQUES: ReadonlyArray<{ titulo: string; paneles: readonly PanelAjustes[] }> = [
-  { titulo: 'Tu dinero', paneles: ['forecast', 'categorias', 'topes', 'periodo', 'metas', 'recurrentes', 'compartido'] },
-  { titulo: 'Herramientas', paneles: ['dividir-cuenta', 'vaquitas', 'extractos', 'atajos', 'gmf'] },
+  { titulo: 'Preferencias', paneles: ['categorias', 'periodo', 'atajos'] },
   { titulo: 'Tus datos', paneles: ['nombres', 'respaldo'] },
   { titulo: 'Comunidad', paneles: ['funciones-solicitadas'] },
 ];
@@ -108,6 +108,7 @@ const Fila: React.FC<{
  */
 export const AjustesView: React.FC<AjustesViewProps> = ({
   onAbrir,
+  onBuscarFunciones,
   temaToggle,
   cuenta,
   mostrarAhorro,
@@ -130,6 +131,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
         Ajustes
       </h1>
 
+    {onBuscarFunciones ? <button type="button" onClick={onBuscarFunciones} className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-left text-[var(--fin-ink)]">Buscar una función de LukApp</button> : null}
     {BLOQUES.map((bloque) => (
       <section key={bloque.titulo}>
         <h2 className="px-1 pb-2 text-[13px] text-[var(--fin-ink-faint)]">{bloque.titulo}</h2>

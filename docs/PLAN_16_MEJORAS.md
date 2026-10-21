@@ -8,7 +8,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 2 | Primera cuenta y primer registro guiados; distinguir datos incompletos de saldo cero; revisar el inicio vacío. | Verificado, V5.1.0 |
 | 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Verificado, V6.0.0 |
 | 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Verificado, V7.0.0 |
-| 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Pendiente |
+| 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Verificado, V8.0.0 |
 | 6 | Iconos, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Pendiente |
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Pendiente |
 | 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Pendiente |
@@ -46,7 +46,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 
 ## Siguiente paso
 
-Implementar y revisar el paso 5 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+Implementar y revisar el paso 6 con su propia versión; el objetivo completo de 16 pasos continúa activo.
 
 ## Cierre del paso 2: V5.1.0
 
@@ -75,3 +75,15 @@ Implementar y revisar el paso 5 con su propia versión; el objetivo completo de 
 - Revisión visual local: abrir escritura, escribir 2.500 con el teclado del dispositivo, volver al teclado de LukApp conservando el monto, pulsar Escape y comprobar regreso al inicio sin guardar el dato de prueba. Evidencia `/tmp/lukapp-v7-captura.png`.
 - Suite completa: 125 archivos y 1.437 pruebas aprobadas. Después del ajuste final de foco, las 12 pruebas de captura/dictado y TypeScript/Vite volvieron a pasar. Lint conserva únicamente las seis advertencias previas y diff aprobado.
 - La transcripción y el OCR se verifican con las pruebas existentes y sus dobles; esta revisión visual no grabó audio del usuario ni envió documentos personales.
+
+## Cierre del paso 5: V8.0.0
+
+- Dinero incluye Metas e Importar extractos junto a las cuentas; las herramientas compartidas y el 4x1000 quedan agrupadas. Mes incluye Pagos fijos, Proyección y el acceso al calendario. Más conserva preferencias, datos, cuenta y comunidad.
+- La búsqueda encuentra funciones por nombre y usos, sin depender de tildes; muestra su sección y abre el destino real. Los movimientos se buscan en todo el historial incluso sin filtros, corrigiendo el acceso al historial completo del inicio.
+- Las herramientas usan rutas dentro de su sección (`/dinero/metas`, `/mes/recurrentes`); las rutas anteriores siguen válidas. Añadir un pago desde el calendario conserva `/calendario` al volver.
+- Desde el detalle de una cuenta se puede abrir importación con esa cuenta preseleccionada. Cerrar y Atrás recuperan el detalle de origen, incluso si se recargó la pantalla de importación con su parámetro de cuenta.
+- Escape afecta solo a la capa superior y el foco vuelve al diálogo que permanece abierto; una prueba reproduce el cierre de importación sobre una cuenta.
+- Revisión visual local: abrir/cerrar metas, importar desde Efectivo sin enviar archivos, comprobar selección y regreso por cerrar/Atrás, buscar metas y abrirlas, revisar Mes/calendario/pagos y la nueva lista de Más. Evidencia `/tmp/lukapp-v8-buscar-funciones.png`.
+- Suite final: 128 archivos y 1.443 pruebas aprobadas. TypeScript, Vite y diff aprobados; lint conserva seis advertencias previas.
+
+El siguiente paso es la unificación visual (6); los pasos 6 a 16 continúan pendientes. Estos cambios del frontend están cerrados localmente, sin publicación.

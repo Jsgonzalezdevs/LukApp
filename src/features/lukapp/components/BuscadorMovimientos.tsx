@@ -7,6 +7,8 @@ import type { Filtro } from '../lib/filtros';
 import type { Transaction } from '../types';
 
 interface BuscadorMovimientosProps {
+  incluirFunciones?: boolean;
+  complementoConsulta?: React.ReactNode;
   filtro: Filtro;
   onCambiar: (filtro: Filtro) => void;
   /** The rows the current filter produced, for the running total. */
@@ -20,6 +22,8 @@ const CAMPO =
 
 export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
   filtro,
+  incluirFunciones = false,
+  complementoConsulta,
   onCambiar,
   resultados,
   cuentas,
@@ -41,13 +45,16 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
         <input
           value={filtro.texto}
           onChange={(e) => cambiar({ texto: e.target.value })}
-          placeholder="Buscar por quién, en qué, o cuánto"
-          aria-label="Buscar movimientos"
+          placeholder={incluirFunciones ? 'Movimiento o función: almuerzo, metas, importar…' : 'Buscar por quién, en qué, o cuánto'}
+          aria-label={incluirFunciones ? 'Buscar movimientos y funciones' : 'Buscar movimientos'}
           type="search"
           className={`${CAMPO} pl-9`}
         />
       </div>
 
+      {incluirFunciones && !activo ? <p className="mt-2 text-xs text-[var(--fin-ink-soft)]">Movimientos de todo tu historial y funciones de LukApp.</p> : null}
+      {complementoConsulta ? <div className="mt-3">{complementoConsulta}</div> : null}
+      {incluirFunciones ? <p className="mt-4 text-xs font-semibold text-[var(--fin-ink-soft)]">Filtrar movimientos</p> : null}
       <div className="mt-2 flex flex-wrap gap-2">
         <select
           value={filtro.kind ?? ''}
