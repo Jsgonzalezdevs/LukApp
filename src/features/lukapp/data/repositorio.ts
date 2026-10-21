@@ -5,6 +5,7 @@ import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
 import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -55,6 +56,8 @@ export interface Repositorio {
   guardarRecurrente(recurrente: Recurrente): Promise<void>;
   borrarRecurrente(id: string): Promise<void>;
 
+  guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void>;
+
   /** Wipes every store. Used by the restore flow before importing a backup. */
   vaciar(): Promise<void>;
 }
@@ -70,6 +73,7 @@ export interface Instantanea {
   presupuestos: Presupuesto[];
   recurrentes: Recurrente[];
   revisiones: RevisionDudosa[];
+  documentosNegocio: DocumentoNegocio[];
 }
 
 /** Un mismo cambio de dinero se confirma entero o no se confirma. */
@@ -90,6 +94,7 @@ export const instantaneaVacia = (): Instantanea => ({
   presupuestos: [],
   recurrentes: [],
   revisiones: [],
+  documentosNegocio: [],
 });
 
 /**
@@ -133,6 +138,7 @@ export class RepositorioMemoria implements Repositorio {
       presupuestos: this.datos.presupuestos.map((p) => ({ ...p })),
       recurrentes: this.datos.recurrentes.map((r) => ({ ...r })),
       revisiones: this.datos.revisiones.map((r) => ({ ...r })),
+      documentosNegocio: this.datos.documentosNegocio.map((d) => ({ ...d, abonos: d.abonos.map((a) => ({ ...a })) })),
       contactos: this.datos.contactos.map((c) => ({
         ...c,
         alias: [...c.alias],
@@ -243,6 +249,10 @@ export class RepositorioMemoria implements Repositorio {
 
   async borrarRecurrente(id: string): Promise<void> {
     this.datos.recurrentes = this.datos.recurrentes.filter((r) => r.id !== id);
+  }
+
+  async guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void> {
+    this.datos.documentosNegocio = this.upsert(this.datos.documentosNegocio, documentos.map((d) => ({ ...d, abonos: d.abonos.map((a) => ({ ...a })) })));
   }
 
   async borrarCategoria(id: string): Promise<void> {

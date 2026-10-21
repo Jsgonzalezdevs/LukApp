@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Cajita, CajitaTipo } from './modelos';
 import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
 import { ES_PASIVO } from './modelos';
 import { RepositorioSupabase } from './repositorioSupabase';
 
@@ -138,6 +139,22 @@ describe('RepositorioSupabase — bandeja de revisión', () => {
     } as unknown as SupabaseClient;
     const datos = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
     expect(datos.revisiones).toEqual([revision]);
+  });
+});
+
+describe('RepositorioSupabase — documentos de negocio', () => {
+  const documento: DocumentoNegocio = { id: '9ee4a012-0c4d-49c3-8ef3-e43a2d02dfe1', tipo: 'por_cobrar', estado: 'enviado', contraparte: 'Cliente', concepto: 'Diseño', totalCop: 50000, fecha: '2026-10-20', vence: null, abonos: [], cotizacionOrigenId: null };
+
+  it('incluye registros de negocio en los lotes atómicos con propiedad de usuario', async () => {
+    const rpc = vi.fn(async (..._args: unknown[]) => ({ error: null }));
+    const cliente = { rpc } as unknown as SupabaseClient;
+    await new RepositorioSupabase(cliente, 'u1').guardarDocumentosNegocio([documento]);
+    const parametros = rpc.mock.calls[0]?.[1] as { cambios: { guardar: Record<string, unknown[]> } };
+    expect(parametros.cambios.guardar.documentos_negocio?.[0]).toMatchObject({
+      id: documento.id,
+      user_id: 'u1',
+      datos: documento,
+    });
   });
 });
 

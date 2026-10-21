@@ -19,7 +19,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Verificado, V9.5.0 |
 | 14 | Aportes/retiros/valoraciones/rendimientos y multimoneda con importe original, tasa y fecha; separar disponible e invertido. | Verificado, V9.6.0 |
 | 15 | Recepción de comprobantes por correo con procedencia y deduplicación; evaluar e implementar la vía bancaria viable. | Verificado, V9.7.0 (correo listo para activar; banca evaluada) |
-| 16 | Modo opcional para independientes/negocios: cuentas por cobrar/pagar, abonos, devengo/caja, cotizaciones y facturas. | Verificado, V9.8.0 |
+| 16 | Modo opcional para independientes/negocios: cuentas por cobrar/pagar, abonos, devengo/caja, cotizaciones y facturas. | Verificado, V9.8.1 |
 
 ## Evidencia del paso 1
 
@@ -198,3 +198,11 @@ Implementar y revisar el paso 15: recepción de comprobantes por correo y la ví
 - El módulo organiza documentos y saldos, pero no emite factura electrónica DIAN ni sustituye un sistema contable; los abonos de negocio no mueven automáticamente las cuentas personales y la pantalla indica registrar también el movimiento real en Dinero.
 - Pruebas de lógica cubren límites de abono, base de devengo/caja y conversión de cotización. Suite completa: 140 archivos y 1.497 pruebas aprobadas. TypeScript, Vite, lint de los archivos tocados y `git diff --check` aprobados.
 - Revisión visual local en `/ajustes/negocio`: jerarquía del resumen, selector Devengo/Caja, formulario y estado vacío legibles; emojis 💼🧾💸 visibles. No se guardaron documentos de prueba.
+
+## Corrección de persistencia del paso 16: V9.8.1
+
+- Los documentos ahora forman parte de `Instantanea`, IndexedDB y el respaldo/restauración financiero; los registros preexistentes en `localStorage` se migran al abrir el módulo y solo se borran tras confirmar el guardado.
+- Las escrituras pasan por el repositorio común y su cola durable, así conservan el dato fuera de línea y sincronizan al regresar la conexión. La RPC atómica de Supabase incluye `documentos_negocio` y mantiene RLS por usuario.
+- Migración `20261021160000_persistencia_documentos_negocio.sql` aplicada al proyecto `trrlknwvplhbntxzprud`; confirmé que la tabla tiene RLS activo y que la RPC incluye la tabla. Los asesores no muestran hallazgos nuevos asociados.
+- Pruebas locales verifican la actualización desde IndexedDB v7, la reapertura y sincronización offline, la traducción a la RPC y el respaldo/restauración. La prueba transaccional remota comprobó aislamiento RLS, escritura en el lote y rechazo de operaciones parciales; dejó la base sin datos de prueba.
+- Suite completa: 140 archivos y 1.501 pruebas aprobadas. TypeScript, build Vite, lint enfocado y `git diff --check` aprobados. Versión `V9.8.1`.

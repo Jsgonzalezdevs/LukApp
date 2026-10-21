@@ -70,7 +70,8 @@ const tieneDatos = (datos: Instantanea): boolean =>
   datos.categorias.length > 0 ||
   datos.contactos.length > 0 ||
   datos.presupuestos.length > 0 ||
-  datos.recurrentes.length > 0;
+  datos.recurrentes.length > 0 ||
+  datos.documentosNegocio.length > 0;
 
 export class RepositorioConCola implements Repositorio {
   private readonly local: Repositorio;
@@ -291,6 +292,10 @@ export class RepositorioConCola implements Repositorio {
     await this.escribir('borrarRecurrente', [id]);
   }
 
+  async guardarDocumentosNegocio(documentos: readonly import('../negocio/modelo').DocumentoNegocio[]): Promise<void> {
+    await this.escribir('guardarDocumentosNegocio', [documentos]);
+  }
+
   /**
    * Igual que cualquier otra escritura: local primero, remoto si hay señal,
    * a la cola si no.
@@ -306,6 +311,6 @@ export class RepositorioConCola implements Repositorio {
    * siguen, en orden, y sube todo junto cuando vuelva la señal.
    */
   async vaciar(): Promise<void> {
-    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [], revisiones: [] } });
+    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [], revisiones: [], documentosNegocio: [] } });
   }
 }

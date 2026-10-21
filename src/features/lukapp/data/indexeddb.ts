@@ -5,6 +5,7 @@ import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
 import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
 import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
@@ -23,7 +24,7 @@ const DB_NOMBRE_LOCAL = 'finanzas';
 // Bumped when a store is added: `onupgradeneeded` only fires on a version
 // change, so a device that already opened the database at v1 would otherwise
 // never get the new store.
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -35,6 +36,7 @@ const STORES = {
   presupuestos: 'presupuestos',
   recurrentes: 'recurrentes',
   revisiones: 'revisiones',
+  documentosNegocio: 'documentosNegocio',
   /**
    * Cambios hechos sin conexión, a la espera de subirse. Solo lo usa
    * `ColaCambios` (`data/colaCambios.ts`); vive en el mismo archivo de base de
@@ -92,6 +94,7 @@ export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> =
     ...datos.presupuestos.map((p) => destino.guardarPresupuesto(p)),
     ...datos.recurrentes.map((r) => destino.guardarRecurrente(r)),
     destino.aplicarCambios({ guardar: { revisiones: datos.revisiones } }),
+    destino.guardarDocumentosNegocio(datos.documentosNegocio),
   ]);
   const rechazados = resultados.filter((resultado): resultado is PromiseRejectedResult => resultado.status === 'rejected');
   if (rechazados.length > 0) {
@@ -248,6 +251,7 @@ export class RepositorioIndexedDB implements Repositorio {
       presupuestos,
       recurrentes,
       revisiones,
+      documentosNegocio,
     ] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
@@ -258,6 +262,7 @@ export class RepositorioIndexedDB implements Repositorio {
       pedir<Presupuesto[]>(tx.objectStore(STORES.presupuestos).getAll()),
       pedir<Recurrente[]>(tx.objectStore(STORES.recurrentes).getAll()),
       pedir<RevisionDudosa[]>(tx.objectStore(STORES.revisiones).getAll()),
+      pedir<DocumentoNegocio[]>(tx.objectStore(STORES.documentosNegocio).getAll()),
     ]);
 
     return {
@@ -270,6 +275,7 @@ export class RepositorioIndexedDB implements Repositorio {
       presupuestos,
       recurrentes,
       revisiones,
+      documentosNegocio,
     };
   }
 
@@ -396,6 +402,14 @@ export class RepositorioIndexedDB implements Repositorio {
   async guardarRecurrente(recurrente: Recurrente): Promise<void> {
     await this.escribir([STORES.recurrentes], (tx) => {
       tx.objectStore(STORES.recurrentes).put(recurrente);
+    });
+  }
+
+  async guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void> {
+    if (documentos.length === 0) return;
+    await this.escribir([STORES.documentosNegocio], (tx) => {
+      const store = tx.objectStore(STORES.documentosNegocio);
+      for (const documento of documentos) store.put(documento);
     });
   }
 

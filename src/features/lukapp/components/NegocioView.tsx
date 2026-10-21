@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BriefcaseBusiness, Check, FilePlus2, HandCoins, Loader2, ReceiptText } from 'lucide-react';
 import { formatCop } from '../lib/formatCop';
-import { obtenerSupabase } from '../data/supabase';
 import { aplicarAbono, convertirCotizacion, saldoPendiente, totalesNegocio, type BaseNegocio, type DocumentoNegocio, type TipoDocumentoNegocio } from '../negocio/modelo';
 
 interface NegocioViewProps {
   userId: string;
+  documentos: DocumentoNegocio[];
+  cargando: boolean;
+  onGuardar: (documentos: readonly DocumentoNegocio[]) => Promise<boolean>;
 }
 
 const CLAVE_LOCAL = (userId: string) => `lukapp.negocio.${userId}`;
+
 const hoyBogota = (): string =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date());
 const nuevoId = (): string =>
@@ -16,8 +19,7 @@ const nuevoId = (): string =>
     ? crypto.randomUUID()
     : `doc-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-export const NegocioView: React.FC<NegocioViewProps> = ({ userId }) => {
-  const [documentos, setDocumentos] = useState<DocumentoNegocio[]>([]);
+export const NegocioView: React.FC<NegocioViewProps> = ({ userId, documentos, cargando, onGuardar }) => {
   const [base, setBase] = useState<BaseNegocio>('devengo');
   const [tipo, setTipo] = useState<TipoDocumentoNegocio>('por_cobrar');
   const [contraparte, setContraparte] = useState('');
@@ -26,64 +28,42 @@ export const NegocioView: React.FC<NegocioViewProps> = ({ userId }) => {
   const [fecha, setFecha] = useState(hoyBogota);
   const [vence, setVence] = useState('');
   const [abono, setAbono] = useState<Record<string, string>>({});
-  const [cargando, setCargando] = useState(true);
   const [ocupado, setOcupado] = useState(false);
   const [mensaje, setMensaje] = useState('');
-
-  const local = userId === 'usuario-local-pruebas' || !obtenerSupabase();
-
-  const guardar = async (siguiente: DocumentoNegocio[]) => {
-    if (local) {
-      try {
-        window.localStorage.setItem(CLAVE_LOCAL(userId), JSON.stringify(siguiente));
-      } catch {
-        throw new Error('No se pudo guardar en este dispositivo. Libera espacio y vuelve a intentar.');
-      }
-    } else {
-      const cliente = obtenerSupabase();
-      if (!cliente) throw new Error('La sincronización no está disponible.');
-      const filas = siguiente
-        .filter((documento) => !documentos.some((anterior) =>
-          anterior.id === documento.id && JSON.stringify(anterior) === JSON.stringify(documento)))
-        .map((documento) => ({
-          id: documento.id,
-          user_id: userId,
-          datos: documento,
-          updated_at: new Date().toISOString(),
-        }));
-      if (filas.length) {
-        const { error } = await cliente.from('documentos_negocio').upsert(filas);
-        if (error) throw error;
-      }
-    }
-    setDocumentos(siguiente);
-  };
+  const usuarioMigrado = useRef('');
 
   useEffect(() => {
-    let cancelado = false;
+    if (cargando || usuarioMigrado.current === userId) return;
+    usuarioMigrado.current = userId;
     void Promise.resolve().then(async () => {
       try {
-        if (local) {
-          const guardado = window.localStorage.getItem(CLAVE_LOCAL(userId));
-          if (guardado && !cancelado) setDocumentos(JSON.parse(guardado) as DocumentoNegocio[]);
-        } else {
-          const cliente = obtenerSupabase();
-          if (!cliente) return;
-          const { data, error } = await cliente.from('documentos_negocio')
-            .select('datos')
-            .eq('user_id', userId)
-            .order('updated_at', { ascending: false });
-          if (error) throw error;
-          if (!cancelado) setDocumentos((data ?? []).map((fila) => fila.datos as DocumentoNegocio));
+        const guardado = window.localStorage.getItem(CLAVE_LOCAL(userId));
+        if (!guardado) return;
+        const antiguos = JSON.parse(guardado) as DocumentoNegocio[];
+        const idsActuales = new Set(documentos.map((documento) => documento.id));
+        const faltantes = antiguos.filter((documento) => documento && typeof documento.id === 'string' && !idsActuales.has(documento.id));
+        if (faltantes.length === 0) {
+          window.localStorage.removeItem(CLAVE_LOCAL(userId));
+          return;
         }
-      } catch (error) {
-        if (!cancelado) setMensaje(error instanceof Error ? error.message : 'No se pudieron cargar tus documentos.');
-      } finally {
-        if (!cancelado) setCargando(false);
+        const correcto = await onGuardar(faltantes);
+        if (correcto) window.localStorage.removeItem(CLAVE_LOCAL(userId));
+        else setMensaje('Tus registros anteriores siguen guardados en este dispositivo; vuelve a sincronizar para migrarlos.');
+      } catch {
+        setMensaje('No se pudieron migrar tus registros anteriores; siguen guardados en este dispositivo.');
       }
     });
-    return () => { cancelado = true; };
-  }, [local, userId]);
+  }, [cargando, documentos, onGuardar, userId]);
+
+  const guardar = async (siguiente: DocumentoNegocio[]) => {
+    const nuevasOActualizadas = siguiente.filter((documento) => {
+      const anterior = documentos.find((fila) => fila.id === documento.id);
+      return !anterior || JSON.stringify(anterior) !== JSON.stringify(documento);
+    });
+    if (nuevasOActualizadas.length > 0 && !await onGuardar(nuevasOActualizadas)) {
+      throw new Error('No se pudo guardar el registro. Revisa el aviso de sincronización e inténtalo de nuevo.');
+    }
+  };
 
   const crear = async (evento: React.FormEvent) => {
     evento.preventDefault();

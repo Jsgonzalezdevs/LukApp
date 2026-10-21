@@ -1374,7 +1374,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 onCompletar={(movimiento) => almacen.actualizarTransaccion(movimiento)}
               />
             ) : panelAjustes === 'negocio' ? (
-              <NegocioView userId={userId ?? 'usuario-local-pruebas'} />
+              <NegocioView userId={userId ?? 'usuario-local-pruebas'} documentos={almacen.datos.documentosNegocio} cargando={almacen.cargando} onGuardar={almacen.guardarDocumentosNegocio} />
             ) : panelAjustes === 'revisiones' ? (
               <BandejaRevision
                 transacciones={transacciones}

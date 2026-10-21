@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.8.1', fecha: '2026-10-21', texto: 'Tus registros de 💼 negocio ahora se guardan junto con tus finanzas, se sincronizan al volver la conexión y entran en los respaldos; también migramos los que ya tenías en este dispositivo.' },
   { version: '9.8.0', fecha: '2026-10-21', texto: 'Activa el modo 💼 Independientes y negocios para llevar cotizaciones, cuentas por cobrar y pagar, registrar abonos y comparar lo emitido con lo realmente recibido. Tus registros de trabajo quedan separados de tus finanzas personales.' },
   { version: '9.7.0', fecha: '2026-10-21', texto: 'Cuando actives la recepción por correo, podrás reenviar comprobantes, ver quién los envió y descargar sus archivos para revisarlos antes de importarlos; no cambiarán tu saldo sin confirmación. 📩🧾' },
   { version: '9.6.0', fecha: '2026-10-21', texto: 'Separa el ahorro disponible de tus inversiones y registra aportes, retiros, rendimientos y cambios de valor en COP o en otra moneda, guardando el importe original, la tasa y la fecha. Tus movimientos conservan emojis 📈💱🐷.' },

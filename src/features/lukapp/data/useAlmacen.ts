@@ -27,6 +27,7 @@ import type {
 import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, claseDeCuenta, cuentaEfectivo } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
 import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
 import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
@@ -54,6 +55,7 @@ export interface Almacen {
   agregarTransaccion: (tx: Transaction) => Promise<boolean>;
   importarTransacciones: (txs: readonly Transaction[], revisiones?: readonly RevisionDudosa[]) => Promise<boolean>;
   guardarRevision: (revision: RevisionDudosa) => Promise<boolean>;
+  guardarDocumentosNegocio: (documentos: readonly DocumentoNegocio[]) => Promise<boolean>;
   actualizarTransaccion: (tx: Transaction) => Promise<boolean>;
   borrarTransaccion: (id: string) => Promise<boolean>;
 
@@ -518,6 +520,19 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       return aplicar(
         { ...datosActuales.current, revisiones: [revision, ...revisiones] },
         () => repo.aplicarCambios({ guardar: { revisiones: [revision] } }),
+      );
+    },
+    [aplicar, repo],
+  );
+
+  const guardarDocumentosNegocio = useCallback(
+    async (documentos: readonly DocumentoNegocio[]) => {
+      const existentes = new Map(datosActuales.current.documentosNegocio.map((documento) => [documento.id, documento]));
+      for (const documento of documentos) existentes.set(documento.id, documento);
+      const siguientes = [...existentes.values()];
+      return aplicar(
+        { ...datosActuales.current, documentosNegocio: siguientes },
+        () => repo.guardarDocumentosNegocio(documentos),
       );
     },
     [aplicar, repo],
@@ -1290,6 +1305,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     agregarTransaccion,
     importarTransacciones,
     guardarRevision,
+    guardarDocumentosNegocio,
     actualizarTransaccion,
     borrarTransaccion,
     crearCajita,
