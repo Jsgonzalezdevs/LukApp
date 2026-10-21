@@ -1317,6 +1317,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 mes={mesCalendarioActivo}
                 hoy={today}
                 onCrear={(d) => almacen.crearRecurrente(d)}
+                onActualizar={(r) => almacen.actualizarRecurrente(r)}
                 onBorrar={(id) => almacen.borrarRecurrente(id)}
                 onConfirmar={(p) => almacen.confirmarRecurrente(p)}
               />

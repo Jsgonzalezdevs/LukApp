@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
 import {
   comoTransaccion,
+  detectarSuscripciones,
   fechaEnMes,
   pendientesDelMes,
+  proximosRecurrentes,
   totalMensual,
   yaRegistrado,
 } from './recurrentes';
@@ -168,5 +170,55 @@ describe('totalMensual', () => {
     const t = totalMensual([rec({ archivedAt: '2026-07-01T00:00:00.000Z' })]);
 
     expect(t).toEqual({ gastoCop: 0, ingresoCop: 0 });
+  });
+});
+
+describe('detectarSuscripciones', () => {
+  const tresMeses = [
+    tx({ id: 't1', description: 'NETFLIX.COM', occurredOn: '2026-07-08', amountCop: 29_900, category: 'entretenimiento' }),
+    tx({ id: 't2', description: 'NETFLIX.COM', occurredOn: '2026-08-08', amountCop: 29_900, category: 'entretenimiento' }),
+    tx({ id: 't3', description: 'NETFLIX.COM', occurredOn: '2026-09-08', amountCop: 31_900, category: 'entretenimiento' }),
+  ];
+
+  it('sugiere un cobro parecido en tres meses seguidos sin registrarlo', () => {
+    const sugerencias = detectarSuscripciones(tresMeses, [], '2026-09-10');
+    expect(sugerencias).toHaveLength(1);
+    expect(sugerencias[0]).toMatchObject({
+      nombre: 'NETFLIX.COM', amountCop: 31_900, promedioCop: 30_567, diaDelMes: 8,
+      meses: 3, cambioPrecio: false, recurrenteExistente: null,
+    });
+  });
+
+  it('propone revisar el precio de un pago fijo existente, sin cambiarlo automáticamente', () => {
+    const sugerencias = detectarSuscripciones(tresMeses, [rec({ nombre: 'NETFLIX.COM', amountCop: 25_000 })], '2026-09-10');
+    expect(sugerencias).toHaveLength(1);
+    expect(sugerencias[0]).toMatchObject({ cambioPrecio: true, recurrenteExistente: { amountCop: 25_000 }, amountCop: 31_900 });
+  });
+
+  it('ignora transferencias propias, filas históricas y patrones con huecos mensuales', () => {
+    const noElegibles = tresMeses.map((fila) => ({ ...fila, kind: 'transferencia' as const }));
+    expect(detectarSuscripciones(noElegibles, [], '2026-09-10')).toEqual([]);
+    expect(detectarSuscripciones(tresMeses.map((fila) => ({ ...fila, afectaSaldo: false })), [], '2026-09-10')).toEqual([]);
+    expect(detectarSuscripciones([
+      tresMeses[0], tresMeses[2], { ...tresMeses[2], id: 't4', occurredOn: '2026-09-08' },
+    ], [], '2026-09-10')).toEqual([]);
+  });
+
+  it('no vuelve a sugerir un pago fijo con precio vigente', () => {
+    expect(detectarSuscripciones(tresMeses, [rec({ nombre: 'NETFLIX.COM', amountCop: 31_900 })], '2026-09-10')).toEqual([]);
+  });
+});
+
+describe('proximosRecurrentes', () => {
+  it('muestra las fechas de cobro de los próximos 60 días y omite ingresos/archivados', () => {
+    const resultado = proximosRecurrentes([
+      rec({ id: 'hoy', diaDelMes: 10 }),
+      rec({ id: 'siguiente', diaDelMes: 5, amountCop: 40_000 }),
+      rec({ id: 'ingreso', kind: 'ingreso' }),
+      rec({ id: 'archivo', archivedAt: '2026-01-01' }),
+    ], '2026-09-10');
+    expect(resultado.map(({ recurrente, fecha }) => [recurrente.id, fecha])).toEqual([
+      ['hoy', '2026-09-10'], ['siguiente', '2026-10-05'], ['hoy', '2026-10-10'], ['siguiente', '2026-11-05'],
+    ]);
   });
 });

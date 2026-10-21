@@ -13,7 +13,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Verificado, V8.0.3 |
 | 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Verificado, V9.0.0 |
 | 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Verificado, V9.1.0 |
-| 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Pendiente |
+| 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Verificado, V9.2.0 |
 | 11 | Asesor con propuestas editables y efectos visibles antes de confirmar presupuestos, metas y movimientos. | Pendiente |
 | 12 | Cifras y gráficas conectadas con sus movimientos; comparaciones y distinción entre real, programado y estimado. | Pendiente |
 | 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Pendiente |
@@ -136,6 +136,14 @@ El paso 7 quedó verificado en V8.0.3; los pasos 8 a 16 continúan pendientes. E
 - Revisión visual local: Más > Revisar movimientos, estado vacío legible y emojis visibles como identidad; no se crearon registros de prueba en la cuenta abierta. Las pruebas de componente cubren resolución, procedencia del archivo y apertura del movimiento.
 - Suite final: 134 archivos y 1.471 pruebas aprobadas. TypeScript y Vite aprobados; lint conserva las seis advertencias previas. `git diff --check` aprobado.
 
+## Cierre del paso 10: V9.2.0
+
+- Pagos fijos detecta cargos del mismo comercio en tres meses seguidos, con montos dentro de un margen del 15%, y ofrece convertir el patrón en un pago fijo únicamente al confirmarlo. Excluye transferencias propias y filas históricas que no afectan el saldo.
+- Si el comercio ya tiene un pago fijo y el último importe cambia más del 15%, muestra el precio previo y el nuevo y espera confirmación antes de actualizarlo; no reescribe movimientos anteriores.
+- La pantalla muestra los próximos 60 días, omite los cobros ya registrados y presenta la proyección mensual y anual como estimación, sin crear movimientos automáticamente. Se conservaron los emojis 📊 y 💡 junto con títulos y texto claro.
+- Pruebas específicas: 28 aprobadas entre patrones, detección de cambios, exclusiones, calendario y versión. Suite completa: 134 archivos y 1.476 pruebas aprobadas. TypeScript, build Vite, lint de archivos tocados y `git diff --check` aprobados.
+- Revisión visual local en Mes > Pagos fijos: proyección y estado vacío legibles; no se añadieron datos financieros a la cuenta abierta.
+
 ## Siguiente paso
 
-Implementar y revisar el paso 10: detectar suscripciones desde patrones, pedir confirmación y mostrar próximos cobros y costo mensual/anual.
+Implementar y revisar el paso 11: propuestas editables del asesor con sus efectos visibles antes de confirmar presupuestos, metas y movimientos.

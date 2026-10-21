@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.2.0', fecha: '2026-10-21', texto: 'LukApp puede detectar cobros parecidos durante tres meses y sugerir que los conviertas en pagos fijos; también te avisa si cambia el precio y muestra próximos cobros y una proyección mensual y anual. Tú confirmas cada cambio. 💡📅📊' },
   { version: '9.1.0', fecha: '2026-10-21', texto: 'La bandeja Revisar reúne posibles cobros repetidos y filas de extractos que necesitan otra mirada; puedes abrir cada movimiento, confirmar o descartar el aviso y consultar después la decisión guardada. 🧭🧾' },
   { version: '9.0.0', fecha: '2026-10-21', texto: 'Importa movimientos desde PDF, fotos, Excel y CSV, revisa posibles duplicados y guarda extractos antiguos en tus reportes sin alterar el saldo actual de la cuenta.' },
   { version: '8.0.3', fecha: '2026-10-20', texto: 'Las transiciones de paneles y botones son más breves y uniformes, y los saldos aparecen apenas cambian. LukApp respeta el movimiento reducido y pausa los bucles decorativos, también si cambias esa preferencia con la app abierta.' },

@@ -1,10 +1,10 @@
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Plus, Repeat, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, Plus, Repeat, Sparkles, Trash2 } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
-import { pendientesDelMes, totalMensual } from '../lib/recurrentes';
+import { detectarSuscripciones, pendientesDelMes, proximosRecurrentes, totalMensual } from '../lib/recurrentes';
 import { useCatalogo } from '../catalogoContexto';
 import { formatCop, parseAmountInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
@@ -17,6 +17,7 @@ interface RecurrentesViewProps {
   mes: string;
   hoy: string;
   onCrear: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => ResultadoGuardado;
+  onActualizar: (recurrente: Recurrente) => ResultadoGuardado;
   onBorrar: (id: string) => ResultadoGuardado;
   onConfirmar: (pendiente: Pendiente) => ResultadoGuardado;
 }
@@ -40,6 +41,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   mes,
   hoy,
   onCrear,
+  onActualizar,
   onBorrar,
   onConfirmar,
 }) => {
@@ -59,6 +61,11 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   );
   const vivos = recurrentes.filter((r) => r.archivedAt === null);
   const total = totalMensual(vivos);
+  const sugerencias = useMemo(
+    () => detectarSuscripciones(transacciones, recurrentes, hoy),
+    [transacciones, recurrentes, hoy],
+  );
+  const proximos = useMemo(() => proximosRecurrentes(vivos, hoy, transacciones), [vivos, hoy, transacciones]);
 
   const crear = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +105,76 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
             {total.ingresoCop > 0 ? ` · entran ${formatCop(total.ingresoCop)}` : ''}
           </p>
         </section>
+
+        <section className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-4" aria-label="Costo proyectado">
+          <p className="text-[13px] font-semibold text-[var(--fin-ink)]">📊 Tu proyección de pagos fijos</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+            {formatCop(total.gastoCop)} al mes · {formatCop(total.gastoCop * 12)} al año, si todos se mantienen.
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--fin-ink-ghost)]">Es una estimación; solo se registra un cobro cuando lo confirmas.</p>
+        </section>
+
+        {proximos.length > 0 ? (
+          <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-[var(--fin-ink)]">
+              <CalendarDays className="h-4 w-4" aria-hidden="true" /> Próximos cobros · 60 días
+            </h3>
+            <ul className="mt-2 flex flex-col gap-2">
+              {proximos.slice(0, 6).map(({ recurrente, fecha }) => (
+                <li key={`${recurrente.id}-${fecha}`} className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="truncate text-[var(--fin-ink-soft)]">{dayLabel(fecha)} · {recurrente.nombre}</span>
+                  <span className="shrink-0 font-semibold tabular-nums text-[var(--fin-ink)]">{formatCop(recurrente.amountCop)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {sugerencias.length > 0 ? (
+          <section className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-[var(--fin-ink)]">
+              <Sparkles className="h-4 w-4" aria-hidden="true" /> 💡 Patrones que podrías volver pagos fijos
+            </h3>
+            <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">LukApp detectó cobros parecidos en tres meses seguidos. Tú decides; no se crea nada sin confirmación.</p>
+            <ul className="mt-3 flex flex-col gap-2">
+              {sugerencias.map((sugerencia) => (
+                <li key={sugerencia.clave} className="rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-semibold text-[var(--fin-ink)]">{sugerencia.nombre}</span>
+                      <span className="block text-[12px] text-[var(--fin-ink-faint)]">
+                        {sugerencia.cambioPrecio
+                          ? `El último cobro cambió de ${formatCop(sugerencia.recurrenteExistente?.amountCop ?? 0)} a ${formatCop(sugerencia.amountCop)}.`
+                          : `${sugerencia.meses} meses · promedio ${formatCop(sugerencia.promedioCop)} · último ${dayLabel(sugerencia.ultimaFecha)}`}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--fin-ink)]">{formatCop(sugerencia.amountCop)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (sugerencia.recurrenteExistente) {
+                        void guardado.ejecutar(() => onActualizar({ ...sugerencia.recurrenteExistente!, amountCop: sugerencia.amountCop }));
+                      } else {
+                        void guardado.ejecutar(() => onCrear({
+                          nombre: sugerencia.nombre,
+                          kind: sugerencia.kind,
+                          amountCop: sugerencia.amountCop,
+                          categoria: sugerencia.categoria,
+                          cuentaId: sugerencia.cuentaId,
+                          diaDelMes: sugerencia.diaDelMes,
+                        }));
+                      }
+                    }}
+                    className="mt-2 min-h-11 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+                  >
+                    {sugerencia.cambioPrecio ? 'Actualizar precio' : 'Sí, añadir a mis pagos fijos'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {/* Pendientes: lo único que pide acción */}
         {pendientes.length > 0 ? (
