@@ -206,3 +206,9 @@ Implementar y revisar el paso 15: recepción de comprobantes por correo y la ví
 - Migración `20261021160000_persistencia_documentos_negocio.sql` aplicada al proyecto `trrlknwvplhbntxzprud`; confirmé que la tabla tiene RLS activo y que la RPC incluye la tabla. Los asesores no muestran hallazgos nuevos asociados.
 - Pruebas locales verifican la actualización desde IndexedDB v7, la reapertura y sincronización offline, la traducción a la RPC y el respaldo/restauración. La prueba transaccional remota comprobó aislamiento RLS, escritura en el lote y rechazo de operaciones parciales; dejó la base sin datos de prueba.
 - Suite completa: 140 archivos y 1.501 pruebas aprobadas. TypeScript, build Vite, lint enfocado y `git diff --check` aprobados. Versión `V9.8.1`.
+
+## Ajustes de publicación en Vercel: V9.8.2
+
+- Se permite el script de `esbuild` solo para la versión fijada `0.28.1`, necesaria para su binario de plataforma; el script opcional de donación de `tesseract.js` queda denegado.
+- `.npmrc` oculta el aviso informativo de paquetes que solicitan financiación. Los comandos de instalación y build de Vercel quitan `NPM_CONFIG_CACHE_DIR`/`npm_config_cache_dir` del proceso npm y usan el lockfile con `npm ci`, eliminando el aviso de configuración desconocida sin alterar variables de las funciones.
+- Verificación local: 140 archivos y 1.501 pruebas aprobadas; TypeScript, build y lint de los archivos modificados pasan. Falta observar el nuevo log de Vercel para confirmar que sus variables de entorno quedan limpias en el entorno remoto. Versión `V9.8.2`.
