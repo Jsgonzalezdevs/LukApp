@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.10.0', fecha: '2026-10-21', texto: 'Crear un ahorro ahora está a la vista y solo pide nombre y saldo para empezar; las metas, el rendimiento y el ícono quedan como opciones para personalizarlo. 🐷✨' },
   { version: '9.9.1', fecha: '2026-10-21', texto: 'Volvimos al botón rosado para anotar por voz y dejamos el resumen de saldos e ingresos visible, sin desplegable. 🌸' },
   { version: '9.9.0', fecha: '2026-10-21', texto: 'Inicio muestra tus movimientos completos, puedes ocultar los próximos pagos desde Más y los accesos para anotar quedan más limpios. ✨' },
   { version: '9.8.2', fecha: '2026-10-21', texto: 'Mejoramos la preparación de LukApp para publicar: la compilación usa el binario correcto de esbuild y mantiene bloqueado el script opcional de donaciones de Tesseract. 🛠️' },

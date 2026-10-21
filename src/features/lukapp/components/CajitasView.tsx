@@ -2,7 +2,7 @@ import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PiggyBank, Plus } from 'lucide-react';
+import { ChevronDown, PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
 import type { Transaction } from '../types';
@@ -205,6 +205,17 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               />
             </div>
           ) : null}
+
+          {tipo === 'cajita' && !creando ? (
+            <button
+              type="button"
+              onClick={() => setCreando(true)}
+              className="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-5 py-3 text-[16px] font-semibold text-[var(--fin-on-accent)] transition-transform active:scale-[0.98]"
+            >
+              <Plus className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
+              🐷 Crear ahorro
+            </button>
+          ) : null}
         </section>
 
         {/* Create */}
@@ -217,8 +228,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             transition={{ duration: 0.2, ease: 'easeOut' }}
             onSubmit={crear}
             className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-            <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-              {esTarjeta ? 'Nueva tarjeta de crédito' : esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
+            <h2 className="text-[18px] font-semibold text-[var(--fin-ink)]">
+              {esTarjeta ? 'Nueva tarjeta de crédito' : esCuenta ? COPY.cuentas.nueva : '🐷 Tu nuevo ahorro'}
             </h2>
 
             <label
@@ -257,32 +268,44 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               </label>
             ) : null}
 
-            {!esCuenta && !esTarjeta ? (
-              <>
-                <label htmlFor="cajita-clase-activo" className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-                  ¿Qué vas a guardar aquí?
-                  <select id="cajita-clase-activo" value={esInversion ? 'inversion' : 'disponible'} onChange={(e) => setEsInversion(e.target.value === 'inversion')} className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none">
-                    <option value="disponible">🐷 Ahorro disponible</option>
-                    <option value="inversion">📈 Inversión</option>
-                  </select>
-                </label>
+            {tipo === 'cajita' ? (
+              <fieldset className="mt-4">
+                <legend className="text-[14px] font-semibold text-[var(--fin-ink-soft)]">¿Qué estás guardando?</legend>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  {[
+                    { valor: false, emoji: '🐷', titulo: 'Ahorro', detalle: 'Para algo que quieres' },
+                    { valor: true, emoji: '📈', titulo: 'Inversión', detalle: 'Dinero invertido' },
+                  ].map((opcion) => (
+                    <button
+                      key={opcion.titulo}
+                      type="button"
+                      aria-pressed={esInversion === opcion.valor}
+                      onClick={() => setEsInversion(opcion.valor)}
+                      className={`rounded-[var(--fin-r-card)] border-2 p-3 text-left transition-colors ${esInversion === opcion.valor ? 'border-[var(--fin-accent)] bg-[var(--fin-soft)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)]'}`}
+                    >
+                      <span className="block text-xl" aria-hidden="true">{opcion.emoji}</span>
+                      <span className="mt-1 block text-[14px] font-semibold text-[var(--fin-ink)]">{opcion.titulo}</span>
+                      <span className="block text-[12px] text-[var(--fin-ink-faint)]">{opcion.detalle}</span>
+                    </button>
+                  ))}
+                </div>
                 {esInversion ? (
-                  <label htmlFor="cajita-moneda" className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-                    Moneda de la inversión
+                  <label htmlFor="cajita-moneda" className="mt-3 block text-[14px] font-semibold text-[var(--fin-ink-soft)]">
+                    Moneda
                     <select id="cajita-moneda" value={moneda} onChange={(e) => setMoneda(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none">
                       {MONEDAS_DISPONIBLES.map((codigo) => <option key={codigo} value={codigo}>{codigo}</option>)}
                     </select>
-                    <span className="mt-1 block text-[13px] font-normal text-[var(--fin-ink-faint)]">El saldo consolidado se muestra en COP; cada aporte conserva su moneda y tasa. 💱</span>
+                    <span className="mt-1 block text-[12px] font-normal text-[var(--fin-ink-faint)]">Tus totales siguen en COP; cada aporte guarda su moneda y tasa. 💱</span>
                   </label>
                 ) : null}
-              </>
+              </fieldset>
             ) : null}
 
             <label
               htmlFor="cajita-saldo"
               className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
-              {esTarjeta ? 'Deuda actual (opcional)' : esCuenta ? COPY.cuentas.saldoInicial : COPY.cajitas.saldoInicial}
+              {esTarjeta ? 'Deuda actual (opcional)' : esCuenta ? COPY.cuentas.saldoInicial : tipo === 'cajita' ? '¿Con cuánto empiezas? (opcional)' : COPY.cajitas.saldoInicial}
             </label>
             <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
               <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
@@ -296,7 +319,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               />
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : esCuenta ? 'Escribe 0 si está vacía. Si dejas este campo en blanco, el saldo quedará pendiente de confirmar.' : esInversion ? 'Ese saldo inicial se guarda en COP; para registrar moneda extranjera, inicia en 0 y agrega un aporte con su tasa 💱.' : COPY.cajitas.saldoInicialHint}
+              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : esCuenta ? 'Escribe 0 si está vacía. Si dejas este campo en blanco, el saldo quedará pendiente de confirmar.' : tipo === 'cajita' ? (esInversion ? 'Empieza en 0 y agrega tus aportes con su moneda. 💱' : 'Puedes empezar en $0 y agregar dinero después. 💸') : COPY.cajitas.saldoInicialHint}
             </p>
 
             {esTarjeta ? (
@@ -322,82 +345,41 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               </div>
             ) : null}
 
-            <fieldset className="mt-4">
-              <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-                Ícono
-              </legend>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {CAJITA_ICONS.map((option: string) => {
-                  const IconComponent = iconoDeCajita(option);
-                  return (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setIcon(option)}
-                      aria-pressed={icon === option}
-                      aria-label={`Ícono ${etiquetaIcono(option)}`}
-                      className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${
-                        icon === option
-                          ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
-                          : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'
-                      }`}
-                    >
-                      <IconComponent className="h-5 w-5" />
-                    </button>
-                  );
-                })}
-              </div>
-            </fieldset>
+            {tipo === 'cajita' ? (
+              <details className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[14px] font-semibold text-[var(--fin-ink-soft)] [&::-webkit-details-marker]:hidden">
+                  <span>✨ Personalizar ahorro</span>
+                  <ChevronDown className="h-4 w-4 transition-transform open:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="pt-3">
+                  <fieldset>
+                    <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ícono</legend>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {CAJITA_ICONS.map((option: string) => {
+                        const IconComponent = iconoDeCajita(option);
+                        return (
+                          <button key={option} type="button" onClick={() => setIcon(option)} aria-pressed={icon === option} aria-label={`Ícono ${etiquetaIcono(option)}`} className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${icon === option ? 'border-[var(--fin-accent)] bg-[var(--fin-card)] text-[var(--fin-ink)]' : 'border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink-soft)]'}`}>
+                            <IconComponent className="h-5 w-5" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
 
-            {!esCuenta && !esTarjeta ? (
-              <>
-                <label
-                  htmlFor="cajita-meta"
-                  className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
-                >
-                  {COPY.cajitas.metaOpcional}
-                </label>
-                <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-                  <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
-                  <input
-                    id="cajita-meta"
-                    value={metaTexto}
-                    onChange={(e) =>
-                      setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))
-                    }
-                    inputMode="numeric"
-                    placeholder="0"
-                    className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
-                  />
-                </div>
-              </>
-            ) : null}
+                  <label htmlFor="cajita-meta" className="mt-4 block text-[13px] font-semibold text-[var(--fin-ink-soft)]">{COPY.cajitas.metaOpcional}</label>
+                  <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+                    <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
+                    <input id="cajita-meta" value={metaTexto} onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))} inputMode="numeric" placeholder="0" className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none" />
+                  </div>
 
-            {!esCuenta && !esTarjeta ? (
-              <>
-                <label
-                  htmlFor="cajita-tasa"
-                  className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
-                >
-                  {COPY.cajitas.tasaOpcional}
-                </label>
-                <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-                  <input
-                    id="cajita-tasa"
-                    value={tasaTexto}
-                    onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
-                    inputMode="decimal"
-                    placeholder="13,5"
-                    className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
-                  />
-                  <span className="shrink-0 text-[15px] font-semibold text-[var(--fin-ink-faint)]">
-                    % E.A.
-                  </span>
+                  <label htmlFor="cajita-tasa" className="mt-4 block text-[13px] font-semibold text-[var(--fin-ink-soft)]">{COPY.cajitas.tasaOpcional}</label>
+                  <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
+                    <input id="cajita-tasa" value={tasaTexto} onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))} inputMode="decimal" placeholder="13,5" className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none" />
+                    <span className="shrink-0 text-[15px] font-semibold text-[var(--fin-ink-faint)]">% E.A.</span>
+                  </div>
+                  <p className="mt-2 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">{COPY.cajitas.tasaHint}</p>
                 </div>
-                <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-                  {COPY.cajitas.tasaHint}
-                </p>
-              </>
+              </details>
             ) : null}
 
             <div className="mt-5 flex gap-2">
@@ -407,7 +389,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 rippleColor="rgba(255,255,255,0.5)"
                 className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
-                {esTarjeta ? 'Crear tarjeta' : esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
+                {esTarjeta ? 'Crear tarjeta' : esCuenta ? COPY.cajitas.crearCuenta : '🐷 Crear ahorro'}
               </RippleButton>
               <button
                 type="button"
@@ -418,7 +400,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               </button>
             </div>
           </motion.form>
-        ) : (
+        ) : tipo !== 'cajita' ? (
           <button
             type="button"
             onClick={() => setCreando(true)}
@@ -427,7 +409,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             <Plus className="h-4 w-4" strokeWidth={3} />
             {esTarjeta ? 'Agregar tarjeta de crédito' : esCuenta ? COPY.cuentas.nueva : COPY.cajitas.nueva}
           </button>
-        )}
+        ) : null}
         </AnimatePresence>
 
         {/* Pockets */}

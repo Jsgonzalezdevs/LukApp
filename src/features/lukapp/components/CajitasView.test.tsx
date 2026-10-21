@@ -140,20 +140,22 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
 
   it('sí las ofrece en una cajita, donde sí significan algo', () => {
     montar('cajita', []);
-    fireEvent.click(screen.getByRole('button', { name: /Nueva cajita/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
 
-    expect(screen.getByText(/Meta a la que quieres llegar/)).toBeInTheDocument();
+    expect(screen.getByText('✨ Personalizar ahorro').closest('details')).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByText('✨ Personalizar ahorro'));
+    expect(screen.getByLabelText(/Meta a la que quieres llegar/)).toBeInTheDocument();
     expect(screen.getByText('Rendimiento (opcional)')).toBeInTheDocument();
   });
 
   it('clasifica una inversión aparte y permite definir su moneda con emojis de identidad', async () => {
     const { onCrear } = montar('cajita', []);
-    fireEvent.click(screen.getByRole('button', { name: /Nueva cajita/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'ETF global' } });
-    fireEvent.change(screen.getByLabelText('¿Qué vas a guardar aquí?'), { target: { value: 'inversion' } });
-    await waitFor(() => expect(screen.getByLabelText('Moneda de la inversión', { exact: false })).toBeInTheDocument());
-    fireEvent.change(screen.getByLabelText('Moneda de la inversión', { exact: false }), { target: { value: 'USD' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Crear cajita' }));
+    fireEvent.click(screen.getByRole('button', { name: /Inversión/ }));
+    await waitFor(() => expect(screen.getByLabelText(/Moneda/)).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText(/Moneda/), { target: { value: 'USD' } });
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
 
     await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({
       nombre: 'ETF global', esInversion: true, moneda: 'USD', tipo: 'cajita',
@@ -192,6 +194,18 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
 
     montar('cajita', []);
     expect(screen.getByText('Aún no tienes cajitas.')).toBeInTheDocument();
+  });
+
+  it('permite crear un ahorro desde la acción principal con solo nombre y monto', async () => {
+    const { onCrear } = montar('cajita', []);
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Viaje a la costa' } });
+    fireEvent.change(screen.getByLabelText('¿Con cuánto empiezas? (opcional)'), { target: { value: '50000' } });
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+
+    await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({
+      nombre: 'Viaje a la costa', tipo: 'cajita', saldoInicialCop: 50000, esInversion: false,
+    })));
   });
 });
 
