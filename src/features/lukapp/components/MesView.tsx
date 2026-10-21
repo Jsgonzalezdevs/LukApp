@@ -144,12 +144,12 @@ export const MesView: React.FC<MesViewProps> = ({
           type="button"
           onClick={() => setResumenAbierto(true)}
           rippleColor="rgba(255,255,255,0.5)"
-          className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-3.5 text-left text-[var(--fin-on-accent)] transition-transform active:scale-[0.99]"
+          className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-4 text-left text-[var(--fin-on-accent)] transition-transform active:scale-[0.99]"
         >
           <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">Tu resumen de {monthKeyLabel(mesCalendario)}</span>
-            <span className="mt-0.5 block text-[13px] opacity-70">
+            <span className="mt-1 block text-[13px] opacity-70">
               Lo mejor y lo raro del mes, en una historia
             </span>
           </span>
@@ -163,14 +163,14 @@ export const MesView: React.FC<MesViewProps> = ({
           <Sparkles className="h-5 w-5 shrink-0 opacity-30 text-[var(--fin-ink-ghost)]" strokeWidth={2} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="block text-[14px] font-semibold text-[var(--fin-ink-soft)]">
+              <span className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 Tu resumen de {monthKeyLabel(mesCalendario)}
               </span>
-              <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--fin-ink-faint)] uppercase">
+              <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-2 py-1 text-[13px] font-semibold tracking-wide text-[var(--fin-ink-faint)] uppercase">
                 Próximamente
               </span>
             </div>
-            <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
+            <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
               Se habilita el {diaDesbloqueo} de {monthKeyLabel(mesCalendario).split(' ')[0]} (2 días antes de fin de mes)
             </span>
           </span>
@@ -235,7 +235,7 @@ export const MesView: React.FC<MesViewProps> = ({
                 clave,
               );
             }}
-            className="flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm transition-all hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] active:scale-95"
+            className="flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm transition-all hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] active:scale-95"
           >
             <Download className="h-4 w-4" strokeWidth={2.25} />
             Exportar {etiquetaPeriodo} a Excel (.xls)

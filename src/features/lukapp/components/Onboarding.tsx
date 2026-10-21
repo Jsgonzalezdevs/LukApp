@@ -90,7 +90,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           onKeyDown={(e) => e.key === 'Enter' && siguiente()}
           placeholder="Tu nombre"
           aria-label="Tu nombre"
-          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3.5 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-4 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
         />
       ),
       boton: 'Continuar',
@@ -108,7 +108,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
                 type="button"
                 onClick={() => setFuente(opcion)}
                 aria-pressed={fuente?.nombre === opcion.nombre}
-                className={`rounded-[var(--fin-r-pill)] px-4 py-2.5 text-[15px] font-semibold transition-colors ${
+                className={`rounded-[var(--fin-r-pill)] px-4 py-3 text-[15px] font-semibold transition-colors ${
                   fuente?.nombre === opcion.nombre
                     ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                     : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
@@ -183,7 +183,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               <button
                 type="button"
                 onClick={() => setPaso(2)}
-                className="mt-3 text-[14px] font-semibold text-[var(--fin-accent)]"
+                className="mt-3 text-[15px] font-semibold text-[var(--fin-accent)]"
               >
                 Editar saldo inicial
               </button>
@@ -191,7 +191,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           ) : (
             <>
               <p className="text-[17px] font-semibold text-[var(--fin-ink)]">No crearás cuentas todavía</p>
-              <p className="mt-1 text-[14px] text-[var(--fin-ink-soft)]">
+              <p className="mt-1 text-[15px] text-[var(--fin-ink-soft)]">
                 Efectivo ya está disponible, con saldo pendiente de confirmar. Puedes agregar un banco o una billetera desde Dinero.
               </p>
             </>
@@ -228,7 +228,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           transition={{ duration: 0.18, ease: 'easeOut' }}
           className="fin-glass w-full max-w-sm rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:pb-6"
         >
-          <div className="flex gap-1.5" aria-label={`Paso ${indice + 1} de ${pasos.length}`}>
+          <div className="flex gap-2" aria-label={`Paso ${indice + 1} de ${pasos.length}`}>
             {pasos.map((_, i) => (
               <span
                 key={i}
@@ -264,7 +264,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               cerrar();
             }}
             disabled={guardado.ocupado || continuarDeshabilitado}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:cursor-not-allowed disabled:opacity-45"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             {guardado.ocupado ? 'Guardando…' : actual.boton}
@@ -285,7 +285,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               }
             }}
             disabled={guardado.ocupado}
-            className="mt-1 w-full rounded-[var(--fin-r-control)] py-2.5 text-[15px] text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+            className="mt-1 w-full rounded-[var(--fin-r-control)] py-3 text-[15px] text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
           >
             {actual.salida}
           </button>

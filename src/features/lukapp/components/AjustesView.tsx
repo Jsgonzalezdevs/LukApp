@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import React from 'react';
 import { ChevronRight, Clock } from 'lucide-react';
 import { PANELES_AJUSTES } from '../sections';
@@ -20,12 +21,6 @@ interface AjustesViewProps {
   esAdmin?: boolean;
 }
 
-/** Cada panel con su emoji. Van aquí y no en sections.ts para que ese fichero
- * siga siendo solo datos. Un emoji en vez de un ícono de trazo: ya trae su
- * propio color y forma reconocible de un vistazo, así que una fila se
- * distingue de otra sin tener que leer el título -- sin inventar un sistema
- * de colores decorativos nuevo (ver el comentario de SECTIONS en
- * sections.ts sobre por qué el color ahí significa solo entrada/salida). */
 const ICONOS: Record<PanelAjustes, string> = {
   forecast: '📈',
   categorias: '🏷️',
@@ -66,19 +61,19 @@ const Fila: React.FC<{
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+      className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--fin-soft)]"
       style={{ boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)' }}
     >
       <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
         aria-hidden="true"
       >
-        {icono}
+        <IconoSimbolo valor={icono} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">{titulo}</span>
         {ayuda ? (
-          <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+          <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
             {ayuda}
           </span>
         ) : null}
@@ -160,20 +155,20 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
         {/* Este interruptor vivía escondido dentro de una vista de contenido, que
  es el sitio donde nadie va a buscar un ajuste. */}
         <label
-          className="flex cursor-pointer items-center gap-3 px-4 py-3.5"
+          className="flex cursor-pointer items-center gap-3 px-4 py-4"
           style={{ boxShadow: 'inset 0 -1px 0 0 var(--fin-line)' }}
         >
           <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
             aria-hidden="true"
           >
-            🐷
+            <IconoSimbolo valor="PiggyBank" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
               Contar los ahorros
             </span>
-            <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+            <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
               Suma lo que tienes guardado al total de arriba
             </span>
           </span>
@@ -185,17 +180,17 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           />
         </label>
 
-        <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none" aria-hidden="true">📊</span>
+        <label className="flex cursor-pointer items-center gap-3 px-4 py-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none" aria-hidden="true"><IconoSimbolo valor="TrendingUp" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Mostrar decisiones financieras</span>
-            <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">Ver cuánto puedes gastar y simular compras</span>
+            <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">Ver cuánto puedes gastar y simular compras</span>
           </span>
           <input type="checkbox" checked={mostrarDecisiones} onChange={(e) => onMostrarDecisiones(e.target.checked)} className="h-6 w-6 shrink-0 accent-[var(--fin-in)]" />
         </label>
 
         <label
-          className="flex cursor-pointer items-center gap-3 px-4 py-3.5"
+          className="flex cursor-pointer items-center gap-3 px-4 py-4"
           style={{
             boxShadow:
               onVolverAVerGuia || temaToggle || cuenta
@@ -204,16 +199,16 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           }}
         >
           <span
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
             aria-hidden="true"
           >
-            💵
+            <IconoSimbolo valor="Wallet" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
               Mostrar efectivo por separado
             </span>
-            <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+            <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
               Desglosar el dinero en efectivo del total
             </span>
           </span>
@@ -227,7 +222,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
 
         {/* Recordatorio de Racha */}
         <div
-          className="flex flex-col px-4 py-3.5"
+          className="flex flex-col px-4 py-4"
           style={{
             boxShadow:
               onVolverAVerGuia || temaToggle || cuenta
@@ -238,16 +233,16 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
                 aria-hidden="true"
               >
-                🔔
+                <IconoSimbolo valor="Bell" />
               </span>
               <div className="min-w-0 flex-1">
                 <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
                   Recordatorio diario de racha
                 </span>
-                <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+                <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
                   Notificación si aún no has anotado gastos hoy
                 </span>
               </div>
@@ -269,15 +264,15 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
 
           {recordatorio.activo && (
             <div className="mt-3 ml-12 flex items-center justify-between border-t border-[var(--fin-line)]/50 pt-2.5">
-              <span className="text-[13px] font-medium text-[var(--fin-ink-soft)] flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-amber-500" />
+              <span className="text-[13px] font-medium text-[var(--fin-ink-soft)] flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5 text-[var(--fin-warn-ink)]" />
                 Hora de aviso:
               </span>
               <input
                 type="time"
                 value={recordatorio.hora}
                 onChange={(e) => recordatorio.cambiarHora(e.target.value)}
-                className="rounded-lg border border-[var(--fin-line)] bg-[var(--fin-bg)] px-2.5 py-1 text-[16px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-1 text-[17px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none focus:ring-1 focus:ring-amber-500"
               />
             </div>
           )}
@@ -287,20 +282,20 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           <button
             type="button"
             onClick={onVolverAVerGuia}
-            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+            className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--fin-soft)]"
             style={{ boxShadow: 'inset 0 -1px 0 0 var(--fin-line)' }}
           >
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
               aria-hidden="true"
             >
-              🚀
+              <IconoSimbolo valor="Plane" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
                 Volver a ver la guía
               </span>
-              <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+              <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
                 Te vuelve a señalar cómo funciona la app
               </span>
             </span>
@@ -318,20 +313,20 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
             onClick={() => {
               window.location.href = '/ecosistema';
             }}
-            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+            className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--fin-soft)]"
             style={{ boxShadow: temaToggle || cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
           >
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-purple-500/15 text-[19px] leading-none"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-purple-500/15 text-[20px] leading-none"
               aria-hidden="true"
             >
-              🛡️
+              <IconoSimbolo valor="Shield" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">
                 Ecosistema / Superadmin
               </span>
-              <span className="mt-0.5 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
+              <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">
                 Lanzador de aplicaciones, administración y analítica
               </span>
             </span>
@@ -345,15 +340,15 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
 
         {temaToggle ? (
           <div
-            className="flex items-center justify-between gap-3 px-4 py-3.5"
+            className="flex items-center justify-between gap-3 px-4 py-4"
             style={{ boxShadow: cuenta ? 'inset 0 -1px 0 0 var(--fin-line)' : undefined }}
           >
             <span className="flex items-center gap-3">
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
                 aria-hidden="true"
               >
-                🌗
+                <IconoSimbolo valor="Moon" />
               </span>
               <span className="text-[17px] font-semibold text-[var(--fin-ink)]">Apariencia</span>
             </span>
@@ -365,17 +360,17 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
           <button
             type="button"
             onClick={() => onAbrir('cuenta')}
-            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+            className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--fin-soft)]"
           >
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[19px] leading-none"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none"
               aria-hidden="true"
             >
-              ☁️
+              <IconoSimbolo valor="Cloud" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Cuenta</span>
-              <span className="mt-0.5 block truncate text-[15px] text-[var(--fin-ink-soft)]">
+              <span className="mt-1 block truncate text-[15px] text-[var(--fin-ink-soft)]">
                 {cuenta.email}
               </span>
             </span>

@@ -2,7 +2,6 @@ import { useCapturaEscritorio } from '../hooks/useCapturaEscritorio';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Ear, Keyboard, Loader2, Mic, Sparkles, Star, Wallet, X } from 'lucide-react';
-import { tint } from '../types';
 import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { etiquetaTipoCajita, type Cajita } from '../data/modelos';
 import type { CategoriaPersonal } from '../categorias';
@@ -367,7 +366,7 @@ export const Captura: React.FC<CapturaProps> = ({
       initial={quieto ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.15 }}
-      className="relative flex h-full w-full max-w-2xl flex-col overflow-y-auto overscroll-contain bg-[var(--fin-bg)] px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] md:max-h-[calc(100dvh-3rem)] md:rounded-[var(--fin-r-sheet)] md:px-8 md:shadow-2xl"
+      className="relative flex h-full w-full max-w-2xl flex-col overflow-y-auto overscroll-contain bg-[var(--fin-bg)] px-4 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] md:max-h-[calc(100dvh-3rem)] md:rounded-[var(--fin-r-sheet)] md:px-8 md:shadow-2xl"
       role="dialog"
       aria-modal="true"
       aria-label="Anotar un movimiento"
@@ -377,21 +376,21 @@ export const Captura: React.FC<CapturaProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-3.5 flex items-start gap-2.5 rounded-[var(--fin-r-card)] border border-amber-500/35 bg-amber-500/10 p-3.5 text-[13px] text-amber-500 shadow-sm backdrop-blur-md"
+          className="mb-4 flex items-start gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] p-4 text-[13px] text-[var(--fin-warn-ink)] shadow-sm backdrop-blur-md"
         >
-          <Sparkles className="mt-0.5 h-4.5 w-4.5 shrink-0 text-amber-400" />
+          <Sparkles className="mt-1 h-4.5 w-4.5 shrink-0 text-[var(--fin-warn-ink)]" />
           <div className="leading-snug">
             {parsed.raw ? (
               <>
                 <span className="font-bold">Prueba por voz reconocida</span>
-                <p className="mt-1 text-[12px] opacity-90">
+                <p className="mt-1 text-[13px] opacity-90">
                   Detectamos «{parsed.raw}». Revisa los datos y pulsa <strong>Guardar</strong> para confirmar tu primer movimiento de prueba.
                 </p>
               </>
             ) : (
               <>
                 <span className="font-bold">Tu primer movimiento de prueba</span>
-                <p className="mt-1 text-[12px] opacity-90">
+                <p className="mt-1 text-[13px] opacity-90">
                   Ingresa un monto y categoría para conocer la app. Podrás editarlo o borrarlo fácilmente con un toque.
                 </p>
               </>
@@ -401,17 +400,10 @@ export const Captura: React.FC<CapturaProps> = ({
       ) : null}
 
       {/* Cabecera superior con Fecha, Selector Plegable de Banco/Cuenta, Selector Gasto/Ingreso y Cerrar */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="sticky top-0 z-20 flex items-center justify-between gap-2 bg-[var(--fin-bg)] pb-2">
         <div className="flex items-center gap-2">
-          {/* Fecha */}
-          <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[12px] font-medium text-[var(--fin-ink-soft)]">
-            {parsed.dateOverride
-              ? parsed.dateOverride.slice(8) + '/' + parsed.dateOverride.slice(5, 7)
-              : 'Hoy'}
-          </span>
-
           {/* Toggle Gasto / Ingreso intuitivo */}
-          <div className="flex items-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-0.5">
+          <div className="flex items-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-1">
             <button
               type="button"
               disabled={guardando}
@@ -420,7 +412,7 @@ export const Captura: React.FC<CapturaProps> = ({
                 audio.play('selection');
                 setKind('gasto');
               }}
-              className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[12px] font-bold transition-all ${
+              className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-3 py-1 text-[13px] font-bold transition-all ${
                 esGasto
                   ? 'bg-[var(--fin-out)] text-[var(--fin-on-accent)] shadow-sm'
                   : 'text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
@@ -437,7 +429,7 @@ export const Captura: React.FC<CapturaProps> = ({
                 audio.play('selection');
                 setKind('ingreso');
               }}
-              className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[12px] font-bold transition-all ${
+              className={`flex items-center gap-1 rounded-[var(--fin-r-pill)] px-3 py-1 text-[13px] font-bold transition-all ${
                 !esGasto
                   ? 'bg-[var(--fin-in)] text-[var(--fin-on-accent)] shadow-sm'
                   : 'text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink-soft)]'
@@ -449,7 +441,7 @@ export const Captura: React.FC<CapturaProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <input
             ref={fotoInputRef}
             type="file"
@@ -479,7 +471,7 @@ export const Captura: React.FC<CapturaProps> = ({
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)] disabled:opacity-50"
           >
             {escaneandoFoto ? (
-              <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-[var(--fin-warn-ink)]" />
             ) : (
               <Camera className="h-4 w-4" strokeWidth={2.25} />
             )}
@@ -497,17 +489,27 @@ export const Captura: React.FC<CapturaProps> = ({
         </div>
       </div>
 
+      <div className="mt-2 flex justify-start">
+          {/* Fecha */}
+          <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-medium text-[var(--fin-ink-soft)]">
+            {parsed.dateOverride
+              ? parsed.dateOverride.slice(8) + '/' + parsed.dateOverride.slice(5, 7)
+              : 'Hoy'}
+          </span>
+
+      </div>
+
       {/* La transcripción definitiva debe permanecer visible durante la
           confirmación. El texto parcial del overlay es solo una ayuda mientras
           se habla y puede equivocarse; aquí se enseña exactamente la versión
           que produjo los campos de abajo. */}
       {parsed.raw.trim() && !esComprobanteOCR ? (
         <section
-          className="mt-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3.5 py-3"
+          className="mt-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3"
           aria-label="Transcripción del dictado"
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-1.5 whitespace-nowrap text-[11px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+            <span className="flex items-center gap-2 whitespace-nowrap text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
               <Ear className="h-3.5 w-3.5" aria-hidden="true" />
               Tu dictado
             </span>
@@ -516,19 +518,19 @@ export const Captura: React.FC<CapturaProps> = ({
                 type="button"
                 disabled={guardando}
                 onClick={onReintentarVoz}
-                className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--fin-ink-soft)]"
+                className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 <Mic className="h-3.5 w-3.5" aria-hidden="true" />
                 Dictar otra vez
               </button>
             ) : null}
           </div>
-          <p className="mt-2 text-[14px] font-medium leading-relaxed text-[var(--fin-ink)]">
+          <p className="mt-2 text-[15px] font-medium leading-relaxed text-[var(--fin-ink)]">
             &ldquo;{parsed.raw.trim()}&rdquo;
           </p>
           {alertaRevision ? (
-            <p className="mt-2 flex items-start gap-1.5 text-[12px] font-semibold leading-snug text-[var(--fin-warn)]">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+            <p className="mt-2 flex items-start gap-2 text-[13px] font-semibold leading-snug text-[var(--fin-warn)]">
+              <AlertTriangle className="mt-1 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
               {alertaRevision}
             </p>
           ) : null}
@@ -537,13 +539,13 @@ export const Captura: React.FC<CapturaProps> = ({
 
       {/* Indicador de escaneo activo en Captura */}
       {escaneandoFoto ? (
-        <div className="mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-amber-500/10 border border-amber-500/20 py-2 px-3 text-[12.5px] font-semibold text-amber-500 animate-pulse">
+        <div className="mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] border border-[var(--fin-warn)]/30 py-2 px-3 text-[13px] font-semibold text-[var(--fin-warn-ink)] animate-pulse">
           <Loader2 className="h-4 w-4 animate-spin" />
           Escaneando comprobante con IA… {Math.round(progresoFoto * 100)}%
         </div>
       ) : null}
       {!escaneandoFoto && (resultadoImagen || esComprobanteOCR) ? (
-        <div className={`mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border py-2 px-3 text-[12.5px] font-semibold ${
+        <div className={`mt-2 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border py-2 px-3 text-[13px] font-semibold ${
           (resultadoImagen ?? parsed.kind) === 'ingreso'
             ? 'border-[var(--fin-in)]/25 bg-[var(--fin-in)]/10 text-[var(--fin-in)]'
             : 'border-[var(--fin-out)]/25 bg-[var(--fin-out)]/10 text-[var(--fin-out)]'
@@ -553,22 +555,22 @@ export const Captura: React.FC<CapturaProps> = ({
         </div>
       ) : null}
       {parsed.cuotasTotal && parsed.cuotaCop ? (
-        <p className="mt-2 rounded-[var(--fin-r-card)] border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-center text-[12.5px] font-semibold text-amber-600 dark:text-amber-400">
+        <p className="mt-2 rounded-[var(--fin-r-card)] border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] px-3 py-2 text-center text-[13px] font-semibold text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]">
           Compra a {parsed.cuotasTotal} cuotas de ${formatAmountInput(parsed.cuotaCop)} al mes. Se cargará a tu tarjeta cuando la elijas.
         </p>
       ) : null}
       {!escaneandoFoto && errorImagen ? (
-        <p className="mt-2 text-center text-[12px] font-medium text-[var(--fin-out)]">{errorImagen}</p>
+        <p className="mt-2 text-center text-[13px] font-medium text-[var(--fin-out)]">{errorImagen}</p>
       ) : null}
 
       {sugerenciaContextual ? (
         <motion.div
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 flex items-center gap-2.5 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/20 bg-[var(--fin-soft)] px-3 py-2.5"
+          className="mt-3 flex items-center gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/20 bg-[var(--fin-soft)] px-3 py-3"
         >
           <Sparkles className="h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.3} aria-hidden="true" />
-          <p className="min-w-0 flex-1 text-[12px] leading-snug text-[var(--fin-ink-soft)]">
+          <p className="min-w-0 flex-1 text-[13px] leading-snug text-[var(--fin-ink-soft)]">
             <strong className="font-semibold text-[var(--fin-ink)]">Como la última vez:</strong>{' '}
             {catalogo.de(sugerenciaContextual.movimiento.category).nombre}
             {sugerenciaContextual.cuenta ? ` · ${sugerenciaContextual.cuenta.nombre}` : ''}
@@ -585,7 +587,7 @@ export const Captura: React.FC<CapturaProps> = ({
               if (digitos === '') setDigitos(String(Math.round(movimiento.amountCop)));
               setCategoriaDetectada(movimiento.category);
             }}
-            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-2.5 py-1.5 text-[11px] font-bold text-[var(--fin-ink)] shadow-xs transition-colors hover:bg-[var(--fin-bg)]"
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-3 py-2 text-[13px] font-bold text-[var(--fin-ink)] shadow-xs transition-colors hover:bg-[var(--fin-bg)]"
           >
             Usar
           </button>
@@ -599,20 +601,20 @@ export const Captura: React.FC<CapturaProps> = ({
             type="button"
             disabled={guardando}
             onClick={() => setDesplegarCuentas(!desplegarCuentas)}
-            className={`flex w-full items-center gap-2 rounded-[var(--fin-r-control)] px-3.5 py-2.5 text-[13px] font-semibold transition-all ${
+            className={`flex w-full items-center gap-2 rounded-[var(--fin-r-control)] px-4 py-3 text-[13px] font-semibold transition-all ${
               cuentaSeleccionada
                 ? 'border border-[var(--fin-line)] bg-[var(--fin-card)] text-[var(--fin-ink)] shadow-sm hover:bg-[var(--fin-soft)]'
-                : 'border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                : 'border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)] hover:bg-[var(--fin-warn-bg)]'
             }`}
           >
-            <IconoCuenta className={`h-4 w-4 shrink-0 ${cuentaSeleccionada ? 'text-[var(--fin-ink-soft)]' : 'text-amber-500'}`} />
+            <IconoCuenta className={`h-4 w-4 shrink-0 ${cuentaSeleccionada ? 'text-[var(--fin-ink-soft)]' : 'text-[var(--fin-warn-ink)]'}`} />
             <span className="min-w-0 flex-1 truncate text-left">
               {cuentaSeleccionada ? cuentaSeleccionada.nombre : '¿Desde qué cuenta o tarjeta?'}
             </span>
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
                 desplegarCuentas ? 'rotate-180' : ''
-              } ${cuentaSeleccionada ? 'text-[var(--fin-ink-faint)]' : 'text-amber-500'}`}
+              } ${cuentaSeleccionada ? 'text-[var(--fin-ink-faint)]' : 'text-[var(--fin-warn-ink)]'}`}
             />
           </button>
 
@@ -626,7 +628,7 @@ export const Captura: React.FC<CapturaProps> = ({
                 className="absolute left-0 top-full z-50 mt-2 min-w-[250px] rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-2 shadow-2xl backdrop-blur-xl"
                 style={{ backgroundColor: 'var(--fin-surface)' }}
               >
-                <p className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+                <p className="px-3 py-1 text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]">
                   Cuenta o tarjeta de pago
                 </p>
                 <div className="mt-1 flex flex-col gap-1 max-h-52 overflow-y-auto">
@@ -643,23 +645,23 @@ export const Captura: React.FC<CapturaProps> = ({
                           setCuentaId(c.id);
                           setDesplegarCuentas(false);
                         }}
-                        className={`flex items-center justify-between rounded-[var(--fin-r-control)] px-3 py-2.5 text-left text-[14px] transition-colors ${
+                        className={`flex items-center justify-between rounded-[var(--fin-r-control)] px-3 py-3 text-left text-[15px] transition-colors ${
                           activa
                             ? 'bg-[var(--fin-soft)] font-bold text-[var(--fin-ink)]'
                             : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]/60 hover:text-[var(--fin-ink)]'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 truncate">
+                        <div className="flex items-center gap-3 truncate">
                           <Icon className="h-4 w-4 shrink-0 text-[var(--fin-ink-soft)]" />
                           <span className="min-w-0 truncate">
                             <span className="block truncate">{c.nombre}</span>
-                            <span className="block text-[11px] font-normal text-[var(--fin-ink-faint)]">
+                            <span className="block text-[13px] font-normal text-[var(--fin-ink-faint)]">
                               {etiquetaTipoCajita(c)}
                             </span>
                           </span>
                           {c.id === cuentaPorDefecto && (
-                            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-500">
-                              <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" /> Principal
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-warn-bg)] px-2 py-1 text-[13px] font-bold text-[var(--fin-warn-ink)]">
+                              <Star className="h-2.5 w-2.5 fill-amber-500 text-[var(--fin-warn-ink)]" /> Principal
                             </span>
                           )}
                         </div>
@@ -692,9 +694,9 @@ export const Captura: React.FC<CapturaProps> = ({
       )}
 
       {/* El centro: Monto y Descripción */}
-      <div className="mt-5 min-h-0 flex-1">
+      <div className="mt-4 grow shrink-0">
         <div className="tabular-nums" style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)', color: amountCop === null ? 'var(--fin-ink-ghost)' : colorMonto }}>
-          <label className="block text-xs font-semibold text-[var(--fin-ink-soft)]" htmlFor="captura-monto">Monto en pesos colombianos</label>
+          <label className="block text-xs font-semibold tracking-normal text-[var(--fin-ink-soft)]" htmlFor="captura-monto">Monto en pesos colombianos</label>
           {escritorio || editandoMonto ? <div className="mt-2 flex items-baseline gap-2">
             <span aria-hidden="true">{esGasto ? '−' : '+'}$</span>
             <input id="captura-monto" ref={montoRef} autoFocus={escritorio} inputMode="numeric" type="text" autoComplete="off" value={formatAmountInput(amountCop)}
@@ -704,8 +706,8 @@ export const Captura: React.FC<CapturaProps> = ({
           </div> : <button id="captura-monto" type="button" disabled={guardando} onClick={() => setEditandoMonto(true)} aria-label="Escribir el monto" className="mt-2 w-full text-left">
             {esGasto ? '−' : '+'}$<AnimatedNumber value={amountCop} format={(n) => formatAmountInput(n)} />
           </button>}
-          {!escritorio && !editandoMonto ? <p className="mt-1 text-xs font-normal text-[var(--fin-ink-soft)]">Toca el monto para escribirlo con tu teclado.</p> : null}
-          {!escritorio && editandoMonto ? <button type="button" onClick={() => setEditandoMonto(false)} className="mt-2 block text-sm font-semibold text-[var(--fin-ink-soft)]">Usar teclado de LukApp</button> : null}
+          {!escritorio && !editandoMonto ? <p className="mt-1 text-xs font-normal tracking-normal text-[var(--fin-ink-soft)]">Toca el monto para escribirlo con tu teclado.</p> : null}
+          {!escritorio && editandoMonto ? <button type="button" onClick={() => setEditandoMonto(false)} className="mt-2 block text-sm font-semibold tracking-normal text-[var(--fin-ink-soft)]">Usar teclado de LukApp</button> : null}
         </div>
 
         {editandoTexto || escritorio ? (
@@ -726,7 +728,7 @@ export const Captura: React.FC<CapturaProps> = ({
             type="button"
             disabled={guardando}
             onClick={() => setEditandoTexto(true)}
-            className="mt-3 block w-full truncate text-left text-[24px] font-normal text-[var(--fin-ink)]"
+            className="mt-3 block w-full truncate text-left text-[20px] font-normal text-[var(--fin-ink)]"
           >
             {description.trim() || (
               <span className="text-[var(--fin-ink-ghost)]">¿En qué fue?</span>
@@ -738,11 +740,11 @@ export const Captura: React.FC<CapturaProps> = ({
             dos filas desbordaba su caja y terminaba tapando 1, 2 y 3. */}
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between px-1">
-            <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
+            <span className="text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
               Categoría · {catalogo.de(category).nombre}
             </span>
             {categoriaDetectada && (
-              <span className="flex items-center gap-1 text-[11.5px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full animate-pulse">
+              <span className="flex items-center gap-1 text-[13px] font-bold text-[var(--fin-warn-ink)] bg-[var(--fin-warn-bg)] px-3 py-1 rounded-full animate-pulse">
                 <Sparkles className="h-3 w-3" /> Detectada: {catalogo.de(categoriaDetectada).nombre}
               </span>
             )}
@@ -771,12 +773,12 @@ export const Captura: React.FC<CapturaProps> = ({
                     activa ? 'shadow-sm' : 'border-transparent hover:bg-[var(--fin-soft)]'
                   }`}
                   style={{
-                    backgroundColor: activa ? tint(entrada.color, 0.16) : 'var(--fin-soft)',
-                    borderColor: activa ? entrada.color : undefined,
+                    backgroundColor: activa ? 'var(--fin-card-hover)' : 'var(--fin-soft)',
+                    borderColor: activa ? 'var(--fin-ink)' : undefined,
                     color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-soft)',
                   }}
                 >
-                  <span className="shrink-0 text-[16px]" aria-hidden="true">
+                  <span className="shrink-0 text-[17px]" aria-hidden="true">
                     <entrada.Icono className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span>{entrada.nombre}</span>
@@ -784,7 +786,7 @@ export const Captura: React.FC<CapturaProps> = ({
               );
             })}
           </div>
-          <button type="button" disabled={guardando} onClick={() => setMostrarTodasCategorias((v) => !v)} aria-expanded={mostrarTodasCategorias} className="mt-1 rounded-lg px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">{mostrarTodasCategorias ? 'Solo frecuentes' : 'Ver todas las categorías'}</button>
+          <button type="button" disabled={guardando} onClick={() => setMostrarTodasCategorias((v) => !v)} aria-expanded={mostrarTodasCategorias} className="mt-1 rounded-[var(--fin-r-control)] px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">{mostrarTodasCategorias ? 'Solo frecuentes' : 'Ver todas las categorías'}</button>
         </div>
       </div>
 
@@ -845,7 +847,7 @@ export const Captura: React.FC<CapturaProps> = ({
               className="w-full max-w-md rounded-t-[var(--fin-r-sheet)] sm:rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-2xl"
             >
               <div className="flex items-center justify-between pb-3 border-b border-[var(--fin-line)]">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fin-accent)]/15 text-[var(--fin-accent)]">
                     <Wallet className="h-5 w-5" />
                   </div>
@@ -853,7 +855,7 @@ export const Captura: React.FC<CapturaProps> = ({
                     <h3 className="text-[17px] font-bold text-[var(--fin-ink)]">
                       {esGasto ? '¿De qué cuenta salió?' : '¿En qué cuenta entró?'}
                     </h3>
-                    <p className="text-[12px] text-[var(--fin-ink-soft)]">
+                    <p className="text-[13px] text-[var(--fin-ink-soft)]">
                       Elige el banco para actualizar tu saldo:
                     </p>
                   </div>
@@ -861,7 +863,7 @@ export const Captura: React.FC<CapturaProps> = ({
                 <button
                   type="button"
                   onClick={() => setPidiendoCuenta(false)}
-                  className="rounded-full p-1.5 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+                  className="rounded-full p-2 text-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -879,7 +881,7 @@ export const Captura: React.FC<CapturaProps> = ({
                         setPidiendoCuenta(false);
                         ejecutarGuardado(c.id);
                       }}
-                      className="flex items-center justify-between rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-soft)] p-3.5 text-left transition-all hover:border-[var(--fin-accent)] hover:bg-[var(--fin-accent)]/10"
+                      className="flex items-center justify-between rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-soft)] p-4 text-left transition-all hover:border-[var(--fin-accent)] hover:bg-[var(--fin-accent)]/10"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fin-card)] text-[var(--fin-ink)]">
@@ -890,8 +892,8 @@ export const Captura: React.FC<CapturaProps> = ({
                             {c.nombre}
                           </span>
                           {c.id === cuentaPorDefecto && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Principal
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-warn-bg)] px-2 py-1 text-[13px] font-bold text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]">
+                              <Star className="h-3 w-3 fill-amber-500 text-[var(--fin-warn-ink)]" /> Principal
                             </span>
                           )}
                         </div>

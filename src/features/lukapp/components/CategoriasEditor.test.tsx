@@ -83,7 +83,7 @@ describe('editor de categorías', () => {
 
     fireEvent.click(screen.getByText('Nueva'));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: ' Mascotas ' } });
-    fireEvent.click(screen.getByLabelText('PawPrint'));
+    fireEvent.click(screen.getByLabelText('Mascotas'));
     fireEvent.click(screen.getByLabelText('Color #10B981'));
     fireEvent.click(screen.getByText('Crear categoría'));
 

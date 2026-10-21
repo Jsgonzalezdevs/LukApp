@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Bell, CheckCircle2, Clock, Flame, Trophy, X } from 'lucide-react';
@@ -23,15 +24,15 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
       >
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-[var(--fin-line)]/50 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]">
               <Flame className="h-6 w-6 fill-amber-500" />
             </div>
             <div>
               <h2 className="text-[17px] font-bold text-[var(--fin-ink)]">
                 Tu racha financiera
               </h2>
-              <p className="text-[12px] text-[var(--fin-ink-soft)]">
+              <p className="text-[13px] text-[var(--fin-ink-soft)]">
                 La consistencia crea libertad financiera
               </p>
             </div>
@@ -47,30 +48,30 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
 
         <div className="mt-4 flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-1">
           {/* Tarjetas de estadísticas */}
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="flex flex-col items-center justify-center rounded-[var(--fin-r-card)] bg-amber-500/10 border border-amber-500/20 p-3 text-center">
-              <span className="text-[24px] font-extrabold text-amber-500 tabular-nums">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-col items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] border border-[var(--fin-warn)]/30 p-3 text-center">
+              <span className="text-[20px] font-bold text-[var(--fin-warn-ink)] tabular-nums">
                 {infoRacha.rachaActual}
               </span>
-              <span className="text-[11px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
+              <span className="text-[13px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
                 Días de racha
               </span>
             </div>
 
             <div className="flex flex-col items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] border border-[var(--fin-line)] p-3 text-center">
-              <span className="text-[24px] font-extrabold text-[var(--fin-ink)] tabular-nums">
+              <span className="text-[20px] font-bold text-[var(--fin-ink)] tabular-nums">
                 {infoRacha.rachaMaxima}
               </span>
-              <span className="text-[11px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
+              <span className="text-[13px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
                 Racha récord
               </span>
             </div>
 
             <div className="flex flex-col items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] border border-[var(--fin-line)] p-3 text-center">
-              <span className="text-[24px] font-extrabold text-[var(--fin-ink)] tabular-nums">
+              <span className="text-[20px] font-bold text-[var(--fin-ink)] tabular-nums">
                 {infoRacha.diasAnotadosMes}
               </span>
-              <span className="text-[11px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
+              <span className="text-[13px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
                 Días este mes
               </span>
             </div>
@@ -78,25 +79,25 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
 
           {/* Estado de hoy */}
           <div
-            className={`flex items-center gap-3 rounded-[var(--fin-r-card)] p-3.5 border ${
+            className={`flex items-center gap-3 rounded-[var(--fin-r-card)] p-4 border ${
               infoRacha.anotadoHoy
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                ? 'bg-[var(--fin-soft)] border-[var(--fin-accent)]/30 text-[var(--fin-ink)]'
+                : 'bg-[var(--fin-warn-bg)] border-[var(--fin-warn)]/30 text-[var(--fin-warn-ink)]'
             }`}
           >
             {infoRacha.anotadoHoy ? (
               <>
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--fin-in)]" />
                 <div className="text-[13px] leading-snug text-[var(--fin-ink)]">
-                  <span className="font-bold text-emerald-500">¡Meta de hoy cumplida!</span> Anotaste
+                  <span className="font-bold text-[var(--fin-in)]">¡Meta de hoy cumplida!</span> Anotaste
                   movimientos hoy y tu racha está asegurada.
                 </div>
               </>
             ) : (
               <>
-                <Flame className="h-5 w-5 shrink-0 text-amber-500" />
+                <Flame className="h-5 w-5 shrink-0 text-[var(--fin-warn-ink)]" />
                 <div className="text-[13px] leading-snug text-[var(--fin-ink)]">
-                  <span className="font-bold text-amber-500">Anota tu primer movimiento hoy</span> para
+                  <span className="font-bold text-[var(--fin-warn-ink)]">Anota tu primer movimiento hoy</span> para
                   no perder tu racha de {infoRacha.rachaActual} días.
                 </div>
               </>
@@ -104,21 +105,21 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
           </div>
 
           {/* Recordatorio diario en este dispositivo / PWA */}
-          <div className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-3.5">
+          <div className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
-                    recordatorio.activo ? 'bg-amber-500/20 text-amber-500' : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
+                  className={`flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-control)] transition-colors ${
+                    recordatorio.activo ? 'bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]' : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
                   }`}
                 >
                   <Bell className="h-4 w-4" />
                 </div>
                 <div>
-                  <h4 className="text-[13.5px] font-bold text-[var(--fin-ink)]">
+                  <h4 className="text-[15px] font-bold text-[var(--fin-ink)]">
                     Recordatorio diario
                   </h4>
-                  <p className="text-[11.5px] text-[var(--fin-ink-soft)]">
+                  <p className="text-[13px] text-[var(--fin-ink-soft)]">
                     Te avisa si no has anotado hoy
                   </p>
                 </div>
@@ -132,7 +133,7 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
                   } else {
                     const ok = await recordatorio.activarRecordatorio();
                     if (ok) {
-                      setMensajePrueba('✅ ¡Recordatorio activado!');
+                      setMensajePrueba('Recordatorio activado.');
                       setTimeout(() => setMensajePrueba(null), 3000);
                     }
                   }
@@ -153,17 +154,17 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
             </div>
 
             {recordatorio.activo && (
-              <div className="mt-3 border-t border-[var(--fin-line)]/60 pt-3 flex flex-col gap-2.5">
+              <div className="mt-3 border-t border-[var(--fin-line)]/60 pt-3 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12.5px] font-medium text-[var(--fin-ink-soft)] flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-amber-500" />
+                  <span className="text-[13px] font-medium text-[var(--fin-ink-soft)] flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5 text-[var(--fin-warn-ink)]" />
                     Hora del recordatorio:
                   </span>
                   <input
                     type="time"
                     value={recordatorio.hora}
                     onChange={(e) => recordatorio.cambiarHora(e.target.value)}
-                    className="rounded-lg border border-[var(--fin-line)] bg-[var(--fin-card)] px-2.5 py-1 text-[16px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none focus:ring-1 focus:ring-amber-500"
+                    className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-1 text-[17px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none focus:ring-1 focus:ring-amber-500"
                   />
                 </div>
 
@@ -173,19 +174,19 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
                     onClick={async () => {
                       const ok = await enviarNotificacionRacha(infoRacha.rachaActual, true);
                       if (ok) {
-                        setMensajePrueba('🔔 Notificación de prueba enviada a tu dispositivo');
+                        setMensajePrueba('Notificación de prueba enviada a tu dispositivo.');
                       } else {
-                        setMensajePrueba('⚠️ Revisa que las notificaciones estén permitidas en tu navegador');
+                        setMensajePrueba('Revisa que las notificaciones estén permitidas en tu navegador.');
                       }
                       setTimeout(() => setMensajePrueba(null), 4000);
                     }}
-                    className="text-[12px] font-semibold text-amber-500 hover:text-amber-600 underline"
+                    className="text-[13px] font-semibold text-[var(--fin-warn-ink)] hover:text-[var(--fin-warn-ink)] underline"
                   >
                     Probar notificación ahora
                   </button>
 
                   {mensajePrueba && (
-                    <span className="text-[11px] font-medium text-[var(--fin-ink-soft)] animate-fade-in">
+                    <span className="text-[13px] font-medium text-[var(--fin-ink-soft)] animate-fade-in">
                       {mensajePrueba}
                     </span>
                   )}
@@ -196,8 +197,8 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
 
           {/* Medallas e Hitos */}
           <div>
-            <h3 className="flex items-center gap-1.5 text-[14px] font-bold text-[var(--fin-ink)] mb-2.5">
-              <Trophy className="h-4 w-4 text-amber-500" />
+            <h3 className="flex items-center gap-2 text-[15px] font-bold text-[var(--fin-ink)] mb-3">
+              <Trophy className="h-4 w-4 text-[var(--fin-warn-ink)]" />
               Medallas de consistencia
             </h3>
 
@@ -209,25 +210,25 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
                     key={hito.dias}
                     className={`flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] border p-3 transition-all ${
                       alcanzado
-                        ? 'border-amber-500/40 bg-amber-500/5'
+                        ? 'border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)]'
                         : 'border-[var(--fin-line)]/50 bg-[var(--fin-bg)] opacity-60'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[20px] ${
-                          alcanzado ? 'bg-amber-500/20' : 'bg-[var(--fin-soft)] grayscale'
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] text-[20px] ${
+                          alcanzado ? 'bg-[var(--fin-warn-bg)]' : 'bg-[var(--fin-soft)] grayscale'
                         }`}
                       >
-                        {hito.emoji}
+                        <IconoSimbolo valor={hito.emoji} className="h-6 w-6" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-[14px] font-bold text-[var(--fin-ink)]">
+                          <p className="text-[15px] font-bold text-[var(--fin-ink)]">
                             {hito.titulo}
                           </p>
                           <span
-                            className={`rounded-[var(--fin-r-pill)] px-2 py-0.5 text-[10.5px] font-extrabold ${
+                            className={`rounded-[var(--fin-r-pill)] px-2 py-1 text-[13px] font-bold ${
                               alcanzado
                                 ? 'bg-amber-500 text-white'
                                 : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
@@ -236,14 +237,14 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
                             {hito.dias} días
                           </span>
                         </div>
-                        <p className="text-[12px] text-[var(--fin-ink-soft)]">
+                        <p className="text-[13px] text-[var(--fin-ink-soft)]">
                           {hito.descripcion}
                         </p>
                       </div>
                     </div>
 
                     {alcanzado && (
-                      <CheckCircle2 className="h-5 w-5 shrink-0 text-amber-500" />
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-[var(--fin-warn-ink)]" />
                     )}
                   </div>
                 );
@@ -257,7 +258,7 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
           <button
             type="button"
             onClick={onCerrar}
-            className="w-full rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] py-3 text-[14.5px] font-bold text-[var(--fin-on-accent)] shadow-md transition-all hover:bg-[var(--fin-accent-hover)]"
+            className="w-full rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] py-3 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-md transition-all hover:bg-[var(--fin-accent-hover)]"
           >
             Entendido, ¡a seguir la racha!
           </button>

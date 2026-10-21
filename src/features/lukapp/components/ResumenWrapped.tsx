@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -79,7 +80,7 @@ const TarjetaVista: React.FC<{
       return (
         <Marco icono={<Sparkles className="h-7 w-7" strokeWidth={2} />} etiqueta="Tu resumen">
           <p className="text-[17px] font-normal text-white/70">Así fue tu</p>
-          <p className="mt-2 text-[34px] font-bold capitalize text-white">
+          <p className="mt-2 text-[28px] font-bold capitalize text-white">
             {monthKeyLabel(tarjeta.mes)}
           </p>
         </Marco>
@@ -160,7 +161,7 @@ const TarjetaVista: React.FC<{
     case 'gastoMasCaro':
       return (
         <Marco
-          icono={<span className="text-2xl">💸</span>}
+          icono={<span className="text-2xl"><IconoSimbolo valor="Wallet" className="h-6 w-6" /></span>}
           etiqueta="El gasto que más dolió"
           color={colorDe(tarjeta.tx.category)}
           detalle={
@@ -319,7 +320,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
       ref={raiz}
     >
       <div className="flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <div className="flex flex-1 gap-1.5" aria-label={`Tarjeta ${indice + 1} de ${tarjetas.length}`}>
+        <div className="flex flex-1 gap-2" aria-label={`Tarjeta ${indice + 1} de ${tarjetas.length}`}>
           {tarjetas.map((_, i) => (
             <span
               key={i}
@@ -370,7 +371,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
               e.stopPropagation();
               void compartir();
             }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-white px-4 py-3.5 text-[17px] font-semibold text-black"
+            className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-white px-4 py-4 text-[17px] font-semibold text-black"
           >
             <Share2 className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
             {compartido ? 'Copiado' : 'Compartir'}
@@ -381,7 +382,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
               e.stopPropagation();
               onCerrar();
             }}
-            className="flex items-center justify-center rounded-[var(--fin-r-control)] bg-white/10 px-5 py-3.5 text-[17px] font-semibold text-white"
+            className="flex items-center justify-center rounded-[var(--fin-r-control)] bg-white/10 px-5 py-4 text-[17px] font-semibold text-white"
           >
             Cerrar
           </button>

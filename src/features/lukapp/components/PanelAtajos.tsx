@@ -40,7 +40,7 @@ const BotonCopiar: React.FC<{ valor: string; etiqueta: string }> = ({ valor, eti
     <button
       type="button"
       onClick={() => void copiar()}
-      className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)]"
+      className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)]"
       aria-label={`Copiar ${etiqueta}`}
     >
       {copiado ? (
@@ -140,7 +140,7 @@ export const PanelAtajos: React.FC = () => {
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+        <h2 className="flex items-center gap-2 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <Smartphone className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
           Registro automático
         </h2>
@@ -151,18 +151,18 @@ export const PanelAtajos: React.FC = () => {
       </div>
 
       {error ? (
-        <p className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
+        <p className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
           {error}
         </p>
       ) : null}
 
       {nueva ? (
-        <div className="flex flex-col gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4">
+        <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4">
           <p className="text-[13px] font-semibold text-[var(--fin-ink)]">
             Tu llave nueva — cópiala ahora, no se vuelve a enseñar
           </p>
           <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-ink)]">
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[13px] text-[var(--fin-ink)]">
               {nueva.llave}
             </code>
             <BotonCopiar valor={nueva.llave} etiqueta="la llave" />
@@ -202,7 +202,7 @@ export const PanelAtajos: React.FC = () => {
                   <span className="block text-[15px] font-semibold text-[var(--fin-ink)]">
                     {l.etiqueta} · ···{l.pista}
                   </span>
-                  <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-faint)]">
+                  <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
                     Creada el {fechaCorta(l.creada_en)}
                     {l.usada_en ? ` · usada por última vez el ${fechaCorta(l.usada_en)}` : ' · nunca usada'}
                   </span>
@@ -210,7 +210,7 @@ export const PanelAtajos: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => void revocar(l.id)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-control)] px-3 py-2 text-[13px] font-semibold text-red-500 transition-colors hover:bg-[var(--fin-out-bg)]"
+                  className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-out)] transition-colors hover:bg-[var(--fin-out-bg)]"
                 >
                   <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
                   Revocar
@@ -275,7 +275,7 @@ export const PanelAtajos: React.FC = () => {
             </li>
           </ol>
           <div className="mt-2 flex items-center gap-2">
-            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-ink)]">
+            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[13px] text-[var(--fin-ink)]">
               {urlEndpoint}
             </code>
             <BotonCopiar valor={urlEndpoint} etiqueta="la dirección" />

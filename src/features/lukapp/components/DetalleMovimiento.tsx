@@ -2,7 +2,6 @@ import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuard
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Pencil, Sparkles, Trash2, X } from 'lucide-react';
-import { tint } from '../types';
 import type { Transaction } from '../types';
 import { formatSigned } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
@@ -84,11 +83,11 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
 
         <div className="flex flex-col items-center pb-2 text-center">
           <span
-            className="flex h-16 w-16 items-center justify-center rounded-3xl text-[30px] select-none shadow-sm"
-            style={{ backgroundColor: tint(entrada.color, 0.2) }}
+            className="flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-card)] text-[28px] select-none shadow-sm"
+            style={{ backgroundColor: 'var(--fin-soft)', color: 'var(--fin-ink-soft)' }}
             aria-hidden="true"
           >
-            {entrada.emoji}
+            <entrada.Icono className="h-5 w-5" aria-hidden="true" />
           </span>
 
           <p
@@ -113,7 +112,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
  descripción. Sirve para entender por qué quedó así si el motor de
  texto se equivocó. */}
           {tx.rawTranscript && tx.rawTranscript.trim() !== tx.description.trim() ? (
-            <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[13px] italic text-[var(--fin-ink-soft)]">
+            <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[13px] italic text-[var(--fin-ink-soft)]">
               Dijiste: «{tx.rawTranscript.trim()}»
             </p>
           ) : null}
@@ -131,7 +130,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
               key={accion.texto}
               type="button"
               onClick={accion.alTocar}
-              className="flex flex-col items-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3.5 text-[13px] font-semibold transition-colors"
+              className="flex flex-col items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-4 text-[13px] font-semibold transition-colors"
               style={{ color: accion.peligro ? 'var(--fin-out)' : 'var(--fin-ink)' }}
             >
               <accion.icono className="h-5 w-5" strokeWidth={2} aria-hidden="true" />

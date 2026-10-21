@@ -23,7 +23,7 @@ interface RecurrentesViewProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 /**
  * Lo que se repite cada mes.
@@ -86,7 +86,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
       {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
             Cada mes
           </h2>
@@ -106,15 +106,15 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
               Ya pasó la fecha de {pendientes.length}{' '}
               {pendientes.length === 1 ? 'movimiento' : 'movimientos'}
             </p>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+            <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               Confirma solo los que de verdad ocurrieron.
             </p>
 
-            <ul className="mt-2.5 flex flex-col gap-1.5">
+            <ul className="mt-3 flex flex-col gap-2">
               {pendientes.map((p) => (
                 <li
                   key={p.recurrente.id}
-                  className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-3"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-[var(--fin-ink)]">
@@ -127,7 +127,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onConfirmar(p)}
-                    className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+                    className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
                   >
                     <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
                     Sí pasó
@@ -160,7 +160,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Arriendo"
               autoFocus
-              className={`mt-1.5 ${CAMPO}`}
+              className={`mt-2 ${CAMPO}`}
             />
 
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -177,7 +177,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   onChange={(e) => setMonto(conPuntos(e.target.value))}
                   inputMode="numeric"
                   placeholder="0"
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 />
               </div>
               <div>
@@ -192,7 +192,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   value={dia}
                   onChange={(e) => setDia(e.target.value.replace(/\D/g, '').slice(0, 2))}
                   inputMode="numeric"
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 />
               </div>
             </div>
@@ -209,7 +209,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   id="rec-kind"
                   value={kind}
                   onChange={(e) => setKind(e.target.value as 'gasto' | 'ingreso')}
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 >
                   <option value="gasto">Sale</option>
                   <option value="ingreso">Entra</option>
@@ -226,7 +226,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   id="rec-cat"
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value)}
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 >
                   {catalogo.lista.map((c) => (
                     <option key={c.clave} value={c.clave}>
@@ -249,7 +249,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   id="rec-cuenta"
                   value={cuentaId}
                   onChange={(e) => setCuentaId(e.target.value)}
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 >
                   <option value="">No indicar</option>
                   {cuentas.map((c) => (
@@ -332,7 +332,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   type="button"
                   onClick={() => onBorrar(r.id)}
                   aria-label={`Eliminar ${r.nombre}`}
-                  className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] hover:text-[var(--fin-out)]"
+                  className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] hover:text-[var(--fin-out)]"
                 >
                   <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                 </button>

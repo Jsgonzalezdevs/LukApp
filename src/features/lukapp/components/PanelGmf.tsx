@@ -28,7 +28,7 @@ interface PanelGmfProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 /**
  * El 4x1000, explicado y estimado.
@@ -70,13 +70,13 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+        <h2 className="flex items-center gap-2 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <Scale className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
           El 4x1000
         </h2>
         {/* Arriba, no al final: si la cifra de abajo no es oficial, decirlo
  después de que ya la leyó no sirve de nada. */}
-        <p className="mt-2 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+        <p className="mt-2 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
           {ADVERTENCIA_GMF}
         </p>
       </div>
@@ -88,7 +88,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         <legend className="px-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           ¿Cómo te lo aplica tu banco?
         </legend>
-        <div className="mt-1 flex flex-col gap-1.5">
+        <div className="mt-1 flex flex-col gap-2">
           {[
             {
               id: 'distribuido' as const,
@@ -103,7 +103,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
           ].map((op) => (
             <label
               key={op.id}
-              className={`flex cursor-pointer items-start gap-2.5 rounded-[var(--fin-r-control)] border-2 px-3 py-2.5 transition-colors ${
+              className={`flex cursor-pointer items-start gap-3 rounded-[var(--fin-r-control)] border-2 px-3 py-3 transition-colors ${
                 regimen === op.id
                   ? 'border-[var(--fin-ink)] bg-[var(--fin-bg)]'
                   : 'border-[var(--fin-line)]'
@@ -114,13 +114,13 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
                 name="regimen-gmf"
                 checked={regimen === op.id}
                 onChange={() => onCambiarRegimen(op.id)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
+                className="mt-1 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
               />
               <span className="min-w-0">
                 <span className="block text-[15px] font-semibold text-[var(--fin-ink)]">
                   {op.titulo}
                 </span>
-                <span className="mt-0.5 block text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                <span className="mt-1 block text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                   {op.nota}
                 </span>
               </span>
@@ -140,7 +140,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
               id="cuenta-exenta"
               value={cuentaExentaId ?? ''}
               onChange={(e) => onCambiarCuentaExenta(e.target.value || null)}
-              className={`mt-1.5 ${CAMPO}`}
+              className={`mt-2 ${CAMPO}`}
             >
               <option value="">Ninguna</option>
               {cuentas.map((c) => (
@@ -161,7 +161,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         <p className="mt-1 text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
           {formatCop(consumo.disponibleCop)}
         </p>
-        <p className="mt-0.5 text-[13px] text-[var(--fin-ink-faint)]">
+        <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
           libres de {formatCop(consumo.topeCop)} ({TOPE_EXENTO_UVT} UVT)
         </p>
 
@@ -212,7 +212,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
 
       {/* Cuentas que cuentan */}
       <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+        <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           <Landmark className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
           ¿Cuáles están en una entidad financiera?
         </p>
@@ -221,17 +221,17 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         </p>
 
         {cuentas.length === 0 ? (
-          <div className="mt-2.5 flex items-start gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-bg-soft)] p-3">
-            <Landmark className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-ink-ghost)]" strokeWidth={1.75} aria-hidden="true" />
+          <div className="mt-3 flex items-start gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-bg-soft)] p-3">
+            <Landmark className="mt-1 h-4 w-4 shrink-0 text-[var(--fin-ink-ghost)]" strokeWidth={1.75} aria-hidden="true" />
             <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               Todavía no tienes cuentas registradas. Créalas en Cuentas para marcar cuáles cobran GMF.
             </p>
           </div>
         ) : (
-          <ul className="mt-2.5 flex flex-col gap-1">
+          <ul className="mt-3 flex flex-col gap-1">
             {cuentas.map((c) => (
               <li key={c.id}>
-                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2.5">
+                <label className="flex cursor-pointer items-center justify-between gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-3">
                   <span className="min-w-0 truncate text-[15px] font-semibold text-[var(--fin-ink)]">
                     {c.etiqueta ?? c.nombre}
                   </span>
@@ -277,7 +277,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
             />
             <button
               type="submit"
-              className="shrink-0 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
+              className="shrink-0 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)]"
             >
               Guardar
             </button>
@@ -293,7 +293,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
                 setBorrador(formatAmountInput(uvt.pesos));
                 setEditandoUvt(true);
               }}
-              className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+              className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
             >
               Cambiar
             </button>
@@ -307,7 +307,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         {/* La UVT cambia cada enero. Calcular en silencio con la del año pasado
  daría un tope equivocado sin que nadie se entere. */}
         {vieja ? (
-          <p className="mt-2 flex items-start gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
+          <p className="mt-2 flex items-start gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-3 py-3 text-[13px] leading-relaxed text-[var(--fin-warn-ink)]">
             <AlertTriangle
               className="mt-px h-3.5 w-3.5 shrink-0"
               strokeWidth={3}

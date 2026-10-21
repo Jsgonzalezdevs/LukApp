@@ -18,7 +18,7 @@ export const ProximosPagosInicio = ({ obligaciones, hoy, privacidad, onVerPagos 
   return <section aria-label="Próximos pagos" className="mt-5 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
     <div className="flex items-center justify-between gap-3">
       <h2 className="flex items-center gap-2 font-semibold text-[var(--fin-ink)]"><CalendarDays size={18} aria-hidden="true" />Próximos pagos</h2>
-      <button type="button" onClick={onVerPagos} className="flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">Ver calendario<ChevronRight size={16} aria-hidden="true" /></button>
+      <button type="button" onClick={onVerPagos} className="flex items-center gap-1 rounded-[var(--fin-r-control)] px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">Ver calendario<ChevronRight size={16} aria-hidden="true" /></button>
     </div>
     <p className="mt-1 text-xs text-[var(--fin-ink-faint)]">Desde hoy · próximos 90 días</p>
     {fechados.length > 0 ? <ul className="mt-2 divide-y divide-[var(--fin-line)]">

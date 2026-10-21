@@ -71,7 +71,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
   return (
     <section className="flex flex-col gap-3">
       <div>
-        <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+        <h2 className="flex items-center gap-2 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <HardDriveDownload className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
           Tus datos
         </h2>
@@ -158,7 +158,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
         </button>
 
         {error !== null ? (
-          <p className="mt-2 flex items-start gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-out-bg)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
+          <p className="mt-2 flex items-start gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out-bg)] px-3 py-3 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
             <AlertTriangle
               className="mt-px h-3.5 w-3.5 shrink-0"
               strokeWidth={3}
@@ -170,7 +170,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
 
         {/* Qué trae, ANTES de reemplazar nada. Descubrirlo después sería tarde. */}
         {porRestaurar !== null ? (
-          <div className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-3.5 py-3">
+          <div className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-4 py-3">
             <p className="text-[13px] font-semibold text-[var(--fin-warn-ink)]">
               Ese archivo trae {porRestaurar.resumen}.
             </p>
@@ -178,7 +178,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
               Restaurar REEMPLAZA todo lo que tienes ahora ({resumirRespaldo(datos)}). Esto no se
               puede deshacer — descarga un respaldo de lo actual si tienes dudas.
             </p>
-            <div className="mt-2.5 flex gap-2">
+            <div className="mt-3 flex gap-2">
               <button
                 type="button"
                 disabled={restaurando}
@@ -192,7 +192,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
                   } catch { setError('No se pudo restaurar. Tus datos anteriores se conservan.'); }
                   finally { restaurandoRef.current = false; setRestaurando(false); }
                 }}
-                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2.5 text-[15px] font-semibold text-white"
+                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-out)]"
               >
                 {restaurando ? 'Restaurando…' : 'Sí, reemplazar todo'}
               </button>
@@ -200,7 +200,7 @@ export const PanelRespaldo: React.FC<PanelRespaldoProps> = ({
                 type="button"
                 disabled={restaurando}
                 onClick={() => setPorRestaurar(null)}
-                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 Cancelar
               </button>

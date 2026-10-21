@@ -471,7 +471,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
     utterance.onstart = () => {
       setHablandoId(msgId);
-      mostrarToast('🔊 Leyendo consejo...');
+      mostrarToast('Leyendo consejo…');
     };
 
     utterance.onend = () => {
@@ -504,7 +504,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           url: 'https://lukapp.app',
         });
         setCompartidoId(msgId);
-        mostrarToast('✨ ¡Consejo compartido con éxito!');
+        mostrarToast('Consejo compartido.');
         setTimeout(() => setCompartidoId((prev) => (prev === msgId ? null : prev)), 2500);
         return;
       } catch (err: any) {
@@ -516,7 +516,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     try {
       await navigator.clipboard.writeText(textoCompartir);
       setCompartidoId(msgId);
-      mostrarToast('📋 ¡Copiado con formato de LukApp listo para WhatsApp!');
+      mostrarToast('Consejo copiado para compartir.');
       setTimeout(() => setCompartidoId((prev) => (prev === msgId ? null : prev)), 2500);
     } catch {
       mostrarToast('No se pudo copiar el texto');
@@ -840,7 +840,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // mentirle a quien pregunta.
   const colorConexion =
     conexion === 'en-linea'
-      ? 'var(--fin-in)'
+      ? 'var(--fin-accent)'
       : conexion === 'despertando'
         ? 'var(--fin-warn)'
         : 'var(--fin-ink-faint)';
@@ -859,9 +859,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           disabled={intentandoDespertar}
           aria-label="Verificar disponibilidad de IA"
           title={conexion === 'en-linea' ? 'La IA respondió y está disponible. Pulsa para verificar de nuevo.' : 'Verificar disponibilidad de IA'}
-          className={`flex max-w-full items-center gap-2 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[13px] transition-colors disabled:cursor-wait ${
+          className={`flex max-w-full items-center gap-2 rounded-[var(--fin-r-pill)] px-3 py-1 text-[13px] transition-colors disabled:cursor-wait ${
             conexion === 'en-linea'
-              ? 'bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-300'
+              ? 'bg-[var(--fin-soft)] font-semibold text-[var(--fin-ink)]'
               : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
           }`}
         >
@@ -896,7 +896,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <button
             type="button"
             onClick={() => setRecordar((actual) => !actual)}
-            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--fin-ink-soft)]"
+            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
             title="Controla si el asesor guarda esta conversación"
           >
             {recordar ? 'Memoria activa' : 'Memoria apagada'}
@@ -915,8 +915,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <section ref={historialRef} className="flex h-full w-[min(88vw,22rem)] flex-col border-l border-[var(--fin-line)] bg-[var(--fin-bg)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-4 py-4">
               <div>
-                <h2 id="historial-asesor-titulo" className="text-[16px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
-                <p className="mt-0.5 text-[11px] text-[var(--fin-ink-faint)]">Tus chats guardados con el asesor</p>
+                <h2 id="historial-asesor-titulo" className="text-[17px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
+                <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">Tus chats guardados con el asesor</p>
               </div>
               <button
                 type="button"
@@ -931,7 +931,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               <button
                 type="button"
                 onClick={nuevaConversacion}
-                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)]"
               >
                 <Plus className="h-4 w-4" />
                 Nueva conversación
@@ -956,7 +956,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   }`}
                 >
                   <span className="block truncate text-[13px] font-semibold">{conversacion.titulo || 'Conversación sin título'}</span>
-                  <span className="mt-1 block text-[11px] text-[var(--fin-ink-faint)]">
+                  <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
                     {new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(conversacion.actualizado_en))}
                   </span>
                 </button>
@@ -976,7 +976,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
  la conversación con un clic en lugar de tener que pensar qué
  escribir primero. */}
         {messages.length === 1 ? (
-          <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 py-4 text-center">
+          <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-4 text-center">
             {/* El personaje entero, no un icono: es la única pantalla con
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
@@ -986,7 +986,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               alt={imagenLuki.alt}
               prioridad="alta"
             />
-            <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
+            <p className="text-[15px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
             <div className="grid grid-cols-2 gap-2 w-full px-2">
@@ -995,7 +995,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   key={sug}
                   onClick={() => handleSend(sug)}
                   disabled={pensando}
-                  className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+                  className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
                 >
                   {sug}
                 </button>
@@ -1022,7 +1022,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   />
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-[16px] leading-relaxed break-words ${
+                  className={`max-w-[85%] rounded-[var(--fin-r-card)] px-4 py-3 text-[17px] leading-relaxed break-words ${
                     msg.role === 'user'
                       ? 'rounded-br-none bg-[var(--fin-accent)] text-[var(--fin-on-accent)] font-medium'
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
@@ -1070,7 +1070,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                           key={idx}
                           onClick={() => handleSend(sug)}
                           disabled={pensando}
-                          className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+                          className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
                         >
                           {sug}
                         </button>
@@ -1083,12 +1083,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopiar(msg.id, msg.text)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
                         title={copiadoId === msg.id ? 'Copiado al portapapeles' : 'Copiar respuesta'}
                         aria-label="Copiar"
                       >
                         {copiadoId === msg.id ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+                          <Check className="h-3.5 w-3.5 text-[var(--fin-in)]" strokeWidth={2.5} />
                         ) : (
                           <Copy className="h-3.5 w-3.5" strokeWidth={2} />
                         )}
@@ -1098,9 +1098,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleFeedback(msg.id, 'like')}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors active:scale-95 ${
                           feedback.get(msg.id) === 'like'
-                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            ? 'bg-[var(--fin-soft)] text-[var(--fin-ink)] ring-1 ring-[var(--fin-ink)]'
                             : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
                         }`}
                         title="Buena respuesta"
@@ -1113,9 +1113,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleFeedback(msg.id, 'dislike')}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors active:scale-95 ${
                           feedback.get(msg.id) === 'dislike'
-                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                            ? 'bg-[var(--fin-soft)] text-[var(--fin-ink)] ring-1 ring-[var(--fin-ink)]'
                             : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
                         }`}
                         title="Mala respuesta"
@@ -1128,7 +1128,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleLeerEnVozAlta(msg.id, msg.text)}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors active:scale-95 ${
                           hablandoId === msg.id
                             ? 'bg-blue-500/20 text-blue-500 animate-pulse'
                             : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
@@ -1147,12 +1147,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCompartir(msg.id, msg.text)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
                         title={compartidoId === msg.id ? '¡Consejo copiado con formato de LukApp!' : 'Compartir consejo de LukApp'}
                         aria-label="Compartir"
                       >
                         {compartidoId === msg.id ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+                          <Check className="h-3.5 w-3.5 text-[var(--fin-in)]" strokeWidth={2.5} />
                         ) : (
                           <Share2 className="h-3.5 w-3.5" strokeWidth={2} />
                         )}
@@ -1163,7 +1163,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                         type="button"
                         onClick={() => handleRegenerar(msg.id)}
                         disabled={pensando}
-                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95 disabled:opacity-40"
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95 disabled:opacity-40"
                         title="Regenerar respuesta"
                         aria-label="Regenerar"
                       >
@@ -1208,11 +1208,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       {/* Input */}
       {errorIA && textoParaReintentar ? (
-        <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[12px]" role="status" aria-live="polite">
+        <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[13px]" role="status" aria-live="polite">
           <span className="text-[var(--fin-ink-soft)]">{errorIA}</span>
           <button
             type="button"
-            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1.5 font-semibold text-[var(--fin-on-accent)]"
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 font-semibold text-[var(--fin-on-accent)]"
             onClick={() => void handleSend(textoParaReintentar, true)}
             disabled={pensando}
           >
@@ -1223,7 +1223,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       <div className="sticky bottom-0 bg-[var(--fin-bg)] pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(dictado.status === 'listening' || dictado.status === 'processing' || dictado.error) && (
           <p
-            className={`mx-auto mb-2 max-w-2xl px-3 text-center text-[12px] font-medium ${
+            className={`mx-auto mb-2 max-w-2xl px-3 text-center text-[13px] font-medium ${
               dictado.error ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink-soft)]'
             }`}
             aria-live="polite"
@@ -1235,7 +1235,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 : dictado.interim || 'Te escucho… toca el botón para terminar'}
           </p>
         )}
-        <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-1.5">
+        <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-2">
           <input
             type="text"
             className="min-w-0 flex-1 bg-transparent px-3 py-2 text-[17px] text-[var(--fin-ink)] border-none shadow-none !outline-none focus:!border-transparent focus:!outline-none focus:!ring-0 focus-visible:!outline-none placeholder:text-[var(--fin-ink-faint)]"
@@ -1293,10 +1293,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             aria-label="Enviar pregunta"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-30"
           >
-            <Send className="mr-0.5 h-4 w-4" strokeWidth={2.5} />
+            <Send className="mr-1 h-4 w-4" strokeWidth={2.5} />
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-[var(--fin-ink-faint)]">
+        <p className="mt-2 text-center text-[13px] text-[var(--fin-ink-faint)]">
           LukApp es una IA y puede cometer errores. Verifica cualquier consejo sobre dinero antes de actuar.
         </p>
       </div>
@@ -1306,7 +1306,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[12px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
         >
           <span>{toast}</span>
         </div>

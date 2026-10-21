@@ -82,7 +82,7 @@ export const ReporteFinancieroModal: React.FC<ReporteFinancieroModalProps> = ({
       <div className="my-auto w-full max-w-5xl overflow-hidden rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-bg)] shadow-2xl print:max-w-none print:rounded-none print:border-0 print:bg-white print:shadow-none">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 sm:px-6 print:hidden">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-[14px] bg-[var(--fin-accent)] text-white shadow-sm">
+            <span className="flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-sm">
               <BarChart3 className="h-5 w-5" strokeWidth={2.4} aria-hidden="true" />
             </span>
             <div>
@@ -94,7 +94,7 @@ export const ReporteFinancieroModal: React.FC<ReporteFinancieroModalProps> = ({
             <button type="button" onClick={() => descargarExcel(datos, cajitasBalances, mes)} className="hidden min-h-[var(--fin-tap)] items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] sm:flex">
               <FileSpreadsheet className="h-4 w-4 text-[var(--fin-in)]" aria-hidden="true" /> Excel
             </button>
-            <button type="button" onClick={() => window.print()} className="flex min-h-[var(--fin-tap)] items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3.5 text-[13px] font-semibold text-white shadow-sm transition hover:brightness-110">
+            <button type="button" onClick={() => window.print()} className="flex min-h-[var(--fin-tap)] items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 text-[13px] font-semibold text-[var(--fin-on-accent)] shadow-sm transition hover:brightness-110">
               <Printer className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Guardar PDF</span><span className="sm:hidden">PDF</span>
             </button>
@@ -111,12 +111,12 @@ export const ReporteFinancieroModal: React.FC<ReporteFinancieroModalProps> = ({
             <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="mb-4 flex items-center gap-2 text-[13px] font-semibold text-violet-200"><Sparkles className="h-4 w-4" aria-hidden="true" /> TU MES EN PERSPECTIVA</div>
-                <h1 id="reporte-titulo" className="text-[30px] font-semibold tracking-[-0.04em] sm:text-[38px]">Así cerraste {nombreMes.toLowerCase()}.</h1>
+                <h1 id="reporte-titulo" className="text-[28px] font-semibold tracking-[-0.04em] sm:text-[44px]">Así cerraste {nombreMes.toLowerCase()}.</h1>
                 <p className="mt-2 max-w-xl text-[15px] leading-6 text-white/70">{resumenBalance}</p>
               </div>
               <div className="rounded-[var(--fin-r-card)] border border-white/15 bg-white/10 px-4 py-3 sm:min-w-44">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/55">Movimientos</p>
-                <p className="mt-1 text-[22px] font-semibold">{txMes.length}</p>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-white/55">Movimientos</p>
+                <p className="mt-1 text-[20px] font-semibold">{txMes.length}</p>
               </div>
             </div>
           </section>
@@ -134,11 +134,11 @@ export const ReporteFinancieroModal: React.FC<ReporteFinancieroModalProps> = ({
             </article>
             <article className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 print:bg-white">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--fin-in)_14%,transparent)] text-[var(--fin-in)]"><ArrowUpRight className="h-5 w-5" aria-hidden="true" /></div>
-              <p className="mt-4 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ingresos</p><p className="mt-1 text-[22px] font-semibold tracking-[-0.03em] text-[var(--fin-ink)]">{formatCop(ingresos)}</p>
+              <p className="mt-4 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ingresos</p><p className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-[var(--fin-ink)]">{formatCop(ingresos)}</p>
             </article>
             <article className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 print:bg-white">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--fin-out)_14%,transparent)] text-[var(--fin-out)]"><ArrowDownRight className="h-5 w-5" aria-hidden="true" /></div>
-              <p className="mt-4 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Gastos</p><p className="mt-1 text-[22px] font-semibold tracking-[-0.03em] text-[var(--fin-ink)]">{formatCop(gastos)}</p>
+              <p className="mt-4 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Gastos</p><p className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-[var(--fin-ink)]">{formatCop(gastos)}</p>
             </article>
           </section>
 
@@ -154,17 +154,17 @@ export const ReporteFinancieroModal: React.FC<ReporteFinancieroModalProps> = ({
             </article>
             <article className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 sm:p-6 print:bg-white">
               <div className="flex items-start justify-between gap-3"><div><h2 className="text-[17px] font-semibold text-[var(--fin-ink)]">Tu dinero hoy</h2><p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">El saldo actual de tus cuentas activas.</p></div><span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-accent)]"><WalletCards className="h-4 w-4" aria-hidden="true" /></span></div>
-              <div className="mt-5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3"><p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--fin-ink-faint)]">Patrimonio en cuentas</p><p className="mt-1 text-[22px] font-semibold tracking-[-0.03em] text-[var(--fin-ink)]">{formatCop(patrimonioTotal)}</p></div>
+              <div className="mt-5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3"><p className="text-[13px] font-semibold uppercase tracking-[0.1em] text-[var(--fin-ink-faint)]">Patrimonio en cuentas</p><p className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-[var(--fin-ink)]">{formatCop(patrimonioTotal)}</p></div>
               <div className="mt-3 max-h-56 divide-y divide-[var(--fin-line)] overflow-y-auto">
                 {cuentasActivas.length === 0 ? <p className="py-4 text-[13px] text-[var(--fin-ink-soft)]">No hay cuentas activas para mostrar.</p> : cuentasActivas.map((cuenta) => {
                   const saldo = cajitasBalances[cuenta.id] ?? 0;
                   const esPasivo = ES_PASIVO[cuenta.tipo];
-                  return <div key={cuenta.id} className="flex items-center justify-between gap-3 py-3"><div className="flex min-w-0 items-center gap-2.5"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"><Landmark className="h-4 w-4" aria-hidden="true" /></span><span className="truncate text-[13px] font-medium text-[var(--fin-ink)]">{cuenta.nombre}</span></div><span className={`shrink-0 text-[13px] font-semibold ${esPasivo ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink)]'}`}>{formatCop(saldo)}</span></div>;
+                  return <div key={cuenta.id} className="flex items-center justify-between gap-3 py-3"><div className="flex min-w-0 items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"><Landmark className="h-4 w-4" aria-hidden="true" /></span><span className="truncate text-[13px] font-medium text-[var(--fin-ink)]">{cuenta.nombre}</span></div><span className={`shrink-0 text-[13px] font-semibold ${esPasivo ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink)]'}`}>{formatCop(saldo)}</span></div>;
                 })}
               </div>
             </article>
           </section>
-          <footer className="mt-5 flex flex-col gap-2 border-t border-[var(--fin-line)] pt-4 text-[12px] text-[var(--fin-ink-faint)] sm:flex-row sm:items-center sm:justify-between print:text-zinc-500"><span className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> Preparado el {new Date().toLocaleDateString('es-CO')}</span><span>{emailUsuario ? `Resumen privado de ${emailUsuario}` : 'Resumen privado de tu libro financiero'} · LukApp</span></footer>
+          <footer className="mt-5 flex flex-col gap-2 border-t border-[var(--fin-line)] pt-4 text-[13px] text-[var(--fin-ink-faint)] sm:flex-row sm:items-center sm:justify-between print:text-zinc-500"><span className="flex items-center gap-2"><CalendarDays className="h-3.5 w-3.5" aria-hidden="true" /> Preparado el {new Date().toLocaleDateString('es-CO')}</span><span>{emailUsuario ? `Resumen privado de ${emailUsuario}` : 'Resumen privado de tu libro financiero'} · LukApp</span></footer>
         </main>
       </div>
     </div>

@@ -167,7 +167,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             setConfirmandoBorrado((v) => !v);
           }}
           aria-label={`${T.eliminar}: ${cajita.nombre}`}
-          className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+          className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
         </button>
@@ -178,11 +178,11 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
         <div className="mt-3">
           <div className="h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
             <div
-              className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-in)] transition-[width] duration-500"
+              className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] transition-[width] duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
-          <p className="mt-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
+          <p className="mt-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
             {pct}% de {formatCop(cajita.metaCop)}
           </p>
         </div>
@@ -227,7 +227,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           <p className="text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
             {T.confirmarEliminar}
           </p>
-          <div className="mt-2.5 flex gap-2">
+          <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={() => {
@@ -235,7 +235,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                 audio.play('heavy');
                 onEliminar(cajita.id);
               }}
-              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-white"
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-on-out)]"
             >
               {T.eliminar}
             </button>
@@ -255,14 +255,14 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
       ) : null}
 
       {/* Actions */}
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-2">
         {ACCIONES.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => abrirAccion(item.id)}
             aria-pressed={accion === item.id}
-            className={`rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+            className={`rounded-[var(--fin-r-pill)] px-3 py-2 text-[13px] font-semibold transition-colors ${
               accion === item.id
                 ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                 : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
@@ -295,7 +295,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                 </>
               ) : null}
 
-              <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
+              <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3">
                 <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
                 <input
                   value={texto}
@@ -309,7 +309,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               </div>
 
               {accion === 'transferir' || accion === 'retiro' ? (
-                <div className="mt-2.5">
+                <div className="mt-3">
                   <label
                     htmlFor={`destino-${cajita.id}`}
                     className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]"
@@ -317,7 +317,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                     {accion === 'retiro' ? '¿A qué cuenta la envías?' : '¿A cuál la pasas?'}
                   </label>
                   {paraElegir.length === 0 ? (
-                    <p className="mt-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                    <p className="mt-2 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                       {accion === 'retiro'
                         ? 'Primero crea una cuenta bancaria. La plata que sale de aquí tiene que llegar a algún lado.'
                         : 'Necesitas otra cuenta o cajita para poder transferir.'}
@@ -327,7 +327,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                       id={`destino-${cajita.id}`}
                       value={destinoId}
                       onChange={(e) => setDestinoId(e.target.value)}
-                      className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                      className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                     >
                       {paraElegir.map((d) => (
                         <option key={d.id} value={d.id}>
@@ -345,7 +345,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                   valorActual === null ||
                   ((accion === 'transferir' || accion === 'retiro') && destinoId === '')
                 }
-                className="mt-2.5 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+                className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {COPY.confirm.save}
               </button>
@@ -365,7 +365,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
               setAbierto((v) => !v);
             }}
             aria-expanded={abierto}
-            className="mt-3 flex w-full items-center justify-between rounded-[var(--fin-r-control)] px-1 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+            className="mt-3 flex w-full items-center justify-between rounded-[var(--fin-r-control)] px-1 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
           >
             {T.historial} ({historial.length})
             <ChevronDown
@@ -375,11 +375,11 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           </button>
 
           {abierto ? (
-            <ul className="flex flex-col gap-1.5">
+            <ul className="flex flex-col gap-2">
               {historial.map(({ movimiento, saldoDespues }) => (
                 <li
                   key={movimiento.id}
-                  className="flex items-center gap-2.5 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
+                  className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
                 >
                   <span className="shrink-0" aria-hidden="true">
                     {(() => {

@@ -125,7 +125,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
       {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto w-full max-w-3xl">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
             Con quién mueves la plata
           </h2>
@@ -159,8 +159,8 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
                 setAgregando(false);
               }}
             >
-              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />
-              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />
+              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" />
+              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" />
               <button type="submit" className="rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]">Guardar persona</button>
             </form>
           ) : null}

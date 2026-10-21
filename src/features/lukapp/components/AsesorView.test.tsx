@@ -61,7 +61,7 @@ describe('AsesorView — estado de conexión', () => {
   it('solo dice “En línea” después de una respuesta real del proveedor', async () => {
     render(<AsesorView {...props} />);
     await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
-    expect(screen.getByRole('button', { name: 'Verificar disponibilidad de IA' })).toHaveClass('bg-emerald-500/15');
+    expect(screen.getByRole('button', { name: 'Verificar disponibilidad de IA' })).toHaveClass('bg-[var(--fin-soft)]');
   });
 
   it('dice "modo local" cuando el servidor responde que no hay IA', async () => {

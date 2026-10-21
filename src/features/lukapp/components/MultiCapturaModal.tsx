@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Trash2, X, Sparkles } from 'lucide-react';
@@ -86,14 +87,14 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-[var(--fin-line)]/50 pb-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+            <div className="flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-[17px] font-bold text-[var(--fin-ink)]">
                 {items.length} movimientos detectados
               </h2>
-              <p className="text-[12px] text-[var(--fin-ink-soft)]">
+              <p className="text-[13px] text-[var(--fin-ink-soft)]">
                 Detectamos varios registros en tu mensaje
               </p>
             </div>
@@ -108,7 +109,7 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
         </div>
 
         {/* Lista de movimientos detectados */}
-        <div className="mt-4 max-h-[50vh] overflow-y-auto pr-1 flex flex-col gap-2.5">
+        <div className="mt-4 max-h-[50vh] overflow-y-auto pr-1 flex flex-col gap-3">
           <AnimatePresence>
             {items.map((item, idx) => {
               const catObj = catalogo.de(item.category);
@@ -120,20 +121,20 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  className="flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)]/60 bg-[var(--fin-bg)] p-3.5"
+                  className="flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)]/60 bg-[var(--fin-bg)] p-4"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-bold text-white shadow-sm"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] font-bold text-white shadow-sm"
                       style={{ backgroundColor: catObj.color || (esGasto ? 'var(--fin-out)' : 'var(--fin-in)') }}
                     >
-                      {esGasto ? '💸' : '💰'}
+                      <IconoSimbolo valor="Wallet" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-[14.5px] font-bold text-[var(--fin-ink)]">
+                      <p className="truncate text-[15px] font-bold text-[var(--fin-ink)]">
                         {item.description || catObj.nombre}
                       </p>
-                      <div className="mt-0.5 flex items-center gap-2 text-[12px] text-[var(--fin-ink-soft)]">
+                      <div className="mt-1 flex items-center gap-2 text-[13px] text-[var(--fin-ink-soft)]">
                         <span className="font-semibold text-[var(--fin-ink-faint)]">
                           {catObj.nombre}
                         </span>
@@ -150,13 +151,13 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p
-                        className="text-[15px] font-extrabold tabular-nums"
+                        className="text-[15px] font-bold tabular-nums"
                         style={{ color: esGasto ? 'var(--fin-out)' : 'var(--fin-in)' }}
                       >
                         {esGasto ? '-' : '+'}
                         {formatCop(item.amount || 0)}
                       </p>
-                      <span className="text-[10.5px] uppercase font-bold text-[var(--fin-ink-faint)]">
+                      <span className="text-[13px] uppercase font-bold text-[var(--fin-ink-faint)]">
                         {esGasto ? 'Gasto' : 'Ingreso'}
                       </span>
                     </div>
@@ -165,7 +166,7 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
                       type="button"
                       onClick={() => eliminarItem(idx)}
                       title="Eliminar este movimiento"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--fin-ink-faint)] hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-control)] text-[var(--fin-ink-faint)] hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)] transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -190,11 +191,11 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
         </div>
 
         {/* Botones de acción */}
-        <div className="mt-5 flex gap-2.5">
+        <div className="mt-5 flex gap-3">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] py-3 text-[14.5px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
+            className="flex-1 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] py-3 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
           >
             Cancelar
           </button>

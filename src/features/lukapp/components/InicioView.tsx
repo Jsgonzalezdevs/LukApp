@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import { ProximosPagosInicio } from './ProximosPagosInicio';
 import { construirObligacionesFuturas, type ObligacionFutura } from '../lib/obligacionesFuturas';
 import { preparacionInicio } from '../lib/preparacionInicio';
@@ -25,7 +26,6 @@ import { calcularRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
 import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';
-import { tint } from '../types';
 import { DecisionFinanciera } from './DecisionFinanciera';
 import type { ContextoFinanciero } from '../lib/motorFinanciero';
 
@@ -222,8 +222,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
     <div className="flex flex-col pb-32">
       {/* ── 1. Cabecera superior minimalista ─────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <div onClick={() => clavePeriodo && onCambiarPeriodo && setPeriodoAbierto((abierto) => !abierto)} className="relative flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-3.5 py-1.5 text-[14px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs">
-          <span className="text-[13px] opacity-80">🗓️</span>
+        <div onClick={() => clavePeriodo && onCambiarPeriodo && setPeriodoAbierto((abierto) => !abierto)} className="relative flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[15px] font-semibold capitalize text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card)] shadow-xs">
+          <span className="text-[13px] opacity-80"><IconoSimbolo valor="CalendarDays" className="h-4 w-4" /></span>
           {clavePeriodo && onCambiarPeriodo && periodoAdyacente && etiquetaPeriodoDeClave ? (
             <>
               <button type="button" onClick={(e) => { e.stopPropagation(); setPeriodoAbierto((abierto) => !abierto); }} aria-expanded={periodoAbierto} aria-label="Cambiar período" className="font-bold text-[var(--fin-ink)]">
@@ -231,9 +231,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
               </button>
               <AnimatePresence>
               {periodoAbierto ? (
-                <motion.div initial={{ opacity: 0, scaleY: 0.72, y: -5 }} animate={{ opacity: 1, scaleY: 1, y: 0 }} exit={{ opacity: 0, scaleY: 0.72, y: -5 }} transition={{ type: 'spring', stiffness: 720, damping: 32, mass: 0.42 }} style={{ transformOrigin: 'top center' }} className="absolute left-0 top-full z-40 mt-2 min-w-[190px] overflow-hidden rounded-[22px] border border-white/15 bg-gradient-to-br from-[var(--fin-soft)] via-[var(--fin-card)] to-[var(--fin-bg)] p-1.5 shadow-[0_18px_42px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
+                <motion.div initial={{ opacity: 0, scaleY: 0.72, y: -5 }} animate={{ opacity: 1, scaleY: 1, y: 0 }} exit={{ opacity: 0, scaleY: 0.72, y: -5 }} transition={{ type: 'spring', stiffness: 720, damping: 32, mass: 0.42 }} style={{ transformOrigin: 'top center' }} className="absolute left-0 top-full z-40 mt-2 min-w-[190px] overflow-hidden rounded-[var(--fin-r-card)] border border-white/15 bg-gradient-to-br from-[var(--fin-soft)] via-[var(--fin-card)] to-[var(--fin-bg)] p-2 shadow-[0_18px_42px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-xl">
                   {Array.from({ length: 13 }, (_, i) => periodoAdyacente(maxClavePeriodo ?? clavePeriodo, -i)).map((clave) => (
-                    <button key={clave} type="button" onClick={() => { onCambiarPeriodo(clave); setPeriodoAbierto(false); }} className={`block w-full rounded-[14px] px-3 py-2.5 text-left text-[13px] font-semibold capitalize transition-all ${clave === clavePeriodo ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-[0_5px_14px_rgba(168,85,247,0.28)]' : 'text-[var(--fin-ink)] hover:bg-white/10'}`}>
+                    <button key={clave} type="button" onClick={() => { onCambiarPeriodo(clave); setPeriodoAbierto(false); }} className={`block w-full rounded-[var(--fin-r-control)] px-3 py-3 text-left text-[13px] font-semibold capitalize transition-all ${clave === clavePeriodo ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-[0_5px_14px_rgba(168,85,247,0.28)]' : 'text-[var(--fin-ink)] hover:bg-white/10'}`}>
                       {etiquetaPeriodoDeClave(clave)}
                     </button>
                   ))}
@@ -251,24 +251,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </motion.div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* Botón de Racha */}
-          <button
-            type="button"
-            onClick={() => setMostrarRachaModal(true)}
-            aria-label="Racha de días"
-            className={`flex h-8.5 items-center gap-1.5 rounded-full px-2.5 text-[12.5px] font-bold transition-all active:scale-95 ${
-              infoRacha.anotadoHoy
-                ? 'border border-amber-500/50 bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
-            }`}
-          >
-            <span className={infoRacha.anotadoHoy ? 'drop-shadow-sm' : 'grayscale opacity-70'}>
-              🔥
-            </span>
-            <span className="tabular-nums font-extrabold">{infoRacha.rachaActual}</span>
-          </button>
-
+        <div className="flex items-center gap-2">
           {onTogglePrivacidad && (
             <button
               type="button"
@@ -276,7 +259,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               aria-label={modoPrivacidad ? 'Mostrar saldos' : 'Ocultar saldos'}
               className={`flex h-8.5 w-8.5 items-center justify-center rounded-full transition-all active:scale-95 ${
                 modoPrivacidad
-                  ? 'bg-amber-500/20 text-amber-500'
+                  ? 'bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]'
                   : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]'
               }`}
             >
@@ -310,16 +293,16 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
       {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
       <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[12px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
+        <span className="inline-flex items-center gap-2 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[13px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
           {preparacion.saldosCompletos ? 'Dinero disponible' : 'Saldo por completar'}
         </span>
 
-        <div className="mt-1.5">
+        <div className="mt-2">
           <button
             type="button"
             onClick={onVerMes}
             aria-label="Ver el resumen de mi dinero"
-            className="text-[44px] sm:text-[52px] font-extrabold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
+            className="text-[44px] sm:text-[44px] font-bold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
             style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
           >
             {preparacion.saldosCompletos ? <AnimatedNumber
@@ -328,7 +311,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
             /> : <span aria-label="Saldo todavía sin confirmar">—</span>}
           </button>
         </div>
-        <p className="mt-1 text-[12px] text-[var(--fin-ink-faint)]">
+        <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
           {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
         </p>
 
@@ -336,7 +319,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           <summary className="cursor-pointer font-medium text-[var(--fin-ink-soft)]">Ver saldos y resultado del período</summary>
         {/* Desglose bancos y efectivo si existen */}
         {preparacion.saldosCompletos && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
-          <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
+          <div className="mt-1 flex items-center gap-3 text-[13px] text-[var(--fin-ink-soft)]">
             <span>
               Bancos:{' '}
               <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
@@ -354,12 +337,12 @@ export const InicioView: React.FC<InicioViewProps> = ({
         ) : null}
 
         {/* Pastilla de Ingresos y Gastos del periodo en toda la mitad */}
-        <div className="mt-3.5 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <button
             type="button"
             onClick={onVerMes}
             title="Ver desglose del periodo"
-            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
+            className="flex items-center gap-3 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[15px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
           >
             <span style={{ color: 'var(--fin-out)' }}>
               ↓ {modoPrivacidad ? '••••' : formatMontoCompacto(gastosCop)}
@@ -379,7 +362,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
       {/* ── 6. Si se activó filtro por categoría ─────────────────────────── */}
       {categoriaFiltro && (
-        <div className="my-2 flex items-center justify-between rounded-full bg-[var(--fin-soft)] px-4 py-1.5 text-[13px]">
+        <div className="my-2 flex items-center justify-between rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13px]">
           <span className="text-[var(--fin-ink-soft)]">
             Mostrando solo: <strong className="text-[var(--fin-ink)] capitalize">{categoriaFiltro}</strong>
           </span>
@@ -398,7 +381,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
       <section ref={recientesRef} tabIndex={-1} aria-label="Movimientos recientes" className="mt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="font-semibold text-[var(--fin-ink)]">Movimientos recientes</h2>
-          <button type="button" onClick={onBuscar} className="rounded-lg px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">Ver historial completo</button>
+          <button type="button" onClick={onBuscar} className="rounded-[var(--fin-r-control)] px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">Ver historial completo</button>
         </div>
         <p className="mb-3 text-xs text-[var(--fin-ink-faint)]">{etiquetaPeriodo} · hasta 5 movimientos</p>
         {movimientosAMostrar.length === 0 ? <p className="py-4 text-center text-sm text-[var(--fin-ink-soft)]">{categoriaFiltro ? `No hay movimientos de ${catalogo.de(categoriaFiltro).nombre} en ${etiquetaPeriodo}.` : preparacion.primerMovimiento ? `No hay movimientos en ${etiquetaPeriodo}.` : 'Aquí aparecerán tus gastos e ingresos cuando guardes el primero.'}</p> : <TransactionList
@@ -417,7 +400,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           <button
             type="button"
             onClick={onAnotar}
-            className="flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] px-5 py-2.5 text-[13.5px] font-semibold text-[var(--fin-ink)] transition-all active:scale-95 shadow-xs"
+            className="flex items-center gap-2 rounded-full border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)] hover:bg-[var(--fin-soft)] px-5 py-3 text-[15px] font-semibold text-[var(--fin-ink)] transition-all active:scale-95 shadow-xs"
           >
             <Plus className="h-4 w-4 text-[var(--fin-ink-soft)]" />
             <span>Anotar nuevo gasto</span>
@@ -442,19 +425,18 @@ export const InicioView: React.FC<InicioViewProps> = ({
           ref={carouselRef}
           onScroll={handleScroll}
           data-scroll-horizontal="true"
-          className="flex items-end gap-2.5 sm:gap-3 overflow-x-auto min-h-[195px] pt-3 pb-4 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
+          className="flex items-end gap-3 sm:gap-3 overflow-x-auto min-h-[225px] pt-3 pb-4 px-1 snap-x scroll-smooth touch-pan-x [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none]"
         >
           {todasCategorias.map((cat, idx) => {
             const ratio = maxTotal > 0 && cat.total > 0 ? cat.total / maxTotal : 0;
-            const MIN_H = 62;
-            const MAX_H = 165;
+            const MIN_H = 112;
+            const MAX_H = 196;
             // Escala directa y muy contrastada: si una vale 176k y la otra 34k, la diferencia de altura es dramática y clara
             const cardHeight = cat.total > 0 
               ? Math.round(MIN_H + ratio * (MAX_H - MIN_H))
               : MIN_H;
 
             const seleccionada = categoriaFiltro === cat.clave;
-            const colorCat = cat.info.color;
 
             return (
               <motion.button
@@ -478,7 +460,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
                   recientesRef.current?.focus();
                 }}
                 style={{ height: cardHeight }}
-                className={`relative flex-shrink-0 w-[80px] sm:w-[88px] snap-start flex flex-col items-center justify-between rounded-[24px] sm:rounded-[28px] bg-[var(--fin-card)] border p-2 sm:p-2.5 cursor-pointer transition-all shadow-[0_6px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.35)] ${
+                className={`relative flex-shrink-0 w-[108px] sm:w-[120px] snap-start flex flex-col items-center justify-between rounded-[var(--fin-r-card)] sm:rounded-[var(--fin-r-card)] bg-[var(--fin-card)] border p-2 sm:p-3 cursor-pointer transition-all shadow-[0_6px_16px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.35)] ${
                   seleccionada
                     ? 'border-[var(--fin-ink)] ring-2 ring-[var(--fin-ink)]/20 shadow-md scale-102'
                     : 'border-[var(--fin-line)] hover:border-[var(--fin-ink-ghost)]'
@@ -486,20 +468,20 @@ export const InicioView: React.FC<InicioViewProps> = ({
               >
                 {/* Emoji superior con contenedor tintado */}
                 <div
-                  className="flex h-8 w-8 items-center justify-center rounded-2xl text-[18px] sm:text-[20px] drop-shadow-xs transition-transform shrink-0"
+                  className="flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-card)] text-[17px] sm:text-[20px] drop-shadow-xs transition-transform shrink-0"
                   style={{
-                    backgroundColor: tint(colorCat, 0.16),
+                    backgroundColor: 'var(--fin-soft)',
                   }}
                 >
-                  {cat.emoji}
+                  <cat.info.Icono className="h-5 w-5" aria-hidden="true" />
                 </div>
 
                 {/* Monto y nombre inferior */}
                 <div className="flex flex-col items-center w-full min-w-0">
-                  <span className="text-[12px] sm:text-[13px] font-extrabold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
+                  <span className="text-[13px] sm:text-[13px] font-bold tabular-nums text-[var(--fin-ink)] text-center leading-tight">
                     {modoPrivacidad ? '••••' : formatMontoCompacto(cat.total)}
                   </span>
-                  <span className="mt-0.5 text-[9.5px] sm:text-[10px] font-semibold leading-tight text-[var(--fin-ink-soft)] line-clamp-2 max-w-[68px] sm:max-w-[76px] text-center capitalize">
+                  <span className="mt-1 text-[13px] sm:text-[13px] font-semibold leading-tight text-[var(--fin-ink-soft)] line-clamp-2 max-w-[68px] sm:max-w-[76px] text-center capitalize">
                     {cat.info.nombre}
                   </span>
                 </div>
@@ -510,7 +492,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
         {/* Indicador de scroll sutil y discreto */}
         {todasCategorias.length > 4 && (
-          <div className="mt-1.5 flex justify-center">
+          <div className="mt-2 flex justify-center">
             <div className="h-1 w-12 rounded-full bg-[var(--fin-line)] overflow-hidden">
               <div
                 className="h-full rounded-full bg-[var(--fin-ink-soft)]/60 transition-all duration-150"
@@ -534,41 +516,41 @@ export const InicioView: React.FC<InicioViewProps> = ({
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
           whileTap={{ scale: 0.985 }}
-          className="mt-3 w-full rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-3.5 py-3 text-left shadow-xs transition-colors hover:bg-[var(--fin-soft)]"
+          className="mt-3 w-full rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/25 bg-[var(--fin-card)] px-4 py-3 text-left shadow-xs transition-colors hover:bg-[var(--fin-soft)]"
         >
           <span className="flex items-center justify-between gap-3">
-            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--fin-accent)]">
+            <span className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.08em] text-[var(--fin-accent)]">
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden="true" />
               Pulso Premium
             </span>
-            <span className="text-[11px] font-medium text-[var(--fin-ink-faint)]">
+            <span className="text-[13px] font-medium text-[var(--fin-ink-faint)]">
               {resumenPremium.confianza === 'alta' ? 'Datos al día' : 'Cálculo estimado'}
             </span>
           </span>
-          <span className="mt-1.5 flex items-baseline justify-between gap-3">
+          <span className="mt-2 flex items-baseline justify-between gap-3">
             <span>
-              <strong className="text-[21px] tracking-[-0.04em] tabular-nums text-[var(--fin-ink)]">
+              <strong className="text-[20px] tracking-[-0.04em] tabular-nums text-[var(--fin-ink)]">
                 {modoPrivacidad ? '$ ••••••' : formatCop(resumenPremium.disponibleDiarioCop)}
               </strong>
-              <span className="ml-1 text-[12px] text-[var(--fin-ink-soft)]">para usar hoy</span>
+              <span className="ml-1 text-[13px] text-[var(--fin-ink-soft)]">para usar hoy</span>
             </span>
-            <span className="text-right text-[11px] leading-snug text-[var(--fin-ink-faint)]">
+            <span className="text-right text-[13px] leading-snug text-[var(--fin-ink-faint)]">
               {resumenPremium.diasRestantes === 1 ? 'Queda 1 día' : `Quedan ${resumenPremium.diasRestantes} días`}
             </span>
           </span>
-          <span className="mt-1 block text-[12px] leading-snug text-[var(--fin-ink-soft)]">
+          <span className="mt-1 block text-[13px] leading-snug text-[var(--fin-ink-soft)]">
             {modoPrivacidad
               ? 'Calculado tras separar tus pagos y reservas conocidos.'
               : `${formatCop(resumenPremium.dineroLibreCop)} libres después de separar pagos y reservas conocidos.`}
           </span>
           {insightActual ? (
-            <span className="mt-3 block border-t border-[var(--fin-line)] pt-2.5 text-[12px] leading-snug text-[var(--fin-ink-soft)]">
+            <span className="mt-3 block border-t border-[var(--fin-line)] pt-2.5 text-[13px] leading-snug text-[var(--fin-ink-soft)]">
               <span className="font-semibold text-[var(--fin-ink)]">{insightActual.titulo}:</span>{' '}
               {insightActual.detalle}
               <span className="ml-1 font-semibold text-[var(--fin-accent)]">Analizar con IA →</span>
             </span>
           ) : (
-            <span className="mt-3 block border-t border-[var(--fin-line)] pt-2.5 text-[12px] font-semibold text-[var(--fin-accent)]">
+            <span className="mt-3 block border-t border-[var(--fin-line)] pt-2.5 text-[13px] font-semibold text-[var(--fin-accent)]">
               Toca para analizar tu margen con IA →
             </span>
           )}
@@ -581,7 +563,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
             initial={{ opacity: 0, y: -6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
-            className="mt-3 flex items-center justify-between rounded-2xl bg-[var(--fin-card)] border border-[var(--fin-accent)]/20 px-3.5 py-2 text-[12.5px] shadow-xs"
+            className="mt-3 flex items-center justify-between rounded-[var(--fin-r-card)] bg-[var(--fin-card)] border border-[var(--fin-accent)]/20 px-4 py-2 text-[13px] shadow-xs"
           >
             <button
               type="button"
@@ -591,7 +573,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               <Sparkles className="h-3.5 w-3.5 text-[var(--fin-accent)] shrink-0" />
               <span className="truncate text-[var(--fin-ink-soft)]">
                 {insightActual.origenIa ? (
-                  <span className="mr-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">
+                  <span className="mr-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]/10 px-2 py-1 text-[13px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">
                     Premium
                   </span>
                 ) : null}
@@ -646,9 +628,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
                 setNovedadExpandida((actual) => !actual);
               }
             }}
-            className="novedad-banner mt-3 flex cursor-pointer items-start justify-between rounded-[var(--fin-r-card)] px-3.5 py-3 text-[13px]"
+            className="novedad-banner mt-3 flex cursor-pointer items-start justify-between rounded-[var(--fin-r-card)] px-4 py-3 text-[13px]"
           >
-            <span className={`flex min-w-0 items-start gap-2.5 ${novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}`}>
+            <span className={`flex min-w-0 items-start gap-3 ${novedadExpandida ? 'mr-2 whitespace-normal' : 'mr-2 truncate'}`}>
               <span className="novedad-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)]">
                 <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden="true" />
               </span>
@@ -672,6 +654,26 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="mt-4 flex justify-center">
+          {/* Botón de Racha */}
+          <button
+            type="button"
+            onClick={() => setMostrarRachaModal(true)}
+            aria-label="Racha de días"
+            className={`flex h-8.5 items-center gap-2 rounded-full px-3 text-[13px] font-bold transition-all active:scale-95 ${
+              infoRacha.anotadoHoy
+                ? 'border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]'
+                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
+            }`}
+          >
+            <span className={infoRacha.anotadoHoy ? 'drop-shadow-sm' : 'grayscale opacity-70'}>
+              <IconoSimbolo valor="Flame" className="h-4 w-4" />
+            </span>
+            <span className="tabular-nums font-semibold">Racha: {infoRacha.rachaActual} días</span>
+          </button>
+
+      </div>
 
       {/* Modal de racha */}
       {mostrarRachaModal && (

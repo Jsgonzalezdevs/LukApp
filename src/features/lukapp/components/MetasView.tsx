@@ -1,3 +1,4 @@
+import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -143,7 +144,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
               <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 Ícono
               </legend>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {CAJITA_ICONS.map((option) => {
                   const Icon = iconoDeMeta(option);
                   return (
@@ -152,7 +153,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                       type="button"
                       onClick={() => setIcon(option)}
                       aria-pressed={icon === option}
-                      aria-label={`Ícono ${option}`}
+                      aria-label={`Ícono ${etiquetaIcono(option)}`}
                       className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${
                         icon === option
                           ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)]'
@@ -226,14 +227,14 @@ export const MetasView: React.FC<MetasViewProps> = ({
                 type="submit"
                 disabled={guardado.ocupado || nombre.trim() === '' || parseAmountInput(objetivoTexto) === null}
                 rippleColor="rgba(255,255,255,0.5)"
-                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {COPY.metas.crear}
               </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
-                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
+                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 {COPY.confirm.cancel}
               </button>
@@ -305,7 +306,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                     type="button"
                     onClick={() => onEliminar(meta.id)}
                     aria-label={`${COPY.metas.eliminar}: ${meta.nombre}`}
-                    className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+                    className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                   </button>
@@ -318,7 +319,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                     <p className="text-[15px] font-semibold text-[var(--fin-in)]">
                       {(() => {
                         const Icon = CheckCircle2;
-                        return <Icon className="mr-1.5 inline h-4 w-4" />;
+                        return <Icon className="mr-2 inline h-4 w-4" />;
                       })()}
                       {COPY.metas.lograda}
                     </p>
@@ -328,19 +329,19 @@ export const MetasView: React.FC<MetasViewProps> = ({
                         {COPY.metas.falta} {formatCop(progreso.faltaCop)}
                       </p>
                       {inteligente ? (
-                        <p className="mt-1 text-[12.5px] text-[var(--fin-ink-faint)]">
+                        <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
                           Estado: {inteligente.viabilidad === 'en_riesgo' ? 'requiere atención' : inteligente.viabilidad === 'sin_datos' ? 'sin datos suficientes' : 'en camino'} · Fecha estimada: no estimable
                         </p>
                       ) : null}
                       {progreso.ritmoMensualCop !== null ? (
-                        <div className="mt-2.5 flex flex-col gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)]/80 border border-[var(--fin-line)]/50 p-2.5">
-                          <div className="flex items-center justify-between text-[12.5px]">
-                            <span className="text-[var(--fin-ink-soft)] font-medium">💡 Aparta por quincena:</span>
-                            <span className="font-bold tabular-nums text-amber-500">
+                        <div className="mt-3 flex flex-col gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-card)]/80 border border-[var(--fin-line)]/50 p-3">
+                          <div className="flex items-center justify-between text-[13px]">
+                            <span className="text-[var(--fin-ink-soft)] font-medium">Aparta por quincena:</span>
+                            <span className="font-bold tabular-nums text-[var(--fin-warn-ink)]">
                               {formatCop(progreso.ritmoQuincenalCop ?? Math.ceil(progreso.ritmoMensualCop / 2))}
                             </span>
                           </div>
-                          <div className="flex items-center justify-between text-[11.5px] text-[var(--fin-ink-faint)] border-t border-[var(--fin-line)]/30 pt-1.5">
+                          <div className="flex items-center justify-between text-[13px] text-[var(--fin-ink-faint)] border-t border-[var(--fin-line)]/30 pt-1.5">
                             <span>{formatCop(progreso.ritmoMensualCop)} / mes</span>
                             <span>{progreso.diasRestantes} días restantes</span>
                           </div>
@@ -377,7 +378,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                         type="button"
                         onClick={() => guardarAhorro(meta)}
                         rippleColor="rgba(255,255,255,0.5)"
-                        className="rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
+                        className="rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)]"
                       >
                         {COPY.confirm.save}
                       </RippleButton>
@@ -389,7 +390,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                         setEditandoAhorro(meta.id);
                         setAhorroTexto(formatAmountInput(meta.ahorradoCop));
                       }}
-                      className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+                      className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
                     >
                       {COPY.metas.ahorrado}: {formatCop(progreso.ahorradoCop)}
                     </button>

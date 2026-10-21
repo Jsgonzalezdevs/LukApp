@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,8 +24,9 @@ interface EspaciosCompartidosViewProps {
   onAnotarEnLukApp?: (montoCop: number, descripcion: string, categoria: string) => void;
 }
 
-const EMOJIS_ESPACIO = ['🥑', '🏠', '✈️', '🍷', '🍕', '🏖️', '🛒', '🚗', '☕', '🎁'];
-const EMOJIS_PAREJA = ['👩🏼', '👦🏼', '👧🏽', '🧑🏻', '👩🏻', '🧔🏽', '👱🏼‍♀️', '🐶', '🐱'];
+const NOMBRES_ICONO: Record<string, string> = { '🥑': 'Mercado', '🏠': 'Hogar', '✈️': 'Viaje', '🍕': 'Comida', '☕': 'Café', '🚗': 'Carro', '🎁': 'Regalo', '🏖️': 'Vacaciones', '👤': 'Persona', '😊': 'Sonrisa', '❤️': 'Corazón', '🐱': 'Gato', '🐶': 'Perro', ShoppingCart: 'Mercado', Home: 'Hogar', Plane: 'Viaje', Utensils: 'Comida', Coffee: 'Café', Car: 'Carro', Gift: 'Regalo', Target: 'Meta', UserRound: 'Persona', Smile: 'Sonrisa', Heart: 'Corazón', Cat: 'Gato', Dog: 'Perro' };
+const ICONOS_ESPACIO = ['🥑', '🏠', '✈️', '🍕', '☕', '🚗', '🎁', '🏖️'];
+const ICONOS_PERSONA = ['👤', '😊', '❤️', '🐱', '🐶'];
 
 export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = ({
   onCerrar,
@@ -65,7 +67,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoIcono, setNuevoIcono] = useState('🥑');
   const [nombrePareja, setNombrePareja] = useState('');
-  const [emojiPareja, setEmojiPareja] = useState('👩🏼');
+  const [emojiPareja, setEmojiPareja] = useState('👤');
 
   const espacioActivo: EspacioCompartido | undefined =
     espacios.find((e) => e.id === espacioIdActivo) || espacios[0];
@@ -176,18 +178,18 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-xl flex-col rounded-[32px] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-2xl sm:p-7">
+    <section className="mx-auto flex w-full max-w-xl flex-col rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-2xl sm:p-7">
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-[var(--fin-line)]/50 pb-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-500 text-[22px]">
-              ❤️
+            <div className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] text-[20px]">
+              <IconoSimbolo valor="Heart" />
             </div>
             <div>
-              <h2 className="text-[19px] font-bold text-[var(--fin-ink)]">
+              <h2 className="text-[20px] font-bold text-[var(--fin-ink)]">
                 Finanzas en Pareja y Compartidas
               </h2>
-              <p className="text-[12.5px] text-[var(--fin-ink-soft)]">
+              <p className="text-[13px] text-[var(--fin-ink-soft)]">
                 Planifica en equipo y lleva las cuentas claras sin discusiones
               </p>
             </div>
@@ -210,13 +212,13 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 key={esp.id}
                 type="button"
                 onClick={() => setEspacioIdActivo(esp.id)}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-semibold whitespace-nowrap transition-all ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-all ${
                   activo
                     ? 'bg-[var(--fin-ink)] text-[var(--fin-bg)] shadow-sm scale-100'
                     : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
                 }`}
               >
-                <span>{esp.icono}</span>
+                <span><IconoSimbolo valor={esp.icono} /></span>
                 <span>{esp.nombre}</span>
               </button>
             );
@@ -225,7 +227,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
           <button
             type="button"
             onClick={() => { limpiarError(); setModalNuevoEspacioAbierto(true); }}
-            className="flex items-center gap-1.5 rounded-full border border-dashed border-[var(--fin-line)] px-3.5 py-2 text-[13px] font-medium text-[var(--fin-ink-soft)] hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)] whitespace-nowrap transition-colors"
+            className="flex items-center gap-2 rounded-full border border-dashed border-[var(--fin-line)] px-4 py-2 text-[13px] font-medium text-[var(--fin-ink-soft)] hover:border-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)] whitespace-nowrap transition-colors"
           >
             <Plus className="h-4 w-4" />
             <span>Nuevo espacio</span>
@@ -233,8 +235,8 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
         </div>
 
         {error && !modalNuevoEspacioAbierto && (
-          <div role="alert" className="mb-2 flex gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[13px] leading-5 text-rose-800">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <div role="alert" className="mb-2 flex gap-2 rounded-[var(--fin-r-control)] border border-[var(--fin-out)]/30 bg-[var(--fin-out-bg)] px-3 py-3 text-[13px] leading-5 text-[var(--fin-out)]">
+            <AlertCircle className="mt-1 h-4 w-4 shrink-0" />
             <p>{error}</p>
           </div>
         )}
@@ -242,48 +244,48 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
         {espacioActivo ? (
           <div className="flex-1 flex flex-col gap-4 mt-2">
             {/* Tarjeta Visual de los Avatares e Ilustración de Pareja */}
-            <div className="relative overflow-hidden rounded-[26px] bg-gradient-to-br from-rose-500/10 via-[var(--fin-soft)] to-indigo-500/10 border border-[var(--fin-line)] p-5 text-center">
+            <div className="relative overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] border border-[var(--fin-line)] p-5 text-center">
               {/* Avatares circulares superpuestos (Estilo Monai / Memoji de referencia) */}
               <div className="flex items-center justify-center -space-x-4 mb-3">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#fed7aa] border-4 border-[var(--fin-card)] text-[28px] shadow-md z-10">
-                  {integrantes[0]?.emoji || '👦🏼'}
+                  <IconoSimbolo valor={integrantes[0]?.emoji} className="h-7 w-7" />
                 </div>
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#fbcfe8] border-4 border-[var(--fin-card)] text-[28px] shadow-md z-20">
-                  {integrantes[1]?.emoji || '👩🏼'}
+                  <IconoSimbolo valor={integrantes[1]?.emoji} className="h-7 w-7" />
                 </div>
               </div>
 
               <h3 className="text-[17px] font-bold text-[var(--fin-ink)]">
                 {integrantes[0]?.nombre || 'Tú'} & {integrantes[1]?.nombre || 'Pareja'}
               </h3>
-              <p className="text-[12px] text-[var(--fin-ink-soft)] uppercase tracking-wider font-semibold mt-0.5">
+              <p className="text-[13px] text-[var(--fin-ink-soft)] uppercase tracking-wider font-semibold mt-1">
                 Espacio: {espacioActivo.nombre}
               </p>
 
               {/* Caja de Balance Principal */}
-              <div className="mt-4 rounded-2xl bg-[var(--fin-card)] border border-[var(--fin-line)] p-4 shadow-xs">
-                <span className="text-[11.5px] uppercase tracking-wider font-bold text-[var(--fin-ink-faint)]">
+              <div className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] border border-[var(--fin-line)] p-4 shadow-xs">
+                <span className="text-[13px] uppercase tracking-wider font-bold text-[var(--fin-ink-faint)]">
                   Estado de Cuentas
                 </span>
 
-                <div className="mt-1.5">
+                <div className="mt-2">
                   {balanceYo > 0 ? (
-                    <div className="text-[22px] sm:text-[26px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-in)] text-[var(--fin-in)]">
                       {nombreOtro} te debe {formatCop(balanceYo)}
                     </div>
                   ) : balanceYo < 0 ? (
-                    <div className="text-[22px] sm:text-[26px] font-extrabold text-rose-600 dark:text-rose-400">
+                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-out)] text-[var(--fin-out)]">
                       Le debes {formatCop(Math.abs(balanceYo))} a {nombreOtro}
                     </div>
                   ) : (
-                    <div className="text-[22px] sm:text-[26px] font-extrabold text-[var(--fin-ink)]">
-                      ¡Están a mano! 🤝
+                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-ink)]">
+                      ¡Están a mano!
                     </div>
                   )}
                 </div>
 
                 {/* Desglose de aportes */}
-                <div className="mt-3 grid grid-cols-2 gap-2 pt-3 border-t border-[var(--fin-line)]/50 text-[12.5px]">
+                <div className="mt-3 grid grid-cols-2 gap-2 pt-3 border-t border-[var(--fin-line)]/50 text-[13px]">
                   <div>
                     <span className="text-[var(--fin-ink-soft)]">Pagado por Ti:</span>
                     <div className="font-bold text-[var(--fin-ink)] tabular-nums">
@@ -303,7 +305,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <RippleButton
                   onClick={() => setModalGastoAbierto(true)}
-                  className="flex items-center gap-2 rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-4 py-2.5 text-[13.5px] font-bold shadow-md hover:opacity-90 active:scale-95"
+                  className="flex items-center gap-2 rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-4 py-3 text-[15px] font-bold shadow-md hover:opacity-90 active:scale-95"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Anotar gasto compartido</span>
@@ -312,7 +314,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 <button
                   type="button"
                   onClick={invitarPareja}
-                  className="flex items-center gap-1.5 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-[13.5px] font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-soft)] active:scale-95 transition-all"
+                  className="flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[15px] font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-soft)] active:scale-95 transition-all"
                 >
                   <Share2 className="h-4 w-4" />
                   <span>Vincular pareja</span>
@@ -321,7 +323,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 <button
                   type="button"
                   onClick={compartirWhatsApp}
-                  className="flex items-center gap-1.5 rounded-full bg-emerald-600 text-white px-4 py-2.5 text-[13.5px] font-bold shadow-md hover:bg-emerald-700 active:scale-95 transition-all"
+                  className="flex items-center gap-2 rounded-full bg-[var(--fin-accent)] text-[var(--fin-on-accent)] px-4 py-3 text-[15px] font-bold shadow-md hover:bg-[var(--fin-accent-hover)] active:scale-95 transition-all"
                 >
                   {mensajeCopiado ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
                   <span>{mensajeCopiado ? '¡Copiado!' : 'WhatsApp'}</span>
@@ -335,7 +337,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                         saldarCuentas(espacioActivo.id);
                       }
                     }}
-                    className="flex items-center gap-1 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3.5 py-2.5 text-[12.5px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]"
+                    className="flex items-center gap-1 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]"
                   >
                     <span>Saldar a $0</span>
                   </button>
@@ -346,21 +348,21 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
             {/* Listado de movimientos del espacio */}
             <div className="mt-2 flex-1">
               <div className="flex items-center justify-between mb-2 px-1">
-                <h4 className="text-[14px] font-bold text-[var(--fin-ink)]">
+                <h4 className="text-[15px] font-bold text-[var(--fin-ink)]">
                   Gastos del Espacio ({gastos.length})
                 </h4>
-                <span className="text-[12px] font-medium text-[var(--fin-ink-soft)]">
+                <span className="text-[13px] font-medium text-[var(--fin-ink-soft)]">
                   Total: {formatCop(totalGastado)}
                 </span>
               </div>
 
               {gastos.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-[var(--fin-line)] p-8 text-center text-[var(--fin-ink-faint)]">
-                  <span className="text-[32px]">✨</span>
-                  <p className="mt-2 text-[14px] font-medium text-[var(--fin-ink)]">
+                <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] p-8 text-center text-[var(--fin-ink-faint)]">
+                  <span className="text-[28px]"><IconoSimbolo valor="Lightbulb" /></span>
+                  <p className="mt-2 text-[15px] font-medium text-[var(--fin-ink)]">
                     No hay gastos pendientes
                   </p>
-                  <p className="text-[12px]">
+                  <p className="text-[13px]">
                     Anota el primer gasto compartido tocando el botón de arriba.
                   </p>
                 </div>
@@ -371,17 +373,17 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                     return (
                       <div
                         key={g.id}
-                        className="flex items-center justify-between rounded-2xl bg-[var(--fin-soft)]/60 border border-[var(--fin-line)]/60 p-3 text-[13.5px] transition-colors hover:bg-[var(--fin-soft)]"
+                        className="flex items-center justify-between rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]/60 border border-[var(--fin-line)]/60 p-3 text-[15px] transition-colors hover:bg-[var(--fin-soft)]"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-[18px]">
-                            {pagadoPorTi ? '👦🏼' : '👩🏼'}
+                          <span className="text-[17px]">
+                            <IconoSimbolo valor="UserRound" />
                           </span>
                           <div className="min-w-0">
                             <div className="font-semibold text-[var(--fin-ink)] truncate">
                               {g.descripcion}
                             </div>
-                            <div className="text-[11.5px] text-[var(--fin-ink-soft)]">
+                            <div className="text-[13px] text-[var(--fin-ink-soft)]">
                               Pagó {pagadoPorTi ? 'Tú' : nombreOtro} • {g.fecha}
                             </div>
                           </div>
@@ -416,7 +418,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-md rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl"
+                className="w-full max-w-md rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-[var(--fin-line)]/50">
                   <h3 className="text-[17px] font-bold text-[var(--fin-ink)]">
@@ -431,9 +433,9 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                   </button>
                 </div>
 
-                <form onSubmit={handleGuardarGasto} className="mt-4 flex flex-col gap-3.5">
+                <form onSubmit={handleGuardarGasto} className="mt-4 flex flex-col gap-4">
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       ¿En qué fue el gasto?
                     </label>
                     <input
@@ -443,12 +445,12 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                       onChange={(e) => setDescGasto(e.target.value)}
                       required
                       autoFocus
-                      className="mt-1 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[16px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
+                      className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       Monto total ($)
                     </label>
                     <input
@@ -458,37 +460,37 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                       value={montoGastoTexto}
                       onChange={(e) => setMontoGastoTexto(e.target.value)}
                       required
-                      className="mt-1 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[16px] font-bold text-[var(--fin-ink)] tabular-nums focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
+                      className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] font-bold text-[var(--fin-ink)] tabular-nums focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       ¿Quién pagó la cuenta?
                     </label>
-                    <div className="mt-1.5 grid grid-cols-2 gap-2">
+                    <div className="mt-2 grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setPagadoPorId('yo')}
-                        className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-bold transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] py-3 text-[15px] font-bold transition-all ${
                           pagadoPorId === 'yo'
                             ? 'bg-[var(--fin-ink)] text-[var(--fin-bg)] shadow-xs'
                             : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
                         }`}
                       >
-                        <span>👦🏼</span>
+                        <span><IconoSimbolo valor="UserRound" /></span>
                         <span>Pagué Yo</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setPagadoPorId(integrantes[1]?.id || 'pareja')}
-                        className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-[14px] font-bold transition-all ${
+                        className={`flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] py-3 text-[15px] font-bold transition-all ${
                           pagadoPorId !== 'yo'
                             ? 'bg-[var(--fin-ink)] text-[var(--fin-bg)] shadow-xs'
                             : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
                         }`}
                       >
-                        <span>👩🏼</span>
+                        <span><IconoSimbolo valor="UserRound" /></span>
                         <span>Pagó {nombreOtro}</span>
                       </button>
                     </div>
@@ -510,13 +512,13 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                     <button
                       type="button"
                       onClick={() => setModalGastoAbierto(false)}
-                      className="px-4 py-2 text-[13.5px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+                      className="px-4 py-2 text-[15px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
                     >
                       Cancelar
                     </button>
                     <RippleButton
                       type="submit"
-                      className="rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-5 py-2.5 text-[14px] font-bold shadow-md hover:opacity-90"
+                      className="rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-5 py-3 text-[15px] font-bold shadow-md hover:opacity-90"
                     >
                       Guardar gasto
                     </RippleButton>
@@ -535,7 +537,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-md rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl"
+                className="w-full max-w-md rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-[var(--fin-line)]/50">
                   <h3 className="text-[17px] font-bold text-[var(--fin-ink)]">
@@ -550,15 +552,15 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                   </button>
                 </div>
 
-                <form onSubmit={handleCrearEspacio} className="mt-4 flex flex-col gap-3.5">
+                <form onSubmit={handleCrearEspacio} className="mt-4 flex flex-col gap-4">
                   {error && (
-                    <div role="alert" className="flex gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-[13px] leading-5 text-rose-800">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div role="alert" className="flex gap-2 rounded-[var(--fin-r-control)] border border-[var(--fin-out)]/30 bg-[var(--fin-out-bg)] px-3 py-3 text-[13px] leading-5 text-[var(--fin-out)]">
+                      <AlertCircle className="mt-1 h-4 w-4 shrink-0" />
                       <p>{error}</p>
                     </div>
                   )}
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       Nombre del espacio
                     </label>
                     <input
@@ -568,34 +570,36 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                       onChange={(e) => { limpiarError(); setNuevoNombre(e.target.value); }}
                       required
                       autoFocus
-                      className="mt-1 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[16px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
+                      className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       Icono
                     </label>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {EMOJIS_ESPACIO.map((emoji) => (
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {ICONOS_ESPACIO.map((emoji) => (
                         <button
                           key={emoji}
+                          aria-label={`Icono ${NOMBRES_ICONO[emoji]}`}
+                          aria-pressed={nuevoIcono === emoji || emojiPareja === emoji}
                           type="button"
                           onClick={() => setNuevoIcono(emoji)}
-                          className={`h-9 w-9 flex items-center justify-center rounded-xl text-[18px] transition-transform ${
+                          className={`h-9 w-9 flex items-center justify-center rounded-[var(--fin-r-control)] text-[17px] transition-transform ${
                             nuevoIcono === emoji
-                              ? 'bg-[var(--fin-ink)] scale-110 shadow-sm'
+                              ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-sm'
                               : 'bg-[var(--fin-soft)] hover:bg-[var(--fin-card)]'
                           }`}
                         >
-                          {emoji}
+                          <IconoSimbolo valor={emoji} />
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       Nombre de tu compañero/a o pareja
                     </label>
                     <input
@@ -603,27 +607,29 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                       placeholder="Ej. Camila, Andrés, Mamá..."
                       value={nombrePareja}
                       onChange={(e) => setNombrePareja(e.target.value)}
-                      className="mt-1 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[16px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
+                      className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[12px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
+                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
                       Avatar de tu compañero/a
                     </label>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {EMOJIS_PAREJA.map((emoji) => (
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {ICONOS_PERSONA.map((emoji) => (
                         <button
                           key={emoji}
+                          aria-label={`Icono ${NOMBRES_ICONO[emoji]}`}
+                          aria-pressed={nuevoIcono === emoji || emojiPareja === emoji}
                           type="button"
                           onClick={() => setEmojiPareja(emoji)}
-                          className={`h-9 w-9 flex items-center justify-center rounded-xl text-[18px] transition-transform ${
+                          className={`h-9 w-9 flex items-center justify-center rounded-[var(--fin-r-control)] text-[17px] transition-transform ${
                             emojiPareja === emoji
-                              ? 'bg-[var(--fin-ink)] scale-110 shadow-sm'
+                              ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-sm'
                               : 'bg-[var(--fin-soft)] hover:bg-[var(--fin-card)]'
                           }`}
                         >
-                          {emoji}
+                          <IconoSimbolo valor={emoji} />
                         </button>
                       ))}
                     </div>
@@ -633,14 +639,14 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                     <button
                       type="button"
                       onClick={() => setModalNuevoEspacioAbierto(false)}
-                      className="px-4 py-2 text-[13.5px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+                      className="px-4 py-2 text-[15px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
                     >
                       Cancelar
                     </button>
                     <RippleButton
                       type="submit"
                       disabled={creandoEspacio}
-                      className="rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-5 py-2.5 text-[14px] font-bold shadow-md hover:opacity-90"
+                      className="rounded-full bg-[var(--fin-ink)] text-[var(--fin-bg)] px-5 py-3 text-[15px] font-bold shadow-md hover:opacity-90"
                     >
                       {creandoEspacio ? 'Creando…' : 'Crear espacio'}
                     </RippleButton>

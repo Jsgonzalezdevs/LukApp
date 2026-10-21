@@ -71,7 +71,7 @@ interface TrabajoConErrorProps {
 const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar, onQuitar }) => (
   <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-5">
     <div className="flex items-start gap-3">
-      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out)]" strokeWidth={3} />
+      <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-[var(--fin-out)]" strokeWidth={3} />
       <div className="min-w-0 flex-1">
         <p className="truncate text-[13px] font-semibold text-[var(--fin-out)]">
           {trabajo.archivo.name}
@@ -79,18 +79,18 @@ const TrabajoConError: React.FC<TrabajoConErrorProps> = ({ trabajo, onReintentar
         <p className="mt-1 text-[15px] leading-relaxed text-[var(--fin-out)]">
           {trabajo.error?.mensaje}
         </p>
-        <div className="mt-2.5 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <button
             type="button"
             onClick={() => onReintentar(trabajo.id)}
-            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--fin-out)]"
+            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-out)]"
           >
             Reintentar
           </button>
           <button
             type="button"
             onClick={() => onQuitar(trabajo.id)}
-            className="rounded-[var(--fin-r-pill)] px-3.5 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
+            className="rounded-[var(--fin-r-pill)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
           >
             Quitar
           </button>
@@ -152,7 +152,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             {trabajo.resultado.periodo.etiqueta}
             {importado > 0 ? ` · ${importado} importado${importado === 1 ? '' : 's'}` : ''}
           </p>
-          <p className="mt-0.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+          <p className="mt-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
             {trabajo.resultado.entidad ? `Banco identificado: ${trabajo.resultado.entidad}` : 'Banco no identificado con certeza'}
           </p>
         </div>
@@ -174,7 +174,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             }
           }}
           aria-label={`Quitar ${trabajo.archivo.name} de la lista`}
-          className="shrink-0 rounded-[var(--fin-r-pill)] p-1.5 text-[var(--fin-ink-ghost)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+          className="shrink-0 rounded-[var(--fin-r-pill)] p-2 text-[var(--fin-ink-ghost)] hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
         >
           <X className="h-3.5 w-3.5" strokeWidth={3} />
         </span>
@@ -183,7 +183,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
       {!contraido ? (
         <div className="mt-4 flex flex-col gap-5 border-t border-[var(--fin-line)] pt-4">
           <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4">
-            <h3 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+            <h3 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               <Download className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
               Importar a tu historial
             </h3>
@@ -197,7 +197,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
               ].map((c) => (
                 <div
                   key={c.label}
-                  className="rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-2 py-2.5"
+                  className="rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-2 py-3"
                 >
                   <p className="text-[20px] font-semibold tabular-nums" style={{ color: c.ink }}>
                     {c.n}
@@ -225,13 +225,13 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                 </button>
 
                 {verPosibles ? (
-                  <ul className="mt-2.5 flex flex-col gap-2">
+                  <ul className="mt-3 flex flex-col gap-2">
                     {plan.posibles.map((p) => {
                       const marcado = aceptados.has(p.clave);
                       return (
                         <li
                           key={p.clave}
-                          className="rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-2.5"
+                          className="rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-3"
                         >
                           <p className="text-[13px] text-[var(--fin-ink-soft)]">
                             Ya tienes:{' '}
@@ -241,7 +241,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                             El extracto dice:{' '}
                             <b className="text-[var(--fin-ink)]">{p.movimiento.descripcion}</b>
                           </p>
-                          <label className="mt-1.5 flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink)]">
+                          <label className="mt-2 flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink)]">
                             <input
                               type="checkbox"
                               checked={marcado}
@@ -267,7 +267,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                                 rawTranscript: `${p.yaTengo.rawTranscript} · extracto: ${p.movimiento.descripcion}`.trim(),
                               }))
                             }
-                            className="mt-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-in-bg)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-in)]"
+                            className="mt-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-in-bg)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-in)]"
                           >
                             Completar este movimiento
                           </button>
@@ -290,7 +290,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : null}
 
             {importado > 0 ? (
-              <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-in-bg)] px-3 py-2.5 text-[15px] font-semibold text-[var(--fin-in)]">
+              <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-in-bg)] px-3 py-3 text-[15px] font-semibold text-[var(--fin-in)]">
                 Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
               </p>
             ) : (
@@ -355,7 +355,7 @@ const TrabajoConContrasena: React.FC<TrabajoConContrasenaProps> = ({ trabajo, on
   return (
     <li className="rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] p-5">
       <div className="flex items-start gap-3">
-        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn-ink)]" strokeWidth={3} />
+        <ShieldCheck className="mt-1 h-4 w-4 shrink-0 text-[var(--fin-warn-ink)]" strokeWidth={3} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">{trabajo.archivo.name}</p>
           <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
@@ -491,13 +491,13 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           onClick={() => inputArchivo.current?.click()}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="mt-5 inline-flex items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-7 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
+          className="mt-5 inline-flex items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-7 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
         >
           <FileUp className="h-4 w-4" strokeWidth={3} />
           Elegir PDF
         </motion.button>
 
-        <p className="mx-auto mt-4 flex max-w-sm items-start gap-1.5 text-left text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+        <p className="mx-auto mt-4 flex max-w-sm items-start gap-2 text-left text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
           <ShieldCheck
             className="mt-px h-3.5 w-3.5 shrink-0"
             strokeWidth={2.5}
@@ -590,7 +590,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
       ) : null}
 
       {analista.trabajos.length > 0 ? (
-        <p className="flex items-center justify-center gap-1.5 text-[13px] text-[var(--fin-ink-faint)]">
+        <p className="flex items-center justify-center gap-2 text-[13px] text-[var(--fin-ink-faint)]">
           <RotateCcw className="h-3 w-3" strokeWidth={3} />
           Puedes seguir arrastrando más extractos mientras estos terminan.
         </p>

@@ -60,15 +60,17 @@
 
   /* Text, darkest to lightest */
   --fin-ink: #1c1917;
-  --fin-ink-soft: #78716c;
-  --fin-ink-faint: #a8a29e;
-  --fin-ink-ghost: #d6d3d1;
+  --fin-ink-soft: #68615b;
+  --fin-ink-faint: #706963;
+  --fin-ink-ghost: #706963;
 
   /* The primary button. Separate from --fin-ink because in dark mode text goes
      light while this must go light-with-dark-text — opposite directions. */
   --fin-accent: #772aea;
   --fin-accent-hover: #631fc9;
   --fin-on-accent: #ffffff;
+  --fin-on-in: #ffffff;
+  --fin-on-out: #ffffff;
 
   /* Money direction and severity. Colour never carries meaning alone here — an
      emoji or a +/- sign always accompanies it — but these still have to stay
@@ -89,7 +91,7 @@
      oscuro, así que el aviso se leía igual que el botón de guardar y dejaba de
      avisar. Verde, rosa y morado ya están tomados (entra, sale, acción); el
      ámbar es el único tono que queda libre para decir "cuidado". */
-  --fin-warn: #d97706;
+  --fin-warn: #945100;
   --fin-warn-bg: #fef3c7;
   --fin-warn-ink: #92400e;
   --fin-media-bg: #fff7ed;
@@ -197,9 +199,9 @@
     --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
 
     --fin-ink: #f5f3f0;
-    --fin-ink-soft: #a8a29e;
-    --fin-ink-faint: #857f7a;
-    --fin-ink-ghost: #57534e;
+    --fin-ink-soft: #c2bbb4;
+    --fin-ink-faint: #b2aba4;
+    --fin-ink-ghost: #aaa39b;
 
     /* Neutro, no el lavanda de marca. Sobre negro el morado #a879f0 pintaba un
        bloque encendido justo al lado de la cifra del monto, y las dos cosas
@@ -209,6 +211,8 @@
     --fin-accent: #f5f3f0;
     --fin-accent-hover: #ffffff;
     --fin-on-accent: #1a1817;
+  --fin-on-in: #1a1817;
+  --fin-on-out: #1a1817;
 
     /* Los tonos de marca, con el croma bajado ~35% y la luminosidad intacta:
        mismo lima y mismo rosa, pero sin el brillo de neón que sobre un negro
@@ -258,13 +262,15 @@
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
 
   --fin-ink: #f5f3f0;
-  --fin-ink-soft: #a8a29e;
-  --fin-ink-faint: #857f7a;
-  --fin-ink-ghost: #57534e;
+  --fin-ink-soft: #c2bbb4;
+  --fin-ink-faint: #b2aba4;
+  --fin-ink-ghost: #aaa39b;
 
   --fin-accent: #f5f3f0;
   --fin-accent-hover: #ffffff;
   --fin-on-accent: #1a1817;
+  --fin-on-in: #1a1817;
+  --fin-on-out: #1a1817;
 
   --fin-in: #c3eb89;
   --fin-in-bg: rgb(195 235 137 / 0.14);
@@ -513,7 +519,7 @@
 }
 
 .division-header { border-bottom: 1px solid color-mix(in srgb, var(--fin-line) 76%, transparent); }
-.division-icon { background: #fff3e8; color: #c55a12; }
+.division-icon { background: var(--fin-soft); color: var(--fin-ink-soft); }
 .division-close { background: var(--fin-soft); color: var(--fin-ink-soft); transition: background 160ms ease, color 160ms ease; }
 .division-close:hover { background: var(--fin-card-hover); color: var(--fin-ink); }
 .division-content { scrollbar-color: var(--fin-ink-ghost) transparent; }
@@ -540,46 +546,25 @@
 .division-tip-active { background: var(--fin-ink); color: var(--fin-bg); box-shadow: 0 7px 16px rgb(28 25 23 / 0.18); }
 .division-stepper { background: var(--fin-surface); border: 1px solid var(--fin-line); color: var(--fin-ink); box-shadow: 0 2px 5px rgb(28 25 23 / 0.06); transition: transform 160ms ease, background 160ms ease; }
 .division-stepper:hover { background: var(--fin-soft); transform: translateY(-1px); }
-.division-people-icon { color: #c55a12; }
+.division-people-icon { color: var(--fin-ink-soft); }
 .division-person { background: transparent; }
 .division-payment { background: var(--fin-soft); color: var(--fin-ink-soft); }
 .division-payment:hover { background: var(--fin-card-hover); color: var(--fin-ink); }
-.division-payment.bg-emerald-500\/15 { background: color-mix(in srgb, #10b981 13%, var(--fin-bg)); color: #087a5b; }
+.division-payment.bg-emerald-500\/15 { background: var(--fin-card-hover); color: var(--fin-ink); }
 
 .division-result {
-  background: linear-gradient(135deg, #1f1b17 0%, #342a22 100%);
+  background: var(--fin-card);
+  border: 1px solid var(--fin-line);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 12px 24px rgb(28 25 23 / 0.14);
 }
-.division-result-label { color: #f8b980; }
-.division-result .text-\[var\(--fin-ink\)\] { color: #fffaf5; }
-.division-result .text-\[var\(--fin-ink-soft\)\] { color: rgb(255 250 245 / 0.66); }
+.division-result-label { color: var(--fin-ink-soft); }
+.division-result .text-\[var\(--fin-ink\)\] { color: var(--fin-ink); }
+.division-result .text-\[var\(--fin-ink-soft\)\] { color: var(--fin-ink-soft); }
 .division-actions { border-top: 1px solid color-mix(in srgb, var(--fin-line) 76%, transparent); padding-top: 1rem; }
 .division-share { border: 1px solid var(--fin-line); background: transparent; color: var(--fin-ink); transition: background 160ms ease, border-color 160ms ease; }
 .division-share:hover { background: var(--fin-soft); border-color: var(--fin-ink-ghost); }
 .division-save { background: var(--fin-accent); color: var(--fin-on-accent); box-shadow: 0 10px 20px color-mix(in srgb, var(--fin-accent) 25%, transparent); transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease; }
 .division-save:hover { background: var(--fin-accent-hover); box-shadow: 0 13px 24px color-mix(in srgb, var(--fin-accent) 30%, transparent); transform: translateY(-1px); }
-
-.fin-html[data-tema='oscuro'] .division-sheet { background: #211e1b; border-color: #423d37; }
-.fin-html[data-tema='oscuro'] .division-icon { background: #402d1d; color: #ffae68; }
-.fin-html[data-tema='oscuro'] .division-money-input,
-.fin-html[data-tema='oscuro'] .division-text-input,
-.fin-html[data-tema='oscuro'] .division-people,
-.fin-html[data-tema='oscuro'] .division-person { background: #1a1817; border-color: #423d37; }
-.fin-html[data-tema='oscuro'] .division-stepper { background: #302c29; border-color: #423d37; }
-.fin-html[data-tema='oscuro'] .division-tip-active { background: #fffaf5; color: #211e1b; }
-.fin-html[data-tema='oscuro'] .division-result { background: linear-gradient(135deg, #38271b 0%, #211e1b 100%); }
-
-@media (prefers-color-scheme: dark) {
-  .fin-html:not([data-tema='claro']) .division-sheet { background: #211e1b; border-color: #423d37; }
-  .fin-html:not([data-tema='claro']) .division-icon { background: #402d1d; color: #ffae68; }
-  .fin-html:not([data-tema='claro']) .division-money-input,
-  .fin-html:not([data-tema='claro']) .division-text-input,
-  .fin-html:not([data-tema='claro']) .division-people,
-  .fin-html:not([data-tema='claro']) .division-person { background: #1a1817; border-color: #423d37; }
-  .fin-html:not([data-tema='claro']) .division-stepper { background: #302c29; border-color: #423d37; }
-  .fin-html:not([data-tema='claro']) .division-tip-active { background: #fffaf5; color: #211e1b; }
-  .fin-html:not([data-tema='claro']) .division-result { background: linear-gradient(135deg, #38271b 0%, #211e1b 100%); }
-}
 
 /* En iOS el <input type="date"> trae un ancho intrínseco propio y se planta en
    él: `width: 100%` no lo encoge, así que dentro de una hoja angosta se sale de
@@ -791,3 +776,24 @@ input[type='date']::-webkit-date-and-time-value {
     animation: none;
   }
 }
+
+/* Controles comunes: el tamaño táctil y el foco no dependen del ancho del icono. */
+.fin-page button,
+.fin-page summary,
+.fin-page input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.fin-page select {
+  min-block-size: var(--fin-tap);
+}
+.fin-page button { min-inline-size: var(--fin-tap); }
+.fin-page summary { align-content: center; }
+.fin-page .text-xs { font-size: 13px; line-height: 1.4; }
+.fin-page input::placeholder,
+.fin-page textarea::placeholder { color: var(--fin-ink-faint); opacity: 1; }
+.fin-page button:disabled { cursor: not-allowed; opacity: .55; }
+.fin-page input:disabled,
+.fin-page textarea:disabled,
+.fin-page select:disabled { cursor: not-allowed; opacity: .65; }
+
+.fin-page .lucide { stroke-width: 1.8; flex-shrink: 0; }
+
+.fin-page input:is([type='checkbox'], [type='radio'], [type='range']) { accent-color: var(--fin-accent); }

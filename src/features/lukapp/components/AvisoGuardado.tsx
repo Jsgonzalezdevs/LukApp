@@ -88,7 +88,7 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
             className="fin-glass pointer-events-auto flex w-full max-w-sm cursor-grab items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 active:cursor-grabbing"
           >
             {guardado.esError ? <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--fin-out)]" aria-hidden="true" /> : <Check
-              className="h-5 w-5 shrink-0 text-[var(--fin-in)]"
+              className="h-5 w-5 shrink-0 text-[var(--fin-accent)]"
               strokeWidth={3}
               aria-hidden="true"
             />}
@@ -97,14 +97,14 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
                 {guardado.texto}
               </p>
               {guardado.detalle ? (
-                <p className="mt-0.5 truncate text-[12px] text-[var(--fin-ink-faint)]">
+                <p className="mt-1 truncate text-[13px] text-[var(--fin-ink-faint)]">
                   {guardado.detalle}
                 </p>
               ) : null}
-              {!guardado.esError && estado ? <p className="mt-0.5 text-[12px] text-[var(--fin-ink-soft)]">{{ local: 'Guardado en este dispositivo', pendiente: 'Guardado en este dispositivo · pendiente de sincronizar', sincronizado: 'Sincronizado con tu cuenta', temporal: 'Guardado solo durante esta sesión' }[estado]}</p> : null}
+              {!guardado.esError && estado ? <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">{{ local: 'Guardado en este dispositivo', pendiente: 'Guardado en este dispositivo · pendiente de sincronizar', sincronizado: 'Sincronizado con tu cuenta', temporal: 'Guardado solo durante esta sesión' }[estado]}</p> : null}
               {errorDeshacer ? <p role="alert" className="text-sm text-[var(--fin-out)]">No se pudo deshacer. El movimiento sigue guardado.</p> : null}
               {guardado.aviso ? (
-                <p className="mt-0.5 flex items-start gap-1.5 text-[13px] text-[var(--fin-warn)]">
+                <p className="mt-1 flex items-start gap-2 text-[13px] text-[var(--fin-warn)]">
                   <AlertTriangle
                     className="mt-px h-3.5 w-3.5 shrink-0"
                     strokeWidth={2.5}
@@ -131,7 +131,7 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
                     setIdDeshaciendo((id) => id === aviso.id ? null : id);
                   }
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
+                className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
               >
                 <Undo2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
                 {deshaciendo ? 'Deshaciendo…' : 'Deshacer'}

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Hand, Pencil, Repeat2 } from 'lucide-react';
-import { tint } from '../types';
 import type { Transaction } from '../types';
 import { COPY } from '../copy';
 import { formatCop, formatSigned } from '../lib/formatCop';
@@ -118,7 +117,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
       {groupByDay(transactions).map((group) => (
         <section key={group.date} aria-label={dayLabel(group.date)}>
           {/* El día, y a la derecha cuánto se movió ese día. */}
-          <div className="mb-1.5 flex items-baseline justify-between px-1">
+          <div className="mb-2 flex items-baseline justify-between px-1">
             <h3 className="text-[13px] capitalize text-[var(--fin-ink-faint)]">
               {dayLabel(group.date)}
             </h3>
@@ -130,7 +129,6 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           <ul className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)]">
             {group.items.map((tx, idx) => {
               const entrada = catalogo.de(tx.category);
-              const color = entrada.color;
               const esIngreso = tx.kind === 'ingreso';
               const esTransferencia = tx.kind === 'transferencia';
               const ultima = idx === group.items.length - 1;
@@ -142,15 +140,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       superficie opaca porque el material translúcido dejaba
                       leer estos controles incluso antes de deslizar. */}
                   {tieneGestos ? (
-                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 text-[12px] font-semibold" aria-hidden="true">
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-4 text-[13px] font-semibold" aria-hidden="true">
                       {onRepetir ? (
-                        <span className="flex items-center gap-1.5 text-[var(--fin-in)]">
+                        <span className="flex items-center gap-2 text-[var(--fin-in)]">
                           <Repeat2 className="h-4 w-4" strokeWidth={2.25} />
                           Repetir
                         </span>
                       ) : <span />}
                       {onEditar ? (
-                        <span className="flex items-center gap-1.5 text-[var(--fin-ink-soft)]">
+                        <span className="flex items-center gap-2 text-[var(--fin-ink-soft)]">
                           Editar
                           <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} />
                         </span>
@@ -187,7 +185,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                         onEditar(tx);
                       }
                     }}
-                    className="relative z-10 flex w-full items-center gap-3 bg-[var(--fin-surface)] px-3.5 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
+                    className="relative z-10 flex w-full items-center gap-3 bg-[var(--fin-surface)] px-4 py-3 text-left transition-colors enabled:hover:bg-[var(--fin-soft)]"
                     style={{
                       boxShadow: ultima ? undefined : 'inset 0 -1px 0 0 var(--fin-line)',
                       touchAction: tieneGestos ? 'pan-y' : undefined,
@@ -197,15 +195,15 @@ export const TransactionList: React.FC<TransactionListProps> = ({
  lista de veinte movimientos con veinte colores distintos
  de letra no se puede leer. */}
                     <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[20px] select-none shadow-xs"
-                      style={{ backgroundColor: tint(color, 0.16) }}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] text-[20px] select-none shadow-xs"
+                      style={{ backgroundColor: 'var(--fin-soft)', color: 'var(--fin-ink-soft)' }}
                       aria-hidden="true"
                     >
-                      {entrada.emoji}
+                      <entrada.Icono className="h-5 w-5" aria-hidden="true" />
                     </span>
 
                     <span className="min-w-0 flex-1">
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-2">
                         <span className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
                           {tx.description}
                         </span>

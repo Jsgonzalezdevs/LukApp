@@ -100,7 +100,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
       <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-            <TrendingUp className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
+            <TrendingUp className="mr-2 inline h-4 w-4 mb-1" aria-hidden="true" />
             {COPY.tendencias.comoVienes}
           </h2>
 
@@ -108,7 +108,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
  gráfica. Un menú que dijera "reporte trimestral" sería la misma
  función con una palabra que obliga a pensar. */}
           <div
-            className="flex gap-0.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-bg)] p-0.5"
+            className="flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-bg)] p-1"
             role="group"
             aria-label="Cuántos meses mirar"
           >
@@ -146,8 +146,8 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
             <p className="text-[13px] font-semibold capitalize text-[var(--fin-ink-soft)]">
               {monthKeyLabel(puntoActivo.month)}
             </p>
-            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-              <span className="flex items-center gap-1.5 text-[15px] font-semibold tabular-nums">
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-1">
+              <span className="flex items-center gap-2 text-[15px] font-semibold tabular-nums">
                 <span
                   className="h-2 w-4 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-in)]"
                   aria-hidden="true"
@@ -155,7 +155,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
                 <span className="text-[var(--fin-ink-faint)]">{COPY.balance.ingresos}</span>
                 <span style={{ color: 'var(--fin-in)' }}>{formatCop(puntoActivo.ingresos)}</span>
               </span>
-              <span className="flex items-center gap-1.5 text-[15px] font-semibold tabular-nums">
+              <span className="flex items-center gap-2 text-[15px] font-semibold tabular-nums">
                 <span
                   className="h-2 w-4 shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-out)]"
                   aria-hidden="true"
@@ -214,7 +214,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
         {/* Averages */}
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-            <Scale className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
+            <Scale className="mr-2 inline h-4 w-4 mb-1" aria-hidden="true" />
             {COPY.tendencias.promedio}
           </h2>
 
@@ -248,10 +248,10 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
         {cambios.length > 0 ? (
           <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-              <Search className="mr-1.5 inline h-4 w-4 mb-0.5" aria-hidden="true" />
+              <Search className="mr-2 inline h-4 w-4 mb-1" aria-hidden="true" />
               {COPY.tendencias.comparativo}
             </h2>
-            <p className="mt-0.5 text-[13px] capitalize text-[var(--fin-ink-faint)]">
+            <p className="mt-1 text-[13px] capitalize text-[var(--fin-ink-faint)]">
               {monthKeyLabel(mes)} vs {monthKeyLabel(mesAnterior)}
             </p>
 
@@ -266,7 +266,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
                 return (
                   <li
                     key={cambio.category}
-                    className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3 py-3"
                   >
                     <span className="shrink-0" aria-hidden="true">
                       {(() => {

@@ -1,3 +1,4 @@
+import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -139,7 +140,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
         {/* Total across every live pocket */}
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-            <PiggyBank className="inline h-4 w-4 mr-1 mb-0.5" aria-hidden="true" />
+            <PiggyBank className="inline h-4 w-4 mr-1 mb-1" aria-hidden="true" />
             {esTarjeta ? 'Deuda total de tarjetas' : esCuenta ? COPY.cuentas.total : COPY.cajitas.total}
           </h2>
           <p className="mt-1 text-[44px] font-semibold tabular-nums text-[var(--fin-ink)]">
@@ -160,7 +161,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
  component also renders debts and cards, and the negated form would
  hang a savings switch under what you owe. */}
           {tipo === 'cajita' && onMostrarEnResumen ? (
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3.5 py-3">
+            <div className="mt-4 flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3">
               <span className="min-w-0">
                 {/* The hint is `aria-describedby`, not part of the label. Inside
  it, the accessible name became the whole paragraph AND changed
@@ -174,7 +175,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 </label>
                 <span
                   id="ahorro-en-resumen-nota"
-                  className="mt-0.5 block text-[13px] leading-relaxed text-[var(--fin-ink-faint)]"
+                  className="mt-1 block text-[13px] leading-relaxed text-[var(--fin-ink-faint)]"
                 >
                   {mostrarEnResumen
                     ? 'Se suman a lo que tienes ahora.'
@@ -263,7 +264,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
               />
             </div>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+            <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : esCuenta ? 'Escribe 0 si está vacía. Si dejas este campo en blanco, el saldo quedará pendiente de confirmar.' : COPY.cajitas.saldoInicialHint}
             </p>
 
@@ -275,7 +276,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 ].map(([label, value, setter, placeholder]) => (
                   <label key={label as string} className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                     {label as string}
-                    <input value={value as string} onChange={(e) => (setter as (v: string) => void)(conPuntos(e.target.value))} placeholder={placeholder as string} inputMode="numeric" className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)] focus:outline-none" />
+                    <input value={value as string} onChange={(e) => (setter as (v: string) => void)(conPuntos(e.target.value))} placeholder={placeholder as string} inputMode="numeric" className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none" />
                   </label>
                 ))}
                 {[
@@ -284,7 +285,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 ].map(([label, value, setter]) => (
                   <label key={label as string} className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                     {label as string}
-                    <input value={value as string} onChange={(e) => (setter as (v: string) => void)(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No configurado" inputMode="numeric" className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)] focus:outline-none" />
+                    <input value={value as string} onChange={(e) => (setter as (v: string) => void)(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No configurado" inputMode="numeric" className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none" />
                   </label>
                 ))}
               </div>
@@ -294,7 +295,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 Ícono
               </legend>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {CAJITA_ICONS.map((option: string) => {
                   const IconComponent = iconoDeCajita(option);
                   return (
@@ -303,7 +304,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                       type="button"
                       onClick={() => setIcon(option)}
                       aria-pressed={icon === option}
-                      aria-label={`Ícono ${option}`}
+                      aria-label={`Ícono ${etiquetaIcono(option)}`}
                       className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${
                         icon === option
                           ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
@@ -362,7 +363,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                     % E.A.
                   </span>
                 </div>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                   {COPY.cajitas.tasaHint}
                 </p>
               </>
@@ -373,14 +374,14 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 type="submit"
                 disabled={guardado.ocupado || nombre.trim() === ''}
                 rippleColor="rgba(255,255,255,0.5)"
-                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 {esTarjeta ? 'Crear tarjeta' : esCuenta ? COPY.cajitas.crearCuenta : COPY.cajitas.crearCajita}
               </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
-                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
+                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 {COPY.confirm.cancel}
               </button>

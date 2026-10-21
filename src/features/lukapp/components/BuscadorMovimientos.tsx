@@ -18,7 +18,7 @@ interface BuscadorMovimientosProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
   filtro,
@@ -103,7 +103,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
  ledger — a search that only looked at the visible month would mean
  stepping back through the calendar to find anything. */}
       {activo ? (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3.5 py-2.5">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3">
           <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             <b className="text-[var(--fin-ink)]">
               {resumen.cuantos} movimiento{resumen.cuantos === 1 ? '' : 's'}
@@ -125,7 +125,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
           <button
             type="button"
             onClick={() => onCambiar(FILTRO_VACIO)}
-            className="flex shrink-0 items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+            className="flex shrink-0 items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
             Limpiar

@@ -9,7 +9,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Verificado, V6.0.0 |
 | 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Verificado, V7.0.0 |
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Verificado, V8.0.0 |
-| 6 | Iconos, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Pendiente |
+| 6 | Iconos, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Verificado, V8.0.1 |
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Pendiente |
 | 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Pendiente |
 | 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Pendiente |
@@ -46,7 +46,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 
 ## Siguiente paso
 
-Implementar y revisar el paso 6 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+Implementar y revisar el paso 7 con su propia versión; el objetivo completo de 16 pasos continúa activo.
 
 ## Cierre del paso 2: V5.1.0
 
@@ -86,4 +86,15 @@ Implementar y revisar el paso 6 con su propia versión; el objetivo completo de 
 - Revisión visual local: abrir/cerrar metas, importar desde Efectivo sin enviar archivos, comprobar selección y regreso por cerrar/Atrás, buscar metas y abrirlas, revisar Mes/calendario/pagos y la nueva lista de Más. Evidencia `/tmp/lukapp-v8-buscar-funciones.png`.
 - Suite final: 128 archivos y 1.443 pruebas aprobadas. TypeScript, Vite y diff aprobados; lint conserva seis advertencias previas.
 
-El siguiente paso es la unificación visual (6); los pasos 6 a 16 continúan pendientes. Estos cambios del frontend están cerrados localmente, sin publicación.
+El siguiente paso son las animaciones comunes (7); los pasos 7 a 16 continúan pendientes. Estos cambios del frontend están cerrados localmente, sin publicación.
+
+## Cierre del paso 6: V8.0.1
+
+- Las pantallas financieras comparten iconos de trazo, radios de tarjeta/control/hoja, separación en múltiplos de 4 y textos de al menos 13 px. Se conserva Poppins y el arte de `public/brand/`, revisado contra su manual.
+- Se reemplazaron emojis visibles de registros, categorías, ajustes, racha y herramientas compartidas por iconos del catálogo. Los campos antiguos se interpretan al pintar y se preservan para mantener compatibles registros y exportaciones; no se migró información financiera.
+- Categorías usa un solo selector visual de iconos; las opciones tienen nombres en español. No se eliminó la personalización de color ni los valores antiguos.
+- Los controles tienen objetivo táctil mínimo de 44 px, foco visible, estado deshabilitado distinguible y selección de tema con contraste. Los avisos, entradas y salidas usan tokens del tema; conexión y valoración del asesor no reutilizan verde/rojo decorativo.
+- El cálculo sobre los tokens reales de claro/oscuro comprobó 52 combinaciones de texto/fondo con mínimo 4,58:1 (`/tmp/lukapp-paso6-contrastes.json`). La comprobación cubre la paleta compartida; no pretende certificar colores que el usuario elija para sus categorías.
+- La revisión visual encontró y corrigió un solapamiento al aumentar texto/controles: Captura ahora conserva la altura natural del contenido, permite desplazarlo completo y mantiene Cerrar en el encabezado. Las leyendas pequeñas del monto no heredan el espaciado de la cifra grande.
+- Se revisaron Ajustes en claro y oscuro, Captura con desplazamiento hasta Guardar y el editor de categorías con foco/selección. La preferencia de tema local volvió a Sistema; no se guardaron datos de prueba. Evidencias: `/tmp/lukapp-v8-0-1-captura-claro.png` y `/tmp/lukapp-v8-0-1-categorias-oscuro.png`.
+- Verificación final: 128 archivos y 1.443 pruebas aprobadas; TypeScript/Vite y diff aprobados. Lint conserva seis advertencias previas. Frontend cerrado localmente, sin publicación.

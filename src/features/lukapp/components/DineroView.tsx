@@ -74,7 +74,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
           />
         </p>
       </div>
-      <p className="-mt-6 text-center text-[12px] text-[var(--fin-ink-faint)]">
+      <p className="-mt-6 text-center text-[13px] text-[var(--fin-ink-faint)]">
         Saldo total menos ahorros reservados y obligaciones.
       </p>
 
@@ -82,7 +82,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
       {vivas.length === 0 ? (
         <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-5 py-8 text-center">
           <p className="text-[17px] font-semibold text-[var(--fin-ink)]">Empieza por tu banco</p>
-          <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <p className="mx-auto mt-2 max-w-xs text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
             Agrega dónde tienes la plata y escribe cuánto hay. Lo demás se calcula solo.
           </p>
           <button
@@ -162,21 +162,21 @@ export const DineroView: React.FC<DineroViewProps> = ({
                             {cajita.nombre}
                           </span>
                           {cajita.id === cuentaFavoritaId && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Principal
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-warn-bg)] px-2 py-1 text-[13px] font-bold text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]">
+                              <Star className="h-3 w-3 fill-amber-500 text-[var(--fin-warn-ink)]" /> Principal
                             </span>
                           )}
                         </div>
-                        <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
+                        <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
                           {cajita.tipo === 'tarjeta' && pagoMensualCop > 0
                             ? `Pago mensual estimado: ${formatCop(pagoMensualCop)}`
                             : etiquetaTipoCajita(cajita)}
                         </span>
                         {pct !== null ? (
                           <>
-                            <span className="mt-1.5 block h-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
+                            <span className="mt-2 block h-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
                               <span
-                                className="block h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-in)]"
+                                className="block h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]"
                                 style={{ width: `${pct}%` }}
                               />
                             </span>
@@ -207,14 +207,14 @@ export const DineroView: React.FC<DineroViewProps> = ({
           <button
             type="button"
             onClick={onCrear}
-            className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
           >
             Agregar cuenta
           </button>
           <button
             type="button"
             onClick={onAbrirTarjetas}
-            className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-line)]"
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-line)]"
           >
             Tarjetas de crédito
           </button>

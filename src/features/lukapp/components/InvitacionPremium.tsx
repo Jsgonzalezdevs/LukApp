@@ -170,7 +170,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.98 }}
             transition={{ type: 'spring', stiffness: 310, damping: 28 }}
-            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[620px] flex-col overflow-hidden rounded-t-[28px] border border-white/15 bg-[#261044] text-white shadow-[0_35px_100px_-28px_rgba(12,4,28,0.85)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[28px]"
+            className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[620px] flex-col overflow-hidden rounded-t-[28px] border border-white/15 bg-[#261044] text-white shadow-[0_35px_100px_-28px_rgba(12,4,28,0.85)] sm:max-h-[calc(100dvh-2.5rem)] sm:rounded-[var(--fin-r-card)]"
           >
             <div className="pointer-events-none absolute inset-0" aria-hidden="true">
               <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-fuchsia-400/35 blur-3xl" />
@@ -181,7 +181,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
 
             <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-7 sm:pt-7">
               <div className="flex items-start justify-between gap-4">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold tracking-[0.08em] text-white/85 uppercase">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[13px] font-bold tracking-[0.08em] text-white/85 uppercase">
                   <Sparkles className="h-3.5 w-3.5 text-lime-200" strokeWidth={2.35} aria-hidden="true" />
                   LukApp Premium
                 </span>
@@ -196,10 +196,10 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
               </div>
 
               <div className="mt-5 max-w-[490px]">
-                <h2 id="invitacion-premium-titulo" className="text-balance text-[29px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[36px]">
+                <h2 id="invitacion-premium-titulo" className="text-balance text-[28px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[28px]">
                   Más espacio para tus finanzas, sin complicarlas.
                 </h2>
-                <p id="invitacion-premium-descripcion" className="mt-4 text-[15px] leading-relaxed text-white/76 sm:text-[16px]">
+                <p id="invitacion-premium-descripcion" className="mt-4 text-[15px] leading-relaxed text-white/76 sm:text-[17px]">
                   Premium reúne las prestaciones que LukApp tiene activas hoy para tu cuenta. Tu plan Normal sigue siendo gratis; tú eliges cuándo cambiar.
                 </p>
               </div>
@@ -208,14 +208,14 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
                 {beneficios.map((beneficio) => {
                   const Icono = iconoDeBeneficio(beneficio.clave);
                   return (
-                  <div key={beneficio.clave} className="rounded-[18px] border border-white/10 bg-black/15 p-3">
+                  <div key={beneficio.clave} className="rounded-[var(--fin-r-card)] border border-white/10 bg-black/15 p-3">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-[11px] font-semibold text-white/65">{beneficio.titulo}</p>
+                      <p className="text-[13px] font-semibold text-white/65">{beneficio.titulo}</p>
                       <Icono className="h-4 w-4 shrink-0 text-lime-200" strokeWidth={2.25} aria-hidden="true" />
                     </div>
-                    <div className="mt-2.5 flex items-end gap-1.5">
-                      <strong className="text-[21px] font-semibold leading-none tracking-[-0.05em]">{valorDeBeneficio(beneficio)}</strong>
-                      <span className="mb-0.5 text-[10px] leading-tight text-white/58">{beneficio.detalle}</span>
+                    <div className="mt-3 flex items-end gap-2">
+                      <strong className="text-[20px] font-semibold leading-none tracking-[-0.05em]">{valorDeBeneficio(beneficio)}</strong>
+                      <span className="mb-1 text-[13px] leading-tight text-white/58">{beneficio.detalle}</span>
                     </div>
                   </div>
                   );
@@ -224,24 +224,24 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
 
             </div>
             <div className="relative shrink-0 border-t border-white/10 bg-[#261044]/95 px-5 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3.5 backdrop-blur-xl sm:px-7 sm:pb-5">
-              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="rounded-[14px] border border-white/10 bg-white/10 px-3.5 py-2.5">
-                  <p className="text-[10px] font-bold tracking-[0.08em] text-white/55 uppercase">Desde</p>
-                  <p className="mt-0.5 text-[15px] font-semibold text-white">{pesos(plan.preciosPremium.mensualCop)} <span className="text-[12px] font-medium text-white/65">/ mes</span></p>
-                  <p className="mt-0.5 text-[11px] text-white/58">Anual: {pesos(plan.preciosPremium.anualCop)}</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="rounded-[var(--fin-r-control)] border border-white/10 bg-white/10 px-4 py-3">
+                  <p className="text-[13px] font-bold tracking-[0.08em] text-white/55 uppercase">Desde</p>
+                  <p className="mt-1 text-[15px] font-semibold text-white">{pesos(plan.preciosPremium.mensualCop)} <span className="text-[13px] font-medium text-white/65">/ mes</span></p>
+                  <p className="mt-1 text-[13px] text-white/58">Anual: {pesos(plan.preciosPremium.anualCop)}</p>
                 </div>
                 <button
                   type="button"
                   onClick={verOpciones}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[#8f32ff] px-5 text-[14px] font-semibold text-white shadow-lg shadow-purple-950/40 transition-colors hover:bg-[#a247ff]"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[#8f32ff] px-5 text-[15px] font-semibold text-white shadow-lg shadow-purple-950/40 transition-colors hover:bg-[#a247ff]"
                 >
                   Ver planes y precios
                   <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />
                 </button>
               </div>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <p className="inline-flex items-center gap-1.5 text-[11px] text-white/55"><ShieldCheck className="h-3.5 w-3.5 text-lime-200" strokeWidth={2.25} aria-hidden="true" /> Sin compromiso ni urgencia.</p>
-                <button type="button" onClick={cerrar} className="text-[12px] font-semibold text-white/75 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white">
+                <p className="inline-flex items-center gap-2 text-[13px] text-white/55"><ShieldCheck className="h-3.5 w-3.5 text-lime-200" strokeWidth={2.25} aria-hidden="true" /> Sin compromiso ni urgencia.</p>
+                <button type="button" onClick={cerrar} className="text-[13px] font-semibold text-white/75 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white">
                   Seguir con Normal
                 </button>
               </div>

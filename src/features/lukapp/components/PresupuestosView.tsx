@@ -1,3 +1,4 @@
+import { IconoSimbolo } from './IconoSimbolo';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -38,7 +39,7 @@ const ARO: Record<TonoPresupuesto, string | null> = {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 /** El fondo tintado detrás de cada ícono de categoría. Reusa el color que ya
  * existe por categoría (el mismo de la barra de progreso) en vez de inventar
@@ -158,7 +159,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[17px] leading-none"
             aria-hidden="true"
           >
-            🔔
+            <IconoSimbolo valor="Bell" />
           </span>
           <span className="min-w-0 flex-1 text-[15px] font-semibold text-[var(--fin-ink)]">
             Alertas de presupuesto
@@ -205,7 +206,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
           onSubmit={crear}
           className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"
         >
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
             <InsigniaCategoria Icono={catalogo.de(creando).Icono} color={catalogo.de(creando).color} />
             <span className="text-[15px] font-semibold text-[var(--fin-ink)]">
               {catalogo.de(creando).nombre}
@@ -217,7 +218,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
               Máximo por período
             </label>
             {promedioCrear !== null ? (
-              <span className="text-[12px] text-[var(--fin-ink-faint)]">
+              <span className="text-[13px] text-[var(--fin-ink-faint)]">
                 Sueles gastar {formatCop(promedioCrear)}
               </span>
             ) : null}
@@ -229,21 +230,21 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
             inputMode="numeric"
             placeholder="0"
             autoFocus
-            className={`mt-1.5 ${CAMPO}`}
+            className={`mt-2 ${CAMPO}`}
           />
 
           <div className="mt-3 flex gap-2">
             <RippleButton
               type="submit"
               rippleColor="rgba(255,255,255,0.5)"
-              className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
+              className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)]"
             >
               Guardar
             </RippleButton>
             <button
               type="button"
               onClick={() => setCreando(null)}
-              className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+              className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
             >
               Cancelar
             </button>
@@ -252,7 +253,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
       ) : null}
       </AnimatePresence>
 
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-3">
         {estados.map((e, idx) => {
           const tono = tonoDe(e, umbralAlertaPct);
           const entrada = catalogo.de(e.categoria);
@@ -263,7 +264,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
             return (
               <li key={e.categoria} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
                 <form onSubmit={guardarEdicion}>
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-2">
                     <InsigniaCategoria Icono={entrada.Icono} color={entrada.color} />
                     <span className="text-[15px] font-semibold text-[var(--fin-ink)]">{entrada.nombre}</span>
                   </span>
@@ -276,7 +277,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                       Máximo por período
                     </label>
                     {promedioEditar !== null ? (
-                      <span className="text-[12px] text-[var(--fin-ink-faint)]">
+                      <span className="text-[13px] text-[var(--fin-ink-faint)]">
                         Sueles gastar {formatCop(promedioEditar)}
                       </span>
                     ) : null}
@@ -288,14 +289,14 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                     inputMode="numeric"
                     placeholder="0"
                     autoFocus
-                    className={`mt-1.5 ${CAMPO}`}
+                    className={`mt-2 ${CAMPO}`}
                   />
 
                   <div className="mt-3 flex gap-2">
                     <RippleButton
                       type="submit"
                       rippleColor="rgba(255,255,255,0.5)"
-                      className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
+                      className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)]"
                     >
                       Guardar
                     </RippleButton>
@@ -305,7 +306,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                         setEditando(null);
                         setMonto('');
                       }}
-                      className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
+                      className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink-soft)]"
                     >
                       Cancelar
                     </button>
@@ -344,7 +345,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                     </div>
 
                     <div
-                      className="mt-1.5 h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] transition-shadow"
+                      className="mt-2 h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] transition-shadow"
                       role="img"
                       aria-label={`${entrada.nombre}: ${e.pctUsado}% del presupuesto`}
                       style={
@@ -385,7 +386,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                     type="button"
                     role="menuitem"
                     onClick={() => empezarEdicion(e.categoria, e.topeCop)}
-                    className="flex items-center gap-2.5 px-3.5 py-3 text-left text-[14px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)]"
+                    className="flex items-center gap-3 px-4 py-3 text-left text-[15px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)]"
                   >
                     <Pencil className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
                     Editar presupuesto
@@ -398,7 +399,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                         setAbierto(null);
                         onNuevaTransaccion(e.categoria);
                       }}
-                      className="flex items-center gap-2.5 border-t border-[var(--fin-glass-border)] px-3.5 py-3 text-left text-[14px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)]"
+                      className="flex items-center gap-3 border-t border-[var(--fin-glass-border)] px-4 py-3 text-left text-[15px] font-semibold text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)]"
                     >
                       <Receipt className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
                       Nueva transacción
@@ -411,7 +412,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                       setAbierto(null);
                       onQuitar(e.categoria);
                     }}
-                    className="flex items-center gap-2.5 border-t border-[var(--fin-glass-border)] px-3.5 py-3 text-left text-[14px] font-semibold text-[var(--fin-out)] hover:bg-[var(--fin-card-hover)]"
+                    className="flex items-center gap-3 border-t border-[var(--fin-glass-border)] px-4 py-3 text-left text-[15px] font-semibold text-[var(--fin-out)] hover:bg-[var(--fin-card-hover)]"
                   >
                     <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
                     Quitar presupuesto
@@ -433,7 +434,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                     <button
                       type="button"
                       onClick={() => empezarCreacion(c.clave)}
-                      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[var(--fin-soft)]"
+                      className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-[var(--fin-soft)]"
                       style={{
                         boxShadow: i === sinPresupuesto.length - 1 ? undefined : 'inset 0 -1px 0 0 var(--fin-line)',
                       }}
@@ -441,7 +442,7 @@ export const PresupuestosView: React.FC<PresupuestosViewProps> = ({
                       <InsigniaCategoria Icono={c.Icono} color={c.color} />
                       <span className="min-w-0 flex-1">
                         <span className="block text-[15px] font-semibold text-[var(--fin-ink)]">{c.nombre}</span>
-                        <span className="mt-0.5 flex items-center gap-1 text-[13px] text-[var(--fin-ink-faint)]">
+                        <span className="mt-1 flex items-center gap-1 text-[13px] text-[var(--fin-ink-faint)]">
                           {sugerido !== null ? (
                             <>
                               <Sparkles className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden="true" />

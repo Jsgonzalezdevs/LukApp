@@ -107,63 +107,63 @@ export const ConfirmarComandoVoz: React.FC<ConfirmarComandoVozProps> = ({
       <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[var(--fin-r-sheet)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.55)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[12px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">Orden por voz</p>
+            <p className="text-[13px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">Orden por voz</p>
             <h2 id="comando-voz-titulo" className="mt-1 text-lg font-bold text-[var(--fin-ink)]">{TITULOS[comando.tipo]}</h2>
           </div>
           <button type="button" onClick={onCancelar} aria-label="Cerrar" className="rounded-full bg-[var(--fin-soft)] p-2 text-[var(--fin-ink-soft)]"><X className="h-4 w-4" /></button>
         </div>
 
         <div className="mt-4 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-[var(--fin-ink-faint)]">Esto fue lo que entendí</p>
+          <p className="text-[13px] font-bold uppercase tracking-wide text-[var(--fin-ink-faint)]">Esto fue lo que entendí</p>
           <p className="mt-1 text-[15px] font-medium leading-relaxed text-[var(--fin-ink)]">“{comando.raw}”</p>
         </div>
 
         <div className="mt-4 flex flex-col gap-3">
           {comando.tipo === 'transferencia' ? (
             <>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta de origen<select aria-label="Cuenta de origen" value={origenId} onChange={(e) => setOrigenId(e.target.value)} className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)]">{opciones(activos, destinoId)}</select></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta o cajita de destino<select aria-label="Cuenta o cajita de destino" value={destinoId} onChange={(e) => setDestinoId(e.target.value)} className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)]">{opciones(activos, origenId)}</select></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta de origen<select aria-label="Cuenta de origen" value={origenId} onChange={(e) => setOrigenId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(activos, destinoId)}</select></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta o cajita de destino<select aria-label="Cuenta o cajita de destino" value={destinoId} onChange={(e) => setDestinoId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(activos, origenId)}</select></label>
             </>
           ) : comando.tipo === 'abono' ? (
             <>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Tarjeta o deuda<select aria-label="Tarjeta o deuda" value={deudaId} onChange={(e) => setDeudaId(e.target.value)} className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)]">{opciones(pasivos)}</select></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pagar desde<select aria-label="Pagar desde" value={cuentaId} onChange={(e) => setCuentaId(e.target.value)} className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)]">{opciones(cuentas)}</select></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Tarjeta o deuda<select aria-label="Tarjeta o deuda" value={deudaId} onChange={(e) => setDeudaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(pasivos)}</select></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pagar desde<select aria-label="Pagar desde" value={cuentaId} onChange={(e) => setCuentaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(cuentas)}</select></label>
             </>
           ) : (
             <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
               {comando.tipo === 'saldo' ? 'Cuenta, cajita, tarjeta o deuda' : 'Cajita que recibió el rendimiento'}
-              <select aria-label={comando.tipo === 'saldo' ? 'Saldo de' : 'Cajita'} value={cajitaId} onChange={(e) => setCajitaId(e.target.value)} className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)]">{opciones(comando.tipo === 'saldo' ? activas : ahorros)}</select>
+              <select aria-label={comando.tipo === 'saldo' ? 'Saldo de' : 'Cajita'} value={cajitaId} onChange={(e) => setCajitaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(comando.tipo === 'saldo' ? activas : ahorros)}</select>
             </label>
           )}
 
           <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
             {comando.tipo === 'saldo' ? 'Nuevo saldo' : 'Monto'}
-            <div className="mt-1.5 flex items-center gap-2 rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
-              <span className="text-[18px] text-[var(--fin-ink-faint)]">$</span>
+            <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3">
+              <span className="text-[17px] text-[var(--fin-ink-faint)]">$</span>
               <input aria-label={comando.tipo === 'saldo' ? 'Nuevo saldo' : 'Monto'} value={montoTexto} onChange={(e) => setMontoTexto(conPuntos(e.target.value))} inputMode="numeric" placeholder="0" className="w-full bg-transparent text-[20px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none" />
             </div>
           </label>
           {comando.tipo !== 'saldo' ? (
             <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
               Fecha
-              <input aria-label="Fecha" type="date" value={fecha} max={bogotaDate()} onChange={(e) => setFecha(e.target.value)} className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)]" />
-              <span className="mt-1 block text-[11px] font-normal text-[var(--fin-ink-faint)]">Vacía significa hoy.</span>
+              <input aria-label="Fecha" type="date" value={fecha} max={bogotaDate()} onChange={(e) => setFecha(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]" />
+              <span className="mt-1 block text-[13px] font-normal text-[var(--fin-ink-faint)]">Vacía significa hoy.</span>
             </label>
           ) : null}
         </div>
 
-        {mismaCuenta ? <p role="alert" className="mt-3 flex gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-out-ink)]"><AlertTriangle className="h-4 w-4 shrink-0" />El origen y el destino deben ser distintos.</p> : null}
-        {abonoExcedeDeuda ? <p role="alert" className="mt-3 flex gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-out-ink)]"><AlertTriangle className="h-4 w-4 shrink-0" />El abono supera la deuda registrada de {formatCop(deudaActual)}. Actualiza primero el saldo si esa cifra está desactualizada.</p> : null}
-        {saldoInsuficiente ? <p className="mt-3 flex gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-warn-ink)]"><AlertTriangle className="h-4 w-4 shrink-0" />La cuenta de origen tiene {formatCop(saldoOrigen)}. Puedes continuar si ese saldo aún no está actualizado.</p> : null}
+        {mismaCuenta ? <p role="alert" className="mt-3 flex gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out-bg)] px-3 py-3 text-[13px] text-[var(--fin-out-ink)]"><AlertTriangle className="h-4 w-4 shrink-0" />El origen y el destino deben ser distintos.</p> : null}
+        {abonoExcedeDeuda ? <p role="alert" className="mt-3 flex gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out-bg)] px-3 py-3 text-[13px] text-[var(--fin-out-ink)]"><AlertTriangle className="h-4 w-4 shrink-0" />El abono supera la deuda registrada de {formatCop(deudaActual)}. Actualiza primero el saldo si esa cifra está desactualizada.</p> : null}
+        {saldoInsuficiente ? <p className="mt-3 flex gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-warn-bg)] px-3 py-3 text-[13px] text-[var(--fin-warn-ink)]"><AlertTriangle className="h-4 w-4 shrink-0" />La cuenta de origen tiene {formatCop(saldoOrigen)}. Puedes continuar si ese saldo aún no está actualizado.</p> : null}
         {monto === null ? <p role="alert" className="mt-3 text-[13px] text-[var(--fin-out)]">Escribe un monto válido antes de continuar.</p> : null}
 
-        <p className="mt-4 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">
+        <p className="mt-4 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
           Nada se aplica hasta que revises estos datos y confirmes.
         </p>
         <div className="mt-4 flex gap-2">
-          {onReintentar ? <button type="button" onClick={onReintentar} className="flex items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-[14px] font-semibold text-[var(--fin-ink-soft)]"><Mic className="h-4 w-4" />Repetir</button> : null}
+          {onReintentar ? <button type="button" onClick={onReintentar} className="flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-[15px] font-semibold text-[var(--fin-ink-soft)]"><Mic className="h-4 w-4" />Repetir</button> : null}
           <button type="button" onClick={onCancelar} className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3 font-semibold text-[var(--fin-ink-soft)]">Cancelar</button>
-          <button type="button" onClick={() => void confirmar()} disabled={!camposCompletos || guardando} className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 font-semibold text-[var(--fin-on-accent)] disabled:opacity-35"><Check className="h-4 w-4" />{guardando ? 'Guardando…' : etiquetaBoton}</button>
+          <button type="button" onClick={() => void confirmar()} disabled={!camposCompletos || guardando} className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 font-semibold text-[var(--fin-on-accent)] disabled:opacity-35"><Check className="h-4 w-4" />{guardando ? 'Guardando…' : etiquetaBoton}</button>
         </div>
       </div>
     </div>

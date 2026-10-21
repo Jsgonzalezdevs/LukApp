@@ -141,7 +141,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-1.5"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2"
             >
               <item.icon
                 className="h-[22px] w-[22px] shrink-0 transition-colors"
