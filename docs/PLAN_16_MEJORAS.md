@@ -12,7 +12,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 6 | Emojis de identidad, iconos de acción, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Verificado, V8.0.2 |
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Verificado, V8.0.3 |
 | 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Verificado, V9.0.0 |
-| 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Pendiente |
+| 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Verificado, V9.1.0 |
 | 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Pendiente |
 | 11 | Asesor con propuestas editables y efectos visibles antes de confirmar presupuestos, metas y movimientos. | Pendiente |
 | 12 | Cifras y gráficas conectadas con sus movimientos; comparaciones y distinción entre real, programado y estimado. | Pendiente |
@@ -124,3 +124,18 @@ El paso 7 quedó verificado en V8.0.3; los pasos 8 a 16 continúan pendientes. E
 - La prueba del parser cubre CSV delimitado y entrecomillado, valores y fechas Excel, OCR, filas sin encabezados y datos ambiguos. Pruebas del hook confirman que CSV se procesa sin solicitud al servidor y que las filas OCR requieren revisión; pruebas de saldos y repositorio cubren exclusión y persistencia/lectura de la marca histórica.
 - Revisión visual local en `/dinero/extractos`: archivos admitidos, cuenta y opción histórica visibles en tema oscuro; no se guardó ningún movimiento de prueba.
 - Suite completa: 131 archivos y 1.460 pruebas aprobadas. TypeScript/Vite aprobados; lint conserva las seis advertencias previas.
+
+## Cierre del paso 9: V9.1.0
+
+- Más incluye Revisar movimientos con 🧭 y reúne señales de cobros posiblemente repetidos o inusuales, filas de extractos marcadas con confianza media/baja, confirmaciones de posibles duplicados y transferencias que el analista excluyó como traslados propios.
+- Cada tarjeta conserva el archivo de origen cuando aplica, el movimiento vinculado, su fecha y monto; permite abrir el detalle para corregirlo, marcarlo revisado o descartar el aviso, y muestra la resolución en el historial.
+- Las altas de movimientos y revisiones se guardan en un solo lote local y remoto; las decisiones también usan la cola sin conexión. No se modifica el saldo al resolver un aviso.
+- IndexedDB sube de versión 6 a 7. La prueba parte de una base v6 ya abierta, crea la tienda nueva y confirma que la bandeja se puede guardar y leer tras la actualización.
+- La migración `20261021122018_bandeja_revisiones_dudosas.sql` crea `revisiones_dudosas`, activa RLS con políticas de lectura/escritura por usuario y extiende `aplicar_cambios_financieros` para mantener la importación y su revisión atómicas. Está aplicada al proyecto `trrlknwvplhbntxzprud`.
+- La prueba SQL remota confirmó aislamiento entre usuarios, guardado junto al movimiento, reversión completa, rechazo de tablas ajenas e idempotencia. El asesor de seguridad no reporta hallazgos nuevos en esta tabla; los avisos restantes pertenecen a objetos anteriores.
+- Revisión visual local: Más > Revisar movimientos, estado vacío legible y emojis visibles como identidad; no se crearon registros de prueba en la cuenta abierta. Las pruebas de componente cubren resolución, procedencia del archivo y apertura del movimiento.
+- Suite final: 134 archivos y 1.471 pruebas aprobadas. TypeScript y Vite aprobados; lint conserva las seis advertencias previas. `git diff --check` aprobado.
+
+## Siguiente paso
+
+Implementar y revisar el paso 10: detectar suscripciones desde patrones, pedir confirmación y mostrar próximos cobros y costo mensual/anual.

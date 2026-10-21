@@ -6,9 +6,11 @@ import { RepositorioMemoria, instantaneaVacia } from './repositorio';
 import { RepositorioConCola } from './repositorioConCola';
 import { ColaCambios } from './colaCambios';
 import type { Cajita, CajitaMovimiento } from './modelos';
+import type { RevisionDudosa } from './revisiones';
 
 const cuenta = (id: string): Cajita => ({ id, nombre: id, tipo: 'cuenta', icon: 'Wallet', metaCop: null, tasaEaPct: null, createdAt: '2026-10-20T00:00:00Z', archivedAt: null });
 const movimiento = (id: string): CajitaMovimiento => ({ id, cajitaId: 'banco', kind: 'deposito', deltaCop: 1000, categoria: null, occurredOn: '2026-10-20', nota: '', createdAt: '2026-10-20T00:00:00Z' });
+const revision = (id: string): RevisionDudosa => ({ id, tipo: 'documento', estado: 'pendiente', referenciaId: 'tx-1', titulo: 'Confirma la lectura', detalle: 'Revisa el monto', documento: 'octubre.pdf', resolucion: null, createdAt: '2026-10-20T00:00:00Z', updatedAt: '2026-10-20T00:00:00Z' });
 
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
@@ -16,6 +18,27 @@ beforeEach(() => {
 });
 
 describe('guardado financiero atómico', () => {
+  it('actualiza una base existente de la versión anterior para crear la tienda de revisiones', async () => {
+    const antigua = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('antes-de-revisiones', 6);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        for (const nombre of ['transacciones', 'cajitas', 'cajitaMovimientos', 'metas', 'categorias', 'contactos', 'recurrentes']) {
+          db.createObjectStore(nombre, { keyPath: 'id' });
+        }
+        db.createObjectStore('presupuestos', { keyPath: 'categoria' });
+        db.createObjectStore('colaPendiente', { autoIncrement: true });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    antigua.close();
+
+    const repo = new RepositorioIndexedDB('antes-de-revisiones');
+    await repo.aplicarCambios({ guardar: { revisiones: [revision('documento:upgrade')] } });
+    expect((await repo.cargarTodo()).revisiones).toEqual([revision('documento:upgrade')]);
+  });
+
   it('revierte también las primeras escrituras si un registro no se puede almacenar', async () => {
     const repo = new RepositorioIndexedDB('atomico');
     await repo.guardarCajita(cuenta('original'));
@@ -36,6 +59,20 @@ describe('guardado financiero atómico', () => {
     await reabierto.sincronizar();
     expect(await reabierto.cambiosPendientes()).toBe(0);
     expect((await remoto.cargarTodo()).cajitaMovimientos).toHaveLength(1);
+  });
+
+  it('mantiene revisiones documentales tras recargar y sincroniza su decisión', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+    const remoto = new RepositorioMemoria();
+    const repo = new RepositorioConCola(new RepositorioIndexedDB('revisiones'), remoto, new ColaCambios('revisiones'));
+    await repo.aplicarCambios({ guardar: { revisiones: [revision('documento:tx-1')] } });
+    const reabierto = new RepositorioConCola(new RepositorioIndexedDB('revisiones'), remoto, new ColaCambios('revisiones'));
+    expect((await reabierto.cargarTodo()).revisiones).toEqual([revision('documento:tx-1')]);
+
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    await reabierto.sincronizar();
+    expect((await remoto.cargarTodo()).revisiones).toEqual([revision('documento:tx-1')]);
+    expect(await reabierto.cambiosPendientes()).toBe(0);
   });
 
   it('un rechazo de permisos no queda guardado localmente como si hubiera funcionado', async () => {

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Cajita, CajitaTipo } from './modelos';
+import type { RevisionDudosa } from './revisiones';
 import { ES_PASIVO } from './modelos';
 import { RepositorioSupabase } from './repositorioSupabase';
 
@@ -82,6 +83,47 @@ describe('RepositorioSupabase — el tipo de una cajita', () => {
     await new RepositorioSupabase(cliente, 'u1').guardarCajita(tarjeta);
 
     expect(guardado[0]).toMatchObject({ tipo: 'tarjeta', user_id: 'u1' });
+  });
+});
+
+describe('RepositorioSupabase — bandeja de revisión', () => {
+  const revision: RevisionDudosa = {
+    id: 'documento:tx-1', tipo: 'documento', estado: 'pendiente', referenciaId: 'tx-1',
+    titulo: 'Confirma la lectura', detalle: 'Revisa el monto.', documento: 'octubre.pdf',
+    resolucion: null, createdAt: '2026-10-20T00:00:00Z', updatedAt: '2026-10-20T00:00:00Z',
+  };
+
+  it('mapea decisiones guardadas al formato de la tabla dentro del lote atómico', async () => {
+    const argumentos: unknown[][] = [];
+    const rpc = vi.fn(async (...args: unknown[]) => { argumentos.push(args); return { error: null }; });
+    const cliente = { rpc } as unknown as SupabaseClient;
+    await new RepositorioSupabase(cliente, 'u1').aplicarCambios({ guardar: { revisiones: [revision] } });
+    const parametros = argumentos[0]?.[1] as { cambios: { guardar: Record<string, unknown[]> } };
+    const cambios = parametros.cambios;
+    expect(cambios.guardar.revisiones_dudosas).toEqual([{
+      id: revision.id, user_id: 'u1', tipo: 'documento', estado: 'pendiente',
+      referencia_id: 'tx-1', titulo: 'Confirma la lectura', detalle: 'Revisa el monto.',
+      documento: 'octubre.pdf', resolucion: null,
+      created_at: revision.createdAt, updated_at: revision.updatedAt,
+    }]);
+  });
+
+  it('lee los estados de revisión persistidos desde Supabase', async () => {
+    const filaRevision = {
+      id: revision.id, tipo: revision.tipo, estado: revision.estado,
+      referencia_id: revision.referenciaId, titulo: revision.titulo, detalle: revision.detalle,
+      documento: revision.documento, resolucion: revision.resolucion,
+      created_at: revision.createdAt, updated_at: revision.updatedAt,
+    };
+    const cliente = {
+      from: (tabla: string) => ({
+        select: () => ({
+          eq: () => ({ order: () => ({ range: async () => ({ data: tabla === 'revisiones_dudosas' ? [filaRevision] : [], count: 0, error: null }) }) }),
+        }),
+      }),
+    } as unknown as SupabaseClient;
+    const datos = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+    expect(datos.revisiones).toEqual([revision]);
   });
 });
 

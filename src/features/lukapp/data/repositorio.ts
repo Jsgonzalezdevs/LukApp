@@ -4,6 +4,7 @@ import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
+import type { RevisionDudosa } from './revisiones';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -68,6 +69,7 @@ export interface Instantanea {
   contactos: Contacto[];
   presupuestos: Presupuesto[];
   recurrentes: Recurrente[];
+  revisiones: RevisionDudosa[];
 }
 
 /** Un mismo cambio de dinero se confirma entero o no se confirma. */
@@ -87,6 +89,7 @@ export const instantaneaVacia = (): Instantanea => ({
   contactos: [],
   presupuestos: [],
   recurrentes: [],
+  revisiones: [],
 });
 
 /**
@@ -129,6 +132,7 @@ export class RepositorioMemoria implements Repositorio {
       // between the store and its reader.
       presupuestos: this.datos.presupuestos.map((p) => ({ ...p })),
       recurrentes: this.datos.recurrentes.map((r) => ({ ...r })),
+      revisiones: this.datos.revisiones.map((r) => ({ ...r })),
       contactos: this.datos.contactos.map((c) => ({
         ...c,
         alias: [...c.alias],

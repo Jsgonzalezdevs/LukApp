@@ -16,7 +16,9 @@ import {
 } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Category } from '../types';
+import type { RevisionDudosa } from '../data/revisiones';
 import { planearImportacion } from '../analista/aMovimientos';
+import { crearRevisionesImportacion } from '../analista/revisionesImportacion';
 import type { Trabajo } from '../analista/useAnalista';
 import { useAnalista } from '../analista/useAnalista';
 import { AnalistaReporte } from './AnalistaReporte';
@@ -26,7 +28,7 @@ interface AnalistaViewProps {
   cuentaInicialId?: string | null;
   existentes: readonly Transaction[];
   cuentas: readonly { id: string; nombre: string }[];
-  onImportar: (nuevos: Transaction[]) => ResultadoGuardado;
+  onImportar: (nuevos: Transaction[], revisiones?: RevisionDudosa[]) => ResultadoGuardado;
   onCompletar: (movimiento: Transaction) => ResultadoGuardado;
 }
 
@@ -104,7 +106,7 @@ interface TrabajoListoProps {
   trabajo: Trabajo;
   existentes: readonly Transaction[];
   cuentaId: string | null;
-  onImportar: (nuevos: Transaction[]) => ResultadoGuardado;
+  onImportar: (nuevos: Transaction[], revisiones?: RevisionDudosa[]) => ResultadoGuardado;
   onCompletar: (movimiento: Transaction) => ResultadoGuardado;
   modoHistorico: boolean;
   onQuitar: (id: string) => ResultadoGuardado;
@@ -127,6 +129,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   const [importado, setImportado] = useState(0);
   const [verPosibles, setVerPosibles] = useState(false);
   const [confirmarDudosos, setConfirmarDudosos] = useState(false);
+  const [revisionesGuardadas, setRevisionesGuardadas] = useState(false);
   const [aceptados, setAceptados] = useState<ReadonlySet<string>>(new Set());
   if (!trabajo.resultado) return null;
 
@@ -294,21 +297,37 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
               </div>
             ) : null}
 
-            {importado > 0 ? (
+            {revisionesGuardadas ? (
+              <p role="status" className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-in-bg)] px-3 py-3 text-[15px] font-semibold text-[var(--fin-in)]">
+                {importado > 0 ? `Importaste ${importado} movimiento${importado === 1 ? '' : 's'} y guardaste lo pendiente en Revisar movimientos.` : 'Guardamos las filas dudosas en Revisar movimientos para que puedas volver a ellas.'}
+              </p>
+            ) : importado > 0 ? (
               <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-in-bg)] px-3 py-3 text-[15px] font-semibold text-[var(--fin-in)]">
                 Importaste {importado} movimiento{importado === 1 ? '' : 's'}.
               </p>
             ) : (
               <button
                 type="button"
-                disabled={guardado.ocupado || !cuentaId || plan.nuevos.length + aceptados.size === 0 || (movimientosDudosos.length > 0 && !confirmarDudosos)}
+                disabled={guardado.ocupado || !cuentaId || (plan.nuevos.length + aceptados.size === 0 && !plan.excluidos.some((fila) => fila.exclusion === 'traslado-propio')) || (movimientosDudosos.length > 0 && !confirmarDudosos)}
                 onClick={async () => {
                   if (!cuentaId) return;
                   const extra = plan.posibles
                     .filter((p) => aceptados.has(p.clave))
                     .map((p) => p.transaccion);
                   const total = [...plan.nuevos, ...extra].map((tx) => ({ ...tx, afectaSaldo: modoHistorico ? false : tx.afectaSaldo !== false }));
-                  if (await guardado.ejecutar(() => onImportar(total))) setImportado(total.length);
+                  const revisiones = crearRevisionesImportacion({
+                    trabajoId: trabajo.id,
+                    documento: trabajo.archivo.name,
+                    transacciones: total,
+                    movimientosDudosos,
+                    posiblesConfirmados: plan.posibles.filter((fila) => aceptados.has(fila.clave)),
+                    transferenciasExcluidas: plan.excluidos.filter((fila) => fila.exclusion === 'traslado-propio'),
+                    ahora: new Date().toISOString(),
+                  });
+                  if (await guardado.ejecutar(() => onImportar(total, revisiones))) {
+                    setImportado(total.length);
+                    setRevisionesGuardadas(revisiones.length > 0);
+                  }
                 }}
                 className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
@@ -316,6 +335,8 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
                   ? 'Revisa las filas antes de importar'
                   : !cuentaId
                   ? 'Elige la cuenta para importar'
+                  : plan.nuevos.length + aceptados.size === 0 && plan.excluidos.some((fila) => fila.exclusion === 'traslado-propio')
+                  ? 'Guardar transferencias para revisar'
                   : plan.nuevos.length + aceptados.size === 0
                   ? 'Nada nuevo por importar'
                   : `${modoHistorico ? 'Guardar en historial' : 'Importar'} ${plan.nuevos.length + aceptados.size} movimiento${

@@ -41,6 +41,7 @@ export const PANELES_AJUSTES = [
     ayuda: 'Arma vacas para paseos, asados o salidas y salda deudas',
   },
   { id: 'extractos', label: 'Importar extractos', ayuda: 'Sube el PDF que te manda el banco' },
+  { id: 'revisiones', label: 'Revisar movimientos', ayuda: 'Confirma avisos y conserva el motivo de cada decisión' },
   { id: 'atajos', label: 'Registro automático', ayuda: 'Que Apple Pay anote el gasto solo' },
   { id: 'gmf', label: 'Impuesto 4x1000', ayuda: 'Cuánto te está costando y en qué cuenta' },
   {

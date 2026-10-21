@@ -6,6 +6,7 @@ import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
+import type { RevisionDudosa } from './revisiones';
 import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
 import { ES_PASIVO } from './modelos';
 
@@ -138,6 +139,7 @@ export class RepositorioSupabase implements Repositorio {
       contactos,
       presupuestos,
       recurrentes,
+      revisiones,
     ] = await Promise.all([
       this.leerTabla<FilaTransaccion>('transacciones'),
       this.leerTabla<FilaCajita>('cajitas'),
@@ -147,6 +149,7 @@ export class RepositorioSupabase implements Repositorio {
       this.leerTabla<FilaContacto>('contactos'),
       this.leerTabla<Parameters<typeof aPresupuesto>[0]>('presupuestos', 'categoria'),
       this.leerTabla<Parameters<typeof aRecurrente>[0]>('recurrentes'),
+      this.leerTabla<RevisionDudosaFila>('revisiones_dudosas'),
     ]);
 
     this.fallar('No se pudieron leer los movimientos', transacciones.error);
@@ -157,6 +160,7 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudieron leer los contactos', contactos.error);
     this.fallar('No se pudieron leer los presupuestos', presupuestos.error);
     this.fallar('No se pudieron leer los recurrentes', recurrentes.error);
+    this.fallar('No se pudieron leer las revisiones', revisiones.error);
 
     return {
       transacciones: (transacciones.data ?? []).map(aTransaccion),
@@ -167,6 +171,7 @@ export class RepositorioSupabase implements Repositorio {
       contactos: (contactos.data ?? []).map(aContacto),
       presupuestos: (presupuestos.data ?? []).map(aPresupuesto),
       recurrentes: (recurrentes.data ?? []).map(aRecurrente),
+      revisiones: (revisiones.data ?? []).map(aRevision),
     };
   }
 
@@ -220,13 +225,16 @@ export class RepositorioSupabase implements Repositorio {
       contactos: guardar.contactos?.map((fila) => desdeContacto(fila, this.userId)),
       presupuestos: guardar.presupuestos?.map((p) => ({ user_id: this.userId, categoria: p.categoria, monto_cop: p.montoCop, created_at: p.createdAt })),
       recurrentes: guardar.recurrentes?.map((r) => ({ id: r.id, user_id: this.userId, nombre: r.nombre, kind: r.kind, amount_cop: r.amountCop, categoria: r.categoria, cuenta_id: r.cuentaId, dia_del_mes: r.diaDelMes, created_at: r.createdAt, archived_at: r.archivedAt })),
+      revisiones_dudosas: guardar.revisiones?.map((r) => desdeRevision(r, this.userId)),
     };
-    const borrar = Object.fromEntries(Object.entries(cambios.borrar ?? {}).map(([clave, ids]) => [clave === 'cajitaMovimientos' ? 'cajita_movimientos' : clave, ids]));
+    const borrar = Object.fromEntries(Object.entries(cambios.borrar ?? {})
+      .map(([clave, ids]) => [clave === 'cajitaMovimientos' ? 'cajita_movimientos' : clave === 'revisiones' ? 'revisiones_dudosas' : clave, ids]));
     const { error } = await this.cliente.rpc('aplicar_cambios_financieros', {
       cambios: { guardar: filas, borrar, reemplazar: Boolean(cambios.reemplazar) },
       id_operacion: cambios.idOperacion ?? nuevoId('operacion'),
     });
     this.fallar('No se pudo completar la operación financiera', error);
+
   }
 
   async guardarMovimientosConTransaccion(
@@ -316,7 +324,7 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async vaciar(): Promise<void> {
-    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [] } });
+    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [], revisiones: [] } });
   }
 }
 
@@ -523,6 +531,46 @@ const aRecurrente = (fila: {
   diaDelMes: fila.dia_del_mes,
   createdAt: fila.created_at,
   archivedAt: fila.archived_at,
+});
+
+interface RevisionDudosaFila {
+  id: string;
+  tipo: RevisionDudosa['tipo'];
+  estado: RevisionDudosa['estado'];
+  referencia_id: string | null;
+  titulo: string;
+  detalle: string;
+  documento: string | null;
+  resolucion: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const aRevision = (fila: RevisionDudosaFila): RevisionDudosa => ({
+  id: fila.id,
+  tipo: fila.tipo,
+  estado: fila.estado,
+  referenciaId: fila.referencia_id,
+  titulo: fila.titulo,
+  detalle: fila.detalle,
+  documento: fila.documento,
+  resolucion: fila.resolucion,
+  createdAt: fila.created_at,
+  updatedAt: fila.updated_at,
+});
+
+const desdeRevision = (revision: RevisionDudosa, userId: string) => ({
+  id: revision.id,
+  user_id: userId,
+  tipo: revision.tipo,
+  estado: revision.estado,
+  referencia_id: revision.referenciaId,
+  titulo: revision.titulo,
+  detalle: revision.detalle,
+  documento: revision.documento,
+  resolucion: revision.resolucion,
+  created_at: revision.createdAt,
+  updated_at: revision.updatedAt,
 });
 
 const aPresupuesto = (fila: {

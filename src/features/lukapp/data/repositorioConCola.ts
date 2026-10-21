@@ -306,6 +306,6 @@ export class RepositorioConCola implements Repositorio {
    * siguen, en orden, y sube todo junto cuando vuelva la señal.
    */
   async vaciar(): Promise<void> {
-    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [] } });
+    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [], revisiones: [] } });
   }
 }

@@ -26,6 +26,7 @@ import type {
 } from './modelos';
 import { ID_EFECTIVO, ID_EFECTIVO_VIEJO, claseDeCuenta, cuentaEfectivo } from './modelos';
 import type { Instantanea, Repositorio } from './repositorio';
+import type { RevisionDudosa } from './revisiones';
 import { tieneSincronizacion } from './repositorioConCola';
 import { instantaneaVacia } from './repositorio';
 import { crearRepositorio } from './crearRepositorio';
@@ -51,7 +52,8 @@ export interface Almacen {
   cambiosPendientes: number;
 
   agregarTransaccion: (tx: Transaction) => Promise<boolean>;
-  importarTransacciones: (txs: readonly Transaction[]) => Promise<boolean>;
+  importarTransacciones: (txs: readonly Transaction[], revisiones?: readonly RevisionDudosa[]) => Promise<boolean>;
+  guardarRevision: (revision: RevisionDudosa) => Promise<boolean>;
   actualizarTransaccion: (tx: Transaction) => Promise<boolean>;
   borrarTransaccion: (id: string) => Promise<boolean>;
 
@@ -490,10 +492,24 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
   );
 
   const importarTransacciones = useCallback(
-    async (txs: readonly Transaction[]) => {
-      if (txs.length === 0) return true;
-      return aplicar({ ...datosActuales.current, transacciones: [...txs, ...datosActuales.current.transacciones] }, () =>
-        repo.guardarTransacciones(txs),
+    async (txs: readonly Transaction[], revisiones: readonly RevisionDudosa[] = []) => {
+      if (txs.length === 0 && revisiones.length === 0) return true;
+      const idsRevision = new Set(revisiones.map((revision) => revision.id));
+      const siguienteRevision = [...revisiones, ...datosActuales.current.revisiones.filter((revision) => !idsRevision.has(revision.id))];
+      return aplicar(
+        { ...datosActuales.current, transacciones: [...txs, ...datosActuales.current.transacciones], revisiones: siguienteRevision },
+        () => repo.aplicarCambios({ guardar: { transacciones: [...txs], revisiones: [...revisiones] } }),
+      );
+    },
+    [aplicar, repo],
+  );
+
+  const guardarRevision = useCallback(
+    async (revision: RevisionDudosa) => {
+      const revisiones = datosActuales.current.revisiones.filter((actual) => actual.id !== revision.id);
+      return aplicar(
+        { ...datosActuales.current, revisiones: [revision, ...revisiones] },
+        () => repo.aplicarCambios({ guardar: { revisiones: [revision] } }),
       );
     },
     [aplicar, repo],
@@ -1238,6 +1254,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     cambiosPendientes,
     agregarTransaccion,
     importarTransacciones,
+    guardarRevision,
     actualizarTransaccion,
     borrarTransaccion,
     crearCajita,

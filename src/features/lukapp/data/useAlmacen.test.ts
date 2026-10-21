@@ -6,6 +6,7 @@ import type { Repositorio } from './repositorio';
 import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { saldoDeCajita } from '../lib/cajitas';
 import type { Cajita } from './modelos';
+import type { RevisionDudosa } from './revisiones';
 import { useAlmacen } from './useAlmacen';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
@@ -47,6 +48,24 @@ describe('useAlmacen', () => {
     expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['nueva']);
     // The point of the whole layer: it survives a fresh read.
     expect((await repo.cargarTodo()).transacciones).toHaveLength(1);
+  });
+
+  it('guarda una revisión de extracto aunque no haya una transacción que importar', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    const revision: RevisionDudosa = {
+      id: 'transferencia-excluida:trabajo:2026-08-06:20000:Entre mis cuentas',
+      tipo: 'transferencia', estado: 'pendiente', referenciaId: null,
+      titulo: 'Verifica una transferencia del extracto', detalle: 'Se excluyó del total.',
+      documento: 'extracto.csv', resolucion: null,
+      createdAt: '2026-08-06T12:00:00.000Z', updatedAt: '2026-08-06T12:00:00.000Z',
+    };
+    await act(async () => {
+      expect(await result.current.importarTransacciones([], [revision])).toBe(true);
+    });
+    expect(result.current.datos.revisiones).toEqual([revision]);
+    expect((await repo.cargarTodo()).revisiones).toEqual([revision]);
+    expect((await repo.cargarTodo()).transacciones).toEqual([]);
   });
 
 

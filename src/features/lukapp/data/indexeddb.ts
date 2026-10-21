@@ -4,6 +4,7 @@ import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
+import type { RevisionDudosa } from './revisiones';
 import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
@@ -22,7 +23,7 @@ const DB_NOMBRE_LOCAL = 'finanzas';
 // Bumped when a store is added: `onupgradeneeded` only fires on a version
 // change, so a device that already opened the database at v1 would otherwise
 // never get the new store.
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -33,6 +34,7 @@ const STORES = {
   contactos: 'contactos',
   presupuestos: 'presupuestos',
   recurrentes: 'recurrentes',
+  revisiones: 'revisiones',
   /**
    * Cambios hechos sin conexión, a la espera de subirse. Solo lo usa
    * `ColaCambios` (`data/colaCambios.ts`); vive en el mismo archivo de base de
@@ -89,6 +91,7 @@ export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> =
     ...datos.contactos.map((c) => destino.guardarContacto(c)),
     ...datos.presupuestos.map((p) => destino.guardarPresupuesto(p)),
     ...datos.recurrentes.map((r) => destino.guardarRecurrente(r)),
+    destino.aplicarCambios({ guardar: { revisiones: datos.revisiones } }),
   ]);
   const rechazados = resultados.filter((resultado): resultado is PromiseRejectedResult => resultado.status === 'rejected');
   if (rechazados.length > 0) {
@@ -244,6 +247,7 @@ export class RepositorioIndexedDB implements Repositorio {
       contactos,
       presupuestos,
       recurrentes,
+      revisiones,
     ] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
@@ -253,6 +257,7 @@ export class RepositorioIndexedDB implements Repositorio {
       pedir<Contacto[]>(tx.objectStore(STORES.contactos).getAll()),
       pedir<Presupuesto[]>(tx.objectStore(STORES.presupuestos).getAll()),
       pedir<Recurrente[]>(tx.objectStore(STORES.recurrentes).getAll()),
+      pedir<RevisionDudosa[]>(tx.objectStore(STORES.revisiones).getAll()),
     ]);
 
     return {
@@ -264,6 +269,7 @@ export class RepositorioIndexedDB implements Repositorio {
       contactos,
       presupuestos,
       recurrentes,
+      revisiones,
     };
   }
 

@@ -225,6 +225,7 @@ export const MesView: React.FC<MesViewProps> = ({
                   presupuestos: [],
                   metas: [],
                   recurrentes: [],
+                  revisiones: [],
                   categorias: [],
                 },
                 {},
