@@ -20,14 +20,18 @@ describe('reconocimiento de entidades financieras', () => {
     expect(entidadDeCuenta({ nombre: 'Nu Visa', tipo: 'tarjeta' })?.nombre).toBe('Nu');
   });
 
-  it('mantiene contraste AA para texto normal sobre cada fondo de marca', () => {
+  it('mantiene contraste AA, incluido el blanco sobre el rojo con su velo de lectura', () => {
     const luminancia = (hex: string) => {
       const rgb = hex.slice(1).match(/../g)!.map((par) => parseInt(par, 16) / 255).map((n) => n <= 0.04045 ? n / 12.92 : ((n + 0.055) / 1.055) ** 2.4);
       return rgb[0] * 0.2126 + rgb[1] * 0.7152 + rgb[2] * 0.0722;
     };
     for (const entidad of ENTIDADES_FINANCIERAS) {
-      const valores = [luminancia(entidad.fondo), luminancia(entidad.texto)].sort((a, b) => a - b);
-      expect((valores[1] + 0.05) / (valores[0] + 0.05), entidad.nombre).toBeGreaterThanOrEqual(4.5);
+      const velos = entidad.sombraLectura ? [entidad.sombraLectura, entidad.sombraLectura + 0.08] : [0];
+      for (const velo of velos) {
+        const fondo = '#' + entidad.fondo.slice(1).match(/../g)!.map((par) => Math.round(parseInt(par, 16) * (1 - velo)).toString(16).padStart(2, '0')).join('');
+        const valores = [luminancia(fondo), luminancia(entidad.texto)].sort((a, b) => a - b);
+        expect((valores[1] + 0.05) / (valores[0] + 0.05), entidad.nombre).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 });

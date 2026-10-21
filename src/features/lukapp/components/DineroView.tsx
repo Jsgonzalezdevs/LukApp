@@ -12,6 +12,8 @@ import { formatCop } from '../lib/formatCop';
 import { AnimatedNumber } from './AnimatedNumber';
 import { resumenTarjeta } from '../lib/tarjetas';
 import { monthKey, bogotaDate } from '../lib/localDate';
+import { FilaCuenta } from './FilaCuenta';
+import { componerCuentas } from '../lib/composicionCuentas';
 
 interface DineroViewProps {
   onAbrirHerramienta?: (panel: PanelAjustes) => void;
@@ -100,19 +102,21 @@ export const DineroView: React.FC<DineroViewProps> = ({
       ) : null}
 
       {GRUPOS.map((grupo) => {
-        const delGrupo = vivas
+        const porSaldo = vivas
           .filter((c) => grupo.tipos.includes(c.tipo) && (grupo.inversion === undefined || Boolean(c.esInversion) === grupo.inversion))
           .sort((a, b) => {
             const saldoA = saldos.get(a.id) ?? 0;
             const saldoB = saldos.get(b.id) ?? 0;
             return saldoB - saldoA;
           });
+        const delGrupo = grupo.tipos[0] === 'cuenta' ? componerCuentas(porSaldo, cuentaFavoritaId) : porSaldo;
         if (delGrupo.length === 0) return null;
 
         return (
           <section key={grupo.titulo}>
             <div className="flex items-center justify-between px-1 pb-2">
               <h2 className="text-[13px] text-[var(--fin-ink-faint)]">{grupo.titulo}</h2>
+              {grupo.tipos[0] === 'cuenta' && delGrupo.length > 2 ? <span className="text-[13px] text-[var(--fin-ink-faint)]">Por color</span> : null}
               {grupo.tipos.length === 1 && grupo.tipos[0] === 'tarjeta' ? (
                 <button
                   type="button"
@@ -124,12 +128,11 @@ export const DineroView: React.FC<DineroViewProps> = ({
               ) : null}
             </div>
 
-            {/* Una sola tarjeta con filas separadas por una línea, como la lista
- de Ajustes de iOS. Antes cada cuenta era su propia tarjeta con su
- propio borde y su propia sombra, y doce cuentas eran doce cajas
- compitiendo entre ellas. */}
-            <ul className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)]">
+            <ul className={grupo.tipos[0] === 'cuenta' ? 'cuentas-lista' : 'overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)]'}>
               {delGrupo.map((cajita, i) => {
+                if (cajita.tipo === 'cuenta') {
+                  return <li key={cajita.id}><FilaCuenta cuenta={cajita} saldo={saldos.get(cajita.id) ?? 0} privacidad={modoPrivacidad} principal={cajita.id === cuentaFavoritaId} onAbrir={onAbrir} /></li>;
+                }
                 const entidad = entidadDeCuenta(cajita);
                 const Icono = iconoDeCajita(cajita.icon);
                 const saldo = saldos.get(cajita.id) ?? 0;

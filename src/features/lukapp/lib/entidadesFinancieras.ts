@@ -8,17 +8,19 @@ interface EntidadFinanciera {
   texto: string;
   claseCuenta: ClaseCuenta;
   fuente: string;
+  sombraLectura?: number;
+  familiaColor: 'morado' | 'amarillo' | 'rojo' | 'naranja';
 }
 
 // Colores tomados de los estilos de los sitios oficiales, consultados el 21/10/2026.
 // Davivienda y DaviPlata comparten el rojo de su familia de marca.
 export const ENTIDADES_FINANCIERAS: readonly EntidadFinanciera[] = [
-  { nombre: 'Nu', alias: ['nu', 'nubank', 'nu bank'], fondo: '#820AD1', texto: '#FFFFFF', claseCuenta: 'banco', fuente: 'https://nu.com.co/' },
-  { nombre: 'Nequi', alias: ['nequi'], fondo: '#200020', texto: '#FFFFFF', claseCuenta: 'billetera', fuente: 'https://www.nequi.com.co/' },
-  { nombre: 'Bancolombia', alias: ['bancolombia', 'banco colombia'], fondo: '#FDDA24', texto: '#2C2A29', claseCuenta: 'banco', fuente: 'https://www.bancolombia.com/' },
-  { nombre: 'Davivienda', alias: ['davivienda', 'davi vivienda'], fondo: '#ED1C27', texto: '#000000', claseCuenta: 'banco', fuente: 'https://epayco.com/wp-content/uploads/2026/04/Toolkit-ePayco.pdf' },
-  { nombre: 'RappiPay', alias: ['rapi', 'rappi', 'rappipay', 'rappi pay', 'rappicuenta', 'rappi cuenta', 'rappicard'], fondo: '#FF441F', texto: '#200020', claseCuenta: 'banco', fuente: 'https://www.rappipay.co/' },
-  { nombre: 'DaviPlata', alias: ['daviplata', 'davi plata'], fondo: '#ED1C27', texto: '#000000', claseCuenta: 'billetera', fuente: 'https://conectesunegocio.daviplata.com/' },
+  { nombre: 'Nu', alias: ['nu', 'nubank', 'nu bank'], fondo: '#820AD1', familiaColor: 'morado', texto: '#FFFFFF', claseCuenta: 'banco', fuente: 'https://nu.com.co/' },
+  { nombre: 'Nequi', alias: ['nequi'], fondo: '#200020', familiaColor: 'morado', texto: '#FFFFFF', claseCuenta: 'billetera', fuente: 'https://www.nequi.com.co/' },
+  { nombre: 'Bancolombia', alias: ['bancolombia', 'banco colombia'], fondo: '#FDDA24', familiaColor: 'amarillo', texto: '#2C2A29', claseCuenta: 'banco', fuente: 'https://www.bancolombia.com/' },
+  { nombre: 'Davivienda', alias: ['davivienda', 'davi vivienda'], fondo: '#ED1C27', familiaColor: 'rojo', texto: '#FFFFFF', sombraLectura: 0.08, claseCuenta: 'banco', fuente: 'https://epayco.com/wp-content/uploads/2026/04/Toolkit-ePayco.pdf' },
+  { nombre: 'RappiPay', alias: ['rapi', 'rappi', 'rappipay', 'rappi pay', 'rappicuenta', 'rappi cuenta', 'rappicard'], fondo: '#FF441F', familiaColor: 'naranja', texto: '#200020', claseCuenta: 'banco', fuente: 'https://www.rappipay.co/' },
+  { nombre: 'DaviPlata', alias: ['daviplata', 'davi plata'], fondo: '#ED1C27', familiaColor: 'rojo', texto: '#FFFFFF', sombraLectura: 0.08, claseCuenta: 'billetera', fuente: 'https://conectesunegocio.daviplata.com/' },
 ];
 
 const normalizar = (texto: string): string => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -50,6 +52,10 @@ export const entidadDeCuenta = (cuenta: Pick<Cajita, 'nombre' | 'tipo' | 'claseC
 
 export const estiloEntidad = (entidad: EntidadFinanciera): CSSProperties => ({
   backgroundColor: entidad.fondo,
+  // La base conserva el color oficial; el velo permite leer texto blanco pequeño sobre el rojo.
+  backgroundImage: entidad.sombraLectura
+    ? `linear-gradient(115deg, rgb(0 0 0 / ${entidad.sombraLectura + 0.08}), rgb(0 0 0 / ${entidad.sombraLectura}))`
+    : undefined,
   color: entidad.texto,
   '--fin-ink': entidad.texto,
   '--fin-ink-soft': entidad.texto,
