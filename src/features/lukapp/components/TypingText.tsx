@@ -1,34 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface TypingTextProps {
   text: string;
-  speed?: number;
   className?: string;
 }
 
-export const TypingText: React.FC<TypingTextProps> = ({ text, speed = 50, className = '' }) => {
-  const [displayedText, setDisplayedText] = useState('');
-
-  useEffect(() => {
-    setDisplayedText('');
-  }, [text]);
-
-  useEffect(() => {
-    if (displayedText.length >= text.length) return;
-
-    const timer = setTimeout(() => {
-      setDisplayedText((prev) => prev + text[prev.length]);
-    }, speed);
-
-    return () => clearTimeout(timer);
-  }, [displayedText, text, speed]);
+export const TypingText: React.FC<TypingTextProps> = ({ text, className = '' }) => {
+  const movimientoReducido = useMovimientoReducido();
 
   return (
-    <span className={className}>
-      {displayedText}
-      {displayedText.length < text.length && (
-        <span className="animate-pulse">_</span>
-      )}
-    </span>
+    <motion.span key={text} className={className}
+      initial={movimientoReducido ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.16, ease: 'easeOut' }}>
+      {text}
+    </motion.span>
   );
 };

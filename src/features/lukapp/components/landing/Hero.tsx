@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   ArrowRight,
   Bus,
@@ -29,7 +30,7 @@ const BURBUJAS: { Icono: LucideIcon; color: string; x: string; y: string; dur: n
 ];
 
 export const Hero: React.FC<HeroProps> = ({ onGetStarted }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
 
   return (
     <section className="hero" aria-labelledby="titulo-lukapp">

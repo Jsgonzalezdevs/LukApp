@@ -97,7 +97,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
       <motion.div
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >

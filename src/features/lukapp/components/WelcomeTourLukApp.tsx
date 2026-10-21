@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 import React, { useLayoutEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ChevronRight, X, Wallet, MessageCircle, FileText, CreditCard, BarChart3, Zap } from 'lucide-react';
 import '../styles/WelcomeTourFinanzas.css';
 
@@ -143,7 +144,7 @@ export const WelcomeTourFinanzas: React.FC<WelcomeTourProps> = ({
 
   const current = steps[step];
   const ultimo = step === steps.length - 1;
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
 
   /* LA ALTURA DEL CUERPO
      Los seis pasos no miden lo mismo: el de cuentas lleva cuatro filas y el de

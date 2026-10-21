@@ -4,7 +4,7 @@ import { construirObligacionesFuturas, type ObligacionFutura } from '../lib/obli
 import { preparacionInicio } from '../lib/preparacionInicio';
 import { PrimerosPasos } from './PrimerosPasos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
   Eye,
@@ -28,6 +28,7 @@ import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';
 import { DecisionFinanciera } from './DecisionFinanciera';
 import type { ContextoFinanciero } from '../lib/motorFinanciero';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface InicioViewProps {
   etiquetaPeriodo: string;
@@ -129,7 +130,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   resumenPremium = null,
   onVerResumenPremium,
 }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const pagos = useMemo(() => obligaciones ?? construirObligacionesFuturas(entrada), [obligaciones, entrada]);
   const preparacion = preparacionInicio(entrada);
   const [novedadExpandida, setNovedadExpandida] = useState(false);
@@ -164,12 +165,12 @@ export const InicioView: React.FC<InicioViewProps> = ({
   }, [insights, isDismissed]);
 
   useEffect(() => {
-    if (insightsVisibles.length <= 1) return;
+    if (insightsVisibles.length <= 1 || quieto) return;
     const timer = setInterval(() => {
       setIndiceRotacion((prev) => (prev + 1) % insightsVisibles.length);
     }, 45000);
     return () => clearInterval(timer);
-  }, [insightsVisibles.length]);
+  }, [insightsVisibles.length, quieto]);
 
   const insightActual = preparacion.saldosCompletos && preparacion.primerMovimiento ? (insightsVisibles[insightsVisibles.length > 1 ? indiceRotacion : 0] ?? null) : null;
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useInView, useReducedMotion } from 'framer-motion';
+import { useInView } from 'framer-motion';
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 
 /**
  * Teclea un texto letra por letra cuando `activo` se enciende. Devuelve también
@@ -10,7 +11,7 @@ export const useTecleo = (
   activo: boolean,
   msPorLetra = 55,
 ): { visible: string; listo: boolean } => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const [largo, setLargo] = useState(0);
 
   useEffect(() => {

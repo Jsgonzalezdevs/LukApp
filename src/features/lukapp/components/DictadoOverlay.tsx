@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Check, AlertTriangle, Square } from 'lucide-react';
 import { COPY } from '../copy';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 export type FaseDictado = 'escuchando' | 'procesando' | 'revelando' | 'error';
 
@@ -51,11 +52,12 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
   onContinuar,
   onEscribir,
 }) => {
+  const movimientoReducido = useMovimientoReducido();
   const palabras = useMemo(() => texto.trim().split(/\s+/).filter(Boolean), [texto]);
 
   // Cuánto se demora cada palabra en aparecer: rápido para una frase corta,
   // pero nunca tan lento que una frase larga tarde una eternidad en revelarse.
-  const stagger = useMemo(() => Math.min(0.05, 1.1 / Math.max(1, palabras.length)), [palabras.length]);
+  const stagger = useMemo(() => movimientoReducido ? 0 : Math.min(0.05, 1.1 / Math.max(1, palabras.length)), [movimientoReducido, palabras.length]);
 
   return (
     <AnimatePresence>
@@ -64,7 +66,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
-          transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="fin-dictado-bg pointer-events-auto fixed inset-0 z-50 flex flex-col overflow-hidden rounded-t-[28px]"
           role="dialog"
           aria-modal="true"
@@ -117,9 +119,9 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 {palabras.map((palabra, i) => (
                   <React.Fragment key={`${i}-${palabra}`}>
                     <motion.span
-                      initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                      initial={movimientoReducido ? false : { opacity: 0, y: 10, filter: 'blur(4px)' }}
                       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                      transition={{ duration: 0.32, delay: i * stagger, ease: 'easeOut' }}
+                      transition={{ duration: movimientoReducido ? 0 : 0.2, delay: i * stagger, ease: 'easeOut' }}
                       className="inline-block"
                     >
                       {palabra}
@@ -133,8 +135,8 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 {fase === 'escuchando' ? (
                   <motion.span
                     className="ml-1 inline-block h-3 w-3 rounded-[var(--fin-r-pill)] bg-white/70 align-middle"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                    animate={movimientoReducido ? { opacity: 0.7 } : { opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut' }}
                     aria-hidden="true"
                   />
                 ) : null}
@@ -192,7 +194,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                         key={i}
                         className="h-3 w-3 rounded-[var(--fin-r-pill)] bg-white/80"
                         animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                        transition={{ duration: 0.9, repeat: movimientoReducido ? 0 : Infinity, delay: i * 0.15, ease: 'easeInOut' }}
                       />
                     ))
                   ) : (

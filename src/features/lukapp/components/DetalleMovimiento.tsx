@@ -66,7 +66,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
       <motion.div
         initial={{ y: 24 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
         className="fin-glass w-full max-w-md rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >

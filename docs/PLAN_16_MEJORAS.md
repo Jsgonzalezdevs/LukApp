@@ -10,7 +10,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Verificado, V7.0.0 |
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Verificado, V8.0.0 |
 | 6 | Emojis de identidad, iconos de acción, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Verificado, V8.0.2 |
-| 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Pendiente |
+| 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Verificado, V8.0.3 |
 | 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Pendiente |
 | 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Pendiente |
 | 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Pendiente |
@@ -104,3 +104,13 @@ El siguiente paso son las animaciones comunes (7); los pasos 7 a 16 continúan p
 - Por indicación del usuario, los emojis forman parte de la identidad juvenil: se recuperan en categorías, captura, movimientos, inicio, ajustes, rachas y espacios compartidos.
 - Se restaura el selector de emojis y se conservan los emojis personalizados guardados, junto con las mejoras de contraste, tipografía y controles del paso 6.
 - Verificación: 21 pruebas aprobadas (categorías, captura y versión), TypeScript y compilación Vite correctos; lint conserva seis advertencias anteriores. Revisión visual en Ajustes y selección de emoji en Categorías sin guardar datos de prueba.
+
+## Evidencia del paso 7
+
+- Las transiciones de interacción que no declaran duración heredan una curva común de 180 ms; paneles, dictado y acceso usan entradas de 200 ms y el ripple dura 220 ms.
+- `useMovimientoReducido` escucha los cambios de `prefers-reduced-motion` en vivo y alimenta `MotionConfig` en la raíz de la app; una prueba confirma la actualización inmediata y que el listener se retira al desmontar.
+- Con movimiento reducido, la Estrella queda quieta, se detienen los carruseles decorativos y los pulsos dejan de repetirse; los registros, saldos y el texto transcrito se muestran completos sin esperar animación.
+- El valor de `AnimatedNumber` aparece inmediatamente: solo anima su entrada breve al cambiar y nunca muestra un saldo viejo mientras espera.
+- En modo reducido, `MotionConfig` omite todas las animaciones de Framer Motion y el CSS acorta transiciones; las escenas decorativas repetidas se detienen y los textos se muestran completos.
+- Suite completa: 129 archivos y 1.444 pruebas aprobadas, incluida la actualización en vivo del ajuste y el retiro del listener; compilación TypeScript/Vite correcta y lint con las seis advertencias ya existentes.
+- En la revisión visual del inicio, los estados iniciales y los saldos conservan su jerarquía; no se interactuó con movimientos financieros.

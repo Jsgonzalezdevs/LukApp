@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react'
+import { MotionConfig } from 'framer-motion'
 import { BarreraErrores } from './components/BarreraErrores'
 import { LandingLukApp } from './features/lukapp/components/LandingLukApp'
+import { useMovimientoReducido } from './features/lukapp/lib/useMovimientoReducido'
 
 const SeoContenido = lazy(() => import('./features/lukapp/components/SeoContenido'))
 
@@ -47,6 +49,19 @@ const CargandoAplicacion = () => (
 )
 
 export const RaizAplicacion = () => {
+  const movimientoReducido = useMovimientoReducido()
+  return (
+    <MotionConfig
+      reducedMotion={movimientoReducido ? 'always' : 'never'}
+      skipAnimations={movimientoReducido}
+      transition={{ type: 'tween', duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+    >
+      <ContenidoAplicacion />
+    </MotionConfig>
+  )
+}
+
+const ContenidoAplicacion = () => {
   const rutaPublica = window.location.pathname.replace(/\/+$/, '') || '/'
   if (rutaPublica === '/blog' || rutaPublica.startsWith('/blog/')) {
     return <Suspense fallback={<CargandoAplicacion />}><SeoContenido /></Suspense>

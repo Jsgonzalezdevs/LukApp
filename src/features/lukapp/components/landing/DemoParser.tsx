@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useMemo, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
   Calendar,
@@ -40,7 +41,7 @@ const diaLegible = (iso: string): string => {
 
 export const DemoParser: React.FC = () => {
   const [texto, setTexto] = useState(EJEMPLOS[0]);
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
 
   /* El mismo parseTransaction que corre dentro de la app. La landing no simula
      el resultado: lo calcula, así que lo que el visitante ve aquí es

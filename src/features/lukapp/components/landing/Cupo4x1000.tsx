@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Landmark } from 'lucide-react';
 import {
   TARIFA_GMF,
@@ -23,7 +24,7 @@ const RADIO = 78;
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
 
 export const Cupo4x1000: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const { ref, enVista } = useEnPantalla<HTMLDivElement>(0.4);
   const restante = TOPE - CONSUMIDO;
 

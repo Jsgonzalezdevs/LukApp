@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 import { Reveal } from './primitivas';
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 
 interface GastoDemo {
   icono: string;
@@ -30,19 +31,28 @@ const CATEGORIAS_PANORAMA = [
 ];
 
 export const SecuenciaAnimada: React.FC = () => {
+  const movimientoReducido = useMovimientoReducido();
   const [pasoIdx, setPasoIdx] = useState(0);
   const [cuadrosLlenos, setCuadrosLlenos] = useState(1);
 
   // Ciclo para los gastos deslizantes (3.6 segundos)
   useEffect(() => {
+    if (movimientoReducido) {
+      setPasoIdx(0);
+      return;
+    }
     const timer = setInterval(() => {
       setPasoIdx((prev) => (prev + 1) % GASTOS_DEMO.length);
     }, 3600);
     return () => clearInterval(timer);
-  }, []);
+  }, [movimientoReducido]);
 
   // Animación al ritmo perfecto cuadrito por cuadrito (420ms por cuadrito)
   useEffect(() => {
+    if (movimientoReducido) {
+      setCuadrosLlenos(21);
+      return;
+    }
     let timer: ReturnType<typeof setTimeout>;
 
     if (cuadrosLlenos >= 21) {
@@ -58,7 +68,7 @@ export const SecuenciaAnimada: React.FC = () => {
     }
 
     return () => clearTimeout(timer);
-  }, [cuadrosLlenos]);
+  }, [cuadrosLlenos, movimientoReducido]);
 
   const gastoActual = GASTOS_DEMO[pasoIdx];
 
@@ -199,11 +209,11 @@ export const SecuenciaAnimada: React.FC = () => {
               }}
             >
               <motion.div
-                animate={{
+                animate={movimientoReducido ? { x: 0 } : {
                   x: [0, -82, -164, -246, 0],
                 }}
                 transition={{
-                  repeat: Infinity,
+                  repeat: movimientoReducido ? 0 : Infinity,
                   duration: 14,
                   ease: 'easeInOut',
                 }}
@@ -214,7 +224,7 @@ export const SecuenciaAnimada: React.FC = () => {
                   <motion.div
                     key={`${cat.id}-${idx}`}
                     style={{ height: `${cat.altura}px` }}
-                    whileHover={{ y: -4 }}
+                    whileHover={movimientoReducido ? undefined : { y: -4 }}
                     className="flex w-[68px] sm:w-[76px] shrink-0 flex-col items-center justify-between rounded-[22px] sm:rounded-[24px] border border-[var(--lp-line)] bg-[var(--lp-bg)] p-2.5 shadow-[0_12px_30px_-6px_rgba(0,0,0,0.07)] dark:shadow-[0_12px_30px_-6px_rgba(0,0,0,0.4)]"
                   >
                     {/* Emoji superior con fondo circular tintado */}

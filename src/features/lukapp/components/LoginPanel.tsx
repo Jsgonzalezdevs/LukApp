@@ -22,6 +22,7 @@ import type { Tema } from '../data/useTema';
 import { BrandMark } from './BrandMark';
 import { TemaToggle } from './TemaToggle';
 import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface LoginPanelProps {
   sesion: Sesion;
@@ -45,6 +46,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   modoInicial,
   onVolverInicio,
 }) => {
+  const movimientoReducido = useMovimientoReducido();
   const [modo, setModo] = useState<Modo>(() => modoInicial ?? (sesion.enRecuperacion ? 'actualizar' : 'entrar'));
   const [recordarme, setRecordarme] = useState(() => {
     try {
@@ -171,22 +173,22 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       <div className="fin-aurora" aria-hidden="true" />
 
       <motion.div
-        animate={{
+        animate={movimientoReducido ? { scale: 1, rotate: 0, opacity: 0.35 } : {
           scale: [1, 1.2, 1],
           rotate: [0, 90, 0],
           opacity: [0.35, 0.6, 0.35],
         }}
-        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 16, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut' }}
         className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-[var(--fin-r-pill)] bg-gradient-to-br from-amber-500/25 via-sky-500/15 to-transparent blur-[120px]"
         aria-hidden="true"
       />
       <motion.div
-        animate={{
+        animate={movimientoReducido ? { scale: 1, rotate: 0, opacity: 0.3 } : {
           scale: [1, 1.25, 1],
           rotate: [0, -90, 0],
           opacity: [0.3, 0.55, 0.3],
         }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        transition={{ duration: 18, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut', delay: 2 }}
         className="pointer-events-none absolute -bottom-40 -right-40 h-[550px] w-[550px] rounded-[var(--fin-r-pill)] bg-gradient-to-tl from-emerald-500/25 via-amber-500/15 to-transparent blur-[130px]"
         aria-hidden="true"
       />
@@ -215,7 +217,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-[27rem]"
       >
         {/* Brand Header */}

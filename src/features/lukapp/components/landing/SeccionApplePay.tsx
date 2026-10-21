@@ -2,22 +2,28 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Play, Pause, Smartphone, Wand2, Zap } from 'lucide-react';
 import { Reveal } from './primitivas';
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 
 const URL_ATAJO_ICLOUD = 'https://www.icloud.com/shortcuts/5331c6951e0e411c96a6bf39adaeb95c';
 
 export const SeccionApplePay: React.FC = () => {
+  const movimientoReducido = useMovimientoReducido();
   const [versionIos, setVersionIos] = useState<'actual' | 'beta'>('actual');
   const [animandoDemo, setAnimandoDemo] = useState(true);
   const [pasoVisual, setPasoVisual] = useState(0);
 
   // Animación interactiva de la demo de pantalla de iPhone
   React.useEffect(() => {
+    if (movimientoReducido) {
+      setPasoVisual(0);
+      return;
+    }
     if (!animandoDemo) return;
     const interval = setInterval(() => {
       setPasoVisual((prev) => (prev + 1) % 4);
     }, 2800);
     return () => clearInterval(interval);
-  }, [animandoDemo]);
+  }, [animandoDemo, movimientoReducido]);
 
   return (
     <section className="relative w-full overflow-hidden py-20 sm:py-28" id="apple-pay">

@@ -186,7 +186,11 @@ export interface LukAppMainProps {
   permitirConsolaEnProduccion?: boolean;
 }
 
-export const LukAppMain: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirConsolaEnProduccion }) => {
+export const LukAppMain: React.FC<LukAppMainProps> = (props) => {
+  return <LukAppContenido {...props} />;
+};
+
+const LukAppContenido: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirConsolaEnProduccion }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
 

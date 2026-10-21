@@ -244,7 +244,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
             className="mt-6 text-[var(--fin-ink)]"
             style={{ font: 'var(--fin-t-titulo-xl)', letterSpacing: 'var(--fin-track-titulo-xl)' }}
           >
-            <TypingText text={actual.titulo} speed={40} />
+            <TypingText text={actual.titulo} />
           </h2>
           <p className="mt-2 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
             {actual.ayuda}

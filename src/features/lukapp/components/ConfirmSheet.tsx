@@ -197,7 +197,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
         onSubmit={handleSubmit}
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         // `overflow-x-hidden` es la red, no el arreglo: sin él la hoja se puede
         // arrastrar de lado. Lo que impide de verdad que se corra es que ningún
         // campo desborde — ver la regla de input[type=date] en lukapp.css.

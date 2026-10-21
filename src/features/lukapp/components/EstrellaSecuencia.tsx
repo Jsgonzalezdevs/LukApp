@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { EstrellaAnimada, type EstrellaAnimation, type EstrellaEmotion } from './EstrellaAnimada';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface EstrellaSecuenciaProps {
   className?: string;
@@ -59,17 +60,22 @@ export const EstrellaSecuencia: React.FC<EstrellaSecuenciaProps> = ({
   className = '',
   size = 240,
 }) => {
+  const movimientoReducido = useMovimientoReducido();
   const [stepIndex, setStepIndex] = useState(0);
 
   const currentStep = SECUENCIA[stepIndex];
 
   useEffect(() => {
+    if (movimientoReducido) {
+      setStepIndex(0);
+      return;
+    }
     const timer = setTimeout(() => {
       setStepIndex((prev) => (prev + 1) % SECUENCIA.length);
     }, currentStep.duration);
 
     return () => clearTimeout(timer);
-  }, [stepIndex, currentStep.duration]);
+  }, [stepIndex, currentStep.duration, movimientoReducido]);
 
   return (
     <div

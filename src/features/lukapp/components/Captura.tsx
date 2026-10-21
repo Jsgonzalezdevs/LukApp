@@ -1,6 +1,7 @@
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 import { useCapturaEscritorio } from '../hooks/useCapturaEscritorio';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Ear, Keyboard, Loader2, Mic, Sparkles, Star, Wallet, X } from 'lucide-react';
 import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { etiquetaTipoCajita, type Cajita } from '../data/modelos';
@@ -69,7 +70,7 @@ export const Captura: React.FC<CapturaProps> = ({
   onReintentarVoz,
 }) => {
   const escritorio = useCapturaEscritorio();
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const dialogoRef = useRef<HTMLDivElement>(null);
   const montoRef = useRef<HTMLInputElement>(null);
   const focoAnterior = useRef(document.activeElement instanceof HTMLElement ? document.activeElement : null);

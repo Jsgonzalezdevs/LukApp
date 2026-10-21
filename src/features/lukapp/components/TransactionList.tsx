@@ -7,6 +7,7 @@ import { formatCop, formatSigned } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
 import { useCatalogo } from '../catalogoContexto';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 const UMBRAL_GESTO_PX = 84;
 const RECORRIDO_GESTO_PX = 128;
@@ -89,6 +90,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
 }) => {
   const catalogo = useCatalogo();
   const haptic = useHapticFeedback();
+  const movimientoReducido = useMovimientoReducido();
 
   if (transactions.length === 0) {
     return (
@@ -101,8 +103,8 @@ export const TransactionList: React.FC<TransactionListProps> = ({
         <motion.span
           className="mb-2 flex justify-center text-[var(--fin-ink-ghost)]"
           aria-hidden="true"
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          animate={movimientoReducido ? { y: 0 } : { y: [0, -4, 0] }}
+          transition={{ duration: 2.2, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut' }}
         >
           <Hand className="h-9 w-9" strokeWidth={1.5} />
         </motion.span>

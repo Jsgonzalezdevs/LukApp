@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 import React, { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Check, Undo2 } from 'lucide-react';
 import { debeCerrarPorDeslizamiento } from './avisoGuardadoGestos';
 
@@ -40,7 +41,7 @@ const SEGUNDOS = 5;
  * que es lo que de verdad hace falta si resultó estar mal.
  */
 export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshacer, onCerrar, estado }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const [idDeshaciendo, setIdDeshaciendo] = useState<string | null>(null);
   const [idErrorDeshacer, setIdErrorDeshacer] = useState<string | null>(null);
   const deshaciendo = guardado !== null && idDeshaciendo === guardado.id;

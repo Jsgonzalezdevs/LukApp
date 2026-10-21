@@ -1,9 +1,10 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useEffect, useRef } from 'react';
-import { motion, useInView, useReducedMotion } from 'framer-motion';
+import { motion, useInView } from 'framer-motion';
 
 /**
  * Reveal on scroll. Todo el movimiento de la landing pasa por aquí, así que
- * `useReducedMotion` se respeta en un solo sitio en vez de en cada sección.
+ * `useMovimientoReducido` se respeta en un solo sitio en vez de en cada sección.
  */
 export const Reveal: React.FC<{
   children: React.ReactNode;
@@ -11,7 +12,7 @@ export const Reveal: React.FC<{
   className?: string;
   as?: 'div' | 'section' | 'article' | 'li' | 'header';
 }> = ({ children, delay = 0, className, as = 'div' }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const Etiqueta = motion[as];
 
   return (
@@ -20,7 +21,7 @@ export const Reveal: React.FC<{
       initial={quieto ? false : { opacity: 0, y: 24 }}
       whileInView={quieto ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.2, delay, ease: 'easeOut' }}
     >
       {children}
     </Etiqueta>
@@ -45,7 +46,7 @@ export const Contador: React.FC<{
 }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const enVista = useInView(ref, { once: true, amount: 0.5 });
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
 
   useEffect(() => {
     const nodo = ref.current;

@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-react';
 import type { Sesion } from '../../data/useSesion';
 import { Reveal } from './primitivas';
@@ -20,7 +21,7 @@ interface RegistroProps {
 }
 
 export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
   const [usuario, setUsuario] = useState('');

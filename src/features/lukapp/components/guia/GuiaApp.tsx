@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import type { PasoGuia } from './pasos';
 
 interface GuiaAppProps {
@@ -46,7 +47,7 @@ const igual = (a: Caja | null, b: Caja | null): boolean => {
  * se sostiene solo; lo que se pierde es el dedo que señala, no la explicación.
  */
 export const GuiaApp: React.FC<GuiaAppProps> = ({ pasos, onCerrar }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const [indice, setIndice] = useState(0);
   const [caja, setCaja] = useState<Caja | null>(null);
   const botonRef = useRef<HTMLButtonElement>(null);

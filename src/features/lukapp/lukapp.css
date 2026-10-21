@@ -503,6 +503,15 @@
 /* Anyone who asked the system to stop animating means it — the aurora is pure
    decoration and has no business overriding that. */
 @media (prefers-reduced-motion: reduce) {
+  html.fin-html *,
+  html.fin-html *::before,
+  html.fin-html *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
   .fin-aurora::before,
   .fin-aurora::after {
     animation: none;

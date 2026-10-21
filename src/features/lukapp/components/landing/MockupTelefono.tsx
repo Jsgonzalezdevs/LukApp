@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { animate, motion, useReducedMotion } from 'framer-motion';
+import { animate, motion } from 'framer-motion';
 import { ChevronDown, Mic, Search, Settings2 } from 'lucide-react';
 import { TransactionList } from '../TransactionList';
 import { CATALOGO_BASE } from '../../categorias';
@@ -61,7 +62,7 @@ type Fase = 'tecleando' | 'reconocido' | 'aplicado' | 'reiniciando' | 'reapareci
  * desde la paleta de la landing.
  */
 export const MockupTelefono: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const { ref, enVista } = useEnPantalla<HTMLDivElement>(0.25);
 
   const [paso, setPaso] = useState(0);
