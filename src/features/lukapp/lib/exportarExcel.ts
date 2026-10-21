@@ -82,6 +82,7 @@ export const generarExcelFinanciero = (
    <Column ss:Width="110"/>
    <Column ss:Width="220"/>
    <Column ss:Width="130"/>
+   <Column ss:Width="100"/>
    <Row ss:Height="24">
     <Cell ss:StyleID="Header"><Data ss:Type="String">Fecha</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Tipo</Data></Cell>
@@ -89,6 +90,7 @@ export const generarExcelFinanciero = (
     <Cell ss:StyleID="Header"><Data ss:Type="String">Categoría</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Descripción</Data></Cell>
     <Cell ss:StyleID="Header"><Data ss:Type="String">Cuenta</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Afecta saldo</Data></Cell>
    </Row>
    ${ordenadas
      .map(
@@ -100,6 +102,7 @@ export const generarExcelFinanciero = (
     <Cell><Data ss:Type="String">${escaparXml(tx.category)}</Data></Cell>
     <Cell><Data ss:Type="String">${escaparXml(tx.description || tx.rawTranscript)}</Data></Cell>
     <Cell><Data ss:Type="String">${escaparXml(nombreCuenta(tx.cuentaId))}</Data></Cell>
+    <Cell ss:StyleID="Center"><Data ss:Type="String">${tx.afectaSaldo === false ? 'No' : 'Sí'}</Data></Cell>
    </Row>`,
      )
      .join('')}

@@ -137,6 +137,8 @@ export interface Transaction {
    * totals — they simply do not move any balance.
    */
   cuentaId: string | null;
+  /** False for imported historical rows kept for reports without changing today's account balance. */
+  afectaSaldo?: boolean;
   /** The untouched dictation, kept so a mis-parse can always be reconstructed. */
   rawTranscript: string;
   /** Compra diferida: la deuda total y su cuota mensual no son lo mismo. */

@@ -332,6 +332,7 @@ interface FilaTransaccion {
   description: string;
   occurred_on: string;
   cuenta_id: string | null;
+  afecta_saldo?: boolean | null;
   raw_transcript: string;
   cuotas_total: number | null;
   cuota_cop: number | null;
@@ -348,6 +349,7 @@ const aTransaccion = (fila: FilaTransaccion): Transaction => {
     description: fila.description,
     occurredOn: fila.occurred_on,
     cuentaId: fila.cuenta_id,
+    afectaSaldo: fila.afecta_saldo !== false,
     rawTranscript: fila.raw_transcript,
     cuotasTotal: esFinanciado ? fila.cuotas_total : null,
     cuotaCop: esFinanciado && fila.cuota_cop !== null ? Number(fila.cuota_cop) : null,
@@ -366,6 +368,7 @@ const desdeTransaccion = (tx: Transaction, userId: string) => {
     description: tx.description,
     occurred_on: tx.occurredOn,
     cuenta_id: tx.cuentaId,
+    afecta_saldo: tx.afectaSaldo !== false,
     raw_transcript: tx.rawTranscript,
     cuotas_total: esFinanciado ? tx.cuotasTotal : null,
     cuota_cop: esFinanciado && typeof tx.cuotaCop === 'number' && tx.cuotaCop > 0 ? tx.cuotaCop : null,

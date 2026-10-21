@@ -190,8 +190,13 @@ describe('aCsv', () => {
 
   it('trae encabezados legibles', () => {
     expect(aCsv(conDatos(), nombreDeCuenta).split('\n')[0]).toBe(
-      'Fecha;Tipo;Monto;Categoría;Descripción;Cuenta',
+      'Fecha;Tipo;Monto;Categoría;Descripción;Cuenta;Afecta saldo',
     );
+  });
+
+  it('conserva en el CSV si un movimiento histórico modifica el saldo', () => {
+    const csv = aCsv(conDatos({ transacciones: [tx({ afectaSaldo: false })] }), nombreDeCuenta);
+    expect(csv.split('\n')[1]).toMatch(/;No$/);
   });
 
   it('sin movimientos deja solo el encabezado', () => {

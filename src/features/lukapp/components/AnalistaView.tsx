@@ -106,6 +106,7 @@ interface TrabajoListoProps {
   cuentaId: string | null;
   onImportar: (nuevos: Transaction[]) => ResultadoGuardado;
   onCompletar: (movimiento: Transaction) => ResultadoGuardado;
+  modoHistorico: boolean;
   onQuitar: (id: string) => ResultadoGuardado;
   contraido: boolean;
   onToggle: (id: string) => void;
@@ -117,6 +118,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   cuentaId,
   onImportar,
   onCompletar,
+  modoHistorico,
   onQuitar,
   contraido,
   onToggle,
@@ -124,6 +126,7 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
   const guardado = useGuardadoFinanciero();
   const [importado, setImportado] = useState(0);
   const [verPosibles, setVerPosibles] = useState(false);
+  const [confirmarDudosos, setConfirmarDudosos] = useState(false);
   const [aceptados, setAceptados] = useState<ReadonlySet<string>>(new Set());
   if (!trabajo.resultado) return null;
 
@@ -282,10 +285,12 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             {movimientosDudosos.length > 0 && importado === 0 ? (
               <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] p-3">
                 <p className="text-[13px] leading-relaxed text-[var(--fin-out)]">
-                  Hay {movimientosDudosos.length} movimiento{movimientosDudosos.length === 1 ? '' : 's'}
-                  {' '}que no se leyó{movimientosDudosos.length === 1 ? '' : 'eron'} con certeza.
-                  Revisa esas filas y no se importarán automáticamente para evitar alterar tus totales.
+                  La foto puede haber confundido {movimientosDudosos.length === 1 ? 'esta cifra' : 'algunas cifras'}. Comprueba fecha, detalle y monto en cada fila antes de importar.
                 </p>
+                <label className="mt-3 flex items-start gap-2 text-[13px] font-semibold text-[var(--fin-out)]">
+                  <input type="checkbox" checked={confirmarDudosos} onChange={(evento) => setConfirmarDudosos(evento.target.checked)} className="mt-0.5 h-4 w-4" />
+                  Revisé los movimientos reconocidos y quiero importarlos
+                </label>
               </div>
             ) : null}
 
@@ -296,24 +301,24 @@ const TrabajoListo: React.FC<TrabajoListoProps> = ({
             ) : (
               <button
                 type="button"
-                disabled={guardado.ocupado || !cuentaId || plan.nuevos.length + aceptados.size === 0 || movimientosDudosos.length > 0}
+                disabled={guardado.ocupado || !cuentaId || plan.nuevos.length + aceptados.size === 0 || (movimientosDudosos.length > 0 && !confirmarDudosos)}
                 onClick={async () => {
                   if (!cuentaId) return;
                   const extra = plan.posibles
                     .filter((p) => aceptados.has(p.clave))
                     .map((p) => p.transaccion);
-                  const total = [...plan.nuevos, ...extra];
+                  const total = [...plan.nuevos, ...extra].map((tx) => ({ ...tx, afectaSaldo: modoHistorico ? false : tx.afectaSaldo !== false }));
                   if (await guardado.ejecutar(() => onImportar(total))) setImportado(total.length);
                 }}
                 className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)] disabled:opacity-30"
               >
-                {movimientosDudosos.length > 0
-                  ? 'Revisión necesaria antes de importar'
+                {movimientosDudosos.length > 0 && !confirmarDudosos
+                  ? 'Revisa las filas antes de importar'
                   : !cuentaId
                   ? 'Elige la cuenta para importar'
                   : plan.nuevos.length + aceptados.size === 0
                   ? 'Nada nuevo por importar'
-                  : `Importar ${plan.nuevos.length + aceptados.size} movimiento${
+                  : `${modoHistorico ? 'Guardar en historial' : 'Importar'} ${plan.nuevos.length + aceptados.size} movimiento${
                       plan.nuevos.length + aceptados.size === 1 ? '' : 's'
                     }`}
               </button>
@@ -400,6 +405,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
   useArchivoPwa(analista.analizarArchivos);
   const [cuentaId, setCuentaId] = useState<string | null>(() => cuentas.some((c) => c.id === cuentaInicialId) ? cuentaInicialId! : cuentas.length === 1 ? cuentas[0].id : null);
   const [arrastrando, setArrastrando] = useState(false);
+  const [modoHistorico, setModoHistorico] = useState(false);
   const [contraidos, setContraidos] = useState<Set<string>>(new Set());
   const inputArchivo = useRef<HTMLInputElement>(null);
   const contadorArrastre = useRef(0);
@@ -469,13 +475,13 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           {arrastrando ? 'Suelta aquí' : 'Sube tus extractos'}
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Arrastra uno o varios PDF, o elígelos desde el explorador. Hasta 4 MB cada uno.
+          Arrastra PDF, fotos, Excel .xlsx o CSV; también puedes elegir varios. Hasta 4 MB cada archivo.
         </p>
 
         <input
           ref={inputArchivo}
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/jpeg,image/png,image/webp,image/tiff,.xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           multiple
           className="hidden"
           onChange={(e) => {
@@ -494,7 +500,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           className="mt-5 inline-flex items-center justify-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-7 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] transition-colors hover:bg-[var(--fin-accent-hover)]"
         >
           <FileUp className="h-4 w-4" strokeWidth={3} />
-          Elegir PDF
+          Elegir archivos
         </motion.button>
 
         <p className="mx-auto mt-4 flex max-w-sm items-start gap-2 text-left text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
@@ -503,11 +509,8 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
             strokeWidth={2.5}
             aria-hidden="true"
           />
-          <span>
-            La IA lee extractos de bancos colombianos y te muestra cada movimiento, categoría,
-            comercio y referencia para revisión antes de importarlo. Las plantillas locales siguen
-            disponibles como respaldo para Nequi, Nu, Bancolombia y Davivienda. Si un PDF tiene
-            contraseña, te la pediremos aquí mismo para desbloquear solo ese extracto; no la guardamos.
+            <span>
+            Los PDF se leen con el analista; las fotos, hojas Excel y CSV se procesan en este dispositivo. Revisa cada fila y sus posibles duplicados antes de guardar. Las plantillas locales siguen disponibles para Nequi, Nu, Bancolombia y Davivienda. Si un PDF tiene contraseña, te la pediremos aquí mismo y no la guardamos.
           </span>
         </p>
       </section>
@@ -526,8 +529,12 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
           {cuentas.map((cuenta) => <option key={cuenta.id} value={cuenta.id}>{cuenta.nombre}</option>)}
         </select>
         <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
-          Debes elegir la cuenta antes de importar: sus movimientos actualizarán ese saldo. Los que ya anotaste se pueden completar sin duplicarlos.
+          Elige la cuenta a la que pertenece el extracto. Puedes importar los movimientos como actividad actual o conservar un historial antiguo sin alterar el saldo de hoy.
         </p>
+        <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] p-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <input type="checkbox" checked={modoHistorico} onChange={(evento) => setModoHistorico(evento.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--fin-accent)]" />
+          <span><b className="text-[var(--fin-ink)]">Importar como historial antiguo</b><br />Los movimientos aparecerán en tus reportes, pero no sumarán ni restarán del saldo actual de la cuenta.</span>
+        </label>
       </section>
 
       {/* ---------- Jobs in flight ---------- */}
@@ -581,6 +588,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
               cuentaId={cuentaId}
               onImportar={onImportar}
               onCompletar={onCompletar}
+              modoHistorico={modoHistorico}
               onQuitar={analista.quitarTrabajo}
               contraido={contraidos.has(trabajo.id)}
               onToggle={toggleContraido}

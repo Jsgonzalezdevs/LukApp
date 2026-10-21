@@ -219,8 +219,13 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                           />
                         ) : null}
                       </span>
-                      <span className="block truncate text-[15px] text-[var(--fin-ink-soft)]">
-                        {entrada.nombre}
+                      <span className="flex min-w-0 items-center gap-2 text-[15px] text-[var(--fin-ink-soft)]">
+                        <span className="truncate">{entrada.nombre}</span>
+                        {tx.afectaSaldo === false ? (
+                          <span className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2 py-0.5 text-[11px] font-semibold" aria-label="Movimiento histórico; no modifica el saldo actual">
+                            <span aria-hidden="true">🕰️ </span>Histórico
+                          </span>
+                        ) : null}
                       </span>
                     </span>
 

@@ -44,7 +44,7 @@ export const emparejarComprasTarjeta = (
   const pares = new Map<string, string>();
   const movimientosUsados = new Set<string>();
   const compras = transacciones.filter(
-    (tx) => tx.kind === 'gasto' && tx.cuentaId !== null && pasivos.has(tx.cuentaId),
+    (tx) => tx.afectaSaldo !== false && tx.kind === 'gasto' && tx.cuentaId !== null && pasivos.has(tx.cuentaId),
   );
 
   // El id compartido es el contrato actual y sigue siendo válido aunque la
@@ -99,6 +99,7 @@ export const saldosPorCajita = (
   // This is what stops a balance going stale the moment something is recorded.
   for (const tx of transacciones) {
     if (!tx.cuentaId) continue;
+    if (tx.afectaSaldo === false) continue;
     if (comprasEmparejadas.has(tx.id)) continue;
     saldos.set(tx.cuentaId, (saldos.get(tx.cuentaId) ?? 0) + deltaAtribuido(tx, pasivos));
   }

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.0.0', fecha: '2026-10-21', texto: 'Importa movimientos desde PDF, fotos, Excel y CSV, revisa posibles duplicados y guarda extractos antiguos en tus reportes sin alterar el saldo actual de la cuenta.' },
   { version: '8.0.3', fecha: '2026-10-20', texto: 'Las transiciones de paneles y botones son más breves y uniformes, y los saldos aparecen apenas cambian. LukApp respeta el movimiento reducido y pausa los bucles decorativos, también si cambias esa preferencia con la app abierta.' },
   { version: '8.0.2', fecha: '2026-10-20', texto: 'Los emojis siguen siendo parte de LukApp: vuelven a categorías, ajustes, rachas y espacios compartidos, y puedes elegir el emoji de tus categorías. Conservamos los textos legibles y los controles fáciles de tocar.' },
   { version: '8.0.1', fecha: '2026-10-20', texto: 'Los iconos, controles y tarjetas comparten un mismo estilo. Los textos secundarios se leen mejor en claro y oscuro, los botones son más fáciles de tocar y los colores de entrada y salida quedan reservados para tus movimientos.' },

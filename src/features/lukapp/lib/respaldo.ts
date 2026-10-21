@@ -141,7 +141,7 @@ const escapar = (valor: string): string =>
  */
 export const aCsv = (datos: Instantanea, nombreDeCuenta: (id: string | null) => string): string => {
   const filas = [
-    ['Fecha', 'Tipo', 'Monto', 'Categoría', 'Descripción', 'Cuenta'].join(';'),
+    ['Fecha', 'Tipo', 'Monto', 'Categoría', 'Descripción', 'Cuenta', 'Afecta saldo'].join(';'),
     ...[...datos.transacciones]
       .sort((a, b) => a.occurredOn.localeCompare(b.occurredOn))
       .map((tx) =>
@@ -154,6 +154,7 @@ export const aCsv = (datos: Instantanea, nombreDeCuenta: (id: string | null) => 
           escapar(tx.category),
           escapar(tx.description),
           escapar(nombreDeCuenta(tx.cuentaId)),
+          tx.afectaSaldo === false ? 'No' : 'Sí',
         ].join(';'),
       ),
   ];

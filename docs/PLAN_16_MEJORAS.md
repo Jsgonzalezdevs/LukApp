@@ -11,7 +11,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Verificado, V8.0.0 |
 | 6 | Emojis de identidad, iconos de acción, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Verificado, V8.0.2 |
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Verificado, V8.0.3 |
-| 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Pendiente |
+| 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Verificado, V9.0.0 |
 | 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Pendiente |
 | 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Pendiente |
 | 11 | Asesor con propuestas editables y efectos visibles antes de confirmar presupuestos, metas y movimientos. | Pendiente |
@@ -46,7 +46,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 
 ## Siguiente paso
 
-Implementar y revisar el paso 7 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+Implementar y revisar el paso 9 con su propia versión; el objetivo completo de 16 pasos continúa activo.
 
 ## Cierre del paso 2: V5.1.0
 
@@ -86,7 +86,7 @@ Implementar y revisar el paso 7 con su propia versión; el objetivo completo de 
 - Revisión visual local: abrir/cerrar metas, importar desde Efectivo sin enviar archivos, comprobar selección y regreso por cerrar/Atrás, buscar metas y abrirlas, revisar Mes/calendario/pagos y la nueva lista de Más. Evidencia `/tmp/lukapp-v8-buscar-funciones.png`.
 - Suite final: 128 archivos y 1.443 pruebas aprobadas. TypeScript, Vite y diff aprobados; lint conserva seis advertencias previas.
 
-El siguiente paso son las animaciones comunes (7); los pasos 7 a 16 continúan pendientes. Estos cambios del frontend están cerrados localmente, sin publicación.
+El paso 7 quedó verificado en V8.0.3; los pasos 8 a 16 continúan pendientes. Estos cambios del frontend están cerrados localmente, sin publicación.
 
 ## Cierre del paso 6: V8.0.1
 
@@ -114,3 +114,13 @@ El siguiente paso son las animaciones comunes (7); los pasos 7 a 16 continúan p
 - En modo reducido, `MotionConfig` omite todas las animaciones de Framer Motion y el CSS acorta transiciones; las escenas decorativas repetidas se detienen y los textos se muestran completos.
 - Suite completa: 129 archivos y 1.444 pruebas aprobadas, incluida la actualización en vivo del ajuste y el retiro del listener; compilación TypeScript/Vite correcta y lint con las seis advertencias ya existentes.
 - En la revisión visual del inicio, los estados iniciales y los saldos conservan su jerarquía; no se interactuó con movimientos financieros.
+
+## Cierre del paso 8: V9.0.0
+
+- El importador acepta extractos PDF, imágenes JPG/PNG/WebP/TIFF, Excel `.xlsx` y CSV, y conserva la revisión de duplicados exactos, posibles duplicados y líneas excluidas antes de guardar. Excel, CSV e imágenes se procesan en el dispositivo; el OCR de imágenes pide confirmar que se revisaron sus cifras.
+- Las hojas tabulares reconocen encabezados de fecha, descripción, débito/crédito o monto, categoría y tipo; las fechas y montos se normalizan y las filas que no se pueden interpretar se omiten en vez de adivinar.
+- La opción «Importar como historial antiguo» conserva esas transacciones para reportes, pero `afecta_saldo=false` las excluye del cálculo de saldos. El detalle del movimiento muestra 🕰️ Histórico. Todas las transacciones existentes y nuevas mantienen `afecta_saldo=true` por defecto.
+- La migración aditiva `20261021034845_transacciones_afecta_saldo_historico.sql` está aplicada al proyecto Supabase `trrlknwvplhbntxzprud`; comprobé la columna y que las 1.185 transacciones previas siguen con `afecta_saldo=true`. Los asesores no reportan hallazgos nuevos ligados a esta columna; los avisos restantes corresponden a objetos preexistentes.
+- La prueba del parser cubre CSV delimitado y entrecomillado, valores y fechas Excel, OCR, filas sin encabezados y datos ambiguos. Pruebas del hook confirman que CSV se procesa sin solicitud al servidor y que las filas OCR requieren revisión; pruebas de saldos y repositorio cubren exclusión y persistencia/lectura de la marca histórica.
+- Revisión visual local en `/dinero/extractos`: archivos admitidos, cuenta y opción histórica visibles en tema oscuro; no se guardó ningún movimiento de prueba.
+- Suite completa: 131 archivos y 1.460 pruebas aprobadas. TypeScript/Vite aprobados; lint conserva las seis advertencias previas.

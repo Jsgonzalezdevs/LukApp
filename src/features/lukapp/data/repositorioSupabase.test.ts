@@ -7,14 +7,14 @@ import { RepositorioSupabase } from './repositorioSupabase';
 const TIPOS = Object.keys(ES_PASIVO) as CajitaTipo[];
 
 /** Minimal client that replays fixed rows, so the mappers can be exercised. */
-const clienteCon = (cajitas: Record<string, unknown>[]) => {
+const clienteCon = (cajitas: Record<string, unknown>[], transacciones: Record<string, unknown>[] = []) => {
   const vacio = { data: [], error: null };
   const guardado: Record<string, unknown>[] = [];
 
   const cliente = {
     from: (tabla: string) => ({
       select: () => ({
-        eq: () => ({ order: () => ({ range: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : vacio) }) }),
+        eq: () => ({ order: () => ({ range: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : tabla === 'transacciones' ? { data: transacciones, error: null } : vacio) }) }),
       }),
       upsert: (filas: Record<string, unknown> | Record<string, unknown>[]) => {
         guardado.push(...(Array.isArray(filas) ? filas : [filas]));
@@ -86,6 +86,39 @@ describe('RepositorioSupabase — el tipo de una cajita', () => {
 });
 
 describe('RepositorioSupabase — errores legibles', () => {
+  it('lee como balance-afectante los registros anteriores y conserva la marca histórica', async () => {
+    const base = {
+      kind: 'gasto', amount_cop: 1000, category: 'comida', description: 'Café', occurred_on: '2025-01-01',
+      cuenta_id: 'c1', raw_transcript: 'extracto', cuotas_total: null, cuota_cop: null, created_at: '2025-01-01T00:00:00.000Z',
+    };
+    const { cliente } = clienteCon([], [
+      { ...base, id: 't-historico', afecta_saldo: false },
+      { ...base, id: 't-legado' },
+    ]);
+
+    const { transacciones } = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+
+    expect(transacciones.map((tx) => tx.afectaSaldo)).toEqual([false, true]);
+  });
+
+  it('persiste si una transacción histórica debe dejar intacto el saldo actual', async () => {
+    const { cliente, guardado } = clienteCon([]);
+    const base = {
+      id: 't-hist', kind: 'gasto' as const, amountCop: 1000, category: 'comida', description: 'Café',
+      occurredOn: '2025-01-01', cuentaId: 'c1', rawTranscript: 'extracto', createdAt: '2025-01-01T00:00:00.000Z',
+    };
+
+    await new RepositorioSupabase(cliente, 'u1').guardarTransacciones([
+      { ...base, afectaSaldo: false },
+      { ...base, id: 't-actual', afectaSaldo: true },
+    ]);
+
+    expect(guardado).toMatchObject([
+      { id: 't-hist', afecta_saldo: false },
+      { id: 't-actual', afecta_saldo: true },
+    ]);
+  });
+
   it('traduce una restricción de Postgres a algo accionable', async () => {
     const cliente = {
       from: () => ({
