@@ -28,9 +28,10 @@ interface DineroViewProps {
 }
 
 /** Los tres grupos en que se parte la lista. */
-const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string }> = [
+const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string; inversion?: boolean }> = [
   { tipos: ['cuenta'], titulo: 'Cuentas' },
-  { tipos: ['cajita'], titulo: 'Ahorros' },
+  { tipos: ['cajita'], titulo: '🐷 Ahorro disponible', inversion: false },
+  { tipos: ['cajita'], titulo: '📈 Inversiones', inversion: true },
   { tipos: ['tarjeta'], titulo: 'Tarjetas de crédito' },
   { tipos: ['deuda'], titulo: 'Deudas' },
 ];
@@ -51,9 +52,11 @@ export const DineroView: React.FC<DineroViewProps> = ({
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
   const resumen = patrimonio(cajitas, movimientos, transacciones);
-  const reservadoCop = mostrarAhorro ? 0 : resumen.cajitasCop;
+  const inversionesCop = vivas.filter((c) => c.tipo === 'cajita' && c.esInversion).reduce((s, c) => s + (saldos.get(c.id) ?? 0), 0);
+  const ahorrosDisponiblesCop = vivas.filter((c) => c.tipo === 'cajita' && !c.esInversion).reduce((s, c) => s + (saldos.get(c.id) ?? 0), 0);
+  const reservadoCop = mostrarAhorro ? 0 : ahorrosDisponiblesCop;
   const deudaTarjetasCop = Math.abs(totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones));
-  const disponibleCop = resumen.totalCop - reservadoCop - (resumen.deudasCop - deudaTarjetasCop);
+  const disponibleCop = resumen.totalCop - inversionesCop - reservadoCop - (resumen.deudasCop - deudaTarjetasCop);
 
   return (
     <div className="flex flex-col gap-8">
@@ -97,7 +100,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
 
       {GRUPOS.map((grupo) => {
         const delGrupo = vivas
-          .filter((c) => grupo.tipos.includes(c.tipo))
+          .filter((c) => grupo.tipos.includes(c.tipo) && (grupo.inversion === undefined || Boolean(c.esInversion) === grupo.inversion))
           .sort((a, b) => {
             const saldoA = saldos.get(a.id) ?? 0;
             const saldoB = saldos.get(b.id) ?? 0;

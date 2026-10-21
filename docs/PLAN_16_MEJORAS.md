@@ -17,7 +17,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 11 | Asesor con propuestas editables y efectos visibles antes de confirmar presupuestos, metas y movimientos. | Verificado, V9.3.0 |
 | 12 | Cifras y gráficas conectadas con sus movimientos; comparaciones y distinción entre real, programado y estimado. | Verificado, V9.4.0 |
 | 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Verificado, V9.5.0 |
-| 14 | Aportes/retiros/valoraciones/rendimientos y multimoneda con importe original, tasa y fecha; separar disponible e invertido. | Pendiente |
+| 14 | Aportes/retiros/valoraciones/rendimientos y multimoneda con importe original, tasa y fecha; separar disponible e invertido. | Verificado, V9.6.0 |
 | 15 | Recepción de comprobantes por correo con procedencia y deduplicación; evaluar e implementar la vía bancaria viable. | Pendiente |
 | 16 | Modo opcional para independientes/negocios: cuentas por cobrar/pagar, abonos, devengo/caja, cotizaciones y facturas. | Pendiente |
 
@@ -171,4 +171,12 @@ El paso 7 quedó verificado en V8.0.3; los pasos 8 a 16 continúan pendientes. E
 
 ## Siguiente paso
 
-Implementar y revisar el paso 14: aportes, retiros, valoraciones, rendimientos y multimoneda, separando disponible e invertido.
+Implementar y revisar el paso 15: recepción de comprobantes por correo y la vía bancaria viable.
+
+## Cierre del paso 14: V9.6.0
+
+- Las cajitas se pueden clasificar como ahorro disponible o inversión; las inversiones pueden usar COP, USD, EUR, MXN, CAD o GBP y aparecen separadas en Dinero y en su pantalla, con subtotal para cada grupo. El disponible no suma inversiones.
+- Aportes, retiros, rendimientos y valoraciones conservan en el historial el importe de origen, la moneda, la tasa COP aplicada y la fecha elegida; la valoración admite alzas y bajas. El saldo consolidado sigue en COP y las retiradas hacia una cuenta se registran como transferencia, no como gasto.
+- Las conversiones se confirman en pantalla antes de guardar y el campo de tasa interpreta el formato local (por ejemplo, `4.000` COP por USD); se conservaron los emojis 📈💱🐷 con etiquetas claras.
+- La migración aditiva `20261021133216_activos_inversiones_multimoneda.sql` está aplicada al proyecto Supabase `trrlknwvplhbntxzprud`. Verifiqué las dos columnas de clasificación/moneda de cajitas y las tres columnas de origen de movimientos. Los asesores no muestran hallazgos nuevos; los avisos actuales ya existían antes del cambio.
+- Pruebas específicas: 100 aprobadas entre creación, conversión, persistencia, lectura Supabase y tamaños de controles en iOS. Suite completa: 138 archivos y 1.492 pruebas aprobadas. TypeScript, build Vite, lint de los archivos modificados y `git diff --check` aprobados.

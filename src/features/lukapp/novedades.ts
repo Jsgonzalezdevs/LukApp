@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.6.0', fecha: '2026-10-21', texto: 'Separa el ahorro disponible de tus inversiones y registra aportes, retiros, rendimientos y cambios de valor en COP o en otra moneda, guardando el importe original, la tasa y la fecha. Tus movimientos conservan emojis 📈💱🐷.' },
   { version: '9.5.0', fecha: '2026-10-21', texto: 'Las invitaciones a espacios compartidos se pueden enviar o copiar y muestran avisos claros; los gastos identifican quién pagó y el reparto empieza cuando se une otra persona. Las vaquitas ahora registran sus gastos, presupuesto y saldo sin inventar aportes, conservando los emojis 🥑💌🐮.' },
   { version: '9.4.0', fecha: '2026-10-21', texto: 'Toca un mes o un día en las gráficas para abrir los movimientos que forman esa cifra. Los registros importados como historial aparecen marcados 🧾🕰️; lo programado y estimado sigue separado en Calendario y Proyección. 📊' },
   { version: '9.3.0', fecha: '2026-10-21', texto: 'El asesor ahora te muestra cómo cambiarían tus cifras antes de guardar un movimiento y permite ajustar presupuestos y metas desde propuestas editables; tú confirmas cada cambio. 💡🧾🎯' },

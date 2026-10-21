@@ -1243,8 +1243,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 movimientos={cajitaMovimientos}
                 onCrear={(datos) => almacen.crearCajita(datos)}
                 onFijarSaldo={(cajitaId, saldo) => almacen.fijarSaldo(cajitaId, saldo)}
-                onMovimiento={(cajitaId, kind, deltaCop) =>
-                  almacen.registrarMovimiento({ cajitaId, kind, deltaCop })
+                onMovimiento={(cajitaId, kind, deltaCop, origen) =>
+                  almacen.registrarMovimiento({ cajitaId, kind, deltaCop, ...(origen ?? {}) })
                 }
                 onEliminar={(id) => almacen.borrarCajita(id)}
                 destinos={destinosDeTransferencia}

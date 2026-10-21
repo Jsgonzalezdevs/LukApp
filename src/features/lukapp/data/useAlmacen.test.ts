@@ -50,6 +50,31 @@ describe('useAlmacen', () => {
     expect((await repo.cargarTodo()).transacciones).toHaveLength(1);
   });
 
+  it('persiste la inversión en su moneda y cada movimiento con tasa y fecha de origen', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'ETF global', icon: '📈', tipo: 'cajita', metaCop: null, tasaEaPct: null,
+        esInversion: true, moneda: 'USD', saldoInicialCop: 0,
+      });
+    });
+    const id = result.current.datos.cajitas.find((c) => c.nombre === 'ETF global')!.id;
+    await act(async () => {
+      await result.current.registrarMovimiento({
+        cajitaId: id, kind: 'deposito', deltaCop: 42000, montoOriginal: 10.5,
+        monedaOriginal: 'USD', tasaCambioCop: 4000, occurredOn: '2026-10-20',
+      });
+    });
+
+    const guardado = await repo.cargarTodo();
+    expect(guardado.cajitas.find((c) => c.nombre === 'ETF global')).toMatchObject({ esInversion: true, moneda: 'USD' });
+    expect(guardado.cajitaMovimientos.at(-1)).toMatchObject({
+      deltaCop: 42000, montoOriginal: 10.5, monedaOriginal: 'USD', tasaCambioCop: 4000,
+      occurredOn: '2026-10-20',
+    });
+  });
+
   it('guarda una revisión de extracto aunque no haya una transacción que importar', async () => {
     const repo = new RepositorioMemoria();
     const { result } = await montar(repo);

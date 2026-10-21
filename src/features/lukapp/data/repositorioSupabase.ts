@@ -399,6 +399,8 @@ interface FilaCajita {
   dia_corte?: number | null;
   dia_pago?: number | null;
   pago_minimo_cop?: number | null;
+  es_inversion?: boolean | null;
+  moneda?: string | null;
 }
 
 const aCajita = (fila: FilaCajita): Cajita => ({
@@ -421,6 +423,8 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   diaCorte: fila.dia_corte ?? null,
   diaPago: fila.dia_pago ?? null,
   pagoMinimoCop: fila.pago_minimo_cop === null || fila.pago_minimo_cop === undefined ? null : Number(fila.pago_minimo_cop),
+  esInversion: fila.es_inversion ?? false,
+  moneda: fila.moneda ?? 'COP',
 });
 
 const desdeCajita = (c: Cajita, userId: string) => ({
@@ -439,6 +443,8 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   dia_corte: c.tipo === 'tarjeta' ? (c.diaCorte ?? null) : null,
   dia_pago: c.tipo === 'tarjeta' ? (c.diaPago ?? null) : null,
   pago_minimo_cop: c.tipo === 'tarjeta' ? (c.pagoMinimoCop ?? null) : null,
+  es_inversion: c.tipo === 'cajita' ? (c.esInversion ?? false) : false,
+  moneda: c.tipo === 'cajita' ? (c.moneda ?? 'COP') : 'COP',
 });
 
 interface FilaMovimiento {
@@ -446,6 +452,9 @@ interface FilaMovimiento {
   cuota_cop?: number | null;
   interes_pct?: number | null;
   cuota_manejo_cop?: number | null;
+  monto_original?: number | string | null;
+  moneda_original?: string | null;
+  tasa_cambio_cop?: number | string | null;
   id: string;
   cajita_id: string;
   kind: string;
@@ -464,6 +473,9 @@ const aMovimiento = (fila: FilaMovimiento): CajitaMovimiento => ({
   cuotaCop: fila.cuota_cop == null ? null : Number(fila.cuota_cop),
   interesPct: fila.interes_pct == null ? null : Number(fila.interes_pct),
   cuotaManejoCop: fila.cuota_manejo_cop == null ? null : Number(fila.cuota_manejo_cop),
+  montoOriginal: fila.monto_original == null ? null : Number(fila.monto_original),
+  monedaOriginal: fila.moneda_original ?? null,
+  tasaCambioCop: fila.tasa_cambio_cop == null ? null : Number(fila.tasa_cambio_cop),
   deltaCop: Number(fila.delta_cop),
   categoria: (fila.categoria as Category | null) ?? null,
   occurredOn: fila.occurred_on,
@@ -479,6 +491,9 @@ const desdeMovimiento = (m: CajitaMovimiento, userId: string) => ({
   cuota_cop: m.cuotaCop ?? null,
   interes_pct: m.interesPct ?? null,
   cuota_manejo_cop: m.cuotaManejoCop ?? null,
+  monto_original: m.montoOriginal ?? null,
+  moneda_original: m.monedaOriginal ?? null,
+  tasa_cambio_cop: m.tasaCambioCop ?? null,
   kind: m.kind,
   delta_cop: m.deltaCop,
   categoria: m.categoria,

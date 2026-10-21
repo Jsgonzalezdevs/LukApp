@@ -68,6 +68,8 @@ export interface Almacen {
     diaCorte?: number | null;
     diaPago?: number | null;
     pagoMinimoCop?: number | null;
+    esInversion?: boolean;
+    moneda?: string;
     /** What is already in the pocket. Recorded as its opening movement. */
     saldoInicialCop: number | null;
   }) => Promise<boolean | void>;
@@ -86,6 +88,9 @@ export interface Almacen {
     cuotaCop?: number | null;
     interesPct?: number | null;
     cuotaManejoCop?: number | null;
+    montoOriginal?: number | null;
+    monedaOriginal?: string | null;
+    tasaCambioCop?: number | null;
   }) => Promise<boolean | void>;
   /**
    * Pays down a debt with money from a real account.
@@ -115,6 +120,9 @@ export interface Almacen {
     destinoId: string;
     montoCop: number;
     occurredOn?: string;
+    montoOriginal?: number;
+    monedaOriginal?: string;
+    tasaCambioCop?: number;
   }) => Promise<boolean | void>;
   /** "I have X in this pocket" — records the delta needed to reach X. */
   fijarSaldo: (cajitaId: string, saldoObjetivo: number, nota?: string) => Promise<boolean | void>;
@@ -604,6 +612,8 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       diaCorte,
       diaPago,
       pagoMinimoCop,
+      esInversion,
+      moneda,
       saldoInicialCop,
     }: {
       nombre: string;
@@ -616,6 +626,8 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       diaCorte?: number | null;
       diaPago?: number | null;
       pagoMinimoCop?: number | null;
+      esInversion?: boolean;
+      moneda?: string;
       saldoInicialCop: number | null;
     }) => {
       const baseNombre = nombre.trim();
@@ -646,6 +658,8 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         diaCorte: tipo === 'tarjeta' ? (diaCorte ?? null) : null,
         diaPago: tipo === 'tarjeta' ? (diaPago ?? null) : null,
         pagoMinimoCop: tipo === 'tarjeta' ? (pagoMinimoCop ?? null) : null,
+        esInversion: tipo === 'cajita' && (esInversion ?? false),
+        moneda: tipo === 'cajita' ? (moneda ?? 'COP') : 'COP',
         createdAt: new Date().toISOString(),
         archivedAt: null,
       };
@@ -721,6 +735,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       cuotaCop,
       interesPct,
       cuotaManejoCop,
+      montoOriginal,
+      monedaOriginal,
+      tasaCambioCop,
     }: {
       cajitaId: string;
       kind: CajitaMovKind;
@@ -733,6 +750,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       cuotaCop?: number | null;
       interesPct?: number | null;
       cuotaManejoCop?: number | null;
+      montoOriginal?: number | null;
+      monedaOriginal?: string | null;
+      tasaCambioCop?: number | null;
     }) => {
       const esFinanciado = typeof cuotasTotal === 'number' && cuotasTotal >= 2;
       const cuotasTotalFinal = esFinanciado ? cuotasTotal : null;
@@ -753,6 +773,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         cuotaCop: cuotaCopFinal,
         interesPct: interesPct ?? null,
         cuotaManejoCop: cuotaManejoCop ?? null,
+        montoOriginal: montoOriginal ?? null,
+        monedaOriginal: monedaOriginal ?? null,
+        tasaCambioCop: tasaCambioCop ?? null,
       };
 
       const compra: Transaction | null =
@@ -795,6 +818,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       cuentaId: string;
       montoCop: number;
       occurredOn?: string;
+      montoOriginal?: number;
+      monedaOriginal?: string;
+      tasaCambioCop?: number;
     }) => {
       const monto = Math.abs(montoCop);
       if (monto === 0) return;
@@ -835,11 +861,17 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
       destinoId,
       montoCop,
       occurredOn,
+      montoOriginal,
+      monedaOriginal,
+      tasaCambioCop,
     }: {
       origenId: string;
       destinoId: string;
       montoCop: number;
       occurredOn?: string;
+      montoOriginal?: number;
+      monedaOriginal?: string;
+      tasaCambioCop?: number;
     }) => {
       const monto = Math.abs(montoCop);
       // Moving money to itself is not a transfer; recording it would leave two
@@ -851,6 +883,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
         occurredOn: occurredOn ?? bogotaDate(),
         categoria: null,
         createdAt: new Date().toISOString(),
+        montoOriginal: montoOriginal ?? null,
+        monedaOriginal: monedaOriginal ?? null,
+        tasaCambioCop: tasaCambioCop ?? null,
       };
 
       const par: CajitaMovimiento[] = [

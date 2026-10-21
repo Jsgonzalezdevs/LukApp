@@ -8,14 +8,14 @@ import { RepositorioSupabase } from './repositorioSupabase';
 const TIPOS = Object.keys(ES_PASIVO) as CajitaTipo[];
 
 /** Minimal client that replays fixed rows, so the mappers can be exercised. */
-const clienteCon = (cajitas: Record<string, unknown>[], transacciones: Record<string, unknown>[] = []) => {
+const clienteCon = (cajitas: Record<string, unknown>[], transacciones: Record<string, unknown>[] = [], movimientos: Record<string, unknown>[] = []) => {
   const vacio = { data: [], error: null };
   const guardado: Record<string, unknown>[] = [];
 
   const cliente = {
     from: (tabla: string) => ({
       select: () => ({
-        eq: () => ({ order: () => ({ range: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : tabla === 'transacciones' ? { data: transacciones, error: null } : vacio) }) }),
+        eq: () => ({ order: () => ({ range: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : tabla === 'transacciones' ? { data: transacciones, error: null } : tabla === 'cajita_movimientos' ? { data: movimientos, error: null } : vacio) }) }),
       }),
       upsert: (filas: Record<string, unknown> | Record<string, unknown>[]) => {
         guardado.push(...(Array.isArray(filas) ? filas : [filas]));
@@ -83,6 +83,20 @@ describe('RepositorioSupabase — el tipo de una cajita', () => {
     await new RepositorioSupabase(cliente, 'u1').guardarCajita(tarjeta);
 
     expect(guardado[0]).toMatchObject({ tipo: 'tarjeta', user_id: 'u1' });
+  });
+});
+
+describe('RepositorioSupabase — activos multimoneda', () => {
+  it('lee la moneda, tipo de activo y datos originales del movimiento', async () => {
+    const { cliente } = clienteCon(
+      [{ ...fila('cajita'), es_inversion: true, moneda: 'USD' }],
+      [],
+      [{ id: 'm1', cajita_id: 'c-cajita', kind: 'deposito', delta_cop: 42000, categoria: null, occurred_on: '2026-10-20', nota: '', created_at: '2026-10-20T12:00:00Z', monto_original: '10.5', moneda_original: 'USD', tasa_cambio_cop: '4000' }],
+    );
+    const { cajitas, cajitaMovimientos } = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+
+    expect(cajitas[0]).toMatchObject({ esInversion: true, moneda: 'USD' });
+    expect(cajitaMovimientos[0]).toMatchObject({ montoOriginal: 10.5, monedaOriginal: 'USD', tasaCambioCop: 4000, occurredOn: '2026-10-20' });
   });
 });
 

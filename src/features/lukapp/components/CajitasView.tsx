@@ -7,7 +7,7 @@ import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, ClaseCuenta } from '../data/modelos';
-import { CAJITA_ICONS, CLASE_CUENTA_LABELS } from '../data/modelos';
+import { CAJITA_ICONS, CLASE_CUENTA_LABELS, MONEDAS_DISPONIBLES } from '../data/modelos';
 import { resumenDeCajitas } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
@@ -42,10 +42,12 @@ interface CajitasViewProps {
     diaCorte?: number | null;
     diaPago?: number | null;
     pagoMinimoCop?: number | null;
+    esInversion?: boolean;
+    moneda?: string;
     saldoInicialCop: number | null;
   }) => ResultadoGuardado;
   onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
-  onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number) => ResultadoGuardado;
+  onMovimiento: (cajitaId: string, kind: CajitaMovKind, deltaCop: number, origen?: { montoOriginal: number; monedaOriginal: string; tasaCambioCop: number; occurredOn: string }) => ResultadoGuardado;
   onEliminar: (cajitaId: string) => ResultadoGuardado;
   /**
    * Whether savings count toward the summary. Only meaningful on the savings
@@ -56,7 +58,7 @@ interface CajitasViewProps {
   destinos?: readonly { id: string; nombre: string }[];
   /** Bank accounts only — where a withdrawal lands. */
   cuentasBancarias?: readonly { id: string; nombre: string }[];
-  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number }) => ResultadoGuardado;
+  onTransferir?: (datos: { origenId: string; destinoId: string; montoCop: number; montoOriginal?: number; monedaOriginal?: string; tasaCambioCop?: number; occurredOn?: string }) => ResultadoGuardado;
   mostrarEnResumen?: boolean;
   onMostrarEnResumen?: (valor: boolean) => void;
 }
@@ -80,6 +82,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [claseCuenta, setClaseCuenta] = useState<ClaseCuenta>('banco');
+  const [esInversion, setEsInversion] = useState(false);
+  const [moneda, setMoneda] = useState('COP');
   const [icon, setIcon] = useState<string>(CAJITA_ICONS[0]);
   const [saldoTexto, setSaldoTexto] = useState('');
   const [metaTexto, setMetaTexto] = useState('');
@@ -95,6 +99,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const esTarjeta = tipo === 'tarjeta';
   const nombreTipo = esTarjeta ? 'tarjeta de crédito' : esCuenta ? 'cuenta' : 'cajita';
   const total = resumenes.reduce((t, r) => t + r.saldoCop, 0);
+  const disponibles = resumenes.filter((r) => !r.cajita.esInversion);
+  const inversiones = resumenes.filter((r) => r.cajita.esInversion);
 
   const crear = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,10 +120,14 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       diaCorte: esTarjeta ? parseDia(corteTexto) : null,
       diaPago: esTarjeta ? parseDia(pagoTexto) : null,
       pagoMinimoCop: esTarjeta ? parseAmountInput(minimoTexto) : null,
+      esInversion: tipo === 'cajita' && esInversion,
+      moneda: tipo === 'cajita' ? moneda : 'COP',
       saldoInicialCop: esCuenta ? parseSaldoInput(saldoTexto) : (parseAmountInput(saldoTexto) ?? 0),
     }))) return;
     setNombre('');
     setClaseCuenta('banco');
+    setEsInversion(false);
+    setMoneda('COP');
     setIcon(CAJITA_ICONS[0]);
     setSaldoTexto('');
     setMetaTexto('');
@@ -247,6 +257,27 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               </label>
             ) : null}
 
+            {!esCuenta && !esTarjeta ? (
+              <>
+                <label htmlFor="cajita-clase-activo" className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+                  ¿Qué vas a guardar aquí?
+                  <select id="cajita-clase-activo" value={esInversion ? 'inversion' : 'disponible'} onChange={(e) => setEsInversion(e.target.value === 'inversion')} className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none">
+                    <option value="disponible">🐷 Ahorro disponible</option>
+                    <option value="inversion">📈 Inversión</option>
+                  </select>
+                </label>
+                {esInversion ? (
+                  <label htmlFor="cajita-moneda" className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+                    Moneda de la inversión
+                    <select id="cajita-moneda" value={moneda} onChange={(e) => setMoneda(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none">
+                      {MONEDAS_DISPONIBLES.map((codigo) => <option key={codigo} value={codigo}>{codigo}</option>)}
+                    </select>
+                    <span className="mt-1 block text-[13px] font-normal text-[var(--fin-ink-faint)]">El saldo consolidado se muestra en COP; cada aporte conserva su moneda y tasa. 💱</span>
+                  </label>
+                ) : null}
+              </>
+            ) : null}
+
             <label
               htmlFor="cajita-saldo"
               className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
@@ -265,7 +296,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
               />
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : esCuenta ? 'Escribe 0 si está vacía. Si dejas este campo en blanco, el saldo quedará pendiente de confirmar.' : COPY.cajitas.saldoInicialHint}
+              {esTarjeta ? 'Escribe lo que debes hoy; las compras nuevas se sumarán a este saldo.' : esCuenta ? 'Escribe 0 si está vacía. Si dejas este campo en blanco, el saldo quedará pendiente de confirmar.' : esInversion ? 'Ese saldo inicial se guarda en COP; para registrar moneda extranjera, inicia en 0 y agrega un aporte con su tasa 💱.' : COPY.cajitas.saldoInicialHint}
             </p>
 
             {esTarjeta ? (
@@ -419,20 +450,30 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
       </div>
 
       {resumenes.length > 0 ? (
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {resumenes.map((resumen) => (
-            <CajitaCard
-              key={resumen.cajita.id}
-              resumen={resumen}
-              movimientos={movimientos}
-              onFijarSaldo={onFijarSaldo}
-              onMovimiento={onMovimiento}
-              onEliminar={onEliminar}
-              destinos={destinos}
-              cuentasBancarias={cuentasBancarias}
-              onTransferir={onTransferir}
-            />
-          ))}
+        <div className="flex flex-col gap-6">
+          {([['disponible', '🐷 Ahorro disponible', disponibles], ['inversion', '📈 Invertido', inversiones]] as const).map(([id, titulo, grupo]) => grupo.length ? (
+            <section key={id} aria-labelledby={`cajitas-${id}`}>
+              <div className="mb-3 flex items-baseline justify-between gap-3 px-1">
+                <h2 id={`cajitas-${id}`} className="text-[17px] font-semibold text-[var(--fin-ink)]">{titulo}</h2>
+                <span className="text-[13px] font-semibold tabular-nums text-[var(--fin-ink-faint)]">{formatCop(grupo.reduce((s, r) => s + r.saldoCop, 0))}</span>
+              </div>
+              <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {grupo.map((resumen) => (
+                  <CajitaCard
+                    key={resumen.cajita.id}
+                    resumen={resumen}
+                    movimientos={movimientos}
+                    onFijarSaldo={onFijarSaldo}
+                    onMovimiento={onMovimiento}
+                    onEliminar={onEliminar}
+                    destinos={destinos}
+                    cuentasBancarias={cuentasBancarias}
+                    onTransferir={onTransferir}
+                  />
+                ))}
+              </div>
+            </section>
+          ) : null)}
         </div>
       ) : null}
     </div>
