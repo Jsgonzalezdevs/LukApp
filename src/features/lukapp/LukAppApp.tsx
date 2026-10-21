@@ -1143,6 +1143,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               setSection('inicio');
               setPending(tx);
             }}
+            onFijarPresupuesto={(categoria, montoCop) => almacen.fijarPresupuesto(categoria, montoCop)}
+            onCrearMeta={(meta) => almacen.crearMeta(meta)}
           />
         ) : null}
 

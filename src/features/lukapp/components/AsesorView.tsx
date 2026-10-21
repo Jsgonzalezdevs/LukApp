@@ -22,20 +22,24 @@ import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { useDictation } from '../hooks/useDictation';
 import type { Transaction } from '../types';
-import type { Cajita } from '../data/modelos';
+import { CATEGORY_LABELS } from '../types';
+import type { Cajita, Meta } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
+import { detectarPropuestaAsesor, type PropuestaAsesor } from '../lib/propuestasAsesor';
+import { gastadoEnCategoria } from '../lib/presupuestos';
+import { claveDePeriodo } from '../lib/periodo';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
 import { hacerCatalogo, type CategoriaPersonal } from '../categorias';
 
 import { apiUrl, precalentarApi } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
-import { bogotaDate, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
+import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
 
@@ -47,6 +51,10 @@ interface Message {
   action?: ParsedTransaction;
   actions?: ParsedTransaction[];
   suggestions?: string[];
+  propuesta?: PropuestaAsesor;
+  propuestaConfirmada?: boolean;
+  propuestaGuardando?: boolean;
+  propuestaError?: string;
 }
 
 interface MemoriaIA {
@@ -81,6 +89,8 @@ interface AsesorViewProps {
   promptInicial?: string | null;
   onLimpiarPromptInicial?: () => void;
   onCrearTransaccion?: (tx: ParsedTransaction) => void;
+  onFijarPresupuesto?: (categoria: string, montoCop: number) => Promise<boolean | void>;
+  onCrearMeta?: (meta: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<boolean | void>;
   entradaFinanciera?: EntradaMotorFinanciero;
   contextoParaAsesor?: ContextoParaAsesor;
 }
@@ -182,6 +192,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   promptInicial,
   onLimpiarPromptInicial,
   onCrearTransaccion,
+  onFijarPresupuesto,
+  onCrearMeta,
   entradaFinanciera,
   contextoParaAsesor,
 }) => {
@@ -617,6 +629,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const handleSend = async (textoDirecto?: string, esReintento = false) => {
     const textoUsuario = (textoDirecto ?? input).trim();
     if (!textoUsuario || pensando || peticionIARef.current) return;
+    const propuestaFinanciera = detectarPropuestaAsesor(textoUsuario, categorias, lexico);
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     if (!esReintento) {
@@ -666,7 +679,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         textoUsuario, transacciones, cajitas, cajitasBalances, categorias, lexico, context, disponibleDiarioCop,
       );
       setContext(newContext);
-      const respuestaLocal: Message = { id: nuevoId(), role: 'bot', text, action, actions, suggestions };
+      const respuestaLocal: Message = {
+        id: nuevoId(), role: 'bot', text,
+        action: propuestaFinanciera ? undefined : action,
+        actions: propuestaFinanciera ? undefined : actions,
+        suggestions,
+        propuesta: propuestaFinanciera ?? undefined,
+      };
       setMessages((prev) => [...prev, respuestaLocal]);
       void guardarMensaje(respuestaLocal);
     };
@@ -787,8 +806,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 role: 'bot',
                 text: textoRespuesta,
                 provider: proveedor,
-                action: deteccion.propuesta?.action,
-                actions: deteccion.propuesta?.actions,
+                action: propuestaFinanciera ? undefined : deteccion.propuesta?.action,
+                actions: propuestaFinanciera ? undefined : deteccion.propuesta?.actions,
+                propuesta: propuestaFinanciera ?? undefined,
               };
               setMessages((prev) => [...prev, botMsg]);
               void guardarMensaje(botMsg);
@@ -844,6 +864,73 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       : conexion === 'despertando'
         ? 'var(--fin-warn)'
         : 'var(--fin-ink-faint)';
+
+  const catalogoCategorias = hacerCatalogo(categorias);
+
+  const actualizarPropuesta = (id: string, cambio: (propuesta: PropuestaAsesor) => PropuestaAsesor) => {
+    setMessages((actuales) => actuales.map((mensaje) => mensaje.id === id && mensaje.propuesta
+      ? { ...mensaje, propuesta: cambio(mensaje.propuesta), propuestaConfirmada: false }
+      : mensaje));
+  };
+
+  const confirmarPropuesta = async (mensaje: Message) => {
+    const propuesta = mensaje.propuesta;
+    if (!propuesta) return;
+    setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+      ? { ...actual, propuestaGuardando: true, propuestaError: undefined }
+      : actual));
+    try {
+      const resultado = propuesta.tipo === 'presupuesto'
+        ? await onFijarPresupuesto?.(propuesta.categoria, propuesta.montoCop)
+        : await onCrearMeta?.({
+          nombre: propuesta.nombre,
+          icon: 'Target',
+          objetivoCop: propuesta.objetivoCop,
+          fechaObjetivo: propuesta.fechaObjetivo,
+          cajitaId: null,
+          ahorradoCop: 0,
+        });
+      if (resultado === false) {
+        setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+          ? { ...actual, propuestaError: 'No se pudo guardar; revisa tu conexión e inténtalo otra vez.' }
+          : actual));
+        return;
+      }
+      setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+        ? { ...actual, propuestaConfirmada: true }
+        : actual));
+    } catch {
+      setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+        ? { ...actual, propuestaError: 'No se pudo guardar; revisa tu conexión e inténtalo otra vez.' }
+        : actual));
+    } finally {
+      setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+        ? { ...actual, propuestaGuardando: false }
+        : actual));
+    }
+  };
+
+  const efectoMovimiento = (accion: ParsedTransaction) => {
+    const monto = accion.amount ?? 0;
+    const cuenta = cajitas.find((item) => item.id === accion.cuentaId);
+    const saldo = accion.cuentaId ? cajitasBalances[accion.cuentaId] : undefined;
+    const cambio = accion.kind === 'ingreso' ? monto : accion.kind === 'gasto' ? -monto : 0;
+    const presupuesto = entradaFinanciera?.presupuestos.find((item) => item.categoria === accion.category);
+    const categoriaLabel = categorias.find((item) => item.id === accion.category)?.nombre
+      ?? CATEGORY_LABELS[accion.category as keyof typeof CATEGORY_LABELS]
+      ?? accion.category;
+    const gasto = entradaFinanciera && accion.kind === 'gasto'
+      ? gastadoEnCategoria(transacciones, claveDePeriodo(entradaFinanciera.hoy, entradaFinanciera.periodo), entradaFinanciera.periodo, accion.category)
+      : null;
+    return (
+      <div className="mt-2 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] p-3 text-[13px] text-[var(--fin-ink-soft)]">
+        <p>🧾 <strong>{accion.description || categoriaLabel}</strong> · {categoriaLabel} · {monto.toLocaleString('es-CO')} COP</p>
+        {cuenta && saldo !== undefined ? <p className="mt-1">Si confirmas, {cuenta.nombre} pasaría de {saldo.toLocaleString('es-CO')} a {(saldo + cambio).toLocaleString('es-CO')} COP.</p> : null}
+        {presupuesto && gasto !== null ? <p className="mt-1">En {categoriaLabel} llevas {gasto.toLocaleString('es-CO')} de {presupuesto.montoCop.toLocaleString('es-CO')} COP; con este movimiento serían {(gasto + (accion.kind === 'gasto' ? monto : 0)).toLocaleString('es-CO')} COP.</p> : null}
+        <p className="mt-1">Puedes revisar y editar los datos antes de guardarlo.</p>
+      </div>
+    );
+  };
 
   return (
     <div className="relative flex min-h-[60vh] flex-col">
@@ -1042,26 +1129,81 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   </div>
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
+                      {efectoMovimiento(msg.action)}
                       <button
                         onClick={() => onCrearTransaccion(msg.action!)}
-                        className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+                        className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
                       >
-                        Sí, registrar gasto
+                        Revisar y editar movimiento
                       </button>
                     </div>
                   )}
                   {msg.actions && msg.actions.length > 0 && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3 flex flex-col gap-2">
                       {msg.actions.map((act, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => onCrearTransaccion(act)}
-                          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
-                        >
-                          Sí, registrar $ {act.amount?.toLocaleString('es-CO')} en {act.category}
-                        </button>
+                        <div key={idx}>
+                          {efectoMovimiento(act)}
+                          <button
+                            onClick={() => onCrearTransaccion(act)}
+                            className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+                          >
+                            Revisar y editar movimiento {idx + 1}
+                          </button>
+                        </div>
                       ))}
                     </div>
+                  )}
+                  {msg.propuesta && (
+                    <section className="mt-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-3" aria-label="Propuesta editable del asesor">
+                      <h3 className="text-[14px] font-semibold text-[var(--fin-ink)]">💡 Propuesta para revisar</h3>
+                      {msg.propuesta.tipo === 'presupuesto' ? (() => {
+                        const propuesta = msg.propuesta;
+                        const categoriaNombre = catalogoCategorias.de(propuesta.categoria).nombre;
+                        const periodo = entradaFinanciera?.periodo;
+                        const clave = periodo && entradaFinanciera ? claveDePeriodo(entradaFinanciera.hoy, periodo) : '';
+                        const gastado = periodo ? gastadoEnCategoria(transacciones, clave, periodo, propuesta.categoria) : 0;
+                        const actual = entradaFinanciera?.presupuestos.find((item) => item.categoria === propuesta.categoria)?.montoCop;
+                        return (
+                          <div className="mt-2 space-y-2">
+                            <p className="text-[13px] text-[var(--fin-ink-soft)]">Tope de {categoriaNombre}{actual ? ` · hoy ${actual.toLocaleString('es-CO')} COP` : ''}; en el período llevas {gastado.toLocaleString('es-CO')} COP.</p>
+                            <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Categoría
+                              <select aria-label="Categoría del presupuesto" disabled={msg.propuestaConfirmada} value={propuesta.categoria} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, categoria: evento.target.value } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)] disabled:opacity-60">
+                                {catalogoCategorias.lista.map((categoria) => <option key={categoria.clave} value={categoria.clave}>{categoria.emoji} {categoria.nombre}</option>)}
+                              </select>
+                            </label>
+                            <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Nuevo tope mensual (COP)
+                            <input aria-label="Nuevo tope mensual en COP" type="number" min="1" step="1000" disabled={msg.propuestaConfirmada} value={propuesta.montoCop} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, montoCop: Math.max(1, Number(evento.target.value) || 1) } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                            </label>
+                            <p className="text-[13px] text-[var(--fin-ink-soft)]">Con ese tope, quedarían {(propuesta.montoCop - gastado).toLocaleString('es-CO')} COP disponibles en el período.</p>
+                          </div>
+                        );
+                      })() : (
+                        <div className="mt-2 space-y-2">
+                          <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Nombre de la meta
+                            <input aria-label="Nombre de la meta" disabled={msg.propuestaConfirmada} value={msg.propuesta.nombre} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, nombre: evento.target.value } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                          </label>
+                          <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Objetivo total (COP)
+                            <input aria-label="Objetivo total de la meta en COP" type="number" min="1" step="1000" disabled={msg.propuestaConfirmada} value={msg.propuesta.objetivoCop} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, objetivoCop: Math.max(1, Number(evento.target.value) || 1) } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                          </label>
+                          <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Fecha objetivo (opcional)
+                            <input aria-label="Fecha objetivo de la meta" type="date" disabled={msg.propuestaConfirmada} value={msg.propuesta.fechaObjetivo ?? ''} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, fechaObjetivo: evento.target.value || null } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                          </label>
+                          <p className="text-[13px] text-[var(--fin-ink-soft)]">La meta empezará con $0 ahorrados; el objetivo será {msg.propuesta.objetivoCop.toLocaleString('es-CO')} COP.</p>
+                          {msg.propuesta.fechaObjetivo && entradaFinanciera ? (() => {
+                            const dias = daysBetween(entradaFinanciera.hoy, msg.propuesta.fechaObjetivo!);
+                            return <p className="text-[13px] text-[var(--fin-ink-soft)]">{dias > 0 ? `Para llegar a tiempo, necesitarías ahorrar cerca de ${Math.ceil(msg.propuesta.objetivoCop / (dias / 30.44)).toLocaleString('es-CO')} COP al mes.` : 'La fecha debe estar en el futuro para calcular un aporte.'}</p>;
+                          })() : null}
+                        </div>
+                      )}
+                      {msg.propuestaError ? <p role="alert" className="mt-2 text-[13px] text-[var(--fin-out)]">{msg.propuestaError}</p> : null}
+                      {msg.propuestaConfirmada ? (
+                        <p role="status" className="mt-2 text-[13px] font-semibold text-[var(--fin-in)]">✅ Guardado. Puedes verlo en Dinero.</p>
+                      ) : (
+                        <button type="button" disabled={msg.propuestaGuardando || (msg.propuesta.tipo === 'presupuesto' ? !onFijarPresupuesto : !onCrearMeta)} onClick={() => void confirmarPropuesta(msg)} className="mt-3 min-h-11 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-50">
+                          {msg.propuestaGuardando ? 'Guardando…' : `Confirmar ${msg.propuesta.tipo === 'presupuesto' ? 'presupuesto' : 'meta'}`}
+                        </button>
+                      )}
+                    </section>
                   )}
                   {msg.suggestions && msg.suggestions.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2 pt-1">

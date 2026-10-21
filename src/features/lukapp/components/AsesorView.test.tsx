@@ -121,14 +121,61 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
       'fetch',
       fetchPorRuta({ offline: false, text: 'Listo, registrado.', provider: 'Groq (GPT-OSS 120B)' }),
     );
-    render(<AsesorView {...props} onCrearTransaccion={vi.fn()} />);
+    const onCrearTransaccion = vi.fn();
+    render(<AsesorView {...props} onCrearTransaccion={onCrearTransaccion} />);
     await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
 
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
     fireEvent.change(input, { target: { value: 'me compre un pancito, me costo 2500' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    await waitFor(() => expect(screen.getByText(/sí, registrar gasto/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/revisar y editar movimiento/i)).toBeTruthy());
+    expect(screen.getByText(/Puedes revisar y editar los datos/)).toBeTruthy();
+    fireEvent.click(screen.getByText(/revisar y editar movimiento/i));
+    expect(onCrearTransaccion).toHaveBeenCalledWith(expect.objectContaining({ amount: 2500 }));
+  });
+
+  it('permite editar el tope y muestra el efecto antes de guardarlo', async () => {
+    vi.stubGlobal('fetch', fetchPorRuta({ offline: false, text: 'Puedo proponerte este tope.', provider: 'Groq' }));
+    const onFijarPresupuesto = vi.fn().mockResolvedValue(true);
+    render(<AsesorView {...props} onFijarPresupuesto={onFijarPresupuesto} entradaFinanciera={{
+      hoy: '2026-09-10', periodo: { frecuencia: 'mensual', diaInicio: 1 }, presupuestos: [],
+    } as any} />);
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
+
+    fireEvent.change(screen.getByPlaceholderText('Pregúntale a tu asesor...'), {
+      target: { value: 'Quiero poner un presupuesto de 300 mil para comida' },
+    });
+    fireEvent.keyDown(screen.getByPlaceholderText('Pregúntale a tu asesor...'), { key: 'Enter' });
+    const monto = await screen.findByRole('spinbutton', { name: 'Nuevo tope mensual en COP' });
+    expect(screen.getByText(/quedarían 300\.000 COP disponibles/)).toBeTruthy();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Categoría del presupuesto' }), { target: { value: 'transporte' } });
+    fireEvent.change(monto, { target: { value: '400000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar presupuesto' }));
+    await waitFor(() => expect(onFijarPresupuesto).toHaveBeenCalledWith('transporte', 400000));
+    await screen.findByText(/Guardado\. Puedes verlo en Dinero/);
+  });
+
+  it('permite editar el nombre y objetivo de una meta antes de confirmar', async () => {
+    vi.stubGlobal('fetch', fetchPorRuta({ offline: false, text: 'Dejé lista una propuesta de meta.', provider: 'Groq' }));
+    const onCrearMeta = vi.fn().mockResolvedValue(true);
+    render(<AsesorView {...props} onCrearMeta={onCrearMeta} entradaFinanciera={{
+      hoy: '2026-09-10', periodo: { frecuencia: 'mensual', diaInicio: 1 }, presupuestos: [],
+    } as any} />);
+    await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
+
+    fireEvent.change(screen.getByPlaceholderText('Pregúntale a tu asesor...'), {
+      target: { value: 'Quiero crear una meta de 2 millones para viajar a Europa' },
+    });
+    fireEvent.keyDown(screen.getByPlaceholderText('Pregúntale a tu asesor...'), { key: 'Enter' });
+    fireEvent.change(await screen.findByRole('textbox', { name: 'Nombre de la meta' }), { target: { value: 'Viaje' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Objetivo total de la meta en COP' }), { target: { value: '2500000' } });
+    fireEvent.change(screen.getByLabelText('Fecha objetivo de la meta'), { target: { value: '2027-06-01' } });
+    expect(screen.getByText(/necesitarías ahorrar cerca de .* COP al mes/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar meta' }));
+    await waitFor(() => expect(onCrearMeta).toHaveBeenCalledWith(expect.objectContaining({
+      nombre: 'Viaje', objetivoCop: 2500000, fechaObjetivo: '2027-06-01', ahorradoCop: 0,
+    })));
   });
 
   it('NO muestra botón de confirmar si el modelo responde pero no había ningún monto que registrar', async () => {
