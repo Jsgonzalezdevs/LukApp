@@ -284,10 +284,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             aria-label={
               procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
             }
-            className={`flex h-16 w-16 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-on-accent)] shadow-lg transition-transform active:scale-95 ${
+            className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-on-out)] shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
               escuchando ? 'animate-pulse' : ''
             }`}
-            style={{ backgroundColor: 'var(--fin-accent)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
+            style={{ backgroundColor: 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
           >
             {procesando ? (
               <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />

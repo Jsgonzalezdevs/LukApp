@@ -319,11 +319,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
           {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : onConfigurarCuenta ? <button type="button" onClick={() => onConfigurarCuenta(null)} className="font-medium text-[var(--fin-accent)]">Completar saldos</button> : null}
         </p>
 
-        <details className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-sm">
-          <summary className="cursor-pointer font-medium text-[var(--fin-ink-soft)]">Ver saldos y resultado del período</summary>
         {/* Desglose bancos y efectivo si existen */}
         {preparacion.saldosCompletos && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
-          <div className="mt-1 flex items-center gap-3 text-[13px] text-[var(--fin-ink-soft)]">
+          <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
             <span>
               Bancos:{' '}
               <strong className="font-semibold text-[var(--fin-ink)] tabular-nums">
@@ -341,12 +339,12 @@ export const InicioView: React.FC<InicioViewProps> = ({
         ) : null}
 
         {/* Pastilla de Ingresos y Gastos del periodo en toda la mitad */}
-        <div className="mt-4 flex justify-center">
+        <div className="mt-3.5 flex justify-center">
           <button
             type="button"
             onClick={onVerMes}
             title="Ver desglose del periodo"
-            className="flex items-center gap-3 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[15px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
+            className="flex items-center gap-2.5 rounded-full bg-[var(--fin-soft)] px-4 py-2 text-[13.5px] font-bold tabular-nums shadow-xs hover:bg-[var(--fin-card)] transition-colors active:scale-95"
           >
             <span style={{ color: 'var(--fin-out)' }}>
               ↓ {modoPrivacidad ? '••••' : formatMontoCompacto(gastosCop)}
@@ -357,7 +355,6 @@ export const InicioView: React.FC<InicioViewProps> = ({
             </span>
           </button>
         </div>
-        </details>
       </div>
 
       {mostrarProximosPagos ? <ProximosPagosInicio obligaciones={pagos} hoy={entrada.hoy} privacidad={modoPrivacidad} onVerPagos={onVerPagos ?? onVerMes} /> : null}

@@ -37,6 +37,8 @@ describe('Inicio — saldo e historial', () => {
     montar(true);
     expect(screen.getByText('Dinero disponible')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Primeros pasos' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Ver saldos y resultado del período')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Ver desglose del periodo')).toBeInTheDocument();
   });
   it('oculta próximos pagos cuando la preferencia está desactivada', () => {
     const datos = entrada(true);
