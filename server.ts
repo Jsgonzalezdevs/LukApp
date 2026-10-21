@@ -65,6 +65,7 @@ import {
   type UsoTokensIA,
 } from './server_lib/usoProveedorIA.ts';
 import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
+import { validarFirmaWebhookResend } from './server_lib/firmaWebhookResend.ts';
 import {
   centavosWompi,
   checksumEsperadoWompi,
@@ -163,7 +164,12 @@ app.use('/api/transcribir', (req, res, next) => {
 
 // PDF de hasta 4 MB en base64 ocupa cerca de 5.4 MB; 6 MB deja margen sin
 // aceptar de forma innecesaria cuerpos enormes. El audio se limita por ruta.
-app.use(express.json({ limit: '6mb' }));
+app.use(express.json({
+  limit: '6mb',
+  // Resend firma los bytes originales del webhook; conservarlos aquí permite
+  // validar la firma antes de confiar en el JSON ya interpretado.
+  verify: (req, _res, buffer) => { (req as express.Request & { rawBody?: Buffer }).rawBody = Buffer.from(buffer); },
+}));
 app.use(express.raw({ type: 'audio/*', limit: MAX_BYTES_AUDIO }));
 app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (typeof error === 'object' && error && (error as { type?: string }).type === 'entity.too.large') {
@@ -784,6 +790,129 @@ app.get('/api/superadmin/usuarios', async (req, res) => {
   } catch (error: any) {
     console.error('Error cargando usuarios del superadmin:', error);
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// COMPROBANTES POR CORREO
+// Cada usuario recibe un alias aleatorio; el webhook solo guarda metadatos y
+// procedencia. Nunca convierte un adjunto en movimiento sin revisión humana.
+// ----------------------------------------------------------------------
+app.post('/api/comprobantes-correo/webhook', async (req, res) => {
+  if (!validarFirmaWebhookResend({
+    secreto: process.env.RESEND_WEBHOOK_SECRET,
+    id: req.get('svix-id'),
+    marcaTiempo: req.get('svix-timestamp'),
+    firmas: req.get('svix-signature'),
+    cuerpo: (req as express.Request & { rawBody?: Buffer }).rawBody,
+  })) return res.status(401).json({ error: 'Firma de correo inválida.' });
+  const evento = req.body as {
+    type?: string;
+    data?: { email_id?: string; message_id?: string; from?: string; to?: string[]; subject?: string;
+      created_at?: string; attachments?: Array<{ id?: string; filename?: string; content_type?: string }> };
+  };
+  if (evento.type !== 'email.received') return res.status(200).json({ ok: true, ignorado: true });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(503).json({ error: 'Servicio de correo no disponible.' });
+  const dato = evento.data;
+  if (!dato?.email_id || !dato.message_id || !Array.isArray(dato.to)) return res.status(400).json({ error: 'El correo recibido está incompleto.' });
+  const dominio = process.env.COMPROBANTES_EMAIL_DOMINIO?.trim().toLowerCase();
+  if (!dominio) return res.status(503).json({ error: 'La recepción de comprobantes no está configurada.' });
+  const destinos = dato.to.map((correo) => correo.trim().toLowerCase());
+  const direccion = destinos.find((correo) => correo.endsWith(`@${dominio}`));
+  const alias = direccion?.split('@')[0];
+  if (alias && !/^[0-9a-f-]{36}$/.test(alias)) return res.status(200).json({ ok: true, ignorado: true });
+  if (!alias) return res.status(200).json({ ok: true, ignorado: true });
+  try {
+    const { data: destino, error: errorDestino } = await cliente.from('comprobantes_correo_destinos')
+      .select('user_id').eq('alias', alias).maybeSingle();
+    if (errorDestino) throw errorDestino;
+    if (!destino) return res.status(200).json({ ok: true, ignorado: true });
+    const adjuntos = (dato.attachments ?? []).slice(0, 12).map((archivo) => ({
+      id: String(archivo.id ?? '').slice(0, 120),
+      nombre: String(archivo.filename ?? 'comprobante').replace(/[\\/\\\\\\x00-\\x1f]/g, '_').slice(0, 180),
+      tipo: String(archivo.content_type ?? 'application/octet-stream').slice(0, 120),
+    }));
+    const { error } = await cliente.from('comprobantes_correo').upsert({
+      user_id: destino.user_id,
+      resend_email_id: dato.email_id,
+      message_id: dato.message_id,
+      remitente: String(dato.from ?? '').slice(0, 320),
+      destinatario: direccion ?? '',
+      asunto: String(dato.subject ?? '').slice(0, 300),
+      recibido_en: dato.created_at ?? new Date().toISOString(),
+      adjuntos,
+    }, { onConflict: 'message_id', ignoreDuplicates: true });
+    if (error) throw error;
+    return res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error('[comprobantes-correo] No se pudo registrar el correo:', error instanceof Error ? error.message : error);
+    return res.status(500).json({ error: 'No se pudo registrar el comprobante.' });
+  }
+});
+
+app.get('/api/comprobantes-correo/destino', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Inicia sesión para consultar tu correo de comprobantes.' });
+  const dominio = process.env.COMPROBANTES_EMAIL_DOMINIO?.trim().toLowerCase();
+  if (!dominio) return res.status(503).json({ error: 'La recepción por correo todavía no está configurada.' });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(503).json({ error: 'Servicio de correo no disponible.' });
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const { data, error } = await cliente.from('comprobantes_correo_destinos')
+      .upsert({ user_id: acceso.userId }, { onConflict: 'user_id' })
+      .select('alias').single();
+    if (error) throw error;
+    return res.json({ direccion: `${data.alias}@${dominio}` });
+  } catch (error) {
+    console.error('[comprobantes-correo] No se pudo crear el destino:', error instanceof Error ? error.message : error);
+    return res.status(500).json({ error: 'No se pudo preparar tu dirección de comprobantes.' });
+  }
+});
+
+app.get('/api/comprobantes-correo/:id/adjunto/:adjuntoId', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Inicia sesión para abrir el adjunto.' });
+  const llaveCorreo = process.env.RESEND_API_KEY;
+  if (!llaveCorreo) return res.status(503).json({ error: 'La descarga de adjuntos no está configurada.' });
+  if (!/^[0-9a-f-]{36}$/i.test(req.params.id) || !/^[0-9a-f-]{36}$/i.test(req.params.adjuntoId)) {
+    return res.status(400).json({ error: 'El adjunto no es válido.' });
+  }
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(503).json({ error: 'Servicio de correo no disponible.' });
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const { data: comprobante, error: errorComprobante } = await cliente.from('comprobantes_correo')
+      .select('resend_email_id,adjuntos').eq('id', req.params.id).eq('user_id', acceso.userId).maybeSingle();
+    if (errorComprobante) throw errorComprobante;
+    if (!comprobante) return res.status(404).json({ error: 'No encontramos ese comprobante en tu cuenta.' });
+    const adjuntos = Array.isArray(comprobante.adjuntos) ? comprobante.adjuntos as Array<{ id?: string }> : [];
+    if (!adjuntos.some((archivo) => archivo.id === req.params.adjuntoId)) {
+      return res.status(404).json({ error: 'Ese archivo no pertenece al comprobante.' });
+    }
+    const respuesta = await fetch(`https://api.resend.com/emails/receiving/${encodeURIComponent(comprobante.resend_email_id)}/attachments`, {
+      headers: { authorization: `Bearer ${llaveCorreo}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!respuesta.ok) throw new Error(`Resend respondió ${respuesta.status} al buscar el adjunto.`);
+    const resultado = await respuesta.json() as { data?: Array<{ id?: string; filename?: string; content_type?: string; size?: number; download_url?: string; expires_at?: string }> };
+    const archivo = resultado.data?.find((candidato) => candidato.id === req.params.adjuntoId);
+    if (!archivo?.download_url || !archivo.expires_at) return res.status(404).json({ error: 'El archivo ya no está disponible para descargar.' });
+    if (!/\.(pdf|jpe?g|png|webp|tiff?|csv|xlsx)$/i.test(archivo.filename ?? '')) {
+      return res.status(415).json({ error: 'Este archivo no es compatible con el importador de LukApp.' });
+    }
+    if (Number(archivo.size) > 4 * 1024 * 1024) return res.status(413).json({ error: 'El adjunto supera el límite de 4 MB del importador.' });
+    const url = new URL(archivo.download_url);
+    if (url.protocol !== 'https:' || url.hostname !== 'inbound-cdn.resend.com') {
+      return res.status(502).json({ error: 'El enlace seguro del adjunto no es válido.' });
+    }
+    return res.json({ url: url.toString(), nombre: String(archivo.filename ?? 'comprobante').slice(0, 180), vence: archivo.expires_at });
+  } catch (error) {
+    console.error('[comprobantes-correo] No se pudo preparar el adjunto:', error instanceof Error ? error.message : error);
+    return res.status(502).json({ error: 'No se pudo preparar la descarga del comprobante.' });
   }
 });
 

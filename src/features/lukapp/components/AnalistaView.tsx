@@ -1,5 +1,5 @@
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   AlertTriangle,
@@ -23,6 +23,8 @@ import type { Trabajo } from '../analista/useAnalista';
 import { useAnalista } from '../analista/useAnalista';
 import { AnalistaReporte } from './AnalistaReporte';
 import { useArchivoPwa } from './useArchivoPwa';
+import { obtenerSupabase } from '../data/supabase';
+import { apiUrl } from '../../../lib/api';
 
 interface AnalistaViewProps {
   cuentaInicialId?: string | null;
@@ -39,6 +41,123 @@ const nuevoId = (): string =>
 
 const segundosDe = (trabajo: Trabajo, ahora: number): number =>
   Math.max(0, Math.floor((ahora - trabajo.inicio) / 1000));
+const FORMATO_FECHA_COMPROBANTE = new Intl.DateTimeFormat('es-CO');
+
+interface ComprobanteCorreo {
+  id: string;
+  remitente: string;
+  asunto: string;
+  recibido_en: string;
+  fechaLegible: string;
+  adjuntos: Array<{ id: string; nombre: string; tipo: string }>;
+}
+
+const BandejaCorreo: React.FC = () => {
+  const [direccion, setDireccion] = useState('');
+  const [comprobantes, setComprobantes] = useState<ComprobanteCorreo[]>([]);
+  const [mensaje, setMensaje] = useState('');
+  const [cargando, setCargando] = useState(true);
+  const [descargando, setDescargando] = useState('');
+
+  const cargar = async () => {
+    setCargando(true);
+    setMensaje('');
+    const cliente = obtenerSupabase();
+    if (!cliente) {
+      setMensaje('Inicia sesión para activar tu dirección personal de comprobantes.');
+      setCargando(false);
+      return;
+    }
+    const { data: sesion } = await cliente.auth.getSession();
+    const token = sesion.session?.access_token;
+    if (!token) {
+      setMensaje('Inicia sesión para activar tu dirección personal de comprobantes.');
+      setCargando(false);
+      return;
+    }
+    try {
+      const respuesta = await fetch(apiUrl('/api/comprobantes-correo/destino'), {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      const datos = await respuesta.json() as { direccion?: string; error?: string };
+      if (!respuesta.ok || !datos.direccion) throw new Error(datos.error || 'No se pudo preparar la dirección.');
+      setDireccion(datos.direccion);
+      const { data, error } = await cliente.from('comprobantes_correo')
+        .select('id,remitente,asunto,recibido_en,adjuntos').order('recibido_en', { ascending: false }).limit(20);
+      if (error) throw error;
+      setComprobantes(((data ?? []) as Omit<ComprobanteCorreo, 'fechaLegible'>[]).map((fila) => ({
+        ...fila,
+        fechaLegible: FORMATO_FECHA_COMPROBANTE.format(new Date(fila.recibido_en)),
+      })));
+    } catch (error) {
+      setMensaje(error instanceof Error ? error.message : 'No se pudo cargar la bandeja de correo.');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  useEffect(() => { void Promise.resolve().then(cargar); }, []);
+
+  const descargar = async (comprobanteId: string, archivo: ComprobanteCorreo['adjuntos'][number]) => {
+    const cliente = obtenerSupabase();
+    const { data: sesion } = cliente ? await cliente.auth.getSession() : { data: { session: null } };
+    const token = sesion.session?.access_token;
+    if (!token) { setMensaje('Inicia sesión para descargar el adjunto.'); return; }
+    setDescargando(archivo.id);
+    try {
+      const respuesta = await fetch(apiUrl(`/api/comprobantes-correo/${comprobanteId}/adjunto/${archivo.id}`), {
+        headers: { authorization: `Bearer ${token}` },
+      });
+      const datos = await respuesta.json() as { url?: string; error?: string };
+      if (!respuesta.ok || !datos.url) throw new Error(datos.error || 'No se pudo preparar la descarga.');
+      window.location.assign(datos.url);
+    } catch (error) {
+      setMensaje(error instanceof Error ? error.message : 'No se pudo descargar el adjunto.');
+    } finally {
+      setDescargando('');
+    }
+  };
+
+  return (
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      <h2 className="text-[17px] font-semibold text-[var(--fin-ink)]">📩 Recibe comprobantes por correo</h2>
+      <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+        Reenvía facturas o recibos a tu dirección personal; aparecerán aquí con su remitente y fecha. No se crean movimientos ni se cambia tu saldo sin que revises e importes el archivo.
+      </p>
+      {direccion ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] p-3">
+          <code className="min-w-0 flex-1 break-all text-[13px] font-semibold text-[var(--fin-ink)]">{direccion}</code>
+          <button type="button" onClick={() => void navigator.clipboard?.writeText(direccion)} className="min-h-11 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] px-4 text-[13px] font-semibold text-[var(--fin-ink)]">Copiar</button>
+        </div>
+      ) : null}
+      {mensaje ? <p role="status" className="mt-3 text-[13px] text-[var(--fin-ink-soft)]">{mensaje}</p> : null}
+      {cargando ? <p className="mt-3 text-[13px] text-[var(--fin-ink-faint)]">Cargando tu bandeja…</p> : null}
+      {!cargando && comprobantes.length > 0 ? (
+        <ul className="mt-3 flex flex-col gap-2">
+          {comprobantes.map((item) => (
+            <li key={item.id} className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] p-3">
+              <p className="text-[13px] font-semibold text-[var(--fin-ink)]">{item.asunto || 'Comprobante recibido'}</p>
+              <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">De {item.remitente} · {item.fechaLegible}</p>
+              {item.adjuntos.length ? (
+                <ul className="mt-2 flex flex-col gap-1">
+                  {item.adjuntos.map((archivo) => (
+                    <li key={archivo.id} className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-[var(--fin-ink-faint)]">
+                      <span className="break-all">📎 {archivo.nombre}</span>
+                      <button type="button" disabled={descargando === archivo.id} onClick={() => void descargar(item.id, archivo)} className="min-h-11 rounded-[var(--fin-r-pill)] px-3 font-semibold text-[var(--fin-accent)] disabled:opacity-50">
+                        {descargando === archivo.id ? 'Preparando…' : 'Descargar para revisar'}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">Sin archivos adjuntos</p>}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <button type="button" onClick={() => void cargar()} disabled={cargando} className="mt-3 min-h-11 rounded-[var(--fin-r-pill)] px-4 text-[13px] font-semibold text-[var(--fin-accent)] disabled:opacity-50">Actualizar bandeja</button>
+    </section>
+  );
+};
 
 // -----------------------------------------------------------------------------
 
@@ -447,6 +566,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
+      <BandejaCorreo />
       {/* ---------- Dropzone: always visible, so more files can be added anytime ---------- */}
       <section
         onDragOver={(e) => {
