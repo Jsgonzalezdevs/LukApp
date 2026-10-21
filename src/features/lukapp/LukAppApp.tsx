@@ -1101,6 +1101,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             ingresos={ingresos}
             delMes={delMes}
             transacciones={transacciones}
+            onAbrirMovimiento={setDetalle}
             topes={
               <PresupuestosView
                 presupuestos={almacen.datos.presupuestos}

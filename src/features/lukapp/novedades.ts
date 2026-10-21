@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.4.0', fecha: '2026-10-21', texto: 'Toca un mes o un día en las gráficas para abrir los movimientos que forman esa cifra. Los registros importados como historial aparecen marcados 🧾🕰️; lo programado y estimado sigue separado en Calendario y Proyección. 📊' },
   { version: '9.3.0', fecha: '2026-10-21', texto: 'El asesor ahora te muestra cómo cambiarían tus cifras antes de guardar un movimiento y permite ajustar presupuestos y metas desde propuestas editables; tú confirmas cada cambio. 💡🧾🎯' },
   { version: '9.2.0', fecha: '2026-10-21', texto: 'LukApp puede detectar cobros parecidos durante tres meses y sugerir que los conviertas en pagos fijos; también te avisa si cambia el precio y muestra próximos cobros y una proyección mensual y anual. Tú confirmas cada cambio. 💡📅📊' },
   { version: '9.1.0', fecha: '2026-10-21', texto: 'La bandeja Revisar reúne posibles cobros repetidos y filas de extractos que necesitan otra mirada; puedes abrir cada movimiento, confirmar o descartar el aviso y consultar después la decisión guardada. 🧭🧾' },

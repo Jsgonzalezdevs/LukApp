@@ -38,6 +38,7 @@ interface MesViewProps {
   ingresos: readonly CategorySlice[];
   delMes: readonly Transaction[];
   transacciones: readonly Transaction[];
+  onAbrirMovimiento?: (tx: Transaction) => void;
   /** Los topes de gasto, que se editan desde Ajustes pero se leen aquí. */
   topes?: React.ReactNode;
 }
@@ -71,6 +72,7 @@ export const MesView: React.FC<MesViewProps> = ({
   ingresos,
   delMes,
   transacciones,
+  onAbrirMovimiento,
   topes,
 }) => {
   const positivo = totals.balance >= 0;
@@ -207,9 +209,9 @@ export const MesView: React.FC<MesViewProps> = ({
       <CategoryBreakdown title="En qué se te va" slices={gastos} />
       <CategoryBreakdown title="De dónde entra" slices={ingresos} />
 
-      <DetalleMes delMes={delMes} transacciones={transacciones} mes={mesCalendario} />
+      <DetalleMes delMes={delMes} transacciones={transacciones} mes={mesCalendario} onAbrirMovimiento={onAbrirMovimiento} />
 
-      <TendenciasView transacciones={transacciones} mes={mesCalendario} />
+      <TendenciasView transacciones={transacciones} mes={mesCalendario} onAbrirMovimiento={onAbrirMovimiento} />
 
       {delMes.length > 0 ? (
         <div className="flex items-center justify-center pt-2 pb-1">

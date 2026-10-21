@@ -15,7 +15,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Verificado, V9.1.0 |
 | 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Verificado, V9.2.0 |
 | 11 | Asesor con propuestas editables y efectos visibles antes de confirmar presupuestos, metas y movimientos. | Verificado, V9.3.0 |
-| 12 | Cifras y gráficas conectadas con sus movimientos; comparaciones y distinción entre real, programado y estimado. | Pendiente |
+| 12 | Cifras y gráficas conectadas con sus movimientos; comparaciones y distinción entre real, programado y estimado. | Verificado, V9.4.0 |
 | 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Pendiente |
 | 14 | Aportes/retiros/valoraciones/rendimientos y multimoneda con importe original, tasa y fecha; separar disponible e invertido. | Pendiente |
 | 15 | Recepción de comprobantes por correo con procedencia y deduplicación; evaluar e implementar la vía bancaria viable. | Pendiente |
@@ -152,6 +152,13 @@ El paso 7 quedó verificado en V8.0.3; los pasos 8 a 16 continúan pendientes. E
 - Los textos pequeños conservan emojis de identidad y etiquetas explicativas; los campos editables usan 17 px para evitar el zoom automático de iOS.
 - Suite completa: 135 archivos y 1.481 pruebas aprobadas. Las 38 pruebas específicas del asesor/parser/iOS también pasaron. TypeScript, build Vite, lint de los archivos tocados y `git diff --check` aprobados; lint conserva una advertencia preexistente de Fast Refresh en `AsesorView.tsx`.
 
+## Cierre del paso 12: V9.4.0
+
+- Seleccionar un día en la gráfica diaria o un mes en Tendencias muestra las transacciones que componen la cifra; tocar una abre el detalle del movimiento desde la misma pantalla.
+- Las transacciones importadas con `afecta_saldo=false` se identifican como historial y aclaran que no modifican saldos; el resto se etiqueta como movimiento actual.
+- Tendencias aclara que sus líneas muestran movimientos guardados, y mantiene programaciones y estimaciones aparte en Calendario y Proyección. Los avisos de pagos distinguen importe confirmado, programado y estimado.
+- Revisión funcional con pruebas de selección por teclado/toque, vínculo a detalle y distinción del historial. Suite completa: 136 archivos y 1.483 pruebas aprobadas; 14 pruebas específicas de detalle/tendencias aprobadas. TypeScript, build Vite, lint de archivos tocados y `git diff --check` aprobados.
+
 ## Siguiente paso
 
-Implementar y revisar el paso 12: conectar cifras y gráficas con sus movimientos, comparaciones y etiquetas de dato real, programado o estimado.
+Implementar y revisar el paso 13: invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles.

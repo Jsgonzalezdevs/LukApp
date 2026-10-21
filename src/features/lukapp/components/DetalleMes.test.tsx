@@ -16,8 +16,8 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
   ...over,
 });
 
-const montar = (transacciones: Transaction[], mes = '2026-08') =>
-  render(<DetalleMes delMes={transacciones} transacciones={transacciones} mes={mes} />);
+const montar = (transacciones: Transaction[], mes = '2026-08', onAbrirMovimiento?: (tx: Transaction) => void) =>
+  render(<DetalleMes delMes={transacciones} transacciones={transacciones} mes={mes} onAbrirMovimiento={onAbrirMovimiento} />);
 
 // The bars are labelled with `dayLabel`, which says "Hoy" and "Ayer" for the two
 // most recent days instead of a date. With a real clock these assertions held
@@ -103,6 +103,19 @@ describe('DetalleMes — gráfica por día', () => {
     fireEvent.mouseEnter(screen.getByRole('button', { name: /10 ago/ }));
 
     expect(screen.getByText('+$900.000')).toBeInTheDocument();
+  });
+
+  it('abre los movimientos que forman la cifra diaria y marca el historial importado', () => {
+    const real = tx({ id: 'real', description: 'Almuerzo' });
+    const historico = tx({ id: 'hist', description: 'Café antiguo', afectaSaldo: false });
+    const onAbrir = vi.fn();
+    montar([real, historico], '2026-08', onAbrir);
+    fireEvent.click(screen.getByRole('button', { name: /10 ago: \$50\.000/ }));
+
+    expect(screen.getByText('Movimiento actual')).toBeInTheDocument();
+    expect(screen.getByText('🕰️ Historial importado · no modifica saldo')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Almuerzo/ }));
+    expect(onAbrir).toHaveBeenCalledWith(real);
   });
 
   it('hides the whole chart when there was no spending at all', () => {

@@ -13,6 +13,7 @@ import {
 } from '../lib/tendencias';
 import { formatCop } from '../lib/formatCop';
 import { monthKeyLabel, shiftMonth } from '../lib/localDate';
+import { forMonth } from '../lib/aggregate';
 import { useCatalogo } from '../catalogoContexto';
 import { GraficaLineas } from './GraficaLineas';
 
@@ -20,11 +21,12 @@ interface TendenciasViewProps {
   transacciones: readonly Transaction[];
   /** 'YYYY-MM' the view is anchored to — the month the rest of the app shows. */
   mes: string;
+  onAbrirMovimiento?: (tx: Transaction) => void;
 }
 
 const RANGO_INICIAL: MesesRango = 6;
 
-export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, mes }) => {
+export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, mes, onAbrirMovimiento }) => {
   const catalogo = useCatalogo();
 
   // Cuántos meses se están mirando. Empieza en 6 porque es lo que había antes,
@@ -56,6 +58,10 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
       ? mesElegido
       : (serie[serie.length - 1]?.month ?? mes);
   const puntoActivo = serie.find((p) => p.month === mesActivo);
+  const movimientosDelMes = useMemo(
+    () => puntoActivo ? forMonth(transacciones, puntoActivo.month).sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt)) : [],
+    [transacciones, puntoActivo],
+  );
 
   const mesesConDatos = serie.filter((p) => p.ingresos > 0 || p.gastos > 0).length;
 
@@ -165,6 +171,33 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
               </span>
             </div>
           </div>
+        ) : null}
+
+        <p className="mt-3 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+          📊 Estas líneas resumen movimientos guardados; los pagos programados y los importes estimados se muestran aparte en Calendario y Proyección.
+        </p>
+        {puntoActivo && onAbrirMovimiento ? (
+          <section className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] p-3" aria-label={`Movimientos de ${monthKeyLabel(puntoActivo.month)}`}>
+            <h3 className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">🧾 Movimientos de {monthKeyLabel(puntoActivo.month)}</h3>
+            {movimientosDelMes.length === 0 ? (
+              <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">No hay movimientos guardados en este mes.</p>
+            ) : (
+              <ul className="mt-2 flex flex-col gap-2">
+                {movimientosDelMes.slice(0, 5).map((tx) => (
+                  <li key={tx.id}>
+                    <button type="button" onClick={() => onAbrirMovimiento(tx)} className="flex min-h-11 w-full items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2 text-left">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[13px] font-semibold text-[var(--fin-ink)]">{tx.description}</span>
+                        <span className="block text-[12px] text-[var(--fin-ink-faint)]">{tx.afectaSaldo === false ? '🕰️ Historial importado · no modifica saldo' : 'Movimiento actual'}</span>
+                      </span>
+                      <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--fin-ink)]">{formatCop(tx.amountCop)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {movimientosDelMes.length > 5 ? <p className="mt-2 text-[12px] text-[var(--fin-ink-faint)]">Mostrando 5 de {movimientosDelMes.length}; usa el historial para ver los demás.</p> : null}
+          </section>
         ) : null}
 
         {/* La frase que interpreta la gráfica. Sin ella el usuario tiene que

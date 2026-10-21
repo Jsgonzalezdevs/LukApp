@@ -13,6 +13,7 @@ interface DetalleMesProps {
   /** Full ledger, needed to place the month on the calendar. */
   transacciones: readonly Transaction[];
   mes: string;
+  onAbrirMovimiento?: (tx: Transaction) => void;
 }
 
 /** "3 movimientos · Mercado, Comida" for the day readout. */
@@ -126,9 +127,10 @@ const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
   );
 };
 
-const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> = ({
+const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string; onAbrirMovimiento?: (tx: Transaction) => void }> = ({
   transacciones,
   mes,
+  onAbrirMovimiento,
 }) => {
   const catalogo = useCatalogo();
   const dias = porDiaDelMes(transacciones, mes);
@@ -232,6 +234,24 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string }> =
       <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
         El promedio cuenta solo los días en que gastaste, no los {dias.length} del mes.
       </p>
+      {dia && onAbrirMovimiento ? (
+        <section className="mt-4 border-t border-[var(--fin-line)] pt-3" aria-label={`Movimientos del ${dayLabel(dia.fecha)}`}>
+          <h3 className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">🧾 Movimientos de ese día</h3>
+          <ul className="mt-2 flex flex-col gap-2">
+            {transacciones.filter((tx) => tx.occurredOn === dia.fecha).map((tx) => (
+              <li key={tx.id}>
+                <button type="button" onClick={() => onAbrirMovimiento(tx)} className="flex min-h-11 w-full items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2 text-left">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-semibold text-[var(--fin-ink)]">{tx.description}</span>
+                    <span className="block text-[12px] text-[var(--fin-ink-faint)]">{tx.afectaSaldo === false ? '🕰️ Historial importado · no modifica saldo' : 'Movimiento actual'}</span>
+                  </span>
+                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--fin-ink)]">{formatCop(tx.amountCop)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </section>
   );
 };
@@ -275,9 +295,9 @@ const Entradas: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
  * on a wallet-heavy account most of the month is transfers, so the question
  * worth answering is who, when, and which ones were big.
  */
-export const DetalleMes: React.FC<DetalleMesProps> = ({ delMes, transacciones, mes }) => (
+export const DetalleMes: React.FC<DetalleMesProps> = ({ delMes, transacciones, mes, onAbrirMovimiento }) => (
   <div className="flex flex-col gap-5">
-    <PorDia transacciones={transacciones} mes={mes} />
+    <PorDia transacciones={transacciones} mes={mes} onAbrirMovimiento={onAbrirMovimiento} />
     <Mayores delMes={delMes} />
     <Contrapartes delMes={delMes} kind="gasto" />
     <Contrapartes delMes={delMes} kind="ingreso" />
