@@ -4,7 +4,9 @@ import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
-import type { Instantanea, Repositorio } from './repositorio';
+import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
+import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
 /**
@@ -22,7 +24,7 @@ const DB_NOMBRE_LOCAL = 'finanzas';
 // Bumped when a store is added: `onupgradeneeded` only fires on a version
 // change, so a device that already opened the database at v1 would otherwise
 // never get the new store.
-const DB_VERSION = 6;
+const DB_VERSION = 8;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -33,6 +35,8 @@ const STORES = {
   contactos: 'contactos',
   presupuestos: 'presupuestos',
   recurrentes: 'recurrentes',
+  revisiones: 'revisiones',
+  documentosNegocio: 'documentosNegocio',
   /**
    * Cambios hechos sin conexión, a la espera de subirse. Solo lo usa
    * `ColaCambios` (`data/colaCambios.ts`); vive en el mismo archivo de base de
@@ -89,6 +93,8 @@ export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> =
     ...datos.contactos.map((c) => destino.guardarContacto(c)),
     ...datos.presupuestos.map((p) => destino.guardarPresupuesto(p)),
     ...datos.recurrentes.map((r) => destino.guardarRecurrente(r)),
+    destino.aplicarCambios({ guardar: { revisiones: datos.revisiones } }),
+    destino.guardarDocumentosNegocio(datos.documentosNegocio),
   ]);
   const rechazados = resultados.filter((resultado): resultado is PromiseRejectedResult => resultado.status === 'rejected');
   if (rechazados.length > 0) {
@@ -164,14 +170,69 @@ export class RepositorioIndexedDB implements Repositorio {
     return this.db;
   }
 
+  async aplicarCambios(cambios: CambiosFinancieros): Promise<void> {
+    await this.escribir(Object.values(STORES).filter((nombre) => nombre !== STORES.colaPendiente), (tx) => {
+      this.escribirCambios(tx, cambios);
+    });
+  }
+
+  private escribirCambios(tx: IDBTransaction, cambios: CambiosFinancieros): void {
+    for (const clave of Object.keys(instantaneaVacia()) as (keyof Instantanea)[]) {
+        const tienda = tx.objectStore(STORES[clave]);
+        if (cambios.reemplazar) {
+          tienda.clear();
+          for (const fila of cambios.reemplazar[clave]) tienda.put(fila);
+        }
+        for (const id of cambios.borrar?.[clave] ?? []) tienda.delete(id);
+        for (const fila of cambios.guardar?.[clave] ?? []) tienda.put(fila);
+    }
+  }
+
+  /** La copia local y su envío pendiente sobreviven juntos a un cierre abrupto. */
+  async confirmarPendiente(datos: Instantanea, metodo: string, args: unknown[]): Promise<IDBValidKey> {
+    const db = await this.conexion();
+    const tx = db.transaction(Object.values(STORES), 'readwrite');
+    const fin = completar(tx);
+    try {
+      this.escribirCambios(tx, { reemplazar: datos });
+      const clave = await pedir(tx.objectStore(STORES.colaPendiente).add({ metodo, args }));
+      await fin;
+      return clave;
+    } catch (error) {
+      try { tx.abort(); } catch { /* Puede haberse abortado al fallar una petición. */ }
+      await fin.catch(() => undefined);
+      throw error;
+    }
+  }
+
+  async descartarPendiente(datos: Instantanea, clave: IDBValidKey): Promise<void> {
+    await this.escribir(Object.values(STORES), (tx) => {
+      this.escribirCambios(tx, { reemplazar: datos });
+      tx.objectStore(STORES.colaPendiente).delete(clave);
+    });
+  }
+
+  async conExclusion<T>(trabajo: () => Promise<T>): Promise<T> {
+    return navigator.locks
+      ? navigator.locks.request(`lukapp:${this.nombreDeBase}`, trabajo)
+      : trabajo();
+  }
+
   private async escribir(
     stores: StoreNombre[],
     trabajo: (tx: IDBTransaction) => void,
   ): Promise<void> {
     const db = await this.conexion();
     const tx = db.transaction(stores, 'readwrite');
-    trabajo(tx);
-    await completar(tx);
+    const fin = completar(tx);
+    try {
+      trabajo(tx);
+    } catch (error) {
+      tx.abort();
+      await fin.catch(() => undefined);
+      throw error;
+    }
+    await fin;
   }
 
   async cargarTodo(): Promise<Instantanea> {
@@ -189,6 +250,8 @@ export class RepositorioIndexedDB implements Repositorio {
       contactos,
       presupuestos,
       recurrentes,
+      revisiones,
+      documentosNegocio,
     ] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
@@ -198,6 +261,8 @@ export class RepositorioIndexedDB implements Repositorio {
       pedir<Contacto[]>(tx.objectStore(STORES.contactos).getAll()),
       pedir<Presupuesto[]>(tx.objectStore(STORES.presupuestos).getAll()),
       pedir<Recurrente[]>(tx.objectStore(STORES.recurrentes).getAll()),
+      pedir<RevisionDudosa[]>(tx.objectStore(STORES.revisiones).getAll()),
+      pedir<DocumentoNegocio[]>(tx.objectStore(STORES.documentosNegocio).getAll()),
     ]);
 
     return {
@@ -209,6 +274,8 @@ export class RepositorioIndexedDB implements Repositorio {
       contactos,
       presupuestos,
       recurrentes,
+      revisiones,
+      documentosNegocio,
     };
   }
 
@@ -235,7 +302,7 @@ export class RepositorioIndexedDB implements Repositorio {
   async borrarCajita(id: string): Promise<void> {
     // All three stores join one transaction: a pocket that vanished while its
     // movements survived would resurrect as a phantom balance on next load.
-    await this.escribir([STORES.cajitas, STORES.cajitaMovimientos, STORES.metas], (tx) => {
+    await this.escribir([STORES.cajitas, STORES.cajitaMovimientos, STORES.metas, STORES.transacciones, STORES.recurrentes], (tx) => {
       tx.objectStore(STORES.cajitas).delete(id);
 
       const movimientos = tx.objectStore(STORES.cajitaMovimientos);
@@ -246,6 +313,15 @@ export class RepositorioIndexedDB implements Repositorio {
         actual.delete();
         actual.continue();
       };
+
+      for (const nombre of [STORES.transacciones, STORES.recurrentes]) {
+        const tienda = tx.objectStore(nombre);
+        tienda.getAll().onsuccess = function () {
+          for (const fila of this.result as (Transaction | Recurrente)[]) {
+            if (fila.cuentaId === id) tienda.put({ ...fila, cuentaId: null });
+          }
+        };
+      }
 
       const metas = tx.objectStore(STORES.metas);
       metas.getAll().onsuccess = function () {
@@ -326,6 +402,14 @@ export class RepositorioIndexedDB implements Repositorio {
   async guardarRecurrente(recurrente: Recurrente): Promise<void> {
     await this.escribir([STORES.recurrentes], (tx) => {
       tx.objectStore(STORES.recurrentes).put(recurrente);
+    });
+  }
+
+  async guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void> {
+    if (documentos.length === 0) return;
+    await this.escribir([STORES.documentosNegocio], (tx) => {
+      const store = tx.objectStore(STORES.documentosNegocio);
+      for (const documento of documentos) store.put(documento);
     });
   }
 

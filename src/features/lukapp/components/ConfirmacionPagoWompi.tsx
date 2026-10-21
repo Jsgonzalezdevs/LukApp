@@ -169,19 +169,19 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
         aria-live="polite"
       >
         <header className="mb-5 flex items-center justify-between px-1">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[var(--fin-accent)] text-white shadow-lg shadow-purple-500/20">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-lg shadow-purple-500/20">
               <CreditCard className="h-4.5 w-4.5" strokeWidth={2.4} aria-hidden="true" />
             </span>
             <span className="text-[15px] font-bold tracking-[-0.02em] text-[var(--fin-ink)]">LukApp</span>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-1.5 text-[11px] font-semibold text-[var(--fin-ink-soft)] shadow-sm">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm">
             <ShieldCheck className="h-3.5 w-3.5 text-[var(--fin-in)]" strokeWidth={2.25} aria-hidden="true" />
             Pago protegido
           </span>
         </header>
 
-        <div className="relative overflow-hidden rounded-[28px] bg-[#281146] p-6 text-white shadow-[0_32px_80px_-38px_rgba(59,22,105,0.72)] sm:p-8">
+        <div className="relative overflow-hidden rounded-[var(--fin-r-card)] bg-[#281146] p-6 text-white shadow-[0_32px_80px_-38px_rgba(59,22,105,0.72)] sm:p-8">
           <div className="pointer-events-none absolute inset-0 opacity-70" aria-hidden="true">
             <div className="absolute -right-20 -top-16 h-64 w-64 rounded-full bg-fuchsia-400/30 blur-3xl" />
             <div className="absolute bottom-[-7rem] left-[-4rem] h-72 w-72 rounded-full bg-lime-300/20 blur-3xl" />
@@ -191,30 +191,30 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
 
           <div className="relative">
             <div className="mb-8 flex items-center justify-between gap-4">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em] text-white/80 uppercase">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[13px] font-semibold tracking-[0.08em] text-white/80 uppercase">
                 <Sparkles className="h-3.5 w-3.5 text-lime-200" strokeWidth={2.3} aria-hidden="true" />
                 {contenidoPrincipal.etiqueta}
               </span>
-              <span className={`flex h-14 w-14 items-center justify-center rounded-[18px] border ${confirmado ? 'border-lime-200/30 bg-lime-200/15 text-lime-100' : 'border-white/15 bg-white/10 text-white'}`}>
+              <span className={`flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-card)] border ${confirmado ? 'border-lime-200/30 bg-lime-200/15 text-lime-100' : 'border-white/15 bg-white/10 text-white'}`}>
                 {contenidoPrincipal.icono}
               </span>
             </div>
 
-            <h1 className="max-w-[13ch] text-balance text-[32px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[42px]">
+            <h1 className="max-w-[13ch] text-balance text-[28px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[44px]">
               {contenidoPrincipal.titulo}
             </h1>
-            <p className="mt-4 max-w-[53ch] text-[15px] leading-relaxed text-white/72 sm:text-[16px]">
+            <p className="mt-4 max-w-[53ch] text-[15px] leading-relaxed text-white/72 sm:text-[17px]">
               {contenidoPrincipal.descripcion}
             </p>
 
             {suscripcion ? (
               <div className="mt-7 grid gap-2 border-t border-white/12 pt-5 sm:grid-cols-2">
-                <div className="rounded-[16px] bg-black/15 px-4 py-3">
-                  <p className="text-[11px] font-semibold tracking-[0.08em] text-white/50 uppercase">Plan activo</p>
+                <div className="rounded-[var(--fin-r-card)] bg-black/15 px-4 py-3">
+                  <p className="text-[13px] font-semibold tracking-[0.08em] text-white/50 uppercase">Plan activo</p>
                   <p className="mt-1 text-[15px] font-semibold text-white">{etiquetaCiclo(suscripcion.ciclo)}</p>
                 </div>
-                <div className="rounded-[16px] bg-black/15 px-4 py-3">
-                  <p className="text-[11px] font-semibold tracking-[0.08em] text-white/50 uppercase">Vigencia</p>
+                <div className="rounded-[var(--fin-r-card)] bg-black/15 px-4 py-3">
+                  <p className="text-[13px] font-semibold tracking-[0.08em] text-white/50 uppercase">Vigencia</p>
                   <p className="mt-1 text-[15px] font-semibold text-white">Hasta {fechaCorta(suscripcion.venceEn)}</p>
                 </div>
               </div>
@@ -222,55 +222,55 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
           </div>
         </div>
 
-        <div className="relative mt-4 overflow-hidden rounded-[24px] border border-[#ded2ef] bg-[linear-gradient(135deg,#ffffff_0%,#faf7ff_56%,#f4ffe6_145%)] p-4 shadow-[0_18px_45px_-34px_rgba(28,25,23,0.45)] sm:p-5">
+        <div className="relative mt-4 overflow-hidden rounded-[var(--fin-r-card)] border border-[#ded2ef] bg-[linear-gradient(135deg,#ffffff_0%,#faf7ff_56%,#f4ffe6_145%)] p-4 shadow-[0_18px_45px_-34px_rgba(28,25,23,0.45)] sm:p-5">
           {confirmado && plan ? (
             <>
               <div className="pointer-events-none absolute -right-14 -top-16 h-40 w-40 rounded-full bg-purple-300/20 blur-3xl" aria-hidden="true" />
               <div className="relative flex items-start gap-3">
-                <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[var(--fin-in)] text-white shadow-lg shadow-emerald-600/20">
+                <span className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-in)] text-[var(--fin-on-in)] shadow-lg shadow-emerald-600/20">
                   <Check className="h-5 w-5" strokeWidth={2.75} aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                     <h2 className="text-[17px] font-semibold tracking-[-0.025em] text-[var(--fin-ink)]">Todo tu Premium ya está habilitado</h2>
-                    <span className="rounded-full bg-[#e9ddff] px-2 py-0.5 text-[10px] font-bold tracking-[0.08em] text-[#5924a3] uppercase">{beneficiosPremium.length} prestaciones activas</span>
+                    <span className="rounded-full bg-[#e9ddff] px-2 py-1 text-[13px] font-bold tracking-[0.08em] text-[#5924a3] uppercase">{beneficiosPremium.length} prestaciones activas</span>
                   </div>
                   <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">Esta lista se compone con la configuración vigente de Premium.</p>
                 </div>
               </div>
-              <div className="relative mt-5 grid gap-2.5 sm:grid-cols-3">
+              <div className="relative mt-5 grid gap-3 sm:grid-cols-3">
                 {beneficiosPremium.slice(0, 3).map((beneficio) => {
                   const Icono = iconoDeBeneficio(beneficio.clave);
                   return (
-                  <div key={beneficio.clave} className="relative overflow-hidden rounded-[18px] bg-[#2b1349] p-4 text-white shadow-[0_14px_28px_-16px_rgba(48,16,88,0.8)]">
+                  <div key={beneficio.clave} className="relative overflow-hidden rounded-[var(--fin-r-card)] bg-[#2b1349] p-4 text-white shadow-[0_14px_28px_-16px_rgba(48,16,88,0.8)]">
                     <div className="absolute -right-7 -top-8 h-24 w-24 rounded-full bg-fuchsia-400/25 blur-2xl" aria-hidden="true" />
                     <div className="relative flex items-center justify-between gap-3">
-                      <p className="text-[12px] font-semibold text-white/74">{beneficio.titulo}</p>
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-lime-200">
+                      <p className="text-[13px] font-semibold text-white/74">{beneficio.titulo}</p>
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] border border-white/15 bg-white/10 text-lime-200">
                         <Icono className="h-4 w-4" strokeWidth={2.25} aria-hidden="true" />
                       </span>
                     </div>
                     <div className="relative mt-4 flex items-end gap-2">
                       <strong className="text-[28px] font-semibold leading-none tracking-[-0.05em] text-white">{valorDeBeneficio(beneficio)}</strong>
-                      <span className="mb-0.5 text-[11px] font-medium leading-tight text-white/62">{beneficio.detalle}</span>
+                      <span className="mb-1 text-[13px] font-medium leading-tight text-white/62">{beneficio.detalle}</span>
                     </div>
                   </div>
                   );
                 })}
               </div>
-              <div className="relative mt-2.5 grid gap-2.5 sm:grid-cols-2">
+              <div className="relative mt-3 grid gap-3 sm:grid-cols-2">
                 {beneficiosPremium.slice(3).map((beneficio) => {
                   const Icono = iconoDeBeneficio(beneficio.clave);
                   return (
-                  <div key={beneficio.clave} className="flex items-center gap-3 rounded-[16px] border border-[#dfd4ef] bg-white/75 px-3.5 py-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#f0e8ff] text-[#6328be]">
+                  <div key={beneficio.clave} className="flex items-center gap-3 rounded-[var(--fin-r-card)] border border-[#dfd4ef] bg-white/75 px-4 py-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[#f0e8ff] text-[#6328be]">
                       <Icono className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold text-[var(--fin-ink)]">{beneficio.titulo}</p>
-                      <p className="mt-0.5 text-[11px] leading-snug text-[var(--fin-ink-soft)]">{beneficio.detalle}</p>
+                      <p className="text-[13px] font-semibold text-[var(--fin-ink)]">{beneficio.titulo}</p>
+                      <p className="mt-1 text-[13px] leading-snug text-[var(--fin-ink-soft)]">{beneficio.detalle}</p>
                     </div>
-                    <strong className="shrink-0 text-[22px] font-semibold leading-none tracking-[-0.05em] text-[#58219d]">{valorDeBeneficio(beneficio)}</strong>
+                    <strong className="shrink-0 text-[20px] font-semibold leading-none tracking-[-0.05em] text-[#58219d]">{valorDeBeneficio(beneficio)}</strong>
                   </div>
                   );
                 })}
@@ -278,11 +278,11 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
             </>
           ) : (
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[13px] bg-[var(--fin-soft)] text-[var(--fin-accent)]">
+              <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-accent)]">
                 {revisando ? <Loader2 className="h-4.5 w-4.5 animate-spin" strokeWidth={2.25} aria-hidden="true" /> : <CalendarDays className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden="true" />}
               </span>
               <div>
-                <h2 className="text-[16px] font-semibold tracking-[-0.02em] text-[var(--fin-ink)]">Tu acceso se actualiza automáticamente</h2>
+                <h2 className="text-[17px] font-semibold tracking-[-0.02em] text-[var(--fin-ink)]">Tu acceso se actualiza automáticamente</h2>
                 <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">No necesitas enviar comprobantes ni repetir el pago. LukApp espera la confirmación firmada antes de activar Premium.</p>
               </div>
             </div>
@@ -290,16 +290,16 @@ export const ConfirmacionPagoWompi: React.FC<ConfirmacionPagoWompiProps> = ({ on
         </div>
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-          <button type="button" onClick={onIrAInicio} className="min-h-11 rounded-[var(--fin-r-control)] px-4 text-[14px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]">
+          <button type="button" onClick={onIrAInicio} className="min-h-11 rounded-[var(--fin-r-control)] px-4 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]">
             Ir al inicio
           </button>
           {confirmado ? (
-            <button type="button" onClick={onIrACuenta} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 text-[14px] font-semibold text-white shadow-lg shadow-purple-500/20 transition-colors hover:bg-[var(--fin-accent-hover)]">
+            <button type="button" onClick={onIrACuenta} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 text-[15px] font-semibold text-[var(--fin-on-accent)] shadow-lg shadow-purple-500/20 transition-colors hover:bg-[var(--fin-accent-hover)]">
               Ver mi plan
               <ArrowRight className="h-4 w-4" strokeWidth={2.4} aria-hidden="true" />
             </button>
           ) : (
-            <button type="button" onClick={() => { setEstado('consultando'); setRonda((valor) => valor + 1); }} disabled={revisando} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 text-[14px] font-semibold text-white shadow-lg shadow-purple-500/20 transition-colors hover:bg-[var(--fin-accent-hover)] disabled:cursor-wait disabled:opacity-60">
+            <button type="button" onClick={() => { setEstado('consultando'); setRonda((valor) => valor + 1); }} disabled={revisando} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 text-[15px] font-semibold text-[var(--fin-on-accent)] shadow-lg shadow-purple-500/20 transition-colors hover:bg-[var(--fin-accent-hover)] disabled:cursor-wait disabled:opacity-60">
               {revisando ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.3} aria-hidden="true" /> : <RefreshCw className="h-4 w-4" strokeWidth={2.3} aria-hidden="true" />}
               Verificar de nuevo
             </button>

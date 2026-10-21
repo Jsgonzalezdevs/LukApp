@@ -1,3 +1,6 @@
+import { etiquetaIcono } from '../lib/etiquetaIcono';
+import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Star, Trash2, X } from 'lucide-react';
 import type { Cajita, CajitaMovimiento } from '../data/modelos';
@@ -14,13 +17,14 @@ const parseDia = (texto: string): number | null => {
 };
 
 interface DetalleCajitaProps {
+  onImportar?: () => void;
   cajita: Cajita;
   movimientos: readonly CajitaMovimiento[];
   transacciones: readonly Transaction[];
-  onFijarSaldo: (cajitaId: string, saldo: number) => void;
-  onActualizar: (cajita: Cajita) => void;
-  onEliminar: (id: string) => void;
-  onTransferir?: (origenId: string, destinoId: string, montoCop: number) => void;
+  onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
+  onActualizar: (cajita: Cajita) => ResultadoGuardado;
+  onEliminar: (id: string) => ResultadoGuardado;
+  onTransferir?: (origenId: string, destinoId: string, montoCop: number) => ResultadoGuardado;
   destinos?: readonly { id: string; nombre: string }[];
   esFavorita?: boolean;
   onAlternarFavorita?: (id: string) => void;
@@ -43,6 +47,7 @@ interface DetalleCajitaProps {
  */
 export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   cajita,
+  onImportar,
   movimientos,
   transacciones,
   onFijarSaldo,
@@ -53,7 +58,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   esFavorita = false,
   onAlternarFavorita,
 }) => {
-  const [editandoSaldo, setEditandoSaldo] = useState(false);
+  const saldoPendiente = cajita.tipo === 'cuenta' && !tieneSaldoConfirmado(cajita.id, movimientos);
+  const [editandoSaldo, setEditandoSaldo] = useState(saldoPendiente);
   const [nuevoSaldoTexto, setNuevoSaldoTexto] = useState('');
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState(false);
@@ -61,6 +67,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   const [montoTexto, setMontoTexto] = useState('');
   const [errorTransferencia, setErrorTransferencia] = useState<string | null>(null);
   const [editandoCuenta, setEditandoCuenta] = useState(false);
+  const guardado = useGuardadoFinanciero();
   const [nombre, setNombre] = useState(cajita.nombre);
   const [icon, setIcon] = useState(cajita.icon);
   const [metaTexto, setMetaTexto] = useState(formatAmountInput(cajita.metaCop));
@@ -75,12 +82,12 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
 
   const pasivo = ES_PASIVO[cajita.tipo];
 
-  const guardarEdicion = (e: React.FormEvent) => {
+  const guardarEdicion = async (e: React.FormEvent) => {
     e.preventDefault();
     const limpio = nombre.trim();
     if (!limpio) return;
     const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
-    onActualizar({
+    if (!await guardado.ejecutar(() => onActualizar({
       ...cajita,
       nombre: limpio,
       icon,
@@ -91,7 +98,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       diaCorte: cajita.tipo === 'tarjeta' ? parseDia(corteTexto) : null,
       diaPago: cajita.tipo === 'tarjeta' ? parseDia(pagoTexto) : null,
       pagoMinimoCop: cajita.tipo === 'tarjeta' ? parseAmountInput(minimoTexto) : null,
-    });
+    }))) return;
     setEditandoCuenta(false);
   };
 
@@ -106,10 +113,10 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
     setEditandoSaldo(true);
   };
 
-  const guardarSaldo = () => {
+  const guardarSaldo = async () => {
     const nuevo = parseSaldoInput(nuevoSaldoTexto);
     if (nuevo === null) return;
-    onFijarSaldo(cajita.id, nuevo);
+    if (!await guardado.ejecutar(() => onFijarSaldo(cajita.id, nuevo))) return;
     setEditandoSaldo(false);
     setNuevoSaldoTexto('');
   };
@@ -128,7 +135,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       return;
     }
     try {
-      await onTransferir(cajita.id, destinoId, monto);
+      if (!await guardado.ejecutar(() => onTransferir!(cajita.id, destinoId, monto))) return;
       setTransfiriendo(false);
       setMontoTexto('');
       setDestinoId('');
@@ -153,14 +160,15 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
 
   return (
     <div className="flex flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       {/* Cabecera con icono y nombre */}
       <div className="flex items-center gap-4">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]">
           <Icono className="h-7 w-7 text-[var(--fin-ink-soft)]" strokeWidth={1.75} />
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[22px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
-          <p className="mt-0.5 text-[13px] text-[var(--fin-ink-faint)]">
+          <h1 className="truncate text-[20px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
+          <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
             {etiquetaTipoCajita(cajita)}
             {cajita.tasaEaPct ? ` · ${cajita.tasaEaPct}% E.A.` : ''}
           </p>
@@ -179,14 +187,14 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       {editandoCuenta ? (
         <form
           onSubmit={guardarEdicion}
-          className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3.5"
+          className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4"
         >
           <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
             Nombre
             <input
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
-              className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+              className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
           </label>
 
@@ -199,7 +207,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))}
                   inputMode="numeric"
                   placeholder="0"
-                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
               <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
@@ -209,7 +217,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
                   inputMode="decimal"
                   placeholder="13,5"
-                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
             </div>
@@ -226,7 +234,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
 
           <fieldset className="mt-3">
             <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ícono</legend>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-2">
               {CAJITA_ICONS.map((op: string) => {
                 const IconComponent = iconoDeCajita(op);
                 return (
@@ -235,7 +243,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                     type="button"
                     onClick={() => setIcon(op)}
                     aria-pressed={icon === op}
-                    aria-label={`Ícono ${op}`}
+                    aria-label={`Ícono ${etiquetaIcono(op)}`}
                     className={`flex h-8 w-8 items-center justify-center rounded-[var(--fin-r-control)] border-2 transition-colors ${
                       icon === op
                         ? 'border-[var(--fin-ink)] bg-[var(--fin-card)] text-[var(--fin-ink)]'
@@ -250,18 +258,18 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           </fieldset>
 
           {!pasivo ? (
-            <label className="mt-3 flex cursor-pointer items-start gap-2.5 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5">
+            <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3">
               <input
                 type="checkbox"
                 checked={bajoMonto}
                 onChange={(e) => setBajoMonto(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
+                className="mt-1 h-4 w-4 shrink-0 accent-[var(--fin-accent)]"
               />
               <span className="min-w-0">
                 <span className="block text-[13px] font-semibold text-[var(--fin-ink)]">
                   Es un depósito de bajo monto (ej. Nequi)
                 </span>
-                <span className="mt-0.5 block text-[13px] text-[var(--fin-ink-faint)]">
+                <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
                   Tiene una exención de 4x1000 de hasta 65 UVT mensuales.
                 </span>
               </span>
@@ -271,7 +279,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           <RippleButton
             type="submit"
             rippleColor="rgba(255,255,255,0.5)"
-            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)]"
+            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)]"
           >
             Guardar cambios
           </RippleButton>
@@ -283,7 +291,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"
         style={{ backdropFilter: 'var(--fin-glass-filter)', boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.6)' }}
       >
-        <p className="text-[12px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">Saldo actual</p>
+        <p className="text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">{saldoPendiente ? 'Confirma tu saldo actual' : 'Saldo actual'}</p>
 
         {!editandoSaldo ? (
           <>
@@ -297,14 +305,14 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 className="text-[44px] font-bold tabular-nums leading-none text-[var(--fin-ink)]"
                 style={{ letterSpacing: 'var(--fin-track-cifra)' }}
               >
-                {formatCop(saldo)}
+                {saldoPendiente ? 'Sin confirmar' : formatCop(saldo)}
               </span>
-              <span className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[12px] font-medium text-[var(--fin-ink-soft)]">
+              <span className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-medium text-[var(--fin-ink-soft)]">
                 <Pencil className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
                 Editar
               </span>
             </button>
-            <p className="mt-2 text-[12px] text-[var(--fin-ink-faint)]">Toca la cifra para actualizarla</p>
+            <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">Toca la cifra para actualizarla</p>
           </>
         ) : (
           /* En modo edición, el input ocupa toda la fila y los botones van en
@@ -322,9 +330,11 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 if (e.key === 'Escape') setEditandoSaldo(false);
               }}
               onFocus={(e) => e.target.select()}
-              placeholder="0"
+              placeholder="Escribe 0 si está vacía"
+              aria-label="Saldo actual de la cuenta"
+              disabled={guardado.ocupado}
               autoFocus
-              className="w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-accent)] bg-[var(--fin-bg)] px-4 py-3.5 text-[32px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none"
+              className="w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-accent)] bg-[var(--fin-bg)] px-4 py-4 text-[28px] font-bold tabular-nums text-[var(--fin-ink)] focus:outline-none"
               style={{ letterSpacing: 'var(--fin-track-cifra)' }}
             />
             {/* Botones en fila propia — nunca al lado del input grande */}
@@ -333,7 +343,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 type="button"
                 onClick={() => setEditandoSaldo(false)}
                 aria-label="Cancelar"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3 text-[14px] font-semibold text-[var(--fin-ink-soft)] transition-opacity hover:opacity-80"
+                className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-opacity hover:opacity-80"
               >
                 <X className="h-4 w-4" strokeWidth={2.5} />
                 Cancelar
@@ -341,9 +351,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               <button
                 type="button"
                 onClick={guardarSaldo}
-                disabled={parseSaldoInput(nuevoSaldoTexto) === null}
+                disabled={guardado.ocupado || parseSaldoInput(nuevoSaldoTexto) === null}
                 aria-label="Guardar saldo"
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 text-[14px] font-semibold text-[var(--fin-on-accent)] transition-opacity disabled:opacity-40"
+                className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-opacity disabled:opacity-40"
               >
                 <Check className="h-4 w-4" strokeWidth={2.5} />
                 Guardar
@@ -356,16 +366,18 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           <>
             <div className="mt-4 h-1.5 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
               <div
-                className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-in)] transition-all"
+                className="h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] transition-all"
                 style={{ width: `${Math.min(100, (saldo / cajita.metaCop) * 100)}%` }}
               />
             </div>
-            <p className="mt-2 text-[12px] text-[var(--fin-ink-faint)]">
+            <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
               {Math.round((saldo / cajita.metaCop) * 100)}% de {formatCop(cajita.metaCop)}
             </p>
           </>
         ) : null}
       </section>
+
+      {cajita.tipo === 'cuenta' && onImportar ? <button type="button" onClick={onImportar} className="mt-3 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-left font-semibold text-[var(--fin-ink)]">Importar extracto de esta cuenta</button> : null}
 
       {/* Marcar como cuenta favorita / principal */}
       {cajita.tipo === 'cuenta' && onAlternarFavorita && (
@@ -377,16 +389,16 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
             <div className="flex items-center gap-3 min-w-0">
               <div
                 className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                  esFavorita ? 'bg-amber-500/15 text-amber-500' : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
+                  esFavorita ? 'bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]' : 'bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
                 }`}
               >
-                <Star className={`h-5 w-5 ${esFavorita ? 'fill-amber-500 text-amber-500' : ''}`} />
+                <Star className={`h-5 w-5 ${esFavorita ? 'fill-amber-500 text-[var(--fin-warn-ink)]' : ''}`} />
               </div>
               <div className="min-w-0">
                 <p className="text-[15px] font-bold text-[var(--fin-ink)] truncate">
                   {esFavorita ? 'Cuenta principal activa' : 'Usar como cuenta principal'}
                 </p>
-                <p className="text-[12.5px] leading-tight text-[var(--fin-ink-soft)]">
+                <p className="text-[13px] leading-tight text-[var(--fin-ink-soft)]">
                   {esFavorita
                     ? 'Se preselecciona por defecto al anotar tus nuevos movimientos.'
                     : 'Márcala para no tener que elegirla cada vez que anotes.'}
@@ -396,13 +408,13 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
             <button
               type="button"
               onClick={() => onAlternarFavorita(cajita.id)}
-              className={`shrink-0 rounded-[var(--fin-r-pill)] px-3.5 py-1.5 text-[13px] font-bold transition-all ${
+              className={`shrink-0 rounded-[var(--fin-r-pill)] px-4 py-2 text-[13px] font-bold transition-all ${
                 esFavorita
-                  ? 'border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                  ? 'border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)] hover:bg-[var(--fin-warn-bg)]'
                   : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]/80'
               }`}
             >
-              {esFavorita ? 'Desmarcar' : 'Activar ⭐'}
+              {esFavorita ? 'Desmarcar' : 'Activar cuenta principal ⭐'}
             </button>
           </div>
         </section>
@@ -412,13 +424,13 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <button
           type="button"
           onClick={abrirTransferir}
-          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-ink)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-bg)] transition-opacity hover:opacity-80 active:opacity-70"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-ink)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-bg)] transition-opacity hover:opacity-80 active:opacity-70"
         >
           <Send className="h-4 w-4" strokeWidth={2.5} />
           Enviar dinero a otra cuenta
         </button>
       ) : (
-        <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-4 py-3.5 text-center">
+        <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-4 py-4 text-center">
           <p className="text-[13px] text-[var(--fin-ink-faint)]">
             Necesitas al menos 2 cuentas para transferir
           </p>
@@ -430,11 +442,11 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <button
           type="button"
           onClick={() => setMostrarAjustes(!mostrarAjustes)}
-          className="flex w-full items-center justify-between rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3.5 text-[14px] font-medium text-[var(--fin-ink)]"
+          className="flex w-full items-center justify-between rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-4 text-[15px] font-medium text-[var(--fin-ink)]"
         >
           <span>Historial de ajustes</span>
           <span className="flex items-center gap-2 text-[var(--fin-ink-faint)]">
-            <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-line)] px-2 py-0.5 text-[12px] font-semibold">
+            <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-line)] px-2 py-1 text-[13px] font-semibold">
               {propios.length}
             </span>
             <ChevronDown
@@ -458,7 +470,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <button
           type="button"
           onClick={confirmarEliminar}
-          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] border border-red-200 bg-red-50 px-4 py-3 text-[14px] font-semibold text-red-600 transition-opacity hover:opacity-80 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-400"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] border border-[var(--fin-out)]/30 bg-[var(--fin-out-bg)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-out)] transition-opacity hover:opacity-80 dark:border-red-900/40 bg-[var(--fin-out-bg)] text-[var(--fin-out)]"
         >
           <Trash2 className="h-4 w-4" />
           Eliminar cuenta
@@ -487,14 +499,14 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               </button>
             </div>
 
-            <label className="block text-[12px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]" htmlFor="destino">
+            <label className="block text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]" htmlFor="destino">
               Hacia
             </label>
             <select
               id="destino"
               value={destinoId}
               onChange={(e) => setDestinoId(e.target.value)}
-              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-[16px] text-[var(--fin-ink)] focus:border-[var(--fin-accent)] focus:outline-none"
+              className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-bg)] px-4 py-3 text-[17px] text-[var(--fin-ink)] focus:border-[var(--fin-accent)] focus:outline-none"
             >
               <option value="">— Elige la cuenta destino —</option>
               {destinosPosibles.map((d) => (
@@ -504,7 +516,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               ))}
             </select>
 
-            <label className="mt-5 block text-[12px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]" htmlFor="monto">
+            <label className="mt-5 block text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]" htmlFor="monto">
               Cuánto
             </label>
             <input
@@ -513,7 +525,9 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               inputMode="numeric"
               value={montoTexto}
               onChange={(e) => setMontoTexto(conPuntos(e.target.value))}
-              placeholder="0"
+              placeholder="Escribe 0 si está vacía"
+              aria-label="Saldo actual de la cuenta"
+              disabled={guardado.ocupado}
               autoFocus
               className={claseCampo}
             />
@@ -538,7 +552,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   setDestinoId('');
                   setMontoTexto('');
                 }}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink)] transition-opacity hover:opacity-80"
+                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-ink)] transition-opacity hover:opacity-80"
               >
                 Cancelar
               </button>
@@ -546,7 +560,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 type="button"
                 onClick={confirmarTransferir}
                 disabled={!montoValido}
-                className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-in)] px-4 py-3.5 text-[15px] font-semibold text-white transition-all hover:opacity-90 disabled:opacity-40 active:scale-[0.98]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-all hover:opacity-90 disabled:opacity-40 active:scale-[0.98]"
               >
                 <Send className="h-4 w-4" strokeWidth={2.5} />
                 Enviar

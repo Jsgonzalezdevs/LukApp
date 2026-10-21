@@ -365,22 +365,22 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
             {apodo || cuenta?.email || 'Tu cuenta'}
           </p>
           {apodo ? (
-            <p className="truncate text-[14px] text-[var(--fin-ink-soft)]">{cuenta?.email}</p>
+            <p className="truncate text-[15px] text-[var(--fin-ink-soft)]">{cuenta?.email}</p>
           ) : null}
         </div>
       </div>
 
       <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        <p className="mb-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)]">ID de cuenta</p>
+        <p className="mb-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]">ID de cuenta</p>
         <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[13px] text-[var(--fin-ink)]">
+          <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[13px] text-[var(--fin-ink)]">
             {id ?? '—'}
           </code>
           <button
             type="button"
             onClick={() => void copiarId()}
             disabled={!id}
-            className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+            className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
             aria-label="Copiar ID de cuenta"
           >
             {copiado ? (
@@ -405,7 +405,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                 <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">Consultando tus beneficios…</p>
               ) : plan ? (
                 <>
-                  <p className="mt-0.5 text-[14px] text-[var(--fin-ink-soft)]">
+                  <p className="mt-1 text-[15px] text-[var(--fin-ink-soft)]">
                     {plan.codigo === 'premium'
                       ? `Premium${plan.suscripcion ? ` hasta ${fechaCorta(plan.suscripcion.venceEn)}` : ''}`
                       : 'Normal — gratis para siempre'}
@@ -416,9 +416,9 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                         ? 'Estas son las prestaciones activas de tu Premium ahora mismo.'
                         : 'Estas son las prestaciones activas de tu plan Normal.'}
                     </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Prestaciones incluidas">
+                    <div className="mt-2 flex flex-wrap gap-2" aria-label="Prestaciones incluidas">
                       {beneficiosActivos(plan.beneficios).map((beneficio) => (
-                        <span key={beneficio.clave} className="rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--fin-ink-soft)]">{beneficio.titulo}</span>
+                        <span key={beneficio.clave} className="rounded-full bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">{beneficio.titulo}</span>
                       ))}
                     </div>
                   </div>
@@ -432,7 +432,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                           type="button"
                           onClick={() => void iniciarCheckoutWompi('mensual')}
                           disabled={pagandoCiclo !== null}
-                          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
                         >
                           {pagandoCiclo === 'mensual' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                           Premium mensual · {pesos(plan.preciosPremium.mensualCop)}
@@ -441,7 +441,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                           type="button"
                           onClick={() => void iniciarCheckoutWompi('anual')}
                           disabled={pagandoCiclo !== null}
-                          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
+                          className="flex min-h-11 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-[15px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
                         >
                           {pagandoCiclo === 'anual' ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                           Premium anual · {pesos(plan.preciosPremium.anualCop)}
@@ -472,7 +472,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
         role="status"
         aria-live="polite"
       >
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-3">
           <span
             className="h-2 w-2 shrink-0 rounded-[var(--fin-r-pill)]"
             style={{ backgroundColor: estadoSync.color }}
@@ -481,7 +481,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
           <div className="min-w-0">
             <p className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Sincronización</p>
             <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">{estadoSync.texto}</p>
-            <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">
+            <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {syncError
                 ? 'Puedes reintentar ahora. Lo que ya ves en pantalla permanece en este dispositivo.'
                 : cambiosPendientes > 0
@@ -494,7 +494,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
           type="button"
           onClick={() => void sincronizar()}
           disabled={sincronizando}
-          className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3.5 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-60"
+          className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-60"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${sincronizando ? 'animate-spin' : ''}`} strokeWidth={2.5} aria-hidden="true" />
           Sincronizar
@@ -505,14 +505,14 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
         <button
           type="button"
           onClick={cuenta.onSalir}
-          className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-left text-[17px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
+          className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-4 text-left text-[17px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
         >
           Cerrar sesión
         </button>
       ) : null}
 
       {cuenta ? (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
           {!cambiandoPassword ? (
             <button
               type="button"
@@ -520,7 +520,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                 setCambiandoPassword(true);
                 setErrorPassword(null);
               }}
-              className="flex items-center gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-left text-[17px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
+              className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-4 text-left text-[17px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)]"
             >
               <KeyRound className="h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.5} aria-hidden="true" />
               Restablecer contraseña
@@ -546,7 +546,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                   placeholder="Mínimo 6 caracteres"
                   autoComplete="new-password"
                   disabled={guardandoPassword}
-                  className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 pr-10 text-[16px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
+                  className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 pr-10 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
                 />
                 <button
                   type="button"
@@ -565,7 +565,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                 placeholder="Confirmar contraseña"
                 autoComplete="new-password"
                 disabled={guardandoPassword}
-                className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
+                className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/30"
               />
 
               {errorPassword ? (
@@ -582,7 +582,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                     setErrorPassword(null);
                   }}
                   disabled={guardandoPassword}
-                  className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
+                  className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
                 >
                   Cancelar
                 </button>
@@ -590,7 +590,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                   type="button"
                   onClick={() => void restablecerPassword()}
                   disabled={guardandoPassword}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
                 >
                   {guardandoPassword ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : null}
                   {guardandoPassword ? 'Guardando…' : 'Guardar'}
@@ -602,22 +602,22 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       ) : null}
 
       {cuenta ? (
-      <div className="mt-2 flex flex-col gap-2.5">
+      <div className="mt-2 flex flex-col gap-3">
         <p className="px-1 text-[13px] font-semibold text-[var(--fin-ink-faint)]">Zona de riesgo</p>
         {!confirmando ? (
           <button
             type="button"
             onClick={() => setConfirmando(true)}
-            className="flex items-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3.5 text-left text-[17px] font-semibold text-[var(--fin-out-ink)] transition-colors hover:opacity-90"
+            className="flex items-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-4 text-left text-[17px] font-semibold text-[var(--fin-out-ink)] transition-colors hover:opacity-90"
           >
             <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.5} aria-hidden="true" />
             Eliminar cuenta
           </button>
         ) : (
           <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-out)]/40 bg-[var(--fin-out-bg)] p-4">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-out-ink)]" strokeWidth={2.5} aria-hidden="true" />
-              <p className="text-[14px] leading-relaxed text-[var(--fin-out-ink)]">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-1 h-4 w-4 shrink-0 text-[var(--fin-out-ink)]" strokeWidth={2.5} aria-hidden="true" />
+              <p className="text-[15px] leading-relaxed text-[var(--fin-out-ink)]">
                 Esto borra tu cuenta y todos tus datos para siempre: movimientos, cuentas, metas,
                 categorías propias. No se puede deshacer.
               </p>
@@ -633,7 +633,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                   setErrorEliminar(null);
                 }}
                 disabled={eliminando}
-                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
+                className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-ink)] disabled:opacity-60"
               >
                 Cancelar
               </button>
@@ -641,7 +641,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                 type="button"
                 onClick={() => void eliminarCuenta()}
                 disabled={eliminando}
-                className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out)] px-4 py-2.5 text-[15px] font-semibold text-white disabled:opacity-60"
+                className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-out)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-out)] disabled:opacity-60"
               >
                 {eliminando ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : null}
                 {eliminando ? 'Eliminando…' : 'Sí, eliminar mi cuenta'}
@@ -654,7 +654,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
 
       {/* La versión, al pie. Es el sitio donde alguien la va a buscar cuando
           reporte un problema: "estoy en la v1.0.0" ahorra media conversación. */}
-      <p className="pt-2 text-center text-[12px] text-[var(--fin-ink-faint)]">
+      <p className="pt-2 text-center text-[13px] text-[var(--fin-ink-faint)]">
         LukApp {VERSION_ETIQUETA}
       </p>
     </section>

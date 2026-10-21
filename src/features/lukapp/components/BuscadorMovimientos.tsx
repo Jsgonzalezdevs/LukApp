@@ -7,6 +7,8 @@ import type { Filtro } from '../lib/filtros';
 import type { Transaction } from '../types';
 
 interface BuscadorMovimientosProps {
+  incluirFunciones?: boolean;
+  complementoConsulta?: React.ReactNode;
   filtro: Filtro;
   onCambiar: (filtro: Filtro) => void;
   /** The rows the current filter produced, for the running total. */
@@ -16,10 +18,12 @@ interface BuscadorMovimientosProps {
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
   filtro,
+  incluirFunciones = false,
+  complementoConsulta,
   onCambiar,
   resultados,
   cuentas,
@@ -41,13 +45,16 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
         <input
           value={filtro.texto}
           onChange={(e) => cambiar({ texto: e.target.value })}
-          placeholder="Buscar por quién, en qué, o cuánto"
-          aria-label="Buscar movimientos"
+          placeholder={incluirFunciones ? 'Movimiento o función: almuerzo, metas, importar…' : 'Buscar por quién, en qué, o cuánto'}
+          aria-label={incluirFunciones ? 'Buscar movimientos y funciones' : 'Buscar movimientos'}
           type="search"
           className={`${CAMPO} pl-9`}
         />
       </div>
 
+      {incluirFunciones && !activo ? <p className="mt-2 text-xs text-[var(--fin-ink-soft)]">Movimientos de todo tu historial y funciones de LukApp.</p> : null}
+      {complementoConsulta ? <div className="mt-3">{complementoConsulta}</div> : null}
+      {incluirFunciones ? <p className="mt-4 text-xs font-semibold text-[var(--fin-ink-soft)]">Filtrar movimientos</p> : null}
       <div className="mt-2 flex flex-wrap gap-2">
         <select
           value={filtro.kind ?? ''}
@@ -96,7 +103,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
  ledger — a search that only looked at the visible month would mean
  stepping back through the calendar to find anything. */}
       {activo ? (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-3.5 py-2.5">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3">
           <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
             <b className="text-[var(--fin-ink)]">
               {resumen.cuantos} movimiento{resumen.cuantos === 1 ? '' : 's'}
@@ -118,7 +125,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
           <button
             type="button"
             onClick={() => onCambiar(FILTRO_VACIO)}
-            className="flex shrink-0 items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
+            className="flex shrink-0 items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
             Limpiar

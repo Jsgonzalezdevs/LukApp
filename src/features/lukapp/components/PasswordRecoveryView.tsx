@@ -55,7 +55,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
           <Mail className="h-6 w-6 text-[var(--fin-ink-soft)]" strokeWidth={2} />
         </div>
         <h2 className="text-[20px] font-semibold text-[var(--fin-ink)]">Recuperar contraseña</h2>
-        <p className="text-[14px] text-[var(--fin-ink-soft)]">
+        <p className="text-[15px] text-[var(--fin-ink-soft)]">
           Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
         </p>
       </div>
@@ -80,7 +80,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
               setMensaje('');
               setEmailEnviado('');
             }}
-            className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+            className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
           >
             Intentar con otro correo
           </button>
@@ -95,7 +95,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
               onChange={(e) => setCorreo(e.target.value)}
               placeholder="tu@correo.com"
               disabled={estado === 'enviando'}
-              className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] border-none focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]"
+              className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3 text-base text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-faint)] border-none focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]"
             />
           </div>
 
@@ -109,7 +109,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
           <button
             type="submit"
             disabled={estado === 'enviando'}
-            className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {estado === 'enviando' ? 'Enviando...' : 'Enviar enlace de recuperación'}
           </button>

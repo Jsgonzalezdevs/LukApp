@@ -16,6 +16,8 @@ export type CajitaTipo = 'cuenta' | 'cajita' | 'deuda' | 'tarjeta';
 
 /** El medio concreto detrás de una cuenta de dinero. */
 export type ClaseCuenta = 'efectivo' | 'banco' | 'billetera';
+export const MONEDAS_DISPONIBLES = ['COP', 'USD', 'EUR', 'MXN', 'CAD', 'GBP'] as const;
+export type MonedaDisponible = (typeof MONEDAS_DISPONIBLES)[number];
 
 /**
  * Debts and credit cards are the same structure INVERTED: the balance is what
@@ -77,6 +79,10 @@ export interface Cajita {
   diaCorte?: number | null;
   diaPago?: number | null;
   pagoMinimoCop?: number | null;
+  /** Una cajita marcada como inversión se excluye del dinero disponible. */
+  esInversion?: boolean;
+  /** Moneda en que está expresado el activo; los totales siguen consolidados en COP. */
+  moneda?: string;
 }
 
 /**
@@ -91,6 +97,7 @@ export type CajitaMovKind =
   | 'deposito'
   | 'retiro'
   | 'rendimiento'
+  | 'valoracion'
   | 'ajuste'
   /** A purchase on a card, or new money owed. Raises what you owe. */
   | 'compra'
@@ -117,6 +124,11 @@ export interface CajitaMovimiento {
   cuotaCop?: number | null;
   interesPct?: number | null;
   cuotaManejoCop?: number | null;
+  /** Importe de origen tal como lo registró la persona, antes de convertir a COP. */
+  montoOriginal?: number | null;
+  monedaOriginal?: string | null;
+  /** COP por una unidad de moneda original; queda congelada en el movimiento. */
+  tasaCambioCop?: number | null;
 }
 
 export const CAJITA_MOV_LABELS: Record<CajitaMovKind, string> = {
@@ -125,6 +137,7 @@ export const CAJITA_MOV_LABELS: Record<CajitaMovKind, string> = {
   deposito: 'Depósito',
   retiro: 'Retiro',
   rendimiento: 'Rendimiento',
+  valoracion: 'Valoración',
   ajuste: 'Ajuste de saldo',
 };
 
@@ -137,6 +150,7 @@ export const CAJITA_MOV_ICON: Record<CajitaMovKind, LucideIcon> = {
   deposito: ArrowUp,
   retiro: ArrowDown,
   rendimiento: Sparkles,
+  valoracion: Pencil,
   ajuste: Pencil,
 };
 

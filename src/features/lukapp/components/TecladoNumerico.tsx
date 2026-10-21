@@ -36,7 +36,7 @@ export const TecladoNumerico: React.FC<TecladoNumericoProps> = ({ onDigito, onBo
           onClick={() => onDigito(tecla)}
           // active:scale en vez de una animación: el toque tiene que responder
           // en el mismo instante, no dentro de 150ms.
-          className={`${altura} rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[22px] font-semibold text-[var(--fin-ink)] tabular-nums transition-transform active:scale-95`}
+          className={`${altura} rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[20px] font-semibold text-[var(--fin-ink)] tabular-nums transition-transform active:scale-95`}
         >
           {tecla}
         </button>

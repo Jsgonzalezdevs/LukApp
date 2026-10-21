@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { Users, Link2Off, Pencil, Check, UserPlus } from 'lucide-react';
 import type { Transaction } from '../types';
@@ -10,12 +11,12 @@ import { DetalleContacto } from './DetalleContacto';
 interface ContactosViewProps {
   transacciones: readonly Transaction[];
   contactos: readonly Contacto[];
-  onUnir: (a: string, b: string, nombre: string) => void;
-  onSeparar: (a: string, b: string, nombre: string) => void;
-  onRenombrar: (contacto: Contacto) => void;
+  onUnir: (a: string, b: string, nombre: string) => ResultadoGuardado;
+  onSeparar: (a: string, b: string, nombre: string) => ResultadoGuardado;
+  onRenombrar: (contacto: Contacto) => ResultadoGuardado;
   /** Undoes a merge: the spellings go back to being their own rows. */
-  onDeshacer: (contactoId: string) => void;
-  onApodar: (clave: string, nombre: string, apodo: string, quitar?: boolean) => void;
+  onDeshacer: (contactoId: string) => ResultadoGuardado;
+  onApodar: (clave: string, nombre: string, apodo: string, quitar?: boolean) => ResultadoGuardado;
 }
 
 /** One row of the list: a merged contact, or a name still standing alone. */
@@ -88,6 +89,7 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
   onDeshacer,
   onApodar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [editando, setEditando] = useState<string | null>(null);
   const [borrador, setBorrador] = useState('');
   const [agregando, setAgregando] = useState(false);
@@ -120,9 +122,10 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
     // `w-full` es obligatorio -- ver el comentario en TendenciasView.tsx
     // sobre por qué un mx-auto sin w-full no llena dentro de un padre flex.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto w-full max-w-3xl">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
             Con quién mueves la plata
           </h2>
@@ -145,19 +148,19 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
           {agregando ? (
             <form
               className="mt-3 grid gap-2"
-              onSubmit={(evento) => {
+              onSubmit={async (evento) => {
                 evento.preventDefault();
                 const nombre = nombreNuevo.trim();
                 const alias = normalizarNombre(aliasNuevo || nombre);
                 if (!nombre || !alias) return;
-                onApodar(alias, nombre, nombre);
+                if (!await guardado.ejecutar(() => onApodar(alias, nombre, nombre))) return;
                 setNombreNuevo('');
                 setAliasNuevo('');
                 setAgregando(false);
               }}
             >
-              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />
-              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />
+              <input value={nombreNuevo} onChange={(e) => setNombreNuevo(e.target.value)} placeholder="Nombre de la persona" required className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" />
+              <input value={aliasNuevo} onChange={(e) => setAliasNuevo(e.target.value)} placeholder="Cómo aparece en el extracto (opcional)" className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" />
               <button type="submit" className="rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]">Guardar persona</button>
             </form>
           ) : null}
@@ -196,11 +199,12 @@ export const ContactosView: React.FC<ContactosViewProps> = ({
             >
               {editando === fila.clave && fila.contacto ? (
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
                     const nombre = borrador.trim();
                     if (nombre !== '' && fila.contacto) {
-                      onRenombrar({ ...fila.contacto, nombre });
+                      const contacto = { ...fila.contacto, nombre };
+                      if (!await guardado.ejecutar(() => onRenombrar(contacto))) return;
                     }
                     setEditando(null);
                   }}

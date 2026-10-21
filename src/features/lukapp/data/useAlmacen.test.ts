@@ -3,8 +3,10 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import type { Transaction } from '../types';
 import { RepositorioMemoria } from './repositorio';
 import type { Repositorio } from './repositorio';
+import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { saldoDeCajita } from '../lib/cajitas';
 import type { Cajita } from './modelos';
+import type { RevisionDudosa } from './revisiones';
 import { useAlmacen } from './useAlmacen';
 
 const tx = (over: Partial<Transaction> = {}): Transaction => ({
@@ -46,6 +48,99 @@ describe('useAlmacen', () => {
     expect(result.current.datos.transacciones.map((t) => t.id)).toEqual(['nueva']);
     // The point of the whole layer: it survives a fresh read.
     expect((await repo.cargarTodo()).transacciones).toHaveLength(1);
+  });
+
+  it('persiste la inversión en su moneda y cada movimiento con tasa y fecha de origen', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    await act(async () => {
+      await result.current.crearCajita({
+        nombre: 'ETF global', icon: '📈', tipo: 'cajita', metaCop: null, tasaEaPct: null,
+        esInversion: true, moneda: 'USD', saldoInicialCop: 0,
+      });
+    });
+    const id = result.current.datos.cajitas.find((c) => c.nombre === 'ETF global')!.id;
+    await act(async () => {
+      await result.current.registrarMovimiento({
+        cajitaId: id, kind: 'deposito', deltaCop: 42000, montoOriginal: 10.5,
+        monedaOriginal: 'USD', tasaCambioCop: 4000, occurredOn: '2026-10-20',
+      });
+    });
+
+    const guardado = await repo.cargarTodo();
+    expect(guardado.cajitas.find((c) => c.nombre === 'ETF global')).toMatchObject({ esInversion: true, moneda: 'USD' });
+    expect(guardado.cajitaMovimientos.at(-1)).toMatchObject({
+      deltaCop: 42000, montoOriginal: 10.5, monedaOriginal: 'USD', tasaCambioCop: 4000,
+      occurredOn: '2026-10-20',
+    });
+  });
+
+  it('guarda una revisión de extracto aunque no haya una transacción que importar', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    const revision: RevisionDudosa = {
+      id: 'transferencia-excluida:trabajo:2026-08-06:20000:Entre mis cuentas',
+      tipo: 'transferencia', estado: 'pendiente', referenciaId: null,
+      titulo: 'Verifica una transferencia del extracto', detalle: 'Se excluyó del total.',
+      documento: 'extracto.csv', resolucion: null,
+      createdAt: '2026-08-06T12:00:00.000Z', updatedAt: '2026-08-06T12:00:00.000Z',
+    };
+    await act(async () => {
+      expect(await result.current.importarTransacciones([], [revision])).toBe(true);
+    });
+    expect(result.current.datos.revisiones).toEqual([revision]);
+    expect((await repo.cargarTodo()).revisiones).toEqual([revision]);
+    expect((await repo.cargarTodo()).transacciones).toEqual([]);
+  });
+
+
+  it('conserva dos registros hechos antes del siguiente render', async () => {
+    const repo = new RepositorioMemoria();
+    const { result } = await montar(repo);
+    await act(async () => {
+      const agregar = result.current.agregarTransaccion;
+      expect(await agregar(tx({ id: 'primera' }))).toBe(true);
+      expect(await agregar(tx({ id: 'segunda' }))).toBe(true);
+    });
+    expect(result.current.datos.transacciones.map((t) => t.id).sort()).toEqual(['primera', 'segunda']);
+    expect((await repo.cargarTodo()).transacciones).toHaveLength(2);
+  });
+
+
+  it('reconcilia la pantalla si un guardado falla mientras otro termina correctamente', async () => {
+    const repo = new RepositorioMemoria();
+    const escribir = repo.guardarTransacciones.bind(repo);
+    let rechazar!: (error: Error) => void;
+    const bloqueo = new Promise<never>((_, rechazo) => { rechazar = rechazo; });
+    vi.spyOn(repo, 'guardarTransacciones').mockImplementation((filas) => filas[0].id === 'rechazada' ? bloqueo : escribir(filas));
+    const { result } = await montar(repo);
+    await act(async () => {
+      const primera = result.current.agregarTransaccion(tx({ id: 'rechazada' }));
+      expect(await result.current.agregarTransaccion(tx({ id: 'aceptada' }))).toBe(true);
+      rechazar(new Error('No se pudo guardar la primera'));
+      expect(await primera).toBe(false);
+    });
+    expect(result.current.datos.transacciones.map((fila) => fila.id)).toEqual(['aceptada']);
+    expect((await repo.cargarTodo()).transacciones.map((fila) => fila.id)).toEqual(['aceptada']);
+  });
+
+  it('distingue saldo desconocido de cero confirmado después de reabrir', async () => {
+    const repo = new RepositorioMemoria();
+    const vista = await montar(repo);
+    await act(async () => {
+      await vista.result.current.crearCajita({ nombre: 'Pendiente', icon: 'wallet', tipo: 'cuenta', metaCop: null, tasaEaPct: null, saldoInicialCop: null });
+      await vista.result.current.crearCajita({ nombre: 'Vacía', icon: 'wallet', tipo: 'cuenta', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 });
+    });
+    const datos = await repo.cargarTodo();
+    const pendiente = datos.cajitas.find((c) => c.nombre === 'Pendiente')!;
+    const vacia = datos.cajitas.find((c) => c.nombre === 'Vacía')!;
+    expect(tieneSaldoConfirmado(pendiente.id, datos.cajitaMovimientos)).toBe(false);
+    expect(tieneSaldoConfirmado(vacia.id, datos.cajitaMovimientos)).toBe(true);
+    await act(async () => { expect(await vista.result.current.fijarSaldo(pendiente.id, 0)).toBe(true); });
+    vista.unmount();
+    const reabierta = await montar(repo);
+    expect(tieneSaldoConfirmado(pendiente.id, reabierta.result.current.datos.cajitaMovimientos)).toBe(true);
+    expect(saldoDeCajita(reabierta.result.current.datos.cajitaMovimientos, pendiente.id)).toBe(0);
   });
 
   it('updates a transaction in place', async () => {
@@ -175,7 +270,7 @@ describe('useAlmacen', () => {
     const { result } = await montar(repo);
 
     await act(async () => {
-      await result.current.agregarTransaccion(tx({ id: 'fantasma' }));
+      expect(await result.current.agregarTransaccion(tx({ id: 'fantasma' }))).toBe(false);
     });
 
     expect(result.current.error).toBe('disco lleno');
@@ -723,6 +818,7 @@ describe('useAlmacen', () => {
     await act(async () => { await result.current.crearCajita({ nombre: 'Efectivo', icon: 'Wallet', tipo: 'cuenta', claseCuenta: 'efectivo', metaCop: null, tasaEaPct: null, saldoInicialCop: 0 }); });
     const id = result.current.datos.cajitas[0].id;
 
+    const antes = await repo.cargarTodo();
     await act(async () => {
       await result.current.transferirEntreCuentas({
         origenId: id,
@@ -731,7 +827,7 @@ describe('useAlmacen', () => {
       });
     });
 
-    expect(result.current.datos.cajitaMovimientos).toEqual([]);
+    expect(result.current.datos.cajitaMovimientos).toEqual(antes.cajitaMovimientos);
   });
 
   it('ignora una transferencia de cero', async () => {
@@ -752,11 +848,12 @@ describe('useAlmacen', () => {
     const a = result.current.datos.cajitas[0].id;
     const b = result.current.datos.cajitas.find((c) => c.nombre === 'Viaje')!.id;
 
+    const antes = await repo.cargarTodo();
     await act(async () => {
       await result.current.transferirEntreCuentas({ origenId: a, destinoId: b, montoCop: 0 });
     });
 
-    expect(result.current.datos.cajitaMovimientos).toEqual([]);
+    expect(result.current.datos.cajitaMovimientos).toEqual(antes.cajitaMovimientos);
   });
 
   it('deja dicho en el historial de dónde vino y a dónde fue', async () => {
@@ -784,7 +881,7 @@ describe('useAlmacen', () => {
     });
 
     const notas = result.current.datos.cajitaMovimientos.map((m) => m.nota).sort();
-    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Bancolombia']);
+    expect(notas).toEqual(['Enviado a Viaje', 'Recibido de Bancolombia', 'Saldo inicial']);
   });
 
   it('el id de una cuenta creada es un UUID válido', async () => {
@@ -953,7 +1050,7 @@ describe('useAlmacen — recargar', () => {
     const { result } = await montar(repo);
 
     // Se guarda algo, pero la escritura se queda colgada a propósito.
-    let guardando: Promise<void>;
+    let guardando: Promise<boolean>;
     act(() => {
       guardando = result.current.agregarTransaccion(tx({ id: 'recien-anotada' }));
     });

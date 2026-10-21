@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
+import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Check, Undo2 } from 'lucide-react';
 import { debeCerrarPorDeslizamiento } from './avisoGuardadoGestos';
@@ -13,11 +14,13 @@ export interface Guardado {
   aviso?: string | null;
   /** Operaciones compuestas no se pueden deshacer borrando una sola transacción. */
   permitirDeshacer?: boolean;
+  esError?: boolean;
 }
 
 interface AvisoGuardadoProps {
   guardado: Guardado | null;
-  onDeshacer: (id: string) => void;
+  onDeshacer: (id: string) => boolean | void | Promise<boolean | void>;
+  estado?: 'local' | 'pendiente' | 'sincronizado' | 'temporal';
   onCerrar: () => void;
 }
 
@@ -37,11 +40,18 @@ const SEGUNDOS = 5;
  * útil, pero no es una razón para parar: se dice después, junto al Deshacer,
  * que es lo que de verdad hace falta si resultó estar mal.
  */
-export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshacer, onCerrar }) => {
+export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshacer, onCerrar, estado }) => {
+  const quieto = useMovimientoReducido();
+  const [idDeshaciendo, setIdDeshaciendo] = useState<string | null>(null);
+  const [idErrorDeshacer, setIdErrorDeshacer] = useState<string | null>(null);
+  const deshaciendo = guardado !== null && idDeshaciendo === guardado.id;
+  const errorDeshacer = guardado !== null && idErrorDeshacer === guardado.id;
+  const avisoActual = useRef(guardado);
+  avisoActual.current = guardado;
   const [restante, setRestante] = useState(SEGUNDOS);
 
   useEffect(() => {
-    if (guardado === null) return;
+    if (guardado === null || deshaciendo || guardado.esError) return;
     setRestante(SEGUNDOS);
     const tic = setInterval(() => setRestante((s) => s - 1), 1000);
     const fin = setTimeout(onCerrar, SEGUNDOS * 1000);
@@ -51,15 +61,15 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
       clearInterval(tic);
       clearTimeout(fin);
     };
-  }, [guardado, onCerrar]);
+  }, [guardado, onCerrar, deshaciendo]);
 
   return (
     <AnimatePresence>
       {guardado !== null ? (
         <motion.div
-          initial={{ y: 20, opacity: 0 }}
+          initial={{ y: quieto ? 0 : 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 20, opacity: 0 }}
+          exit={{ y: quieto ? 0 : 20, opacity: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
           // Va por encima de la barra de anotar para no taparla.
           className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+7rem)]"
@@ -78,22 +88,24 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
             style={{ touchAction: 'pan-x' }}
             className="fin-glass pointer-events-auto flex w-full max-w-sm cursor-grab items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 active:cursor-grabbing"
           >
-            <Check
-              className="h-5 w-5 shrink-0 text-[var(--fin-in)]"
+            {guardado.esError ? <AlertTriangle className="h-5 w-5 shrink-0 text-[var(--fin-out)]" aria-hidden="true" /> : <Check
+              className="h-5 w-5 shrink-0 text-[var(--fin-accent)]"
               strokeWidth={3}
               aria-hidden="true"
-            />
+            />}
             <div className="min-w-0 flex-1">
               <p className="truncate text-[15px] font-semibold text-[var(--fin-ink)]">
                 {guardado.texto}
               </p>
               {guardado.detalle ? (
-                <p className="mt-0.5 truncate text-[12px] text-[var(--fin-ink-faint)]">
+                <p className="mt-1 truncate text-[13px] text-[var(--fin-ink-faint)]">
                   {guardado.detalle}
                 </p>
               ) : null}
+              {!guardado.esError && estado ? <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">{{ local: 'Guardado en este dispositivo', pendiente: 'Guardado en este dispositivo · pendiente de sincronizar', sincronizado: 'Sincronizado con tu cuenta', temporal: 'Guardado solo durante esta sesión' }[estado]}</p> : null}
+              {errorDeshacer ? <p role="alert" className="text-sm text-[var(--fin-out)]">No se pudo deshacer. El movimiento sigue guardado.</p> : null}
               {guardado.aviso ? (
-                <p className="mt-0.5 flex items-start gap-1.5 text-[13px] text-[var(--fin-warn)]">
+                <p className="mt-1 flex items-start gap-2 text-[13px] text-[var(--fin-warn)]">
                   <AlertTriangle
                     className="mt-px h-3.5 w-3.5 shrink-0"
                     strokeWidth={2.5}
@@ -103,14 +115,27 @@ export const AvisoGuardado: React.FC<AvisoGuardadoProps> = ({ guardado, onDeshac
                 </p>
               ) : null}
             </div>
-            {guardado.permitirDeshacer !== false ? (
+            {guardado.permitirDeshacer !== false && !guardado.esError ? (
               <button
                 type="button"
-                onClick={() => onDeshacer(guardado.id)}
-                className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
+                disabled={deshaciendo}
+                onClick={async () => {
+                  const aviso = guardado;
+                  setIdDeshaciendo(aviso.id);
+                  setIdErrorDeshacer(null);
+                  try {
+                    const resultado = await onDeshacer(aviso.id);
+                    if (avisoActual.current === aviso && resultado === false) setIdErrorDeshacer(aviso.id);
+                  } catch {
+                    if (avisoActual.current === aviso) setIdErrorDeshacer(aviso.id);
+                  } finally {
+                    setIdDeshaciendo((id) => id === aviso.id ? null : id);
+                  }
+                }}
+                className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
               >
                 <Undo2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-                Deshacer
+                {deshaciendo ? 'Deshaciendo…' : 'Deshacer'}
                 <span className="tabular-nums text-[var(--fin-ink-faint)]">{restante}</span>
               </button>
             ) : null}

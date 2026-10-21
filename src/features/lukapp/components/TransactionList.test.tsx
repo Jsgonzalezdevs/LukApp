@@ -15,6 +15,11 @@ const movimiento = {
 };
 
 describe('TransactionList — atajos de movimiento', () => {
+  it('identifica los movimientos históricos que no afectan el saldo actual', () => {
+    render(<TransactionList transactions={[{ ...movimiento, afectaSaldo: false }]} />);
+    expect(screen.getByLabelText('Movimiento histórico; no modifica el saldo actual')).toHaveTextContent('Histórico');
+  });
+
   it('mantiene acciones equivalentes y accesibles para repetir o editar una fila', () => {
     const repetir = vi.fn();
     const editar = vi.fn();

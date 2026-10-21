@@ -1,3 +1,5 @@
+import { etiquetaIcono } from '../lib/etiquetaIcono';
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Lock, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
@@ -7,8 +9,8 @@ import {
   EMOJIS_POPULARES_CATEGORIA,
   ICONOS_CATEGORIA,
   iconoDeCategoria,
-  sugerirEmojiCategoria,
   sugerirIconoCategoria,
+  sugerirEmojiCategoria,
 } from '../categorias';
 import type { CategoriaPersonal } from '../categorias';
 import { useCatalogo } from '../catalogoContexto';
@@ -18,22 +20,22 @@ import { RippleButton } from './RippleButton';
 export interface CategoriasEditorProps {
   categorias: readonly CategoriaPersonal[];
   transacciones: readonly Transaction[];
-  onCrear: (datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => void;
-  onActualizar: (categoria: CategoriaPersonal) => void;
-  onArchivar: (id: string) => void;
-  onBorrar: (id: string) => void;
+  onCrear: (datos: Omit<CategoriaPersonal, 'id' | 'createdAt' | 'archivedAt'>) => ResultadoGuardado;
+  onActualizar: (categoria: CategoriaPersonal) => ResultadoGuardado;
+  onArchivar: (id: string) => ResultadoGuardado;
+  onBorrar: (id: string) => ResultadoGuardado;
 }
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 const SelectorEmoji: React.FC<{ valor: string; onCambiar: (v: string) => void }> = ({
   valor,
   onCambiar,
 }) => (
   <div>
-    <div className="flex flex-wrap gap-1.5 max-h-44 overflow-y-auto pr-1" role="radiogroup" aria-label="Emoji">
+    <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto pr-1" role="radiogroup" aria-label="Emoji">
       {EMOJIS_POPULARES_CATEGORIA.map((emoji) => {
         const activo = valor === emoji;
         return (
@@ -44,7 +46,7 @@ const SelectorEmoji: React.FC<{ valor: string; onCambiar: (v: string) => void }>
             aria-checked={activo}
             aria-label={`Emoji ${emoji}`}
             onClick={() => onCambiar(emoji)}
-            className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-control)] border text-[20px] transition-all ${
+            className={`flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-control)] border text-[20px] transition-all ${
               activo
                 ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] scale-105 shadow-xs ring-2 ring-[var(--fin-ink)]/20'
                 : 'border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)]'
@@ -64,10 +66,11 @@ const SelectorEmoji: React.FC<{ valor: string; onCambiar: (v: string) => void }>
           const v = e.target.value;
           if (v.trim()) onCambiar(v.trim());
         }}
+        aria-label="Emoji personalizado"
         placeholder="O escribe tu propio emoji (ej: 🍕, 🚀, 🐱)"
-        className="flex-1 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
+        className="flex-1 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
       />
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--fin-soft)] text-[22px] border border-[var(--fin-line)] shrink-0">
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--fin-soft)] text-[20px] border border-[var(--fin-line)] shrink-0">
         {valor || '🏷️'}
       </span>
     </div>
@@ -78,7 +81,7 @@ const SelectorIcono: React.FC<{ valor: string; onCambiar: (v: string) => void }>
   valor,
   onCambiar,
 }) => (
-  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Ícono">
+  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Ícono">
     {ICONOS_CATEGORIA.map((nombre) => {
       const Icono = iconoDeCategoria(nombre);
       const activo = valor === nombre;
@@ -88,7 +91,7 @@ const SelectorIcono: React.FC<{ valor: string; onCambiar: (v: string) => void }>
           type="button"
           role="radio"
           aria-checked={activo}
-          aria-label={nombre}
+          aria-label={etiquetaIcono(nombre)}
           onClick={() => onCambiar(nombre)}
           className={`flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-control)] border-2 transition-colors ${
             activo
@@ -107,7 +110,7 @@ const SelectorColor: React.FC<{ valor: string; onCambiar: (v: string) => void }>
   valor,
   onCambiar,
 }) => (
-  <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Color">
+  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Color">
     {COLORES_CATEGORIA.map((color) => {
       const activo = valor.toUpperCase() === color;
       return (
@@ -132,14 +135,12 @@ const SelectorColor: React.FC<{ valor: string; onCambiar: (v: string) => void }>
 
 const Formulario: React.FC<{
   inicial?: CategoriaPersonal;
-  onGuardar: (datos: { nombre: string; icon: string; emoji: string; color: string }) => void;
+  onGuardar: (datos: { nombre: string; icon: string; emoji: string; color: string }) => ResultadoGuardado;
   onCancelar: () => void;
 }> = ({ inicial, onGuardar, onCancelar }) => {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');
   const [icon, setIcon] = useState(inicial?.icon ?? 'Package');
-  const [emoji, setEmoji] = useState(
-    inicial?.emoji ?? (inicial?.nombre ? sugerirEmojiCategoria(inicial.nombre) : '🏷️'),
-  );
+  const [emoji, setEmoji] = useState(inicial?.emoji ?? sugerirEmojiCategoria(inicial?.nombre ?? ''));
   const [color, setColor] = useState<string>(inicial?.color ?? COLORES_CATEGORIA[0]);
   const [manual, setManual] = useState(inicial !== undefined);
 
@@ -153,6 +154,7 @@ const Formulario: React.FC<{
     }
   };
 
+  const guardado = useGuardadoFinanciero();
   const cambiarIconoManual = (valor: string) => {
     setManual(true);
     setIcon(valor);
@@ -169,19 +171,20 @@ const Formulario: React.FC<{
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         if (!listo) return;
-        onGuardar({ nombre: nombre.trim(), icon, emoji: emoji || '🏷️', color });
+        await guardado.ejecutar(() => onGuardar({ nombre: nombre.trim(), icon, emoji, color }));
       }}
       className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 border border-[var(--fin-line)]"
     >
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="flex items-center gap-3">
         <span
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[26px] shadow-xs"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] text-[28px] shadow-xs"
           style={{ backgroundColor: tint(color, 0.2) }}
         >
-          {emoji || '🏷️'}
+          <span aria-hidden="true">{emoji || '🏷️'}</span>
         </span>
         <div className="flex-1 min-w-0">
           <label
@@ -197,25 +200,23 @@ const Formulario: React.FC<{
             placeholder="Ej: Mercado, Viajes, Almuerzo..."
             maxLength={28}
             autoFocus
-            className={`mt-1.5 ${CAMPO}`}
+            className={`mt-2 ${CAMPO}`}
           />
         </div>
       </div>
 
-      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-        Emoji
-      </p>
-      <div className="mt-1.5">
+      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Emoji</p>
+      <div className="mt-2">
         <SelectorEmoji valor={emoji} onCambiar={cambiarEmojiManual} />
       </div>
 
-      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Ícono</p>
-      <div className="mt-1.5">
+      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Ícono alternativo</p>
+      <div className="mt-2">
         <SelectorIcono valor={icon} onCambiar={cambiarIconoManual} />
       </div>
 
       <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Color</p>
-      <div className="mt-1.5">
+      <div className="mt-2">
         <SelectorColor valor={color} onCambiar={setColor} />
       </div>
 
@@ -224,14 +225,14 @@ const Formulario: React.FC<{
           type="submit"
           disabled={!listo}
           rippleColor="rgba(255,255,255,0.5)"
-          className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[16px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30 shadow-xs"
+          className="flex-1 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30 shadow-xs"
         >
           {inicial ? 'Guardar cambios' : 'Crear categoría'}
         </RippleButton>
         <button
           type="button"
           onClick={onCancelar}
-          className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-3 text-[16px] font-semibold text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]"
+          className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]"
         >
           Cancelar
         </button>
@@ -266,7 +267,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
           <button
             type="button"
             onClick={() => setCreando(true)}
-            className="flex items-center gap-1.5 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[14px] font-semibold text-[var(--fin-ink)] shadow-xs hover:bg-[var(--fin-soft)]"
+            className="flex items-center gap-2 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[15px] font-semibold text-[var(--fin-ink)] shadow-xs hover:bg-[var(--fin-soft)]"
           >
             <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
             Nueva
@@ -278,9 +279,10 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
         {creando ? (
           <div className="mt-2">
             <Formulario
-              onGuardar={(datos) => {
-                onCrear(datos);
+              onGuardar={async (datos) => {
+                if (await onCrear(datos) === false) return false;
                 setCreando(false);
+                return true;
               }}
               onCancelar={() => setCreando(false)}
             />
@@ -290,7 +292,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
 
       <ul className="mt-3 flex flex-col gap-2">
         {propias.length === 0 && !creando ? (
-          <li className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-4 py-5 text-center text-[14px] text-[var(--fin-ink-soft)]">
+          <li className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-4 py-5 text-center text-[15px] text-[var(--fin-ink-soft)]">
             Aún no tienes categorías propias. Crea una para clasificar mejor tus movimientos.
           </li>
         ) : null}
@@ -303,9 +305,10 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
               <li key={cat.id}>
                 <Formulario
                   inicial={cat}
-                  onGuardar={(datos) => {
-                    onActualizar({ ...cat, ...datos });
+                  onGuardar={async (datos) => {
+                    if (await onActualizar({ ...cat, ...datos }) === false) return false;
                     setEditando(null);
+                    return true;
                   }}
                   onCancelar={() => setEditando(null)}
                 />
@@ -322,22 +325,22 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: Math.min(idx, 8) * 0.03, ease: 'easeOut' }}
-              className={`flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3.5 py-3 border border-[var(--fin-line)] shadow-xs ${
+              className={`flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3 border border-[var(--fin-line)] shadow-xs ${
                 archivada ? 'opacity-55' : ''
               }`}
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[22px] select-none"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] text-[20px] select-none"
                 style={{ backgroundColor: tint(cat.color, 0.18) }}
               >
-                {emojiActual}
+                <span aria-hidden="true">{emojiActual}</span>
               </span>
 
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[16px] font-semibold text-[var(--fin-ink)]">
+                <span className="block truncate text-[17px] font-semibold text-[var(--fin-ink)]">
                   {cat.nombre}
                 </span>
-                <span className="block text-[12.5px] text-[var(--fin-ink-faint)]">
+                <span className="block text-[13px] text-[var(--fin-ink-faint)]">
                   {archivada ? 'Archivada · ' : ''}
                   {enUso === 0 ? 'sin movimientos' : `${enUso} movimiento${enUso === 1 ? '' : 's'}`}
                 </span>
@@ -381,22 +384,22 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
         })}
       </ul>
 
-      <p className="mt-6 px-1 text-[14px] font-semibold text-[var(--fin-ink-soft)]">
+      <p className="mt-6 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         Categorías principales del sistema
       </p>
       <ul className="mt-2 flex flex-wrap gap-2">
         {basicas.map((cat) => (
           <li
             key={cat.clave}
-            className="flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-1.5 text-[13.5px] font-medium text-[var(--fin-ink)] shadow-xs"
+            className="flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[15px] font-medium text-[var(--fin-ink)] shadow-xs"
           >
-            <span className="text-[16px]">{cat.emoji}</span>
+            <span className="text-[17px]"><span aria-hidden="true">{cat.emoji}</span></span>
             <span>{cat.nombre}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2.5 flex items-start gap-1.5 px-1 text-[12.5px] leading-relaxed text-[var(--fin-ink-faint)]">
-        <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
+      <p className="mt-3 flex items-start gap-2 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+        <Lock className="mt-1 h-3.5 w-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />
         Estas no se editan: el dictado por voz y las plantillas de extracto las reconocen automáticamente.
       </p>
     </section>

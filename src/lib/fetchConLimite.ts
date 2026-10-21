@@ -1,5 +1,5 @@
 /** El límite incluye leer el cuerpo, no solo recibir las cabeceras HTTP. */
-export async function fetchConLimite(url: string, init: RequestInit, limiteMs: number): Promise<Response> {
+export async function fetchConLimite(url: RequestInfo | URL, init: RequestInit, limiteMs: number, solicitar: typeof fetch = globalThis.fetch): Promise<Response> {
   const controller = new AbortController();
   const cancelar = () => controller.abort();
   if (init.signal?.aborted) controller.abort();
@@ -8,7 +8,7 @@ export async function fetchConLimite(url: string, init: RequestInit, limiteMs: n
   try {
     return await Promise.race([
       (async () => {
-        const respuesta = await globalThis.fetch(url, { ...init, signal: controller.signal });
+        const respuesta = await solicitar(url, { ...init, signal: controller.signal });
         const cuerpo = await respuesta.arrayBuffer();
         return new Response(cuerpo.byteLength ? cuerpo : null, {
           status: respuesta.status, statusText: respuesta.statusText, headers: respuesta.headers,

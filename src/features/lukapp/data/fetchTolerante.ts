@@ -1,3 +1,5 @@
+import { fetchConLimite } from '../../../lib/fetchConLimite';
+
 /**
  * Reintenta las peticiones que la API rechaza por un token "recién nacido".
  *
@@ -93,6 +95,7 @@ const esperaCalculada = (respuesta: Response, token: string | null): number | nu
 export interface OpcionesTolerante {
   /** Inyectable para que los tests no esperen de verdad. */
   esperar?: (ms: number) => Promise<void>;
+  limiteMs?: number;
 }
 
 /**
@@ -104,11 +107,20 @@ export interface OpcionesTolerante {
  */
 export const crearFetchTolerante = (
   base: typeof fetch,
-  { esperar = dormir }: OpcionesTolerante = {},
+  { esperar = dormir, limiteMs = 20_000 }: OpcionesTolerante = {},
 ): typeof fetch => {
   return async (entrada: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     for (let intento = 0; ; intento++) {
-      const respuesta = await base(entrada, init);
+      let respuesta: Response;
+      try {
+        const signal = init?.signal ?? (entrada instanceof Request ? entrada.signal : undefined);
+        respuesta = await fetchConLimite(entrada, { ...init, signal }, limiteMs, base);
+      } catch (error) {
+        if (error instanceof Error && (error.message === 'tiempo-agotado' || error.name === 'AbortError')) {
+          throw new TypeError('Network: se agotó el tiempo de conexión con el servidor.');
+        }
+        throw error;
+      }
 
       if (respuesta.status !== 401 || intento >= ESPERAS_A_CIEGAS_MS.length) return respuesta;
 

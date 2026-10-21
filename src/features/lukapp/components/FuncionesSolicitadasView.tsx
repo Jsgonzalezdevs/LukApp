@@ -156,7 +156,7 @@ export const FuncionesSolicitadasView: React.FC = () => {
   return (
     <section className="flex flex-col gap-4">
       <div>
-        <h2 className="flex items-center gap-1.5 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+        <h2 className="flex items-center gap-2 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <Lightbulb className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
           Funciones solicitadas
         </h2>
@@ -166,7 +166,7 @@ export const FuncionesSolicitadasView: React.FC = () => {
       </div>
 
       {error ? (
-        <p className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-3.5 py-3 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
+        <p className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
           {error}
         </p>
       ) : null}
@@ -174,19 +174,19 @@ export const FuncionesSolicitadasView: React.FC = () => {
       {funciones === null ? (
         <p className="px-1 text-[13px] text-[var(--fin-ink-faint)]">Cargando…</p>
       ) : (
-        <ul className="flex flex-col gap-2.5">
+        <ul className="flex flex-col gap-3">
           {funciones.map((f) => {
             const votado = misVotos.has(f.id);
             return (
               <li
                 key={f.id}
-                className="flex items-start gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-3.5"
+                className="flex items-start gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"
               >
                 <button
                   type="button"
                   onClick={() => void votar(f.id)}
                   disabled={votando.has(f.id)}
-                  className={`flex shrink-0 flex-col items-center gap-0.5 rounded-[var(--fin-r-control)] px-2.5 py-2 text-[15px] font-bold tabular-nums transition-colors disabled:opacity-60 ${
+                  className={`flex shrink-0 flex-col items-center gap-1 rounded-[var(--fin-r-control)] px-3 py-2 text-[15px] font-bold tabular-nums transition-colors disabled:opacity-60 ${
                     votado
                       ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                       : 'bg-[var(--fin-soft)] text-[var(--fin-ink)] hover:bg-[var(--fin-card-hover)]'
@@ -200,7 +200,7 @@ export const FuncionesSolicitadasView: React.FC = () => {
                 <div className="min-w-0 flex-1 pt-1">
                   <p className="text-[15px] font-semibold text-[var(--fin-ink)]">{f.titulo}</p>
                   {f.descripcion ? (
-                    <p className="mt-0.5 text-[13px] leading-snug text-[var(--fin-ink-soft)]">
+                    <p className="mt-1 text-[13px] leading-snug text-[var(--fin-ink-soft)]">
                       {f.descripcion}
                     </p>
                   ) : null}
@@ -211,7 +211,7 @@ export const FuncionesSolicitadasView: React.FC = () => {
 
           <li>
             {formAbierto ? (
-              <div className="flex flex-col gap-2.5 rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] p-3.5">
+              <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] p-4">
                 <div className="flex items-center justify-between">
                   <p className="text-[13px] font-semibold text-[var(--fin-ink)]">Otras ideas</p>
                   <button
@@ -233,20 +233,20 @@ export const FuncionesSolicitadasView: React.FC = () => {
                   onChange={(e) => setTitulo(e.target.value)}
                   placeholder="¿Qué te gustaría que hiciera LukApp?"
                   autoFocus
-                  className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
+                  className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
                 />
                 <textarea
                   value={descripcion}
                   onChange={(e) => setDescripcion(e.target.value)}
                   placeholder="Cuéntanos un poco más (opcional)"
                   rows={2}
-                  className="resize-none rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
+                  className="resize-none rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
                 />
                 <button
                   type="button"
                   onClick={() => void enviarIdea()}
                   disabled={!titulo.trim() || enviando}
-                  className="flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-50"
                 >
                   {enviando ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : null}
                   {enviando ? 'Enviando…' : 'Enviar idea'}
@@ -256,7 +256,7 @@ export const FuncionesSolicitadasView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setFormAbierto(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] p-3.5 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)]"
+                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] p-4 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)]"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
                 ¿Otras ideas?

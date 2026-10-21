@@ -52,12 +52,12 @@ describe('useSincronizacion', () => {
     expect(recargar).toHaveBeenCalledTimes(1);
   });
 
-  it('vuelve a recargar pasada la espera mínima', () => {
+  it('vuelve a recargar pasada la espera mínima', async () => {
     const recargar = vi.fn().mockResolvedValue(undefined);
     renderHook(() => useSincronizacion({ activo: true, recargar }));
 
     volverALaApp();
-    vi.advanceTimersByTime(3500);
+    await vi.advanceTimersByTimeAsync(3500);
     volverALaApp();
 
     expect(recargar).toHaveBeenCalledTimes(2);
@@ -104,4 +104,16 @@ describe('useSincronizacion', () => {
     expect(viejo).not.toHaveBeenCalled();
     expect(nuevo).toHaveBeenCalledTimes(1);
   });
+  it('reintenta periódicamente una cola mientras la app permanece abierta', async () => {
+    const recargar = vi.fn().mockResolvedValue(undefined);
+    const { unmount } = renderHook(() => useSincronizacion({ activo: true, recargar }));
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(recargar).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(recargar).toHaveBeenCalledTimes(2);
+    unmount();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(recargar).toHaveBeenCalledTimes(2);
+  });
+
 });

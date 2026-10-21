@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
@@ -12,7 +13,7 @@ interface OnboardingProps {
     banco: string | null;
     claseCuenta: ClaseCuenta | null;
     saldoCop: number | null;
-  }) => void;
+  }) => ResultadoGuardado;
 }
 
 interface FuenteDinero {
@@ -55,6 +56,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
   onTerminar,
 }) => {
   const [paso, setPaso] = useState(0);
+  const guardado = useGuardadoFinanciero();
   const [nombre, setNombre] = useState('');
   const [fuente, setFuente] = useState<FuenteDinero | null>(null);
   const [otroBanco, setOtroBanco] = useState('');
@@ -69,12 +71,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({
 
   const siguiente = () => setPaso((p) => Math.min(p + 1, pasos.length - 1));
   const cerrar = () =>
-    onTerminar({
+    guardado.ejecutar(() => onTerminar({
       nombre: nombre.trim(),
       banco: bancoFinal,
       claseCuenta: claseCuentaFinal,
-      saldoCop,
-    });
+      saldoCop: bancoFinal ? saldoCop : null,
+    }));
 
   const pasos = [
     {
@@ -88,7 +90,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           onKeyDown={(e) => e.key === 'Enter' && siguiente()}
           placeholder="Tu nombre"
           aria-label="Tu nombre"
-          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3.5 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-4 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
         />
       ),
       boton: 'Continuar',
@@ -106,7 +108,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
                 type="button"
                 onClick={() => setFuente(opcion)}
                 aria-pressed={fuente?.nombre === opcion.nombre}
-                className={`rounded-[var(--fin-r-pill)] px-4 py-2.5 text-[15px] font-semibold transition-colors ${
+                className={`rounded-[var(--fin-r-pill)] px-4 py-3 text-[15px] font-semibold transition-colors ${
                   fuente?.nombre === opcion.nombre
                     ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                     : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
@@ -140,8 +142,9 @@ export const Onboarding: React.FC<OnboardingProps> = ({
     },
     {
       titulo: bancoFinal ? `¿Cuánto tienes en ${bancoFinal}?` : '¿Cuánto tienes?',
-      ayuda:
-        'El saldo que ves en la app del banco. Si no lo sabes, sigue: lo arreglas cuando quieras.',
+      ayuda: bancoFinal
+        ? 'El saldo actual que ves en tu banco. Escribe 0 si está vacía o déjalo pendiente si no lo sabes.'
+        : 'No elegiste un banco. Podrás confirmar el saldo de Efectivo desde el inicio.',
       cuerpo: (
         <div className="flex flex-col gap-4">
           <p
@@ -152,7 +155,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               color: digitos === '' ? 'var(--fin-ink-ghost)' : 'var(--fin-ink)',
             }}
           >
-            ${digitos === '' ? '0' : formatAmountInput(saldoCop)}
+            {digitos === '' ? 'Sin confirmar' : `$${formatAmountInput(saldoCop)}`}
           </p>
           <TecladoNumerico
             onDigito={(d) => setDigitos((prev) => (prev + d).replace(/^0+(?=\d)/, '').slice(0, 12))}
@@ -161,7 +164,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
         </div>
       ),
       boton: 'Continuar',
-      salida: 'Después',
+      salida: 'Dejar saldo pendiente',
     },
     {
       titulo: nombre.trim() ? `Listo, ${nombre.trim()}.` : 'Todo listo.',
@@ -175,12 +178,12 @@ export const Onboarding: React.FC<OnboardingProps> = ({
                 {bancoFinal} · {ETIQUETA_CLASE[claseCuentaFinal]}
               </p>
               <p className="mt-1 tabular-nums text-[15px] text-[var(--fin-ink-soft)]">
-                Saldo inicial: ${formatAmountInput(saldoCop)}
+                {saldoCop === null ? 'Saldo pendiente de confirmar' : `Saldo inicial: $${formatAmountInput(saldoCop)}`}
               </p>
               <button
                 type="button"
                 onClick={() => setPaso(2)}
-                className="mt-3 text-[14px] font-semibold text-[var(--fin-accent)]"
+                className="mt-3 text-[15px] font-semibold text-[var(--fin-accent)]"
               >
                 Editar saldo inicial
               </button>
@@ -188,8 +191,8 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           ) : (
             <>
               <p className="text-[17px] font-semibold text-[var(--fin-ink)]">No crearás cuentas todavía</p>
-              <p className="mt-1 text-[14px] text-[var(--fin-ink-soft)]">
-                LukApp empezará completamente vacía y podrás agregar una cuenta desde Dinero.
+              <p className="mt-1 text-[15px] text-[var(--fin-ink-soft)]">
+                Efectivo ya está disponible, con saldo pendiente de confirmar. Puedes agregar un banco o una billetera desde Dinero.
               </p>
             </>
           )}
@@ -225,7 +228,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
           transition={{ duration: 0.18, ease: 'easeOut' }}
           className="fin-glass w-full max-w-sm rounded-[var(--fin-r-sheet)] bg-[var(--fin-card)] p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:pb-6"
         >
-          <div className="flex gap-1.5" aria-label={`Paso ${indice + 1} de ${pasos.length}`}>
+          <div className="flex gap-2" aria-label={`Paso ${indice + 1} de ${pasos.length}`}>
             {pasos.map((_, i) => (
               <span
                 key={i}
@@ -241,28 +244,30 @@ export const Onboarding: React.FC<OnboardingProps> = ({
             className="mt-6 text-[var(--fin-ink)]"
             style={{ font: 'var(--fin-t-titulo-xl)', letterSpacing: 'var(--fin-track-titulo-xl)' }}
           >
-            <TypingText text={actual.titulo} speed={40} />
+            <TypingText text={actual.titulo} />
           </h2>
           <p className="mt-2 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
             {actual.ayuda}
           </p>
 
           <div className="mt-5">{actual.cuerpo}</div>
+          {guardado.error ? <p role="alert" className="mt-3 text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
 
           <button
             type="button"
             onClick={() => {
               if (!ultimo) {
+                if (indice === 1 && !bancoFinal) { setPaso(3); return; }
                 siguiente();
                 return;
               }
               cerrar();
             }}
-            disabled={continuarDeshabilitado}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:cursor-not-allowed disabled:opacity-45"
+            disabled={guardado.ocupado || continuarDeshabilitado}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-5 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:cursor-not-allowed disabled:opacity-45"
           >
             <Check className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            {actual.boton}
+            {guardado.ocupado ? 'Guardando…' : actual.boton}
             {!ultimo ? (
               <ArrowRight className="h-4 w-4 opacity-60" strokeWidth={2.5} aria-hidden="true" />
             ) : null}
@@ -274,10 +279,13 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               if (ultimo) {
                 setPaso((p) => Math.max(0, p - 1));
               } else {
+                if (indice === 1) { setFuente(null); setOtroBanco(''); setDigitos(''); setPaso(3); return; }
+                if (indice === 2) setDigitos('');
                 siguiente();
               }
             }}
-            className="mt-1 w-full rounded-[var(--fin-r-control)] py-2.5 text-[15px] text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+            disabled={guardado.ocupado}
+            className="mt-1 w-full rounded-[var(--fin-r-control)] py-3 text-[15px] text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
           >
             {actual.salida}
           </button>

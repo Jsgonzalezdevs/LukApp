@@ -4,6 +4,8 @@ import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
+import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
 
 /**
  * Everything the app is allowed to know about storage.
@@ -19,6 +21,7 @@ import type { Recurrente } from '../lib/recurrentes';
  */
 export interface Repositorio {
   cargarTodo(): Promise<Instantanea>;
+  aplicarCambios(cambios: CambiosFinancieros): Promise<void>;
 
   guardarTransacciones(transacciones: readonly Transaction[]): Promise<void>;
   borrarTransaccion(id: string): Promise<void>;
@@ -53,6 +56,8 @@ export interface Repositorio {
   guardarRecurrente(recurrente: Recurrente): Promise<void>;
   borrarRecurrente(id: string): Promise<void>;
 
+  guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void>;
+
   /** Wipes every store. Used by the restore flow before importing a backup. */
   vaciar(): Promise<void>;
 }
@@ -67,6 +72,16 @@ export interface Instantanea {
   contactos: Contacto[];
   presupuestos: Presupuesto[];
   recurrentes: Recurrente[];
+  revisiones: RevisionDudosa[];
+  documentosNegocio: DocumentoNegocio[];
+}
+
+/** Un mismo cambio de dinero se confirma entero o no se confirma. */
+export interface CambiosFinancieros {
+  idOperacion?: string;
+  guardar?: Partial<Instantanea>;
+  borrar?: Partial<Record<keyof Instantanea, string[]>>;
+  reemplazar?: Instantanea;
 }
 
 export const instantaneaVacia = (): Instantanea => ({
@@ -78,6 +93,8 @@ export const instantaneaVacia = (): Instantanea => ({
   contactos: [],
   presupuestos: [],
   recurrentes: [],
+  revisiones: [],
+  documentosNegocio: [],
 });
 
 /**
@@ -90,6 +107,18 @@ export class RepositorioMemoria implements Repositorio {
 
   constructor(inicial?: Partial<Instantanea>) {
     this.datos = { ...instantaneaVacia(), ...inicial };
+  }
+
+  async aplicarCambios(cambios: CambiosFinancieros): Promise<void> {
+    const siguientes = structuredClone(cambios.reemplazar ?? this.datos);
+    for (const clave of Object.keys(siguientes) as (keyof Instantanea)[]) {
+      const idDe = (fila: { id?: string; categoria?: string | null }) => clave === 'presupuestos' ? fila.categoria : fila.id;
+      const eliminados = new Set(cambios.borrar?.[clave] ?? []);
+      const filas = new Map(siguientes[clave].filter((fila) => !eliminados.has(idDe(fila)!)).map((fila) => [idDe(fila), fila]));
+      for (const fila of cambios.guardar?.[clave] ?? []) filas.set(idDe(fila), structuredClone(fila));
+      Object.assign(siguientes, { [clave]: [...filas.values()] });
+    }
+    this.datos = siguientes;
   }
 
   async cargarTodo(): Promise<Instantanea> {
@@ -108,6 +137,8 @@ export class RepositorioMemoria implements Repositorio {
       // between the store and its reader.
       presupuestos: this.datos.presupuestos.map((p) => ({ ...p })),
       recurrentes: this.datos.recurrentes.map((r) => ({ ...r })),
+      revisiones: this.datos.revisiones.map((r) => ({ ...r })),
+      documentosNegocio: this.datos.documentosNegocio.map((d) => ({ ...d, abonos: d.abonos.map((a) => ({ ...a })) })),
       contactos: this.datos.contactos.map((c) => ({
         ...c,
         alias: [...c.alias],
@@ -140,6 +171,8 @@ export class RepositorioMemoria implements Repositorio {
     // Movements outlive nothing: a pocket's history is meaningless without it,
     // and leaving them behind would silently skew any later balance rebuild.
     this.datos.cajitaMovimientos = this.datos.cajitaMovimientos.filter((m) => m.cajitaId !== id);
+    this.datos.transacciones = this.datos.transacciones.map((t) => t.cuentaId === id ? { ...t, cuentaId: null } : t);
+    this.datos.recurrentes = this.datos.recurrentes.map((r) => r.cuentaId === id ? { ...r, cuentaId: null } : r);
     this.datos.metas = this.datos.metas.map((meta) =>
       meta.cajitaId === id ? { ...meta, cajitaId: null } : meta,
     );
@@ -216,6 +249,10 @@ export class RepositorioMemoria implements Repositorio {
 
   async borrarRecurrente(id: string): Promise<void> {
     this.datos.recurrentes = this.datos.recurrentes.filter((r) => r.id !== id);
+  }
+
+  async guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void> {
+    this.datos.documentosNegocio = this.upsert(this.datos.documentosNegocio, documentos.map((d) => ({ ...d, abonos: d.abonos.map((a) => ({ ...a })) })));
   }
 
   async borrarCategoria(id: string): Promise<void> {

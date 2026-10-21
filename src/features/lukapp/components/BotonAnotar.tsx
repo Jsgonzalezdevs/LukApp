@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Camera, Loader2, Mic, Plus, Search, Square } from 'lucide-react';
+import { Camera, Loader2, Mic, Keyboard, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
 import { useImageOCR } from '../hooks/useImageOCR';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -171,6 +171,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         onCancelar={cancelarDictado}
         onTerminar={confirmarDictado}
         onContinuar={continuarConTexto}
+        onEscribir={() => { cancelarDictado(); onManual(); }}
       />
 
       {/* Hidden File Input for Receipt/Photo Scanning */}
@@ -193,14 +194,14 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
 
       {/* Floating Scanning Progress Toast */}
       {isScanning ? (
-        <div className="pointer-events-auto mb-1 flex items-center gap-2.5 rounded-[var(--fin-r-pill)] border border-amber-500/30 bg-[var(--fin-card)] px-4 py-2 shadow-xl backdrop-blur-xl animate-pulse">
-          <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+        <div className="pointer-events-auto mb-1 flex items-center gap-3 rounded-[var(--fin-r-pill)] border border-[var(--fin-warn)]/30 bg-[var(--fin-card)] px-4 py-2 shadow-xl backdrop-blur-xl animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--fin-warn-ink)]" />
           <span className="text-[13px] font-semibold text-[var(--fin-ink)]">
             Escaneando comprobante… {Math.round(ocrProgress * 100)}%
           </span>
         </div>
       ) : ocrError ? (
-        <div className="pointer-events-auto mb-1 flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-red-500/30 bg-[var(--fin-card)] px-4 py-2 text-[12.5px] font-medium text-red-400 shadow-xl backdrop-blur-xl">
+        <div className="pointer-events-auto mb-1 flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-out)]/30 bg-[var(--fin-card)] px-4 py-2 text-[13px] font-medium text-[var(--fin-out)] shadow-xl backdrop-blur-xl">
           {ocrError}
         </div>
       ) : null}
@@ -209,9 +210,11 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         data-guia="anotar"
         aria-hidden={overlayAbierto}
         inert={overlayAbierto ? true : undefined}
-        className="pointer-events-auto flex items-center gap-2.5"
+        className="pointer-events-auto flex items-center gap-2"
+        role="group"
+        aria-label="Registrar movimiento"
       >
-        <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
+        <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-2">
           <button
             type="button"
             onClick={() => {
@@ -221,9 +224,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             }}
             aria-label="Anotar a mano"
             title="Anotar a mano"
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
+            className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
-            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            <Keyboard className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            <span className="text-[13px] font-semibold">Escribir</span>
           </button>
           <button
             type="button"
@@ -239,13 +243,14 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             aria-label="Escanear comprobante o foto"
             title="Escanear recibo o comprobante de Nequi / Bancolombia"
             disabled={isScanning}
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90 disabled:opacity-50"
+            className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90 disabled:opacity-50"
           >
             {isScanning ? (
-              <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
+              <Loader2 className="h-5 w-5 animate-spin text-[var(--fin-warn-ink)]" />
             ) : (
               <Camera className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             )}
+            <span className="text-[13px] font-semibold">Foto</span>
           </button>
           <button
             type="button"
@@ -254,18 +259,19 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
               audio.play('click');
               onBuscar();
             }}
-            aria-label="Buscar un movimiento"
-            title="Buscar movimientos"
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
+            aria-label="Buscar movimientos y funciones"
+            title="Buscar movimientos y funciones"
+            className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Search className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            <span className="text-[13px] font-semibold">Buscar</span>
           </button>
         </div>
 
         <div className="relative">
           {dictation.status === 'blocked' && (
             <span
-              className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-warn)] text-white text-[10px] font-bold"
+              className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-warn)] text-white text-[13px] font-bold"
               aria-label="Micrófono bloqueado"
               title="Permiso del micrófono denegado"
             >
@@ -281,10 +287,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             aria-label={
               procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
             }
-            className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
+            className={`flex h-16 w-16 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-on-accent)] shadow-lg transition-transform active:scale-95 ${
               escuchando ? 'animate-pulse' : ''
             }`}
-            style={{ backgroundColor: 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
+            style={{ backgroundColor: 'var(--fin-accent)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
           >
             {procesando ? (
               <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
@@ -293,6 +299,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             ) : (
               <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
             )}
+            <span className="text-[13px] font-semibold">{procesando ? 'Procesando' : escuchando ? 'Terminar' : 'Voz'}</span>
           </RippleButton>
         </div>
       </div>

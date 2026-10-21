@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useRef } from 'react';
-import { motion, useInView, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { motion, useInView, useScroll, useSpring, useTransform } from 'framer-motion';
 
 /**
  * La barra de progreso de la nav. Es la única pieza que le dice al visitante
@@ -28,7 +29,7 @@ export const TituloPalabras: React.FC<{
   /** La última palabra en color de marca, como el "tu plata" del hero. */
   resaltarUltimas?: number;
 }> = ({ texto, className, resaltarUltimas = 0 }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const ref = useRef<HTMLHeadingElement>(null);
   const enVista = useInView(ref, { once: true, amount: 0.25 });
   const palabras = texto.split(' ');
@@ -92,7 +93,7 @@ export const Parallax: React.FC<{
   className?: string;
 }> = ({ children, distancia = -60, className }) => {
   const ref = useRef<HTMLDivElement>(null);
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ['start end', 'end start'],
@@ -111,7 +112,7 @@ export const Parallax: React.FC<{
  * Sirve de respiro entre secciones sin meter otro bloque de texto.
  */
 export const LineaQueSeDibuja: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
 
   return (
     <motion.span

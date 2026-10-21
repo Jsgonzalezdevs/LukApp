@@ -1,9 +1,10 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Plus, Repeat, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, Plus, Repeat, Sparkles, Trash2 } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Pendiente, Recurrente } from '../lib/recurrentes';
-import { pendientesDelMes, totalMensual } from '../lib/recurrentes';
+import { detectarSuscripciones, pendientesDelMes, proximosRecurrentes, totalMensual } from '../lib/recurrentes';
 import { useCatalogo } from '../catalogoContexto';
 import { formatCop, parseAmountInput, conPuntos } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
@@ -15,14 +16,15 @@ interface RecurrentesViewProps {
   cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
   mes: string;
   hoy: string;
-  onCrear: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => void;
-  onBorrar: (id: string) => void;
-  onConfirmar: (pendiente: Pendiente) => void;
+  onCrear: (datos: Omit<Recurrente, 'id' | 'createdAt' | 'archivedAt'>) => ResultadoGuardado;
+  onActualizar: (recurrente: Recurrente) => ResultadoGuardado;
+  onBorrar: (id: string) => ResultadoGuardado;
+  onConfirmar: (pendiente: Pendiente) => ResultadoGuardado;
 }
 
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
-  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+  'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
 /**
  * Lo que se repite cada mes.
@@ -39,10 +41,12 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   mes,
   hoy,
   onCrear,
+  onActualizar,
   onBorrar,
   onConfirmar,
 }) => {
   const catalogo = useCatalogo();
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [monto, setMonto] = useState('');
@@ -57,20 +61,25 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
   );
   const vivos = recurrentes.filter((r) => r.archivedAt === null);
   const total = totalMensual(vivos);
+  const sugerencias = useMemo(
+    () => detectarSuscripciones(transacciones, recurrentes, hoy),
+    [transacciones, recurrentes, hoy],
+  );
+  const proximos = useMemo(() => proximosRecurrentes(vivos, hoy, transacciones), [vivos, hoy, transacciones]);
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     const valor = parseAmountInput(monto);
     const diaNum = Number(dia);
     if (nombre.trim() === '' || valor === null || valor <= 0) return;
-    onCrear({
+    if (!await guardado.ejecutar(() => onCrear({
       nombre: nombre.trim(),
       kind,
       amountCop: valor,
       categoria,
       cuentaId: cuentaId || null,
       diaDelMes: Math.min(31, Math.max(1, diaNum || 1)),
-    });
+    }))) return;
     setCreando(false);
     setNombre('');
     setMonto('');
@@ -81,9 +90,10 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
     // columna angosta, la lista de recurrentes en su propia grilla ancha.
     // `w-full` por consistencia -- ver el comentario en TendenciasView.tsx.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Repeat className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
             Cada mes
           </h2>
@@ -96,6 +106,76 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
           </p>
         </section>
 
+        <section className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-4" aria-label="Costo proyectado">
+          <p className="text-[13px] font-semibold text-[var(--fin-ink)]">📊 Tu proyección de pagos fijos</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+            {formatCop(total.gastoCop)} al mes · {formatCop(total.gastoCop * 12)} al año, si todos se mantienen.
+          </p>
+          <p className="mt-1 text-[12px] text-[var(--fin-ink-ghost)]">Es una estimación; solo se registra un cobro cuando lo confirmas.</p>
+        </section>
+
+        {proximos.length > 0 ? (
+          <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-[var(--fin-ink)]">
+              <CalendarDays className="h-4 w-4" aria-hidden="true" /> Próximos cobros · 60 días
+            </h3>
+            <ul className="mt-2 flex flex-col gap-2">
+              {proximos.slice(0, 6).map(({ recurrente, fecha }) => (
+                <li key={`${recurrente.id}-${fecha}`} className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="truncate text-[var(--fin-ink-soft)]">{dayLabel(fecha)} · {recurrente.nombre}</span>
+                  <span className="shrink-0 font-semibold tabular-nums text-[var(--fin-ink)]">{formatCop(recurrente.amountCop)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {sugerencias.length > 0 ? (
+          <section className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+            <h3 className="flex items-center gap-2 text-[14px] font-semibold text-[var(--fin-ink)]">
+              <Sparkles className="h-4 w-4" aria-hidden="true" /> 💡 Patrones que podrías volver pagos fijos
+            </h3>
+            <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">LukApp detectó cobros parecidos en tres meses seguidos. Tú decides; no se crea nada sin confirmación.</p>
+            <ul className="mt-3 flex flex-col gap-2">
+              {sugerencias.map((sugerencia) => (
+                <li key={sugerencia.clave} className="rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-semibold text-[var(--fin-ink)]">{sugerencia.nombre}</span>
+                      <span className="block text-[12px] text-[var(--fin-ink-faint)]">
+                        {sugerencia.cambioPrecio
+                          ? `El último cobro cambió de ${formatCop(sugerencia.recurrenteExistente?.amountCop ?? 0)} a ${formatCop(sugerencia.amountCop)}.`
+                          : `${sugerencia.meses} meses · promedio ${formatCop(sugerencia.promedioCop)} · último ${dayLabel(sugerencia.ultimaFecha)}`}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[var(--fin-ink)]">{formatCop(sugerencia.amountCop)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (sugerencia.recurrenteExistente) {
+                        void guardado.ejecutar(() => onActualizar({ ...sugerencia.recurrenteExistente!, amountCop: sugerencia.amountCop }));
+                      } else {
+                        void guardado.ejecutar(() => onCrear({
+                          nombre: sugerencia.nombre,
+                          kind: sugerencia.kind,
+                          amountCop: sugerencia.amountCop,
+                          categoria: sugerencia.categoria,
+                          cuentaId: sugerencia.cuentaId,
+                          diaDelMes: sugerencia.diaDelMes,
+                        }));
+                      }
+                    }}
+                    className="mt-2 min-h-11 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+                  >
+                    {sugerencia.cambioPrecio ? 'Actualizar precio' : 'Sí, añadir a mis pagos fijos'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
         {/* Pendientes: lo único que pide acción */}
         {pendientes.length > 0 ? (
           <section className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] bg-[var(--fin-bg)] p-4">
@@ -103,15 +183,15 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
               Ya pasó la fecha de {pendientes.length}{' '}
               {pendientes.length === 1 ? 'movimiento' : 'movimientos'}
             </p>
-            <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+            <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               Confirma solo los que de verdad ocurrieron.
             </p>
 
-            <ul className="mt-2.5 flex flex-col gap-1.5">
+            <ul className="mt-3 flex flex-col gap-2">
               {pendientes.map((p) => (
                 <li
                   key={p.recurrente.id}
-                  className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5"
+                  className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-3"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-semibold text-[var(--fin-ink)]">
@@ -124,7 +204,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   <button
                     type="button"
                     onClick={() => onConfirmar(p)}
-                    className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+                    className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)]"
                   >
                     <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
                     Sí pasó
@@ -157,7 +237,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Arriendo"
               autoFocus
-              className={`mt-1.5 ${CAMPO}`}
+              className={`mt-2 ${CAMPO}`}
             />
 
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -174,7 +254,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   onChange={(e) => setMonto(conPuntos(e.target.value))}
                   inputMode="numeric"
                   placeholder="0"
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 />
               </div>
               <div>
@@ -189,7 +269,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   value={dia}
                   onChange={(e) => setDia(e.target.value.replace(/\D/g, '').slice(0, 2))}
                   inputMode="numeric"
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 />
               </div>
             </div>
@@ -206,7 +286,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   id="rec-kind"
                   value={kind}
                   onChange={(e) => setKind(e.target.value as 'gasto' | 'ingreso')}
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 >
                   <option value="gasto">Sale</option>
                   <option value="ingreso">Entra</option>
@@ -223,7 +303,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   id="rec-cat"
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value)}
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 >
                   {catalogo.lista.map((c) => (
                     <option key={c.clave} value={c.clave}>
@@ -246,7 +326,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   id="rec-cuenta"
                   value={cuentaId}
                   onChange={(e) => setCuentaId(e.target.value)}
-                  className={`mt-1.5 ${CAMPO}`}
+                  className={`mt-2 ${CAMPO}`}
                 >
                   <option value="">No indicar</option>
                   {cuentas.map((c) => (
@@ -329,7 +409,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                   type="button"
                   onClick={() => onBorrar(r.id)}
                   aria-label={`Eliminar ${r.nombre}`}
-                  className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] hover:text-[var(--fin-out)]"
+                  className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] hover:text-[var(--fin-out)]"
                 >
                   <Trash2 className="h-4 w-4" strokeWidth={2.5} />
                 </button>

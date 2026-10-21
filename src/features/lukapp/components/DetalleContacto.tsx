@@ -1,3 +1,4 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownCircle, ArrowUpCircle, Plus, Tag, X } from 'lucide-react';
@@ -12,8 +13,8 @@ interface DetalleContactoProps {
   nombre: string;
   /** Cómo le dices tú. Ausente cuando la fila no es un contacto guardado. */
   apodos?: readonly string[];
-  onAgregarApodo?: (apodo: string) => void;
-  onQuitarApodo?: (apodo: string) => void;
+  onAgregarApodo?: (apodo: string) => ResultadoGuardado;
+  onQuitarApodo?: (apodo: string) => ResultadoGuardado;
   /** Las grafías normalizadas que son esta persona. */
   alias: readonly string[];
   transacciones: readonly Transaction[];
@@ -37,6 +38,7 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
   onCerrar,
 }) => {
   useBloqueoScroll(true);
+  const guardado = useGuardadoFinanciero();
   const [nuevoApodo, setNuevoApodo] = useState('');
   const catalogo = useCatalogo();
 
@@ -76,7 +78,7 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
             <h2 className="truncate text-[20px] font-semibold tracking-tight text-[var(--fin-ink)]">
               {nombre}
             </h2>
-            <p className="mt-0.5 text-[13px] text-[var(--fin-ink-faint)]">
+            <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
               {movimientos.length} movimiento{movimientos.length === 1 ? '' : 's'}
               {alias.length > 1 ? ` · ${alias.length} formas de escribirlo` : ''}
             </p>
@@ -85,7 +87,7 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar"
-            className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
+            className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-4 w-4" strokeWidth={3} />
           </button>
@@ -93,21 +95,21 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
 
         {/* En qué quedó la cuenta entre los dos. */}
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3.5 py-3">
-            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-ink-faint)]">
+          <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3">
+            <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink-faint)]">
               <ArrowUpCircle className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
               Le mandaste
             </p>
-            <p className="mt-0.5 text-[20px] font-semibold tabular-nums text-[var(--fin-out)]">
+            <p className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--fin-out)]">
               {formatCop(balance.salioCop)}
             </p>
           </div>
-          <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3.5 py-3">
-            <p className="flex items-center gap-1.5 text-[13px] font-semibold text-[var(--fin-ink-faint)]">
+          <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3">
+            <p className="flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink-faint)]">
               <ArrowDownCircle className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
               Te mandó
             </p>
-            <p className="mt-0.5 text-[20px] font-semibold tabular-nums text-[var(--fin-in)]">
+            <p className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--fin-in)]">
               {formatCop(balance.entroCop)}
             </p>
           </div>
@@ -134,21 +136,21 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
         {/* Cómo le dices tú. Con esto, decir "le mandé 20 mil a mi pa" deja
  escrito quién es en vez de "pa". */}
         {onAgregarApodo ? (
-          <div className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3.5 py-3">
-            <p className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-wider text-[var(--fin-ink-faint)]">
+          <div className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3">
+            <p className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-wider text-[var(--fin-ink-faint)]">
               <Tag className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
               Cómo le dices
             </p>
 
             {apodos && apodos.length > 0 ? (
-              <ul className="mt-2 flex flex-wrap gap-1.5">
+              <ul className="mt-2 flex flex-wrap gap-2">
                 {apodos.map((apodo) => (
                   <li key={apodo}>
                     <button
                       type="button"
                       onClick={() => onQuitarApodo?.(apodo)}
                       aria-label={`Quitar el apodo ${apodo}`}
-                      className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-out)]"
+                      className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] hover:text-[var(--fin-out)]"
                     >
                       {apodo}
                       <X className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
@@ -158,11 +160,12 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
               </ul>
             ) : null}
 
+            {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
             <form
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 if (nuevoApodo.trim() === '') return;
-                onAgregarApodo(nuevoApodo);
+                if (!await guardado.ejecutar(() => onAgregarApodo!(nuevoApodo))) return;
                 setNuevoApodo('');
               }}
               className="mt-2 flex items-center gap-2"
@@ -177,7 +180,7 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
               <button
                 type="submit"
                 aria-label="Agregar apodo"
-                className="shrink-0 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] p-2.5 text-[var(--fin-ink-soft)]"
+                className="shrink-0 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] p-3 text-[var(--fin-ink-soft)]"
               >
                 <Plus className="h-4 w-4" strokeWidth={3} />
               </button>
@@ -185,14 +188,14 @@ export const DetalleContacto: React.FC<DetalleContactoProps> = ({
           </div>
         ) : null}
 
-        <ul className="mt-4 flex flex-col gap-1.5">
+        <ul className="mt-4 flex flex-col gap-2">
           {movimientos.map((tx) => {
             const entrada = catalogo.de(tx.category);
             const esIngreso = tx.kind === 'ingreso';
             return (
               <li
                 key={tx.id}
-                className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-3.5 py-3"
+                className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3"
               >
                 <entrada.Icono
                   className="h-4 w-4 shrink-0"

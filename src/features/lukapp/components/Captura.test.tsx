@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import type { Transaction } from '../types';
 import { parseTransaction } from '../lib/parseTransaction';
 import { Captura } from './Captura';
 
@@ -92,4 +93,58 @@ describe('Captura desde dictado', () => {
 
     expect(onCancel).not.toHaveBeenCalled();
   });
+  it('espera el guardado y evita dos envíos mientras la respuesta está pendiente', async () => {
+    let terminar!: (correcto: boolean) => void;
+    const onSave = vi.fn(() => new Promise<boolean>((resolver) => { terminar = resolver; }));
+    render(<Captura parsed={parseTransaction('comida 2500')} onSave={onSave} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    const boton = screen.getByRole('button', { name: 'Guardando…' });
+    expect(boton).toBeDisabled();
+    fireEvent.click(boton);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    await act(async () => { terminar(false); });
+    expect(screen.getByRole('dialog', { name: 'Anotar un movimiento' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeEnabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('No se pudo guardar.');
+  });
+
+  it('en computador permite escribir el monto y confirmar con Enter', async () => {
+    const consultaOriginal = window.matchMedia.bind(window);
+    const consulta = vi.spyOn(window, 'matchMedia').mockImplementation((q) => ({ ...consultaOriginal(q), matches: q.includes('pointer: fine'), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    try {
+      const guardar = vi.fn().mockResolvedValue(true);
+      render(<Captura parsed={parseTransaction('')} onSave={guardar} onCancel={vi.fn()} />);
+      expect(screen.queryByRole('button', { name: '1' })).not.toBeInTheDocument();
+      const monto = screen.getByRole('textbox', { name: 'Monto en pesos colombianos' });
+      fireEvent.change(monto, { target: { value: '45.000' } });
+      fireEvent.change(screen.getByRole('textbox', { name: 'Descripción' }), { target: { value: 'Almuerzo' } });
+      fireEvent.keyDown(monto, { key: 'Enter' });
+      await waitFor(() => expect(guardar).toHaveBeenCalledWith(expect.objectContaining({ amountCop: 45000, category: 'comida', description: 'Almuerzo' })));
+    } finally { consulta.mockRestore(); }
+  });
+
+  it('en móvil alterna escritura de monto y teclado sin perder el valor', async () => {
+    const guardar = vi.fn().mockResolvedValue(true);
+    render(<Captura parsed={parseTransaction('')} onSave={guardar} onCancel={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Escribir el monto' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Monto en pesos colombianos' }), { target: { value: '12.000' } });
+    expect(screen.queryByRole('button', { name: '1' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Usar teclado de LukApp' }));
+    expect(screen.getByRole('dialog', { name: 'Anotar un movimiento' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: '1' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() => expect(guardar).toHaveBeenCalledWith(expect.objectContaining({ amountCop: 12000 })));
+  });
+
+  it('prioriza categorías del mismo tipo y conserva acceso a todas', () => {
+    const historial: Transaction[] = Array.from({ length: 8 }, (_, i) => ({ id: String(i), kind: i < 6 ? 'ingreso' : 'gasto', category: i < 6 ? 'transporte' : 'mercado', amountCop: 1000, description: 'Registro', cuentaId: null, occurredOn: '2026-10-20', createdAt: '2026-10-20', rawTranscript: '' }));
+    render(<Captura parsed={parseTransaction('')} transacciones={historial} onSave={vi.fn()} onCancel={vi.fn()} />);
+    const grupo = screen.getByRole('group', { name: 'Categorías' });
+    expect(within(grupo).getAllByRole('button')[0]).toHaveTextContent('Mercado');
+    expect(within(grupo).getAllByRole('button')).toHaveLength(5);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todas las categorías' }));
+    expect(within(grupo).getAllByRole('button').length).toBeGreaterThan(5);
+    expect(screen.getByRole('button', { name: 'Solo frecuentes' })).toBeInTheDocument();
+  });
+
 });

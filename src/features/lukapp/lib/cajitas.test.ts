@@ -63,6 +63,17 @@ describe('saldosPorCajita', () => {
   it('is empty for a pocket with no movements', () => {
     expect(saldoDeCajita([], 'c1')).toBe(0);
   });
+
+  it('keeps historical imported transactions out of the current account balance', () => {
+    const historica: Transaction = {
+      id: 'historica', kind: 'gasto', amountCop: 25_000, category: 'comida', description: 'Café',
+      occurredOn: '2025-01-01', cuentaId: 'c1', rawTranscript: 'extracto', createdAt: '2025-01-01T00:00:00.000Z', afectaSaldo: false,
+    };
+    const actual: Transaction = { ...historica, id: 'actual', afectaSaldo: true };
+
+    expect(saldosPorCajita([mov({ deltaCop: 100_000 })], [historica]).get('c1')).toBe(100_000);
+    expect(saldosPorCajita([mov({ deltaCop: 100_000 })], [actual]).get('c1')).toBe(75_000);
+  });
 });
 
 describe('ajusteHacia', () => {

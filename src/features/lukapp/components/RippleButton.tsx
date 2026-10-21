@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface RippleButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,6 +14,7 @@ interface RippleButtonProps
  */
 export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProps>(
   ({ children, rippleColor = 'rgba(255,255,255,0.4)', onClick, ...props }, ref) => {
+    const movimientoReducido = useMovimientoReducido();
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [ripples, setRipples] = React.useState<
       Array<{ id: number; x: number; y: number }>
@@ -33,7 +35,7 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       const rect = buttonRef.current?.getBoundingClientRect();
-      if (rect) {
+      if (rect && !movimientoReducido) {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const id = rippleIdRef.current++;
@@ -43,7 +45,7 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
         const temporizador = window.setTimeout(() => {
           temporizadoresRef.current.delete(temporizador);
           setRipples((prev) => prev.filter((r) => r.id !== id));
-        }, 600);
+        }, 220);
         temporizadoresRef.current.add(temporizador);
       }
 
@@ -64,7 +66,7 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
             key={id}
             initial={{ scale: 0, opacity: 0.6 }}
             animate={{ scale: 4, opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.22 }}
             className="pointer-events-none absolute block h-2 w-2 rounded-[var(--fin-r-pill)]"
             style={{
               backgroundColor: rippleColor,

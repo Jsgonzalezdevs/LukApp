@@ -13,8 +13,8 @@ interface NovedadesCardProps {
 export const NovedadesCard: React.FC<NovedadesCardProps> = ({ novedad, onCerrar }) => (
   <div className="mt-5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4 shadow-sm border border-[var(--fin-line)]/50">
     <div className="flex items-start justify-between gap-3">
-      <p className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink)]">
-        <Sparkles className="h-4 w-4 shrink-0 text-amber-500" strokeWidth={2} aria-hidden="true" />
+      <p className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink)]">
+        <Sparkles className="h-4 w-4 shrink-0 text-[var(--fin-warn-ink)]" strokeWidth={2} aria-hidden="true" />
         Novedades de la {novedad.version}
       </p>
       <button
@@ -26,6 +26,6 @@ export const NovedadesCard: React.FC<NovedadesCardProps> = ({ novedad, onCerrar 
         <X className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
       </button>
     </div>
-    <p className="mt-2 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">{novedad.texto}</p>
+    <p className="mt-2 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">{novedad.texto}</p>
   </div>
 );

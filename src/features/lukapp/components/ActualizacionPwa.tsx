@@ -18,8 +18,8 @@ export const ActualizacionPwa = () => {
 
   if (!visible) return null;
   return (
-    <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3" role="status">
-      <Download className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.5} />
+    <div className="mb-4 flex items-start gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3" role="status">
+      <Download className="mt-1 h-4 w-4 shrink-0 text-[var(--fin-accent)]" strokeWidth={2.5} />
       <p className="flex-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
         Hay una mejora lista. Actualiza cuando termines lo que estás haciendo.
       </p>

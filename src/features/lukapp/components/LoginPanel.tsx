@@ -22,6 +22,7 @@ import type { Tema } from '../data/useTema';
 import { BrandMark } from './BrandMark';
 import { TemaToggle } from './TemaToggle';
 import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface LoginPanelProps {
   sesion: Sesion;
@@ -45,6 +46,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   modoInicial,
   onVolverInicio,
 }) => {
+  const movimientoReducido = useMovimientoReducido();
   const [modo, setModo] = useState<Modo>(() => modoInicial ?? (sesion.enRecuperacion ? 'actualizar' : 'entrar'));
   const [recordarme, setRecordarme] = useState(() => {
     try {
@@ -155,12 +157,12 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   };
 
   const campo =
-    'w-full rounded-[var(--fin-r-card)] border border-[var(--fin-line)]/60 bg-[var(--fin-bg)]/80 pl-10 pr-4 py-3.5 text-[16px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-all duration-200 focus:border-[var(--fin-accent)] focus:bg-[var(--fin-card)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/25';
+    'w-full rounded-[var(--fin-r-card)] border border-[var(--fin-line)]/60 bg-[var(--fin-bg)]/80 pl-10 pr-4 py-4 text-[17px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-all duration-200 focus:border-[var(--fin-accent)] focus:bg-[var(--fin-card)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/25';
 
   const exito = modo === 'registrarse' && enviado && !sesion.error && !sesion.ocupado;
 
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[var(--fin-bg)] px-5 py-10 selection:bg-[var(--fin-accent)] selection:text-white">
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[var(--fin-bg)] px-5 py-10 selection:bg-[var(--fin-accent)] selection:text-[var(--fin-on-accent)]">
       {/* Dynamic Background Grid Pattern */}
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(var(--fin-line)_1px,transparent_1px)] [background-size:28px_28px] opacity-30 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,#000_60%,transparent_100%)]"
@@ -171,22 +173,22 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       <div className="fin-aurora" aria-hidden="true" />
 
       <motion.div
-        animate={{
+        animate={movimientoReducido ? { scale: 1, rotate: 0, opacity: 0.35 } : {
           scale: [1, 1.2, 1],
           rotate: [0, 90, 0],
           opacity: [0.35, 0.6, 0.35],
         }}
-        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 16, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut' }}
         className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-[var(--fin-r-pill)] bg-gradient-to-br from-amber-500/25 via-sky-500/15 to-transparent blur-[120px]"
         aria-hidden="true"
       />
       <motion.div
-        animate={{
+        animate={movimientoReducido ? { scale: 1, rotate: 0, opacity: 0.3 } : {
           scale: [1, 1.25, 1],
           rotate: [0, -90, 0],
           opacity: [0.3, 0.55, 0.3],
         }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+        transition={{ duration: 18, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut', delay: 2 }}
         className="pointer-events-none absolute -bottom-40 -right-40 h-[550px] w-[550px] rounded-[var(--fin-r-pill)] bg-gradient-to-tl from-emerald-500/25 via-amber-500/15 to-transparent blur-[130px]"
         aria-hidden="true"
       />
@@ -199,7 +201,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             if (onVolverInicio) onVolverInicio();
             else window.location.href = '/';
           }}
-          className="group flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-3.5 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
+          className="group flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
           title="Volver a la página principal"
           aria-label="Volver al inicio"
         >
@@ -215,7 +217,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className="relative z-10 w-full max-w-[27rem]"
       >
         {/* Brand Header */}
@@ -226,10 +228,10 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               if (onVolverInicio) onVolverInicio();
               else window.location.href = '/';
             }}
-            className="group relative mb-3.5 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            className="group relative mb-4 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
             title="Volver al inicio"
           >
-            <span className="absolute -inset-2.5 rounded-3xl bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
+            <span className="absolute -inset-2.5 rounded-[var(--fin-r-card)] bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
             <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
               <span
                 className="absolute inset-0 rounded-[1.4rem] opacity-80"
@@ -243,10 +245,10 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
             </span>
           </button>
 
-          <h1 className="text-[32px] font-extrabold tracking-tight text-[var(--fin-ink)]">
+          <h1 className="text-[28px] font-bold tracking-tight text-[var(--fin-ink)]">
             LukApp
           </h1>
-          <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <p className="mt-1 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
             {modo === 'entrar'
               ? 'Tu plata tiene historia. Aquí la entiendes.'
               : 'Crea tu cuenta y dale contexto a cada peso.'}
@@ -261,11 +263,11 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center py-2 text-center"
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 shadow-inner">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-in-bg)] text-[var(--fin-in)] shadow-inner">
                 <MailCheck size={32} strokeWidth={2} />
               </div>
-              <h2 className="text-[22px] font-bold text-[var(--fin-ink)]">¡Revisa tu correo!</h2>
-              <p className="mt-2.5 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">
+              <h2 className="text-[20px] font-bold text-[var(--fin-ink)]">¡Revisa tu correo!</h2>
+              <p className="mt-3 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
                 Te enviamos un enlace de confirmación a{' '}
                 <strong className="text-[var(--fin-ink)]">{identidad.trim()}</strong>. Ábrelo para
                 activar tu cuenta y empezar.
@@ -273,7 +275,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               <button
                 type="button"
                 onClick={() => cambiarModo('entrar')}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-3.5 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-4 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
               >
                 Ya lo confirmé, quiero entrar
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
@@ -285,18 +287,18 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center py-2 text-center"
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 shadow-inner">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)] shadow-inner">
                 <MailCheck size={32} strokeWidth={2} />
               </div>
-              <h2 className="text-[22px] font-bold text-[var(--fin-ink)]">¡Enlace enviado!</h2>
-              <p className="mt-2.5 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">
+              <h2 className="text-[20px] font-bold text-[var(--fin-ink)]">¡Enlace enviado!</h2>
+              <p className="mt-3 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
                 Te enviamos un enlace para restaurar tu contraseña a{' '}
                 <strong className="text-[var(--fin-ink)]">{identidad.trim()}</strong>. Ábrelo para ingresar tu nueva contraseña. Si no lo ves en unos minutos, revisa tu carpeta de spam.
               </p>
               <button
                 type="button"
                 onClick={() => cambiarModo('entrar')}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-3.5 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-4 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
               >
                 Volver a Iniciar sesión
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
@@ -308,11 +310,11 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center py-2 text-center"
             >
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-500 shadow-inner">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-in-bg)] text-[var(--fin-in)] shadow-inner">
                 <Check size={32} strokeWidth={2.5} />
               </div>
-              <h2 className="text-[22px] font-bold text-[var(--fin-ink)]">¡Contraseña actualizada!</h2>
-              <p className="mt-2.5 text-[14px] leading-relaxed text-[var(--fin-ink-soft)]">
+              <h2 className="text-[20px] font-bold text-[var(--fin-ink)]">¡Contraseña actualizada!</h2>
+              <p className="mt-3 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
                 Tu contraseña ha sido cambiada correctamente. Ya puedes acceder con tus nuevas credenciales.
               </p>
               <button
@@ -321,7 +323,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                   sesion.finalizarRecuperacion();
                   cambiarModo('entrar');
                 }}
-                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-3.5 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-6 py-4 text-[15px] font-bold text-[var(--fin-on-accent)] shadow-lg shadow-amber-500/20 transition-all hover:bg-[var(--fin-accent-hover)]"
               >
                 Entrar a LukApp
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
@@ -342,7 +344,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                       type="button"
                       onClick={() => cambiarModo(item.id)}
                       aria-pressed={modo === item.id}
-                      className="relative rounded-[var(--fin-r-control)] px-4 py-2.5 text-[13px] font-bold transition-colors"
+                      className="relative rounded-[var(--fin-r-control)] px-4 py-3 text-[13px] font-bold transition-colors"
                     >
                       {modo === item.id ? (
                         <motion.span
@@ -365,7 +367,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
 
               {modo === 'entrar' || modo === 'registrarse' ? (
                 <>
-                  <p className="mb-5 text-center text-[12px] text-[var(--fin-ink-faint)]">
+                  <p className="mb-5 text-center text-[13px] text-[var(--fin-ink-faint)]">
                     Crea tu cuenta o accede con tu correo electrónico.
                   </p>
                 </>
@@ -373,22 +375,22 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
 
               {modo === 'recuperar' ? (
                 <div className="mb-5 flex items-center justify-between border-b border-[var(--fin-line)]/50 pb-3">
-                  <div className="flex items-center gap-2 text-[14px] font-bold text-[var(--fin-ink)]">
-                    <KeyRound className="h-4 w-4 text-amber-500" />
+                  <div className="flex items-center gap-2 text-[15px] font-bold text-[var(--fin-ink)]">
+                    <KeyRound className="h-4 w-4 text-[var(--fin-warn-ink)]" />
                     Restaurar contraseña
                   </div>
                   <button
                     type="button"
                     onClick={() => cambiarModo('entrar')}
-                    className="flex items-center gap-1 text-[12px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+                    className="flex items-center gap-1 text-[13px] font-semibold text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     Volver
                   </button>
                 </div>
               ) : modo === 'actualizar' ? (
-                <div className="mb-5 flex items-center gap-2 border-b border-[var(--fin-line)]/50 pb-3 text-[14px] font-bold text-[var(--fin-ink)]">
-                  <Lock className="h-4 w-4 text-amber-500" />
+                <div className="mb-5 flex items-center gap-2 border-b border-[var(--fin-line)]/50 pb-3 text-[15px] font-bold text-[var(--fin-ink)]">
+                  <Lock className="h-4 w-4 text-[var(--fin-warn-ink)]" />
                   Ingresa tu nueva contraseña
                 </div>
               ) : null}
@@ -405,10 +407,10 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                   {/* Field: Tu Nombre / Apodo (Registration Only) */}
                   {modo === 'registrarse' ? (
                     <div>
-                      <div className="mb-1.5 flex items-center justify-between">
+                      <div className="mb-2 flex items-center justify-between">
                         <label
                           htmlFor="login-usuario"
-                          className="block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+                          className="block text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
                         >
                           Tu nombre / apodo
                         </label>
@@ -436,7 +438,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                     <div>
                       <label
                         htmlFor="login-identidad"
-                        className="mb-1.5 block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+                        className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
                       >
                         Tu correo
                       </label>
@@ -462,10 +464,10 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                   {/* Field: Contraseña (Not needed in 'recuperar') */}
                   {modo !== 'recuperar' ? (
                     <div>
-                      <div className="mb-1.5 flex items-center justify-between">
+                      <div className="mb-2 flex items-center justify-between">
                         <label
                           htmlFor="login-password"
-                          className="block text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
+                          className="block text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
                         >
                           {modo === 'actualizar' ? 'Nueva contraseña' : 'Contraseña'}
                         </label>
@@ -473,12 +475,12 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                           <button
                             type="button"
                             onClick={() => cambiarModo('recuperar')}
-                            className="text-[12px] font-semibold text-amber-500 transition-colors hover:text-amber-400"
+                            className="text-[13px] font-semibold text-[var(--fin-warn-ink)] transition-colors hover:text-[var(--fin-warn-ink)]"
                           >
                             ¿Olvidaste tu contraseña?
                           </button>
                         ) : (
-                          <span className="text-[11px] font-medium text-[var(--fin-ink-faint)]">
+                          <span className="text-[13px] font-medium text-[var(--fin-ink-faint)]">
                             {password.length > 0 && errorPassword
                               ? errorPassword
                               : `Mín. ${MINIMO_PASSWORD}: mayús., minús., número y símbolo.`}
@@ -503,7 +505,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                           onClick={() => setVerPassword((v) => !v)}
                           aria-label={verPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                           aria-pressed={verPassword}
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[var(--fin-r-control)] p-2.5 text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-[var(--fin-r-control)] p-3 text-[var(--fin-ink-faint)] transition-colors hover:text-[var(--fin-ink)]"
                         >
                           {verPassword ? (
                             <EyeOff className="h-4 w-4" strokeWidth={2.25} />
@@ -527,7 +529,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                         />
                         <span
                           aria-hidden="true"
-                          className={`flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border shadow-sm transition-[background-color,border-color,color,transform] duration-150 group-hover:border-[var(--fin-accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fin-accent)]/40 peer-active:scale-95 ${
+                          className={`flex h-[18px] w-[18px] items-center justify-center rounded-[var(--fin-r-control)] border shadow-sm transition-[background-color,border-color,color,transform] duration-150 group-hover:border-[var(--fin-accent)] peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--fin-accent)]/40 peer-active:scale-95 ${
                             recordarme
                               ? 'border-[var(--fin-accent)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                               : 'border-[var(--fin-line)] bg-transparent text-transparent'
@@ -551,9 +553,9 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                     animate={{ opacity: 1, height: 'auto', marginTop: 18 }}
                     exit={{ opacity: 0, height: 0, marginTop: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="flex items-start gap-2.5 overflow-hidden rounded-[var(--fin-r-card)] border border-red-500/20 bg-red-500/10 px-4 py-3 text-[14px] leading-relaxed text-red-400"
+                    className="flex items-start gap-3 overflow-hidden rounded-[var(--fin-r-card)] border border-[var(--fin-out)]/30 bg-[var(--fin-out-bg)] px-4 py-3 text-[15px] leading-relaxed text-[var(--fin-out)]"
                   >
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    <AlertTriangle className="mt-1 h-4 w-4 shrink-0" strokeWidth={2.5} />
                     {sesion.error}
                   </motion.p>
                 ) : null}
@@ -565,7 +567,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                 disabled={sesion.ocupado || !listo}
                 whileHover={listo && !sesion.ocupado ? { scale: 1.015 } : undefined}
                 whileTap={listo && !sesion.ocupado ? { scale: 0.985 } : undefined}
-                className="group relative mt-6 flex w-full items-center justify-center gap-2.5 rounded-[var(--fin-r-card)] bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 bg-[length:200%_auto] px-6 py-4 text-[16.5px] font-bold text-white shadow-[0_8px_24px_-4px_rgba(245,158,11,0.35)] transition-all duration-300 hover:bg-[position:right_center] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
+                className="group relative mt-6 flex w-full items-center justify-center gap-3 rounded-[var(--fin-r-card)] bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500 bg-[length:200%_auto] px-6 py-4 text-[17px] font-bold text-white shadow-[0_8px_24px_-4px_rgba(245,158,11,0.35)] transition-all duration-300 hover:bg-[position:right_center] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
               >
                 {sesion.ocupado ? (
                   <>
@@ -604,7 +606,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                     className="text-[13px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
                   >
                     ¿Recordaste tu contraseña?{' '}
-                    <span className="text-amber-500 underline underline-offset-2 hover:text-amber-400">
+                    <span className="text-[var(--fin-warn-ink)] underline underline-offset-2 hover:text-[var(--fin-warn-ink)]">
                       Iniciar sesión
                     </span>
                   </button>
@@ -619,14 +621,14 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                     {modo === 'entrar' ? (
                       <>
                         ¿No tienes cuenta?{' '}
-                        <span className="text-amber-500 underline underline-offset-2 hover:text-amber-400">
+                        <span className="text-[var(--fin-warn-ink)] underline underline-offset-2 hover:text-[var(--fin-warn-ink)]">
                           Crear cuenta
                         </span>
                       </>
                     ) : (
                       <>
                         ¿Ya tienes cuenta?{' '}
-                        <span className="text-amber-500 underline underline-offset-2 hover:text-amber-400">
+                        <span className="text-[var(--fin-warn-ink)] underline underline-offset-2 hover:text-[var(--fin-warn-ink)]">
                           Iniciar sesión
                         </span>
                       </>
@@ -638,12 +640,12 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           )}
 
           {/* Footer Features / Trust Highlights */}
-          <div className="mt-7 flex items-center justify-center gap-6 border-t border-[var(--fin-line)]/50 pt-5 text-[12px] font-medium text-[var(--fin-ink-faint)]">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+          <div className="mt-7 flex items-center justify-center gap-6 border-t border-[var(--fin-line)]/50 pt-5 text-[13px] font-medium text-[var(--fin-ink-faint)]">
+            <span className="flex items-center gap-2">
+              <ShieldCheck className="h-3.5 w-3.5 text-[var(--fin-in)]" />
               Tus datos son privados
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-2">
               <Smartphone className="h-3.5 w-3.5 text-sky-400" />
               Integración con iOS
             </span>
@@ -658,12 +660,12 @@ const ApodoAviso: React.FC<{ estado: EstadoApodo }> = ({ estado }) => {
   if (estado === 'vacio') return null;
 
   if (estado === 'corto') {
-    return <span className="text-[11px] font-medium text-amber-500">mín. {APODO_MINIMO} letras</span>;
+    return <span className="text-[13px] font-medium text-[var(--fin-warn-ink)]">mín. {APODO_MINIMO} letras</span>;
   }
 
   if (estado === 'comprobando') {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--fin-ink-faint)]">
+      <span className="inline-flex items-center gap-1 text-[13px] font-medium text-[var(--fin-ink-faint)]">
         <Loader2 className="h-3 w-3 animate-spin" />
         comprobando
       </span>
@@ -672,7 +674,7 @@ const ApodoAviso: React.FC<{ estado: EstadoApodo }> = ({ estado }) => {
 
   if (estado === 'libre') {
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-500">
+      <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[var(--fin-in)]">
         <Check className="h-3 w-3" strokeWidth={3} />
         disponible
       </span>
@@ -680,7 +682,7 @@ const ApodoAviso: React.FC<{ estado: EstadoApodo }> = ({ estado }) => {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500">
+    <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[var(--fin-out)]">
       <X className="h-3 w-3" strokeWidth={3} />
       ya tomado
     </span>

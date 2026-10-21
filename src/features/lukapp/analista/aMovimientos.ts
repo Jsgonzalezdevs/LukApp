@@ -144,6 +144,7 @@ export const planearImportacion = (
       description: mov.descripcion,
       occurredOn: mov.fecha,
       cuentaId,
+      ...(mov.afectaSaldo === undefined ? {} : { afectaSaldo: mov.afectaSaldo }),
       rawTranscript: `extracto: ${mov.descripcion}`,
       createdAt: ahora(),
     });

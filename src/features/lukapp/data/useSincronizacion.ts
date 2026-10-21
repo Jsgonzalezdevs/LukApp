@@ -46,21 +46,32 @@ export const useSincronizacion = ({ activo, recargar }: Opciones): void => {
   useEffect(() => {
     if (!activo) return;
 
+    let pendiente: ReturnType<typeof setTimeout> | undefined;
+    let recargando = false;
     const quizaRecargar = () => {
       // `hidden` cubre el caso de `focus` disparado sobre una ventana que sigue
       // tapada por otra: no hay nada que refrescar si no se está viendo.
       if (document.visibilityState === 'hidden') return;
       const ahora = Date.now();
-      if (ahora - ultima.current < ESPERA_MINIMA_MS) return;
+      if (recargando) return;
+      const espera = ESPERA_MINIMA_MS - (ahora - ultima.current);
+      if (espera > 0) {
+        if (!pendiente) pendiente = setTimeout(() => { pendiente = undefined; quizaRecargar(); }, espera);
+        return;
+      }
       ultima.current = ahora;
-      void recargarRef.current();
+      recargando = true;
+      void recargarRef.current().catch(() => undefined).finally(() => { recargando = false; });
     };
 
     document.addEventListener('visibilitychange', quizaRecargar);
     window.addEventListener('focus', quizaRecargar);
     window.addEventListener('online', quizaRecargar);
+    const intervalo = setInterval(quizaRecargar, 30_000);
 
     return () => {
+      clearInterval(intervalo);
+      if (pendiente) clearTimeout(pendiente);
       document.removeEventListener('visibilitychange', quizaRecargar);
       window.removeEventListener('focus', quizaRecargar);
       window.removeEventListener('online', quizaRecargar);

@@ -113,15 +113,15 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
       >
         {/* Cabecera */}
         <div className="division-header flex items-center justify-between pb-5">
-          <div className="flex items-center gap-2.5">
-            <div className="division-icon flex h-10 w-10 items-center justify-center rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="division-icon flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-control)]">
               <UtensilsCrossed className="h-5 w-5" />
             </div>
             <div>
               <h2 className="text-[17px] font-bold text-[var(--fin-ink)]">
                 Dividir cuenta y propina
               </h2>
-              <p className="text-[12px] text-[var(--fin-ink-soft)]">
+              <p className="text-[13px] text-[var(--fin-ink-soft)]">
                 Calcula la cuota por persona y anota tu parte
               </p>
             </div>
@@ -149,7 +149,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
                 placeholder="Ej. 120.000"
                 value={totalTexto}
                 onChange={(e) => setTotalTexto(conPuntos(e.target.value))}
-                className="w-full bg-transparent text-[18px] font-bold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+                className="w-full bg-transparent text-[17px] font-bold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
               />
             </div>
           </div>
@@ -164,7 +164,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
               placeholder="Ej. Crepes & Waffles, Asado, Almuerzo"
               value={lugarTexto}
               onChange={(e) => setLugarTexto(e.target.value)}
-              className="division-text-input mt-2 w-full rounded-[var(--fin-r-card)] px-4 py-3 text-[16px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
+              className="division-text-input mt-2 w-full rounded-[var(--fin-r-card)] px-4 py-3 text-[17px] text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none"
             />
           </div>
 
@@ -178,7 +178,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
                 {formatCop(valorPropina)}
               </span>
             </div>
-            <div className="mt-1.5 grid grid-cols-4 gap-2">
+            <div className="mt-2 grid grid-cols-4 gap-2">
               {[0, 10, 15, 20].map((pct) => (
                 <button
                   key={pct}
@@ -210,12 +210,12 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
                 type="button"
                 onClick={() => cambiarPersonas(-1)}
                 disabled={personas <= 1}
-                className="division-stepper flex h-10 w-10 items-center justify-center rounded-xl disabled:opacity-40"
+                className="division-stepper flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-control)] disabled:opacity-40"
               >
                 <Minus className="h-4 w-4" />
               </button>
 
-              <div className="flex items-center gap-2 font-bold text-[16px] text-[var(--fin-ink)]">
+              <div className="flex items-center gap-2 font-bold text-[17px] text-[var(--fin-ink)]">
                 <Users className="division-people-icon h-4 w-4" />
                 <span>{personas} {personas === 1 ? 'persona' : 'personas'}</span>
               </div>
@@ -223,7 +223,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
               <button
                 type="button"
                 onClick={() => cambiarPersonas(1)}
-                className="division-stepper flex h-10 w-10 items-center justify-center rounded-xl"
+                className="division-stepper flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-control)]"
               >
                 <Plus className="h-4 w-4" />
               </button>
@@ -233,11 +233,11 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
           <div>
             <div className="flex items-center justify-between">
               <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">¿Quién ya pagó?</label>
-              <span className="text-[12px] text-[var(--fin-ink-faint)]">Edita los nombres si hace falta</span>
+              <span className="text-[13px] text-[var(--fin-ink-faint)]">Edita los nombres si hace falta</span>
             </div>
-            <div className="mt-1.5 space-y-2">
+            <div className="mt-2 space-y-2">
               {participantes.map((participante, indice) => (
-                <div key={indice} className="division-person flex items-center gap-2 rounded-[var(--fin-r-card)] p-2.5">
+                <div key={indice} className="division-person flex items-center gap-2 rounded-[var(--fin-r-card)] p-3">
                   <input
                     aria-label={`Nombre de la persona ${indice + 1}`}
                     value={participante.nombre}
@@ -245,14 +245,14 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
                     onBlur={(e) => {
                       if (!e.target.value.trim()) cambiarNombre(indice, `Persona ${indice + 1}`);
                     }}
-                    className="min-w-0 flex-1 bg-transparent px-1 text-[16px] font-semibold text-[var(--fin-ink)] outline-none focus:border-b focus:border-orange-500"
+                    className="min-w-0 flex-1 bg-transparent px-1 text-[17px] font-semibold text-[var(--fin-ink)] outline-none focus:border-b focus:border-[var(--fin-warn)]/30"
                   />
                   <button
                     type="button"
                     onClick={() => marcarPago(indice)}
-                    className={`division-payment shrink-0 rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[12px] font-bold transition-colors ${
+                    className={`division-payment shrink-0 rounded-[var(--fin-r-pill)] px-3 py-2 text-[13px] font-bold transition-colors ${
                       participante.pagoConfirmado
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                        ? 'bg-[var(--fin-in-bg)] text-[var(--fin-in)] text-[var(--fin-in)]'
                         : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
                     }`}
                   >
@@ -265,29 +265,29 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
 
           {/* Tarjeta de resultado */}
           <div className="division-result rounded-[var(--fin-r-card)] p-4 text-center">
-            <p className="division-result-label text-[12.5px] font-semibold uppercase tracking-wide">
+            <p className="division-result-label text-[13px] font-semibold uppercase tracking-wide">
               Cuota por persona
             </p>
-            <p className="mt-1 text-[28px] font-extrabold tabular-nums text-[var(--fin-ink)]">
+            <p className="mt-1 text-[28px] font-bold tabular-nums text-[var(--fin-ink)]">
               {formatCop(cuotaPorPersona)}
             </p>
-            <p className="mt-1 text-[12px] text-[var(--fin-ink-soft)]">
+            <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">
               Total cuenta {formatCop(totalConPropina)} entre {personas}
             </p>
           </div>
         </div>
 
         {/* Botones de acción */}
-        <div className="division-actions mt-5 flex flex-col sm:flex-row gap-2.5">
+        <div className="division-actions mt-5 flex flex-col sm:flex-row gap-3">
           <button
             type="button"
             onClick={copiarMensaje}
             disabled={cuotaPorPersona <= 0}
-            className="division-share flex-1 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] py-3 text-[14px] font-bold disabled:opacity-40"
+            className="division-share flex-1 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] py-3 text-[15px] font-bold disabled:opacity-40"
           >
             {copiado ? (
               <>
-                <Check className="h-4 w-4 text-emerald-500" />
+                <Check className="h-4 w-4 text-[var(--fin-in)]" />
                 <span>¡Listo para enviar!</span>
               </>
             ) : (
@@ -303,7 +303,7 @@ export const DivisionCuentasModal: React.FC<DivisionCuentasModalProps> = ({
             onClick={handleAnotar}
             disabled={cuotaPorPersona <= 0}
             rippleColor="rgba(255,255,255,0.4)"
-            className="division-save flex-1 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] py-3 text-[14.5px] font-bold disabled:opacity-40"
+            className="division-save flex-1 flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] py-3 text-[15px] font-bold disabled:opacity-40"
           >
             <Check className="h-4 w-4" strokeWidth={3} />
             Anotar mi parte ({formatCop(cuotaPorPersona)})

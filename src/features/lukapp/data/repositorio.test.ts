@@ -173,6 +173,18 @@ const contrato = (nombre: string, crear: () => Repositorio) => {
       expect(datos.cajitaMovimientos.map((m) => m.id)).toEqual(['mov-3']);
     });
 
+    it('conserva el historial y desvincula movimientos y pagos al borrar su cuenta', async () => {
+      await repo.guardarCajita(cajita());
+      await repo.guardarTransacciones([tx({ cuentaId: 'caj-1' })]);
+      await repo.guardarRecurrente({ id: 'pago', nombre: 'Arriendo', kind: 'gasto', amountCop: 20000, categoria: 'otros', cuentaId: 'caj-1', diaDelMes: 1, createdAt: '2026-08-01', archivedAt: null });
+      await repo.borrarCajita('caj-1');
+      const datos = await repo.cargarTodo();
+      expect(datos.transacciones).toHaveLength(1);
+      expect(datos.transacciones[0].cuentaId).toBeNull();
+      expect(datos.recurrentes).toHaveLength(1);
+      expect(datos.recurrentes[0].cuentaId).toBeNull();
+    });
+
     it('unlinks a goal when its pocket is deleted', async () => {
       await repo.guardarCajita(cajita());
       await repo.guardarMeta(meta({ cajitaId: 'caj-1' }));

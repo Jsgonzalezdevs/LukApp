@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Bot,
   PiggyBank,
@@ -25,7 +26,7 @@ const Barra: React.FC<{
   color: string;
   retraso: number;
 }> = ({ etiqueta, valor, tope, color, retraso }) => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const pct = Math.min((valor / tope) * 100, 100);
   const pasado = valor > tope;
 
@@ -75,7 +76,7 @@ const DEUDAS = [
 ];
 
 const MockDeudas: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   return (
     <div className="mk">
       <span className="mk-titulo">Deudas</span>
@@ -107,7 +108,7 @@ const RECURRENTES = [
 ];
 
 const MockRecurrentes: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   return (
     <div className="mk">
       <span className="mk-titulo">Cada mes, sin falta</span>
@@ -147,7 +148,7 @@ const GESTOS_LUKI = [
 ];
 
 const MockAnalista: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   return (
     <div className="mk mk-chat">
       <span className="mk-titulo">Pregúntale a tus números</span>
@@ -183,7 +184,7 @@ const MESES = [
 ];
 
 const MockTendencias: React.FC = () => {
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   return (
     <div className="mk">
       <span className="mk-titulo">Gasto por mes</span>
@@ -287,7 +288,7 @@ const PESTANAS: {
 
 export const Funciones: React.FC = () => {
   const [activa, setActiva] = useState(PESTANAS[0].clave);
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
   const actual = PESTANAS.find((p) => p.clave === activa) ?? PESTANAS[0];
   const { Mockup } = actual;
 

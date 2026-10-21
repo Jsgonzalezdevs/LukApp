@@ -133,7 +133,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
         className="flex h-[var(--fin-nav-h)] w-full max-w-[720px] items-center justify-around px-2"
       >
         {SECTIONS.map((item) => {
-          const activa = item.id === section;
+          const activa = item.id === section || (section === 'calendario' && item.id === 'mes');
           return (
             <button
               key={item.id}
@@ -141,7 +141,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-1.5"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2"
             >
               <item.icon
                 className="h-[22px] w-[22px] shrink-0 transition-colors"

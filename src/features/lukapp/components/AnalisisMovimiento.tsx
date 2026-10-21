@@ -42,7 +42,7 @@ const FilaSenal: React.FC<{ senal: Senal }> = ({ senal }) => {
       style={{ backgroundColor: fondo }}
     >
       <Icono
-        className="mt-0.5 h-4 w-4 shrink-0"
+        className="mt-1 h-4 w-4 shrink-0"
         style={{ color: tinta }}
         strokeWidth={2.5}
         aria-hidden="true"
@@ -51,7 +51,7 @@ const FilaSenal: React.FC<{ senal: Senal }> = ({ senal }) => {
         <p className="text-[13px] font-semibold" style={{ color: tinta }}>
           {senal.titulo}
         </p>
-        <p className="mt-0.5 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
+        <p className="mt-1 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
           {senal.detalle}
         </p>
       </div>
@@ -97,7 +97,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
       <motion.div
         initial={{ y: 24, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
@@ -123,7 +123,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar"
-            className="shrink-0 rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
+            className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)]"
           >
             <X className="h-4 w-4" strokeWidth={3} />
           </button>
@@ -145,7 +145,7 @@ export const AnalisisMovimiento: React.FC<AnalisisMovimientoProps> = ({
         ) : (
           <div className="mt-5 flex items-start gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3">
             <Info
-              className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]"
+              className="mt-1 h-4 w-4 shrink-0 text-[var(--fin-ink-faint)]"
               strokeWidth={2.5}
               aria-hidden="true"
             />

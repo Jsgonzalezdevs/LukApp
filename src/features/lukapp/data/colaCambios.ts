@@ -39,14 +39,15 @@ export class ColaCambios {
   }
 
   /** Añade un cambio al final de la cola. */
-  async encolar(metodo: MetodoDeEscritura, args: unknown[]): Promise<void> {
+  async encolar(metodo: MetodoDeEscritura, args: unknown[]): Promise<IDBValidKey> {
     const db = await this.conexion();
     const tx = db.transaction(TIENDA, 'readwrite');
-    tx.objectStore(TIENDA).add({ metodo, args });
+    const solicitud = tx.objectStore(TIENDA).add({ metodo, args });
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
       tx.onabort = () => reject(tx.error ?? new Error('No se pudo guardar el cambio pendiente.'));
     });
+    return solicitud.result;
   }
 
   /**

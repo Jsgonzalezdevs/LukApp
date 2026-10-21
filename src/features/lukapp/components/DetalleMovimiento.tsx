@@ -1,7 +1,7 @@
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Pencil, Sparkles, Trash2, X } from 'lucide-react';
-import { tint } from '../types';
 import type { Transaction } from '../types';
 import { formatSigned } from '../lib/formatCop';
 import { dayLabel } from '../lib/localDate';
@@ -15,7 +15,7 @@ interface DetalleMovimientoProps {
   onCerrar: () => void;
   onEditar: (tx: Transaction) => void;
   onAnalizar: (tx: Transaction) => void;
-  onBorrar: (id: string) => void;
+  onBorrar: (id: string) => ResultadoGuardado;
 }
 
 /**
@@ -39,6 +39,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
   onAnalizar,
   onBorrar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const catalogo = useCatalogo();
   const entrada = catalogo.de(tx.category);
   const esIngreso = tx.kind === 'ingreso';
@@ -48,7 +49,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
   const acciones = esTransferencia ? [] : [
     { icono: Sparkles, texto: 'Analizar', alTocar: () => onAnalizar(tx) },
     { icono: Pencil, texto: 'Editar', alTocar: () => onEditar(tx) },
-    { icono: Trash2, texto: 'Borrar', alTocar: () => onBorrar(tx.id), peligro: true },
+    { icono: Trash2, texto: 'Borrar', alTocar: () => guardado.ejecutar(() => onBorrar(tx.id)), peligro: true },
   ];
 
   return (
@@ -65,7 +66,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
       <motion.div
         initial={{ y: 24 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.22, ease: 'easeOut' }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
         className="fin-glass w-full max-w-md rounded-t-[var(--fin-r-sheet)] bg-[var(--fin-card)] px-5 pt-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]"
       >
@@ -82,11 +83,11 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
 
         <div className="flex flex-col items-center pb-2 text-center">
           <span
-            className="flex h-16 w-16 items-center justify-center rounded-3xl text-[30px] select-none shadow-sm"
-            style={{ backgroundColor: tint(entrada.color, 0.2) }}
+            className="flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-card)] text-[28px] select-none shadow-sm"
+            style={{ backgroundColor: 'var(--fin-soft)', color: 'var(--fin-ink-soft)' }}
             aria-hidden="true"
           >
-            {entrada.emoji}
+            <span aria-hidden="true">{entrada.emoji}</span>
           </span>
 
           <p
@@ -111,7 +112,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
  descripción. Sirve para entender por qué quedó así si el motor de
  texto se equivocó. */}
           {tx.rawTranscript && tx.rawTranscript.trim() !== tx.description.trim() ? (
-            <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-[13px] italic text-[var(--fin-ink-soft)]">
+            <p className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-3 text-[13px] italic text-[var(--fin-ink-soft)]">
               Dijiste: «{tx.rawTranscript.trim()}»
             </p>
           ) : null}
@@ -123,12 +124,13 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
           </p>
         ) : (
         <div className="mt-5 grid grid-cols-3 gap-2">
+          {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
           {acciones.map((accion) => (
             <button
               key={accion.texto}
               type="button"
               onClick={accion.alTocar}
-              className="flex flex-col items-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-3.5 text-[13px] font-semibold transition-colors"
+              className="flex flex-col items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] py-4 text-[13px] font-semibold transition-colors"
               style={{ color: accion.peligro ? 'var(--fin-out)' : 'var(--fin-ink)' }}
             >
               <accion.icono className="h-5 w-5" strokeWidth={2} aria-hidden="true" />

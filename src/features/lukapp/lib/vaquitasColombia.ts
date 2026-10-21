@@ -44,6 +44,15 @@ export interface ResumenVaquita {
   liquidacionesSugeridas: DeudaLiquidacion[];
 }
 
+/** Reparte pesos enteros sin crear ni perder saldo por redondeo. */
+export const repartirCuota = (totalCop: number, cantidad: number): number[] => {
+  if (!Number.isFinite(totalCop) || totalCop < 0 || !Number.isInteger(cantidad) || cantidad <= 0) return [];
+  const total = Math.floor(totalCop);
+  const base = Math.floor(total / cantidad);
+  const sobrante = total % cantidad;
+  return Array.from({ length: cantidad }, (_, indice) => base + (indice < sobrante ? 1 : 0));
+};
+
 /**
  * Calcula el estado financiero de una vaquita y calcula cómo saldar cuentas
  * entre los participantes.

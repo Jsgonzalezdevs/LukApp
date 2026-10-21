@@ -1,3 +1,5 @@
+import { etiquetaIcono } from '../lib/etiquetaIcono';
+import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CreditCard, Pencil, Plus, Trash2 } from 'lucide-react';
@@ -29,8 +31,8 @@ interface DeudasViewProps {
     metaCop: number | null;
     tasaEaPct: number | null;
     saldoInicialCop: number;
-  }) => void;
-  onFijarSaldo: (cajitaId: string, saldo: number) => void;
+  }) => ResultadoGuardado;
+  onFijarSaldo: (cajitaId: string, saldo: number) => ResultadoGuardado;
   onMovimiento: (
     cajitaId: string,
     kind: CajitaMovKind,
@@ -42,13 +44,13 @@ interface DeudasViewProps {
       interesPct?: number | null;
       cuotaManejoCop?: number | null;
     },
-  ) => void;
-  onEliminar: (cajitaId: string) => void;
+  ) => ResultadoGuardado;
+  onEliminar: (cajitaId: string) => ResultadoGuardado;
   /** La configuración de una tarjeta vive junto con sus compras y abonos. */
-  onActualizar?: (cajita: Cajita) => void;
+  onActualizar?: (cajita: Cajita) => ResultadoGuardado;
   /** Live asset balances a payment can come out of. Never debts or cards. */
   cuentas: readonly { id: string; nombre: string; etiqueta?: string }[];
-  onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => void;
+  onAbonar: (datos: { deudaId: string; cuentaId: string; montoCop: number }) => ResultadoGuardado;
 }
 
 type Accion = 'compra' | 'abono' | 'saldo';
@@ -84,6 +86,7 @@ const DeudaCard: React.FC<{
   cuentas,
   onAbonar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [accion, setAccion] = useState<Accion | null>(null);
   const [texto, setTexto] = useState('');
   const [categoria, setCategoria] = useState<Category>('otros');
@@ -122,11 +125,12 @@ const DeudaCard: React.FC<{
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
   const valor = leer(texto);
 
-  const enviar = (e: React.FormEvent) => {
+  const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (valor === null || accion === null) return;
 
-    if (accion === 'saldo') onFijarSaldo(cajita.id, valor);
+    let operacion: () => ResultadoGuardado;
+    if (accion === 'saldo') operacion = () => onFijarSaldo(cajita.id, valor);
     // A purchase adds to what you owe; a payment takes away from it — and comes
     // out of a real account, which is why it goes through its own action.
     else if (accion === 'compra') {
@@ -147,14 +151,14 @@ const DeudaCard: React.FC<{
       // histórico de movimientos; los metadatos solo viajan cuando la persona
       // realmente configuró cuotas, interés o manejo.
       const hayDetalles = esFinanciada || interes !== '' || cuotaManejo !== '';
-      if (hayDetalles) onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, detalles);
-      else onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
+      operacion = () => hayDetalles ? onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria, detalles) : onMovimiento(cajita.id, 'compra', Math.abs(valor), categoria);
     }
     else {
       if (cuentaId === '') return;
-      onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });
+      operacion = () => onAbonar({ deudaId: cajita.id, cuentaId, montoCop: Math.abs(valor) });
     }
 
+    if (!await guardado.ejecutar(operacion)) return;
     setAccion(null);
     setTexto('');
   };
@@ -165,7 +169,7 @@ const DeudaCard: React.FC<{
     setTexto(misma ? '' : siguiente === 'saldo' ? formatAmountInput(saldoCop) : '');
   };
 
-  const guardarTarjeta = (e: React.FormEvent) => {
+  const guardarTarjeta = async (e: React.FormEvent) => {
     e.preventDefault();
     const nombre = nombreTarjeta.trim();
     if (!onActualizar || !nombre) return;
@@ -173,19 +177,20 @@ const DeudaCard: React.FC<{
       const dia = Number.parseInt(valor, 10);
       return Number.isInteger(dia) && dia >= 1 && dia <= 31 ? dia : null;
     };
-    onActualizar({
+    if (!await guardado.ejecutar(() => onActualizar!({
       ...cajita,
       nombre,
       limiteCreditoCop: parseAmountInput(limiteTarjeta),
       diaCorte: leerDia(diaCorte),
       diaPago: leerDia(diaPago),
       pagoMinimoCop: parseAmountInput(pagoMinimo),
-    });
+    }))) return;
     setEditandoTarjeta(false);
   };
 
   return (
     <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="flex items-start gap-3">
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)]"
@@ -201,7 +206,7 @@ const DeudaCard: React.FC<{
           <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">
             {TIPO_LABELS[cajita.tipo]}
           </p>
-          <p className="mt-0.5 text-[28px] font-semibold tabular-nums text-[var(--fin-out)]">
+          <p className="mt-1 text-[28px] font-semibold tabular-nums text-[var(--fin-out)]">
             <AnimatedNumber value={saldoCop} format={formatCop} />
           </p>
           <p className="text-[13px] text-[var(--fin-ink-faint)]">
@@ -216,7 +221,7 @@ const DeudaCard: React.FC<{
               onClick={() => setEditandoTarjeta((v) => !v)}
               aria-label={`Editar ${cajita.nombre}`}
               aria-expanded={editandoTarjeta}
-              className="rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+              className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
             >
               <Pencil className="h-4 w-4" strokeWidth={2.5} />
             </button>
@@ -225,7 +230,7 @@ const DeudaCard: React.FC<{
             type="button"
             onClick={() => setConfirmando((v) => !v)}
             aria-label={`Eliminar ${cajita.nombre}`}
-            className="rounded-[var(--fin-r-control)] p-1.5 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
+            className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.5} />
           </button>
@@ -234,31 +239,31 @@ const DeudaCard: React.FC<{
 
       {editandoTarjeta ? (
         <form onSubmit={guardarTarjeta} className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3">
-          <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">{cajita.tipo === 'tarjeta' ? 'Nombre de la tarjeta' : 'Nombre de la deuda'}<input value={nombreTarjeta} onChange={(e) => setNombreTarjeta(e.target.value)} className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+          <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">{cajita.tipo === 'tarjeta' ? 'Nombre de la tarjeta' : 'Nombre de la deuda'}<input value={nombreTarjeta} onChange={(e) => setNombreTarjeta(e.target.value)} className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" /></label>
           {cajita.tipo === 'tarjeta' ? <div className="mt-2 grid grid-cols-2 gap-2">
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cupo<input value={limiteTarjeta} onChange={(e) => setLimiteTarjeta(conPuntos(e.target.value))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pago mínimo<input value={pagoMinimo} onChange={(e) => setPagoMinimo(conPuntos(e.target.value))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de corte<input value={diaCorte} onChange={(e) => setDiaCorte(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de pago<input value={diaPago} onChange={(e) => setDiaPago(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cupo<input value={limiteTarjeta} onChange={(e) => setLimiteTarjeta(conPuntos(e.target.value))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pago mínimo<input value={pagoMinimo} onChange={(e) => setPagoMinimo(conPuntos(e.target.value))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de corte<input value={diaCorte} onChange={(e) => setDiaCorte(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Día de pago<input value={diaPago} onChange={(e) => setDiaPago(e.target.value.replace(/\D/g, ''))} inputMode="numeric" placeholder="No configurado" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)]" /></label>
             </div> : null}
-          <button type="submit" className="mt-3 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[14px] font-semibold text-[var(--fin-on-accent)]">Guardar cambios</button>
+          <button type="submit" disabled={guardado.ocupado} className="mt-3 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-on-accent)]">Guardar cambios</button>
         </form>
       ) : null}
 
       {pagoDelMes > 0 ? (
-        <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-3 py-2.5">
+        <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-3 py-3">
           <p className="text-[13px] font-semibold text-[var(--fin-out-ink)]">Para pagar este mes</p>
-          <p className="mt-0.5 text-[20px] font-semibold tabular-nums text-[var(--fin-out)]">
+          <p className="mt-1 text-[20px] font-semibold tabular-nums text-[var(--fin-out)]">
             {formatCop(pagoDelMes)}
           </p>
-          <p className="mt-0.5 text-[12px] leading-relaxed text-[var(--fin-out-ink)]">
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
             Es la suma de tus cuotas vigentes; abónala desde una cuenta cuando la pagues.
           </p>
         </div>
       ) : null}
 
       {cajita.tipo === 'tarjeta' && (cajita.limiteCreditoCop !== null && cajita.limiteCreditoCop !== undefined) ? (
-        <p className="mt-2 text-[12px] text-[var(--fin-ink-faint)]">
+        <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
           Cupo disponible: {formatCop(Math.max(0, cajita.limiteCreditoCop - Math.max(0, saldoCop)))}
           {cajita.diaCorte ? ` · corte día ${cajita.diaCorte}` : ''}
           {cajita.diaPago ? ` · pago día ${cajita.diaPago}` : ''}
@@ -270,11 +275,11 @@ const DeudaCard: React.FC<{
           <p className="text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
             Se elimina y con ella todo su historial de cargos y abonos.
           </p>
-          <div className="mt-2.5 flex gap-2">
+          <div className="mt-3 flex gap-2">
             <button
               type="button"
               onClick={() => onEliminar(cajita.id)}
-              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-white"
+              className="rounded-[var(--fin-r-pill)] bg-[var(--fin-out)] px-4 py-2 text-[15px] font-semibold text-[var(--fin-on-out)]"
             >
               Eliminar
             </button>
@@ -289,7 +294,7 @@ const DeudaCard: React.FC<{
         </div>
       ) : null}
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-2">
         {(
           [
             { id: 'compra', label: 'Registrar compra' },
@@ -302,7 +307,7 @@ const DeudaCard: React.FC<{
             type="button"
             onClick={() => abrir(item.id)}
             aria-pressed={accion === item.id}
-            className={`rounded-[var(--fin-r-pill)] px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+            className={`rounded-[var(--fin-r-pill)] px-3 py-2 text-[13px] font-semibold transition-colors ${
               accion === item.id
                 ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]'
                 : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:text-[var(--fin-ink)]'
@@ -318,7 +323,7 @@ const DeudaCard: React.FC<{
           onSubmit={enviar}
           className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3"
         >
-          <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5">
+          <div className="flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3">
             <span className="text-[20px] font-semibold text-[var(--fin-ink-faint)]">$</span>
             <input
               value={texto}
@@ -333,10 +338,10 @@ const DeudaCard: React.FC<{
 
           {accion === 'compra' ? (
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuotas<input value={cuotas} onChange={(e) => setCuotas(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuota mensual<input value={cuotaMensual} onChange={(e) => setCuotaMensual(conPuntos(e.target.value))} inputMode="numeric" placeholder="Se calcula" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Interés mensual (%)<input value={interes} onChange={(e) => setInteres(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuota de manejo<input value={cuotaManejo} onChange={(e) => setCuotaManejo(conPuntos(e.target.value))} inputMode="numeric" placeholder="0" className="mt-1 w-full rounded-xl border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuotas<input value={cuotas} onChange={(e) => setCuotas(e.target.value)} inputMode="numeric" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuota mensual<input value={cuotaMensual} onChange={(e) => setCuotaMensual(conPuntos(e.target.value))} inputMode="numeric" placeholder="Se calcula" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Interés mensual (%)<input value={interes} onChange={(e) => setInteres(e.target.value)} inputMode="decimal" placeholder="0" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuota de manejo<input value={cuotaManejo} onChange={(e) => setCuotaManejo(conPuntos(e.target.value))} inputMode="numeric" placeholder="0" className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2" /></label>
             </div>
           ) : null}
 
@@ -347,7 +352,7 @@ const DeudaCard: React.FC<{
               <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 ¿En qué fue?
               </legend>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {CATEGORIES.map((op) => {
                   const activa = categoria === op;
                   const color = CATEGORY_COLOR[op];
@@ -358,7 +363,7 @@ const DeudaCard: React.FC<{
                       type="button"
                       onClick={() => setCategoria(op)}
                       aria-pressed={activa}
-                      className="flex items-center gap-1 rounded-[var(--fin-r-pill)] border-2 px-2.5 py-1.5 text-[13px] font-semibold transition-colors"
+                      className="flex items-center gap-1 rounded-[var(--fin-r-pill)] border-2 px-3 py-2 text-[13px] font-semibold transition-colors"
                       style={{
                         backgroundColor: activa ? tint(color, 0.16) : 'var(--fin-card)',
                         borderColor: activa ? color : 'var(--fin-line)',
@@ -383,7 +388,7 @@ const DeudaCard: React.FC<{
                 ¿De dónde sale el pago?
               </label>
               {cuentas.length === 0 ? (
-                <p className="mt-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
+                <p className="mt-2 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-3 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
                   Primero crea una cuenta en Ahorro. El dinero de un abono tiene que salir de algún
                   lado, o los saldos dejan de cuadrar.
                 </p>
@@ -393,7 +398,7 @@ const DeudaCard: React.FC<{
                   value={cuentaId}
                   onChange={(e) => setCuentaId(e.target.value)}
                   required
-                  className="mt-1.5 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
+                  className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 >
                   {cuentas.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -407,9 +412,9 @@ const DeudaCard: React.FC<{
 
           <RippleButton
             type="submit"
-            disabled={valor === null || (accion === 'abono' && cuentaId === '')}
+            disabled={guardado.ocupado || valor === null || (accion === 'abono' && cuentaId === '')}
             rippleColor="rgba(255,255,255,0.5)"
-            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-2.5 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+            className="mt-3 w-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-4 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
           >
             Guardar
           </RippleButton>
@@ -417,11 +422,11 @@ const DeudaCard: React.FC<{
       ) : null}
 
       {historial.length > 0 ? (
-        <ul className="mt-3 flex flex-col gap-1.5">
+        <ul className="mt-3 flex flex-col gap-2">
           {historial.slice(0, 6).map(({ movimiento, saldoDespues }) => (
             <li
               key={movimiento.id}
-              className="flex items-center gap-2.5 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
+              className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[13px] font-semibold text-[var(--fin-ink)]">
@@ -450,11 +455,11 @@ const DeudaCard: React.FC<{
       {comprasRegistradas.length > 0 ? (
         <div className="mt-3">
           <p className="px-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Compras registradas</p>
-          <ul className="mt-1.5 flex flex-col gap-1.5">
+          <ul className="mt-2 flex flex-col gap-2">
             {comprasRegistradas.slice(0, 6).map((tx) => (
               <li
                 key={tx.id}
-                className="flex items-center gap-2.5 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
+                className="flex items-center gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-semibold text-[var(--fin-ink)]">{tx.description}</p>
@@ -490,6 +495,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   cuentas,
   onAbonar,
 }) => {
+  const guardado = useGuardadoFinanciero();
   const [creando, setCreando] = useState(false);
   const [nombre, setNombre] = useState('');
   const [tipo, setTipo] = useState<CajitaTipo>(soloTipo ?? 'tarjeta');
@@ -501,19 +507,19 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
   );
   const total = filas.reduce((t, f) => t + f.saldoCop, 0);
 
-  const crear = (e: React.FormEvent) => {
+  const crear = async (e: React.FormEvent) => {
     e.preventDefault();
     const limpio = nombre.trim();
     if (!limpio) return;
 
-    onCrear({
+    if (!await guardado.ejecutar(() => onCrear({
       nombre: limpio,
       icon,
       tipo,
       metaCop: null,
       tasaEaPct: null,
       saldoInicialCop: parseAmountInput(saldoTexto) ?? 0,
-    });
+    }))) return;
     setNombre('');
     setSaldoTexto('');
     setTipo(soloTipo ?? 'tarjeta');
@@ -525,9 +531,10 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
     // las tarjetas de deudas en su propia grilla ancha.
     // `w-full` por consistencia -- ver el comentario en TendenciasView.tsx.
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+      {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
             {soloTipo === 'tarjeta' ? 'Deuda de tarjetas' : soloTipo === 'deuda' ? 'Deudas pendientes' : 'Lo que debes'}
           </h2>
@@ -558,14 +565,14 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
               <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 ¿Qué es?
               </legend>
-              <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-1.5">
+              <div className="mt-2 grid grid-cols-2 gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-2">
                 {(['tarjeta', 'deuda'] as const).map((op) => (
                   <button
                     key={op}
                     type="button"
                     onClick={() => setTipo(op)}
                     aria-pressed={tipo === op}
-                    className={`rounded-[var(--fin-r-control)] px-3 py-2.5 text-[13px] font-semibold transition-colors ${
+                    className={`rounded-[var(--fin-r-control)] px-3 py-3 text-[13px] font-semibold transition-colors ${
                       tipo === op
                         ? 'bg-[var(--fin-card)] text-[var(--fin-ink)]'
                         : 'text-[var(--fin-ink-soft)]'
@@ -614,7 +621,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
               <legend className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 Ícono
               </legend>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {CAJITA_ICONS.map((op: string) => {
                   const IconComponent = iconoDeCajita(op);
                   return (
@@ -623,7 +630,7 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
                       type="button"
                       onClick={() => setIcon(op)}
                       aria-pressed={icon === op}
-                      aria-label={`Ícono ${op}`}
+                      aria-label={`Ícono ${etiquetaIcono(op)}`}
                       className={`flex h-10 w-10 items-center justify-center rounded-[var(--fin-r-card)] border-2 transition-colors ${
                         icon === op
                           ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] text-[var(--fin-ink)]'
@@ -640,16 +647,16 @@ export const DeudasView: React.FC<DeudasViewProps> = ({
             <div className="mt-5 flex gap-2">
               <RippleButton
                 type="submit"
-                disabled={nombre.trim() === ''}
+                disabled={guardado.ocupado || nombre.trim() === ''}
                 rippleColor="rgba(255,255,255,0.5)"
-                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
+                className="flex-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-30"
               >
                 Crear
               </RippleButton>
               <button
                 type="button"
                 onClick={() => setCreando(false)}
-                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-3.5 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
+                className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-6 py-4 text-[17px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 Cancelar
               </button>

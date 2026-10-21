@@ -1,3 +1,4 @@
+import { nuevoId } from '../lib/id';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, ClaseCuenta, Meta } from './modelos';
@@ -5,7 +6,9 @@ import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
-import type { Instantanea, Repositorio } from './repositorio';
+import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
+import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
 import { ES_PASIVO } from './modelos';
 
 /**
@@ -44,6 +47,7 @@ export class RepositorioSupabase implements Repositorio {
 
   private fallar(contexto: string, error: { message: string } | null): void {
     if (!error) return;
+    if (/failed to fetch|network|load failed/i.test(error.message)) throw new TypeError(error.message);
 
     // Constraint names are the schema's vocabulary, not the user's. Postgres
     // reports the rule that failed; this says what to do about it.
@@ -109,6 +113,23 @@ export class RepositorioSupabase implements Repositorio {
     throw new Error(`${contexto}: ${error.message}`);
   }
 
+  private async leerTabla<Fila>(tabla: string, clave = 'id'): Promise<{ data: Fila[]; error: { message: string } | null }> {
+    const filas: Fila[] = [];
+    while (true) {
+      const { data, error, count } = await this.cliente.from(tabla)
+        .select('*', { count: 'exact' }).eq('user_id', this.userId)
+        .order(clave).range(filas.length, filas.length + 499);
+      if (error) return { data: [], error };
+      const pagina = (data ?? []) as Fila[];
+      filas.push(...pagina);
+      if (count !== null && count !== undefined) {
+        if (filas.length >= count) break;
+        if (pagina.length === 0) throw new Error('El historial llegó incompleto. Vuelve a sincronizar antes de hacer cambios.');
+      } else if (pagina.length < 500) break;
+    }
+    return { data: filas, error: null };
+  }
+
   async cargarTodo(): Promise<Instantanea> {
     const [
       transacciones,
@@ -119,15 +140,19 @@ export class RepositorioSupabase implements Repositorio {
       contactos,
       presupuestos,
       recurrentes,
+      revisiones,
+      documentosNegocio,
     ] = await Promise.all([
-      this.cliente.from('transacciones').select('*').eq('user_id', this.userId),
-      this.cliente.from('cajitas').select('*').eq('user_id', this.userId),
-      this.cliente.from('cajita_movimientos').select('*').eq('user_id', this.userId),
-      this.cliente.from('metas').select('*').eq('user_id', this.userId),
-      this.cliente.from('categorias').select('*').eq('user_id', this.userId),
-      this.cliente.from('contactos').select('*').eq('user_id', this.userId),
-      this.cliente.from('presupuestos').select('*').eq('user_id', this.userId),
-      this.cliente.from('recurrentes').select('*').eq('user_id', this.userId),
+      this.leerTabla<FilaTransaccion>('transacciones'),
+      this.leerTabla<FilaCajita>('cajitas'),
+      this.leerTabla<FilaMovimiento>('cajita_movimientos'),
+      this.leerTabla<FilaMeta>('metas'),
+      this.leerTabla<FilaCategoria>('categorias'),
+      this.leerTabla<FilaContacto>('contactos'),
+      this.leerTabla<Parameters<typeof aPresupuesto>[0]>('presupuestos', 'categoria'),
+      this.leerTabla<Parameters<typeof aRecurrente>[0]>('recurrentes'),
+      this.leerTabla<RevisionDudosaFila>('revisiones_dudosas'),
+      this.leerTabla<{ id: string; datos: DocumentoNegocio }>('documentos_negocio'),
     ]);
 
     this.fallar('No se pudieron leer los movimientos', transacciones.error);
@@ -138,6 +163,8 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudieron leer los contactos', contactos.error);
     this.fallar('No se pudieron leer los presupuestos', presupuestos.error);
     this.fallar('No se pudieron leer los recurrentes', recurrentes.error);
+    this.fallar('No se pudieron leer las revisiones', revisiones.error);
+    this.fallar('No se pudieron leer los registros del negocio', documentosNegocio.error);
 
     return {
       transacciones: (transacciones.data ?? []).map(aTransaccion),
@@ -148,6 +175,8 @@ export class RepositorioSupabase implements Repositorio {
       contactos: (contactos.data ?? []).map(aContacto),
       presupuestos: (presupuestos.data ?? []).map(aPresupuesto),
       recurrentes: (recurrentes.data ?? []).map(aRecurrente),
+      revisiones: (revisiones.data ?? []).map(aRevision),
+      documentosNegocio: (documentosNegocio.data ?? []).map((fila) => fila.datos),
     };
   }
 
@@ -190,59 +219,39 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo eliminar el movimiento de la cajita', error);
   }
 
+  async aplicarCambios(cambios: CambiosFinancieros): Promise<void> {
+    const guardar = cambios.reemplazar ?? cambios.guardar ?? {};
+    const filas = {
+      transacciones: guardar.transacciones?.map((fila) => desdeTransaccion(fila, this.userId)),
+      cajitas: guardar.cajitas?.map((fila) => desdeCajita(fila, this.userId)),
+      cajita_movimientos: guardar.cajitaMovimientos?.map((fila) => desdeMovimiento(fila, this.userId)),
+      metas: guardar.metas?.map((fila) => desdeMeta(fila, this.userId)),
+      categorias: guardar.categorias?.map((fila) => desdeCategoria(fila, this.userId)),
+      contactos: guardar.contactos?.map((fila) => desdeContacto(fila, this.userId)),
+      presupuestos: guardar.presupuestos?.map((p) => ({ user_id: this.userId, categoria: p.categoria, monto_cop: p.montoCop, created_at: p.createdAt })),
+      recurrentes: guardar.recurrentes?.map((r) => ({ id: r.id, user_id: this.userId, nombre: r.nombre, kind: r.kind, amount_cop: r.amountCop, categoria: r.categoria, cuenta_id: r.cuentaId, dia_del_mes: r.diaDelMes, created_at: r.createdAt, archived_at: r.archivedAt })),
+      revisiones_dudosas: guardar.revisiones?.map((r) => desdeRevision(r, this.userId)),
+      documentos_negocio: guardar.documentosNegocio?.map((documento) => ({ id: documento.id, user_id: this.userId, datos: documento, updated_at: new Date().toISOString() })),
+    };
+    const borrar = Object.fromEntries(Object.entries(cambios.borrar ?? {})
+      .map(([clave, ids]) => [clave === 'cajitaMovimientos' ? 'cajita_movimientos' : clave === 'revisiones' ? 'revisiones_dudosas' : clave === 'documentosNegocio' ? 'documentos_negocio' : clave, ids]));
+    const { error } = await this.cliente.rpc('aplicar_cambios_financieros', {
+      cambios: { guardar: filas, borrar, reemplazar: Boolean(cambios.reemplazar) },
+      id_operacion: cambios.idOperacion ?? nuevoId('operacion'),
+    });
+    this.fallar('No se pudo completar la operación financiera', error);
+
+  }
+
   async guardarMovimientosConTransaccion(
     movimientos: readonly CajitaMovimiento[],
     transaccion?: Transaction | null,
   ): Promise<void> {
-    if (!transaccion) {
-      await this.guardarCajitaMovimientos(movimientos);
-      return;
-    }
-    if (movimientos.length === 0) {
-      await this.guardarTransacciones([transaccion]);
-      return;
-    }
-
-    const filasMov = movimientos.map((m) => desdeMovimiento(m, this.userId));
-    const filaTx = desdeTransaccion(transaccion, this.userId);
-
-    const [resMov, resTx] = await Promise.all([
-      this.cliente.from('cajita_movimientos').upsert(filasMov),
-      this.cliente.from('transacciones').upsert(filaTx),
-    ]);
-
-    if (resMov.error || resTx.error) {
-      if (!resMov.error && resTx.error) {
-        for (const m of movimientos) {
-          await this.cliente.from('cajita_movimientos').delete().eq('id', m.id);
-        }
-      } else if (resMov.error && !resTx.error) {
-        await this.cliente.from('transacciones').delete().eq('id', transaccion.id);
-      }
-      this.fallar('No se pudo guardar el movimiento de la cajita', resMov.error);
-      this.fallar('No se pudo guardar el movimiento', resTx.error);
-    }
+    await this.aplicarCambios({ guardar: { cajitaMovimientos: [...movimientos], transacciones: transaccion ? [transaccion] : [] } });
   }
 
-  async borrarMovimientoConTransaccion(
-    movimientoId: string,
-    transaccionId: string,
-  ): Promise<void> {
-    // El movimiento duplicado se elimina primero. Si la segunda petición
-    // falla, la transacción restante sigue siendo la fuente canónica del cargo
-    // y el saldo no desaparece. La transacción SQL real se implementa en la
-    // fase de atomicidad del repositorio remoto.
-    const movimiento = await this.cliente
-      .from('cajita_movimientos')
-      .delete()
-      .eq('id', movimientoId);
-    this.fallar('No se pudo eliminar el movimiento de la cajita', movimiento.error);
-
-    const transaccion = await this.cliente
-      .from('transacciones')
-      .delete()
-      .eq('id', transaccionId);
-    this.fallar('No se pudo eliminar el movimiento', transaccion.error);
+  async borrarMovimientoConTransaccion(movimientoId: string, transaccionId: string): Promise<void> {
+    await this.aplicarCambios({ borrar: { cajitaMovimientos: [movimientoId], transacciones: [transaccionId] } });
   }
 
   async guardarMeta(meta: Meta): Promise<void> {
@@ -290,6 +299,11 @@ export class RepositorioSupabase implements Repositorio {
     this.fallar('No se pudo eliminar el recurrente', error);
   }
 
+  async guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void> {
+    if (documentos.length === 0) return;
+    await this.aplicarCambios({ guardar: { documentosNegocio: [...documentos] } });
+  }
+
   async guardarPresupuesto(presupuesto: Presupuesto): Promise<void> {
     const { error } = await this.cliente.from('presupuestos').upsert({
       user_id: this.userId,
@@ -321,22 +335,7 @@ export class RepositorioSupabase implements Repositorio {
   }
 
   async vaciar(): Promise<void> {
-    // Pockets last: deleting them cascades into their movements, so removing
-    // movements first is redundant but keeps the intent explicit if the schema
-    // ever loses that cascade.
-    for (const tabla of [
-      'transacciones',
-      'metas',
-      'cajita_movimientos',
-      'cajitas',
-      'categorias',
-      'contactos',
-      'presupuestos',
-      'recurrentes',
-    ]) {
-      const { error } = await this.cliente.from(tabla).delete().eq('user_id', this.userId);
-      this.fallar(`No se pudo vaciar ${tabla}`, error);
-    }
+    await this.aplicarCambios({ reemplazar: { transacciones: [], cajitas: [], cajitaMovimientos: [], metas: [], categorias: [], contactos: [], presupuestos: [], recurrentes: [], revisiones: [], documentosNegocio: [] } });
   }
 }
 
@@ -352,6 +351,7 @@ interface FilaTransaccion {
   description: string;
   occurred_on: string;
   cuenta_id: string | null;
+  afecta_saldo?: boolean | null;
   raw_transcript: string;
   cuotas_total: number | null;
   cuota_cop: number | null;
@@ -368,6 +368,7 @@ const aTransaccion = (fila: FilaTransaccion): Transaction => {
     description: fila.description,
     occurredOn: fila.occurred_on,
     cuentaId: fila.cuenta_id,
+    afectaSaldo: fila.afecta_saldo !== false,
     rawTranscript: fila.raw_transcript,
     cuotasTotal: esFinanciado ? fila.cuotas_total : null,
     cuotaCop: esFinanciado && fila.cuota_cop !== null ? Number(fila.cuota_cop) : null,
@@ -386,6 +387,7 @@ const desdeTransaccion = (tx: Transaction, userId: string) => {
     description: tx.description,
     occurred_on: tx.occurredOn,
     cuenta_id: tx.cuentaId,
+    afecta_saldo: tx.afectaSaldo !== false,
     raw_transcript: tx.rawTranscript,
     cuotas_total: esFinanciado ? tx.cuotasTotal : null,
     cuota_cop: esFinanciado && typeof tx.cuotaCop === 'number' && tx.cuotaCop > 0 ? tx.cuotaCop : null,
@@ -394,6 +396,7 @@ const desdeTransaccion = (tx: Transaction, userId: string) => {
 };
 
 interface FilaCajita {
+  es_bajo_monto?: boolean;
   id: string;
   nombre: string;
   emoji: string;
@@ -407,6 +410,8 @@ interface FilaCajita {
   dia_corte?: number | null;
   dia_pago?: number | null;
   pago_minimo_cop?: number | null;
+  es_inversion?: boolean | null;
+  moneda?: string | null;
 }
 
 const aCajita = (fila: FilaCajita): Cajita => ({
@@ -414,6 +419,7 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   nombre: fila.nombre,
   icon: fila.emoji,
   tipo: aTipo(fila.tipo),
+  esBajoMonto: fila.es_bajo_monto ?? false,
   claseCuenta:
     fila.clase_cuenta === 'efectivo' ||
     fila.clase_cuenta === 'banco' ||
@@ -428,6 +434,8 @@ const aCajita = (fila: FilaCajita): Cajita => ({
   diaCorte: fila.dia_corte ?? null,
   diaPago: fila.dia_pago ?? null,
   pagoMinimoCop: fila.pago_minimo_cop === null || fila.pago_minimo_cop === undefined ? null : Number(fila.pago_minimo_cop),
+  esInversion: fila.es_inversion ?? false,
+  moneda: fila.moneda ?? 'COP',
 });
 
 const desdeCajita = (c: Cajita, userId: string) => ({
@@ -436,6 +444,7 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   nombre: c.nombre,
   emoji: c.icon,
   tipo: c.tipo,
+  es_bajo_monto: c.esBajoMonto ?? false,
   clase_cuenta: c.tipo === 'cuenta' ? (c.claseCuenta ?? null) : null,
   meta_cop: c.metaCop,
   tasa_ea_pct: c.tasaEaPct,
@@ -445,9 +454,18 @@ const desdeCajita = (c: Cajita, userId: string) => ({
   dia_corte: c.tipo === 'tarjeta' ? (c.diaCorte ?? null) : null,
   dia_pago: c.tipo === 'tarjeta' ? (c.diaPago ?? null) : null,
   pago_minimo_cop: c.tipo === 'tarjeta' ? (c.pagoMinimoCop ?? null) : null,
+  es_inversion: c.tipo === 'cajita' ? (c.esInversion ?? false) : false,
+  moneda: c.tipo === 'cajita' ? (c.moneda ?? 'COP') : 'COP',
 });
 
 interface FilaMovimiento {
+  cuotas_total?: number | null;
+  cuota_cop?: number | null;
+  interes_pct?: number | null;
+  cuota_manejo_cop?: number | null;
+  monto_original?: number | string | null;
+  moneda_original?: string | null;
+  tasa_cambio_cop?: number | string | null;
   id: string;
   cajita_id: string;
   kind: string;
@@ -462,6 +480,13 @@ const aMovimiento = (fila: FilaMovimiento): CajitaMovimiento => ({
   id: fila.id,
   cajitaId: fila.cajita_id,
   kind: fila.kind as CajitaMovKind,
+  cuotasTotal: fila.cuotas_total ?? null,
+  cuotaCop: fila.cuota_cop == null ? null : Number(fila.cuota_cop),
+  interesPct: fila.interes_pct == null ? null : Number(fila.interes_pct),
+  cuotaManejoCop: fila.cuota_manejo_cop == null ? null : Number(fila.cuota_manejo_cop),
+  montoOriginal: fila.monto_original == null ? null : Number(fila.monto_original),
+  monedaOriginal: fila.moneda_original ?? null,
+  tasaCambioCop: fila.tasa_cambio_cop == null ? null : Number(fila.tasa_cambio_cop),
   deltaCop: Number(fila.delta_cop),
   categoria: (fila.categoria as Category | null) ?? null,
   occurredOn: fila.occurred_on,
@@ -473,6 +498,13 @@ const desdeMovimiento = (m: CajitaMovimiento, userId: string) => ({
   id: m.id,
   user_id: userId,
   cajita_id: m.cajitaId,
+  cuotas_total: m.cuotasTotal ?? null,
+  cuota_cop: m.cuotaCop ?? null,
+  interes_pct: m.interesPct ?? null,
+  cuota_manejo_cop: m.cuotaManejoCop ?? null,
+  monto_original: m.montoOriginal ?? null,
+  moneda_original: m.monedaOriginal ?? null,
+  tasa_cambio_cop: m.tasaCambioCop ?? null,
   kind: m.kind,
   delta_cop: m.deltaCop,
   categoria: m.categoria,
@@ -525,6 +557,46 @@ const aRecurrente = (fila: {
   diaDelMes: fila.dia_del_mes,
   createdAt: fila.created_at,
   archivedAt: fila.archived_at,
+});
+
+interface RevisionDudosaFila {
+  id: string;
+  tipo: RevisionDudosa['tipo'];
+  estado: RevisionDudosa['estado'];
+  referencia_id: string | null;
+  titulo: string;
+  detalle: string;
+  documento: string | null;
+  resolucion: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const aRevision = (fila: RevisionDudosaFila): RevisionDudosa => ({
+  id: fila.id,
+  tipo: fila.tipo,
+  estado: fila.estado,
+  referenciaId: fila.referencia_id,
+  titulo: fila.titulo,
+  detalle: fila.detalle,
+  documento: fila.documento,
+  resolucion: fila.resolucion,
+  createdAt: fila.created_at,
+  updatedAt: fila.updated_at,
+});
+
+const desdeRevision = (revision: RevisionDudosa, userId: string) => ({
+  id: revision.id,
+  user_id: userId,
+  tipo: revision.tipo,
+  estado: revision.estado,
+  referencia_id: revision.referenciaId,
+  titulo: revision.titulo,
+  detalle: revision.detalle,
+  documento: revision.documento,
+  resolucion: revision.resolucion,
+  created_at: revision.createdAt,
+  updated_at: revision.updatedAt,
 });
 
 const aPresupuesto = (fila: {

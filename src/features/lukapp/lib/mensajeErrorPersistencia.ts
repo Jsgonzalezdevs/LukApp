@@ -4,7 +4,7 @@ export const mensajeDeErrorPersistencia = (error: unknown, hayConexion = typeof 
   const texto = detalle.toLowerCase();
 
   if (!hayConexion || texto.includes('network') || texto.includes('fetch')) {
-    return 'No hay conexión estable. El cambio queda guardado en este dispositivo y se intentará sincronizar después.';
+    return 'No se pudo confirmar el guardado. Revisa la conexión e inténtalo de nuevo.';
   }
   if (texto.includes('401') || texto.includes('jwt') || texto.includes('session')) {
     return 'Tu sesión venció. Inicia sesión de nuevo para sincronizar tus cambios.';

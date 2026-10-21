@@ -1,3 +1,5 @@
+import type { PanelAjustes } from '../sections';
+import { AccesosFunciones } from './AccesosFunciones';
 import React, { useMemo, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight, Download, Lock, Sparkles } from 'lucide-react';
 import type { Transaction } from '../types';
@@ -15,6 +17,7 @@ import { RippleButton } from './RippleButton';
 import { AnimatedNumber } from './AnimatedNumber';
 
 interface MesViewProps {
+  onAbrirHerramienta?: (panel: PanelAjustes) => void;
   /** El período activo -- 'YYYY-MM' si la frecuencia es mensual sin desfase
    * (como siempre), o la clave que le corresponda a cualquier otra frecuencia. */
   clave: string;
@@ -35,6 +38,7 @@ interface MesViewProps {
   ingresos: readonly CategorySlice[];
   delMes: readonly Transaction[];
   transacciones: readonly Transaction[];
+  onAbrirMovimiento?: (tx: Transaction) => void;
   /** Los topes de gasto, que se editan desde Ajustes pero se leen aquí. */
   topes?: React.ReactNode;
 }
@@ -61,12 +65,14 @@ export const MesView: React.FC<MesViewProps> = ({
   hoy,
   onCambiarPeriodo,
   onAbrirCalendario,
+  onAbrirHerramienta,
   shift,
   totals,
   gastos,
   ingresos,
   delMes,
   transacciones,
+  onAbrirMovimiento,
   topes,
 }) => {
   const positivo = totals.balance >= 0;
@@ -133,18 +139,19 @@ export const MesView: React.FC<MesViewProps> = ({
           <ChevronRight className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
         </button>
       </div>
+      {onAbrirHerramienta ? <AccesosFunciones paneles={['recurrentes', 'forecast']} onAbrir={onAbrirHerramienta} /> : null}
 
       {habilitado ? (
         <RippleButton
           type="button"
           onClick={() => setResumenAbierto(true)}
           rippleColor="rgba(255,255,255,0.5)"
-          className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-3.5 text-left text-[var(--fin-on-accent)] transition-transform active:scale-[0.99]"
+          className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] px-4 py-4 text-left text-[var(--fin-on-accent)] transition-transform active:scale-[0.99]"
         >
           <Sparkles className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-semibold">Tu resumen de {monthKeyLabel(mesCalendario)}</span>
-            <span className="mt-0.5 block text-[13px] opacity-70">
+            <span className="mt-1 block text-[13px] opacity-70">
               Lo mejor y lo raro del mes, en una historia
             </span>
           </span>
@@ -158,14 +165,14 @@ export const MesView: React.FC<MesViewProps> = ({
           <Sparkles className="h-5 w-5 shrink-0 opacity-30 text-[var(--fin-ink-ghost)]" strokeWidth={2} aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="block text-[14px] font-semibold text-[var(--fin-ink-soft)]">
+              <span className="block text-[15px] font-semibold text-[var(--fin-ink-soft)]">
                 Tu resumen de {monthKeyLabel(mesCalendario)}
               </span>
-              <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-2 py-0.5 text-[10px] font-semibold tracking-wide text-[var(--fin-ink-faint)] uppercase">
+              <span className="rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-2 py-1 text-[13px] font-semibold tracking-wide text-[var(--fin-ink-faint)] uppercase">
                 Próximamente
               </span>
             </div>
-            <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
+            <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
               Se habilita el {diaDesbloqueo} de {monthKeyLabel(mesCalendario).split(' ')[0]} (2 días antes de fin de mes)
             </span>
           </span>
@@ -202,9 +209,9 @@ export const MesView: React.FC<MesViewProps> = ({
       <CategoryBreakdown title="En qué se te va" slices={gastos} />
       <CategoryBreakdown title="De dónde entra" slices={ingresos} />
 
-      <DetalleMes delMes={delMes} transacciones={transacciones} mes={mesCalendario} />
+      <DetalleMes delMes={delMes} transacciones={transacciones} mes={mesCalendario} onAbrirMovimiento={onAbrirMovimiento} />
 
-      <TendenciasView transacciones={transacciones} mes={mesCalendario} />
+      <TendenciasView transacciones={transacciones} mes={mesCalendario} onAbrirMovimiento={onAbrirMovimiento} />
 
       {delMes.length > 0 ? (
         <div className="flex items-center justify-center pt-2 pb-1">
@@ -220,6 +227,8 @@ export const MesView: React.FC<MesViewProps> = ({
                   presupuestos: [],
                   metas: [],
                   recurrentes: [],
+                  revisiones: [],
+                  documentosNegocio: [],
                   categorias: [],
                 },
                 {},
@@ -230,7 +239,7 @@ export const MesView: React.FC<MesViewProps> = ({
                 clave,
               );
             }}
-            className="flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm transition-all hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] active:scale-95"
+            className="flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm transition-all hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)] active:scale-95"
           >
             <Download className="h-4 w-4" strokeWidth={2.25} />
             Exportar {etiquetaPeriodo} a Excel (.xls)

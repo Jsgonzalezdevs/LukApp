@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CajitasView } from './CajitasView';
 
@@ -38,6 +38,7 @@ const montar = (
   movimientos: CajitaMovimiento[] = [],
 ) => {
   const onCrear = vi.fn();
+  const onMovimiento = vi.fn();
   render(
     <CajitasView
       tipo={tipo}
@@ -46,11 +47,11 @@ const montar = (
       transacciones={[]}
       onCrear={onCrear}
       onFijarSaldo={vi.fn()}
-      onMovimiento={vi.fn()}
+      onMovimiento={onMovimiento}
       onEliminar={vi.fn()}
     />,
   );
-  return { onCrear };
+  return { onCrear, onMovimiento };
 };
 
 describe('CajitasView — cuentas y cajitas son módulos separados', () => {
@@ -80,6 +81,15 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     expect(screen.getAllByText('$600.000').length).toBeGreaterThan(0);
     expect(screen.queryByText('$1.000.000')).not.toBeInTheDocument();
     expect(screen.queryByText('$400.000')).not.toBeInTheDocument();
+  });
+
+  it.each([['', null], ['0', 0], ['15.000', 15000]])('al crear una cuenta distingue el saldo %s del saldo desconocido', async (texto, esperado) => {
+    const { onCrear } = montar('cuenta', []);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Mi banco' } });
+    fireEvent.change(screen.getByLabelText('¿Cuánto tienes en esta cuenta?'), { target: { value: texto } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+    await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({ saldoInicialCop: esperado })));
   });
 
   it('ya no pregunta "¿Qué es?" — la pantalla en la que estás lo responde', () => {
@@ -134,6 +144,34 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
 
     expect(screen.getByText(/Meta a la que quieres llegar/)).toBeInTheDocument();
     expect(screen.getByText('Rendimiento (opcional)')).toBeInTheDocument();
+  });
+
+  it('clasifica una inversión aparte y permite definir su moneda con emojis de identidad', async () => {
+    const { onCrear } = montar('cajita', []);
+    fireEvent.click(screen.getByRole('button', { name: /Nueva cajita/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'ETF global' } });
+    fireEvent.change(screen.getByLabelText('¿Qué vas a guardar aquí?'), { target: { value: 'inversion' } });
+    await waitFor(() => expect(screen.getByLabelText('Moneda de la inversión', { exact: false })).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText('Moneda de la inversión', { exact: false }), { target: { value: 'USD' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear cajita' }));
+
+    await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({
+      nombre: 'ETF global', esInversion: true, moneda: 'USD', tipo: 'cajita',
+    })));
+  });
+
+  it('convierte un aporte a COP y conserva el valor, moneda, tasa y fecha originales', async () => {
+    const inversor = caj({ id: 'etf', nombre: 'ETF global', tipo: 'cajita', esInversion: true, moneda: 'USD' });
+    const { onMovimiento } = montar('cajita', [inversor]);
+    fireEvent.click(screen.getByRole('button', { name: 'Depositar' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Depositar' }), { target: { value: '10.5' } });
+    fireEvent.change(screen.getByLabelText('Tasa de hoy · COP por USD'), { target: { value: '4000' } });
+    fireEvent.change(screen.getByLabelText('Fecha del movimiento'), { target: { value: '2026-10-20' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+    await waitFor(() => expect(onMovimiento).toHaveBeenCalledWith('etf', 'deposito', 42000, {
+      montoOriginal: 10.5, monedaOriginal: 'USD', tasaCambioCop: 4000, occurredOn: '2026-10-20',
+    }));
   });
 
   it('cada pantalla tiene su propio vacío, no uno compartido', () => {
@@ -307,4 +345,16 @@ describe('CajitasView — contar las cajitas en el resumen', () => {
 
     expect(screen.queryByLabelText('Contar las cajitas en el resumen')).toBeNull();
   });
+  it('conserva el nombre y el formulario cuando crear la cuenta falla', async () => {
+    const onCrear = vi.fn().mockResolvedValue(false);
+    render(<CajitasView tipo="cuenta" cajitas={[]} movimientos={[]} transacciones={[]} onCrear={onCrear} onFijarSaldo={vi.fn()} onMovimiento={vi.fn()} onEliminar={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/i }));
+    const nombre = screen.getByPlaceholderText(/Nequi|Bancolombia/i);
+    fireEvent.change(nombre, { target: { value: 'Cuenta que debo conservar' } });
+    fireEvent.click(screen.getByRole('button', { name: /Crear cuenta|Guardar/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(nombre).toHaveValue('Cuenta que debo conservar');
+    expect(onCrear).toHaveBeenCalledTimes(1);
+  });
+
 });

@@ -1,5 +1,6 @@
+import { useMovimientoReducido } from '../../lib/useMovimientoReducido';
 import React, { useEffect, useRef } from 'react';
-import { animate, useMotionValue, useReducedMotion } from 'framer-motion';
+import { animate, useMotionValue } from 'framer-motion';
 
 /**
  * Un número que rueda de su valor anterior al nuevo cada vez que cambia.
@@ -61,7 +62,7 @@ export const CifraViva: React.FC<{
 }) => {
   const ref = useRef<HTMLSpanElement>(null);
   const numero = useMotionValue(valor);
-  const quieto = useReducedMotion();
+  const quieto = useMovimientoReducido();
 
   /* En refs y no en dependencias: las dos llegan con identidad nueva en cada
      render del padre, y meterlas en el array es exactamente lo que rompía la

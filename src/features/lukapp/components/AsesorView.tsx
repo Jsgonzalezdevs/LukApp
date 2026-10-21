@@ -22,20 +22,24 @@ import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { useDictation } from '../hooks/useDictation';
 import type { Transaction } from '../types';
-import type { Cajita } from '../data/modelos';
+import { CATEGORY_LABELS } from '../types';
+import type { Cajita, Meta } from '../data/modelos';
 import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
 import { VaquitasModal } from './VaquitasModal';
 import type { ParsedTransaction } from '../lib/parseTransaction';
+import { detectarPropuestaAsesor, type PropuestaAsesor } from '../lib/propuestasAsesor';
+import { gastadoEnCategoria } from '../lib/presupuestos';
+import { claveDePeriodo } from '../lib/periodo';
 
 import type { LexicoAprendido } from '../lib/aprendizaje';
 import { hacerCatalogo, type CategoriaPersonal } from '../categorias';
 
 import { apiUrl, precalentarApi } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
-import { bogotaDate, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
+import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
 
@@ -47,6 +51,10 @@ interface Message {
   action?: ParsedTransaction;
   actions?: ParsedTransaction[];
   suggestions?: string[];
+  propuesta?: PropuestaAsesor;
+  propuestaConfirmada?: boolean;
+  propuestaGuardando?: boolean;
+  propuestaError?: string;
 }
 
 interface MemoriaIA {
@@ -81,6 +89,8 @@ interface AsesorViewProps {
   promptInicial?: string | null;
   onLimpiarPromptInicial?: () => void;
   onCrearTransaccion?: (tx: ParsedTransaction) => void;
+  onFijarPresupuesto?: (categoria: string, montoCop: number) => Promise<boolean | void>;
+  onCrearMeta?: (meta: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<boolean | void>;
   entradaFinanciera?: EntradaMotorFinanciero;
   contextoParaAsesor?: ContextoParaAsesor;
 }
@@ -182,6 +192,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   promptInicial,
   onLimpiarPromptInicial,
   onCrearTransaccion,
+  onFijarPresupuesto,
+  onCrearMeta,
   entradaFinanciera,
   contextoParaAsesor,
 }) => {
@@ -471,7 +483,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
     utterance.onstart = () => {
       setHablandoId(msgId);
-      mostrarToast('🔊 Leyendo consejo...');
+      mostrarToast('Leyendo consejo…');
     };
 
     utterance.onend = () => {
@@ -504,7 +516,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           url: 'https://lukapp.app',
         });
         setCompartidoId(msgId);
-        mostrarToast('✨ ¡Consejo compartido con éxito!');
+        mostrarToast('Consejo compartido.');
         setTimeout(() => setCompartidoId((prev) => (prev === msgId ? null : prev)), 2500);
         return;
       } catch (err: any) {
@@ -516,7 +528,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     try {
       await navigator.clipboard.writeText(textoCompartir);
       setCompartidoId(msgId);
-      mostrarToast('📋 ¡Copiado con formato de LukApp listo para WhatsApp!');
+      mostrarToast('Consejo copiado para compartir.');
       setTimeout(() => setCompartidoId((prev) => (prev === msgId ? null : prev)), 2500);
     } catch {
       mostrarToast('No se pudo copiar el texto');
@@ -617,6 +629,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const handleSend = async (textoDirecto?: string, esReintento = false) => {
     const textoUsuario = (textoDirecto ?? input).trim();
     if (!textoUsuario || pensando || peticionIARef.current) return;
+    const propuestaFinanciera = detectarPropuestaAsesor(textoUsuario, categorias, lexico);
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     if (!esReintento) {
@@ -666,7 +679,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         textoUsuario, transacciones, cajitas, cajitasBalances, categorias, lexico, context, disponibleDiarioCop,
       );
       setContext(newContext);
-      const respuestaLocal: Message = { id: nuevoId(), role: 'bot', text, action, actions, suggestions };
+      const respuestaLocal: Message = {
+        id: nuevoId(), role: 'bot', text,
+        action: propuestaFinanciera ? undefined : action,
+        actions: propuestaFinanciera ? undefined : actions,
+        suggestions,
+        propuesta: propuestaFinanciera ?? undefined,
+      };
       setMessages((prev) => [...prev, respuestaLocal]);
       void guardarMensaje(respuestaLocal);
     };
@@ -787,8 +806,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 role: 'bot',
                 text: textoRespuesta,
                 provider: proveedor,
-                action: deteccion.propuesta?.action,
-                actions: deteccion.propuesta?.actions,
+                action: propuestaFinanciera ? undefined : deteccion.propuesta?.action,
+                actions: propuestaFinanciera ? undefined : deteccion.propuesta?.actions,
+                propuesta: propuestaFinanciera ?? undefined,
               };
               setMessages((prev) => [...prev, botMsg]);
               void guardarMensaje(botMsg);
@@ -840,10 +860,77 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   // mentirle a quien pregunta.
   const colorConexion =
     conexion === 'en-linea'
-      ? 'var(--fin-in)'
+      ? 'var(--fin-accent)'
       : conexion === 'despertando'
         ? 'var(--fin-warn)'
         : 'var(--fin-ink-faint)';
+
+  const catalogoCategorias = hacerCatalogo(categorias);
+
+  const actualizarPropuesta = (id: string, cambio: (propuesta: PropuestaAsesor) => PropuestaAsesor) => {
+    setMessages((actuales) => actuales.map((mensaje) => mensaje.id === id && mensaje.propuesta
+      ? { ...mensaje, propuesta: cambio(mensaje.propuesta), propuestaConfirmada: false }
+      : mensaje));
+  };
+
+  const confirmarPropuesta = async (mensaje: Message) => {
+    const propuesta = mensaje.propuesta;
+    if (!propuesta) return;
+    setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+      ? { ...actual, propuestaGuardando: true, propuestaError: undefined }
+      : actual));
+    try {
+      const resultado = propuesta.tipo === 'presupuesto'
+        ? await onFijarPresupuesto?.(propuesta.categoria, propuesta.montoCop)
+        : await onCrearMeta?.({
+          nombre: propuesta.nombre,
+          icon: 'Target',
+          objetivoCop: propuesta.objetivoCop,
+          fechaObjetivo: propuesta.fechaObjetivo,
+          cajitaId: null,
+          ahorradoCop: 0,
+        });
+      if (resultado === false) {
+        setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+          ? { ...actual, propuestaError: 'No se pudo guardar; revisa tu conexión e inténtalo otra vez.' }
+          : actual));
+        return;
+      }
+      setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+        ? { ...actual, propuestaConfirmada: true }
+        : actual));
+    } catch {
+      setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+        ? { ...actual, propuestaError: 'No se pudo guardar; revisa tu conexión e inténtalo otra vez.' }
+        : actual));
+    } finally {
+      setMessages((actuales) => actuales.map((actual) => actual.id === mensaje.id
+        ? { ...actual, propuestaGuardando: false }
+        : actual));
+    }
+  };
+
+  const efectoMovimiento = (accion: ParsedTransaction) => {
+    const monto = accion.amount ?? 0;
+    const cuenta = cajitas.find((item) => item.id === accion.cuentaId);
+    const saldo = accion.cuentaId ? cajitasBalances[accion.cuentaId] : undefined;
+    const cambio = accion.kind === 'ingreso' ? monto : accion.kind === 'gasto' ? -monto : 0;
+    const presupuesto = entradaFinanciera?.presupuestos.find((item) => item.categoria === accion.category);
+    const categoriaLabel = categorias.find((item) => item.id === accion.category)?.nombre
+      ?? CATEGORY_LABELS[accion.category as keyof typeof CATEGORY_LABELS]
+      ?? accion.category;
+    const gasto = entradaFinanciera && accion.kind === 'gasto'
+      ? gastadoEnCategoria(transacciones, claveDePeriodo(entradaFinanciera.hoy, entradaFinanciera.periodo), entradaFinanciera.periodo, accion.category)
+      : null;
+    return (
+      <div className="mt-2 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] p-3 text-[13px] text-[var(--fin-ink-soft)]">
+        <p>🧾 <strong>{accion.description || categoriaLabel}</strong> · {categoriaLabel} · {monto.toLocaleString('es-CO')} COP</p>
+        {cuenta && saldo !== undefined ? <p className="mt-1">Si confirmas, {cuenta.nombre} pasaría de {saldo.toLocaleString('es-CO')} a {(saldo + cambio).toLocaleString('es-CO')} COP.</p> : null}
+        {presupuesto && gasto !== null ? <p className="mt-1">En {categoriaLabel} llevas {gasto.toLocaleString('es-CO')} de {presupuesto.montoCop.toLocaleString('es-CO')} COP; con este movimiento serían {(gasto + (accion.kind === 'gasto' ? monto : 0)).toLocaleString('es-CO')} COP.</p> : null}
+        <p className="mt-1">Puedes revisar y editar los datos antes de guardarlo.</p>
+      </div>
+    );
+  };
 
   return (
     <div className="relative flex min-h-[60vh] flex-col">
@@ -859,9 +946,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           disabled={intentandoDespertar}
           aria-label="Verificar disponibilidad de IA"
           title={conexion === 'en-linea' ? 'La IA respondió y está disponible. Pulsa para verificar de nuevo.' : 'Verificar disponibilidad de IA'}
-          className={`flex max-w-full items-center gap-2 rounded-[var(--fin-r-pill)] px-2.5 py-1 text-[13px] transition-colors disabled:cursor-wait ${
+          className={`flex max-w-full items-center gap-2 rounded-[var(--fin-r-pill)] px-3 py-1 text-[13px] transition-colors disabled:cursor-wait ${
             conexion === 'en-linea'
-              ? 'bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-300'
+              ? 'bg-[var(--fin-soft)] font-semibold text-[var(--fin-ink)]'
               : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
           }`}
         >
@@ -896,7 +983,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <button
             type="button"
             onClick={() => setRecordar((actual) => !actual)}
-            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[11px] font-semibold text-[var(--fin-ink-soft)]"
+            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
             title="Controla si el asesor guarda esta conversación"
           >
             {recordar ? 'Memoria activa' : 'Memoria apagada'}
@@ -915,8 +1002,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           <section ref={historialRef} className="flex h-full w-[min(88vw,22rem)] flex-col border-l border-[var(--fin-line)] bg-[var(--fin-bg)] shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--fin-line)] px-4 py-4">
               <div>
-                <h2 id="historial-asesor-titulo" className="text-[16px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
-                <p className="mt-0.5 text-[11px] text-[var(--fin-ink-faint)]">Tus chats guardados con el asesor</p>
+                <h2 id="historial-asesor-titulo" className="text-[17px] font-semibold text-[var(--fin-ink)]">Conversaciones</h2>
+                <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">Tus chats guardados con el asesor</p>
               </div>
               <button
                 type="button"
@@ -931,7 +1018,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               <button
                 type="button"
                 onClick={nuevaConversacion}
-                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-2.5 text-[13px] font-semibold text-[var(--fin-on-accent)]"
+                className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[13px] font-semibold text-[var(--fin-on-accent)]"
               >
                 <Plus className="h-4 w-4" />
                 Nueva conversación
@@ -956,7 +1043,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   }`}
                 >
                   <span className="block truncate text-[13px] font-semibold">{conversacion.titulo || 'Conversación sin título'}</span>
-                  <span className="mt-1 block text-[11px] text-[var(--fin-ink-faint)]">
+                  <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
                     {new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(conversacion.actualizado_en))}
                   </span>
                 </button>
@@ -976,7 +1063,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
  la conversación con un clic en lugar de tener que pensar qué
  escribir primero. */}
         {messages.length === 1 ? (
-          <div className="mx-auto flex max-w-lg flex-col items-center gap-2.5 py-4 text-center">
+          <div className="mx-auto flex max-w-lg flex-col items-center gap-3 py-4 text-center">
             {/* El personaje entero, no un icono: es la única pantalla con
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
@@ -986,7 +1073,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               alt={imagenLuki.alt}
               prioridad="alta"
             />
-            <p className="text-[14px] leading-snug text-[var(--fin-ink-soft)]">
+            <p className="text-[15px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
             <div className="grid grid-cols-2 gap-2 w-full px-2">
@@ -995,7 +1082,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   key={sug}
                   onClick={() => handleSend(sug)}
                   disabled={pensando}
-                  className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+                  className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
                 >
                   {sug}
                 </button>
@@ -1022,7 +1109,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   />
                 )}
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-[16px] leading-relaxed break-words ${
+                  className={`max-w-[85%] rounded-[var(--fin-r-card)] px-4 py-3 text-[17px] leading-relaxed break-words ${
                     msg.role === 'user'
                       ? 'rounded-br-none bg-[var(--fin-accent)] text-[var(--fin-on-accent)] font-medium'
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
@@ -1042,26 +1129,81 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   </div>
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
+                      {efectoMovimiento(msg.action)}
                       <button
                         onClick={() => onCrearTransaccion(msg.action!)}
-                        className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+                        className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
                       >
-                        Sí, registrar gasto
+                        Revisar y editar movimiento
                       </button>
                     </div>
                   )}
                   {msg.actions && msg.actions.length > 0 && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3 flex flex-col gap-2">
                       {msg.actions.map((act, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => onCrearTransaccion(act)}
-                          className="w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
-                        >
-                          Sí, registrar $ {act.amount?.toLocaleString('es-CO')} en {act.category}
-                        </button>
+                        <div key={idx}>
+                          {efectoMovimiento(act)}
+                          <button
+                            onClick={() => onCrearTransaccion(act)}
+                            className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+                          >
+                            Revisar y editar movimiento {idx + 1}
+                          </button>
+                        </div>
                       ))}
                     </div>
+                  )}
+                  {msg.propuesta && (
+                    <section className="mt-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-3" aria-label="Propuesta editable del asesor">
+                      <h3 className="text-[14px] font-semibold text-[var(--fin-ink)]">💡 Propuesta para revisar</h3>
+                      {msg.propuesta.tipo === 'presupuesto' ? (() => {
+                        const propuesta = msg.propuesta;
+                        const categoriaNombre = catalogoCategorias.de(propuesta.categoria).nombre;
+                        const periodo = entradaFinanciera?.periodo;
+                        const clave = periodo && entradaFinanciera ? claveDePeriodo(entradaFinanciera.hoy, periodo) : '';
+                        const gastado = periodo ? gastadoEnCategoria(transacciones, clave, periodo, propuesta.categoria) : 0;
+                        const actual = entradaFinanciera?.presupuestos.find((item) => item.categoria === propuesta.categoria)?.montoCop;
+                        return (
+                          <div className="mt-2 space-y-2">
+                            <p className="text-[13px] text-[var(--fin-ink-soft)]">Tope de {categoriaNombre}{actual ? ` · hoy ${actual.toLocaleString('es-CO')} COP` : ''}; en el período llevas {gastado.toLocaleString('es-CO')} COP.</p>
+                            <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Categoría
+                              <select aria-label="Categoría del presupuesto" disabled={msg.propuestaConfirmada} value={propuesta.categoria} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, categoria: evento.target.value } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)] disabled:opacity-60">
+                                {catalogoCategorias.lista.map((categoria) => <option key={categoria.clave} value={categoria.clave}>{categoria.emoji} {categoria.nombre}</option>)}
+                              </select>
+                            </label>
+                            <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Nuevo tope mensual (COP)
+                            <input aria-label="Nuevo tope mensual en COP" type="number" min="1" step="1000" disabled={msg.propuestaConfirmada} value={propuesta.montoCop} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, montoCop: Math.max(1, Number(evento.target.value) || 1) } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                            </label>
+                            <p className="text-[13px] text-[var(--fin-ink-soft)]">Con ese tope, quedarían {(propuesta.montoCop - gastado).toLocaleString('es-CO')} COP disponibles en el período.</p>
+                          </div>
+                        );
+                      })() : (
+                        <div className="mt-2 space-y-2">
+                          <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Nombre de la meta
+                            <input aria-label="Nombre de la meta" disabled={msg.propuestaConfirmada} value={msg.propuesta.nombre} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, nombre: evento.target.value } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                          </label>
+                          <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Objetivo total (COP)
+                            <input aria-label="Objetivo total de la meta en COP" type="number" min="1" step="1000" disabled={msg.propuestaConfirmada} value={msg.propuesta.objetivoCop} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, objetivoCop: Math.max(1, Number(evento.target.value) || 1) } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                          </label>
+                          <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Fecha objetivo (opcional)
+                            <input aria-label="Fecha objetivo de la meta" type="date" disabled={msg.propuestaConfirmada} value={msg.propuesta.fechaObjetivo ?? ''} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, fechaObjetivo: evento.target.value || null } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                          </label>
+                          <p className="text-[13px] text-[var(--fin-ink-soft)]">La meta empezará con $0 ahorrados; el objetivo será {msg.propuesta.objetivoCop.toLocaleString('es-CO')} COP.</p>
+                          {msg.propuesta.fechaObjetivo && entradaFinanciera ? (() => {
+                            const dias = daysBetween(entradaFinanciera.hoy, msg.propuesta.fechaObjetivo!);
+                            return <p className="text-[13px] text-[var(--fin-ink-soft)]">{dias > 0 ? `Para llegar a tiempo, necesitarías ahorrar cerca de ${Math.ceil(msg.propuesta.objetivoCop / (dias / 30.44)).toLocaleString('es-CO')} COP al mes.` : 'La fecha debe estar en el futuro para calcular un aporte.'}</p>;
+                          })() : null}
+                        </div>
+                      )}
+                      {msg.propuestaError ? <p role="alert" className="mt-2 text-[13px] text-[var(--fin-out)]">{msg.propuestaError}</p> : null}
+                      {msg.propuestaConfirmada ? (
+                        <p role="status" className="mt-2 text-[13px] font-semibold text-[var(--fin-in)]">✅ Guardado. Puedes verlo en Dinero.</p>
+                      ) : (
+                        <button type="button" disabled={msg.propuestaGuardando || (msg.propuesta.tipo === 'presupuesto' ? !onFijarPresupuesto : !onCrearMeta)} onClick={() => void confirmarPropuesta(msg)} className="mt-3 min-h-11 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-50">
+                          {msg.propuestaGuardando ? 'Guardando…' : `Confirmar ${msg.propuesta.tipo === 'presupuesto' ? 'presupuesto' : 'meta'}`}
+                        </button>
+                      )}
+                    </section>
                   )}
                   {msg.suggestions && msg.suggestions.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2 pt-1">
@@ -1070,7 +1212,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                           key={idx}
                           onClick={() => handleSend(sug)}
                           disabled={pensando}
-                          className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+                          className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
                         >
                           {sug}
                         </button>
@@ -1083,12 +1225,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopiar(msg.id, msg.text)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
                         title={copiadoId === msg.id ? 'Copiado al portapapeles' : 'Copiar respuesta'}
                         aria-label="Copiar"
                       >
                         {copiadoId === msg.id ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+                          <Check className="h-3.5 w-3.5 text-[var(--fin-in)]" strokeWidth={2.5} />
                         ) : (
                           <Copy className="h-3.5 w-3.5" strokeWidth={2} />
                         )}
@@ -1098,9 +1240,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleFeedback(msg.id, 'like')}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors active:scale-95 ${
                           feedback.get(msg.id) === 'like'
-                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                            ? 'bg-[var(--fin-soft)] text-[var(--fin-ink)] ring-1 ring-[var(--fin-ink)]'
                             : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
                         }`}
                         title="Buena respuesta"
@@ -1113,9 +1255,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleFeedback(msg.id, 'dislike')}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors active:scale-95 ${
                           feedback.get(msg.id) === 'dislike'
-                            ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
+                            ? 'bg-[var(--fin-soft)] text-[var(--fin-ink)] ring-1 ring-[var(--fin-ink)]'
                             : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
                         }`}
                         title="Mala respuesta"
@@ -1128,7 +1270,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleLeerEnVozAlta(msg.id, msg.text)}
-                        className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors active:scale-95 ${
+                        className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors active:scale-95 ${
                           hablandoId === msg.id
                             ? 'bg-blue-500/20 text-blue-500 animate-pulse'
                             : 'hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)]'
@@ -1147,12 +1289,12 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCompartir(msg.id, msg.text)}
-                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95"
                         title={compartidoId === msg.id ? '¡Consejo copiado con formato de LukApp!' : 'Compartir consejo de LukApp'}
                         aria-label="Compartir"
                       >
                         {compartidoId === msg.id ? (
-                          <Check className="h-3.5 w-3.5 text-emerald-500" strokeWidth={2.5} />
+                          <Check className="h-3.5 w-3.5 text-[var(--fin-in)]" strokeWidth={2.5} />
                         ) : (
                           <Share2 className="h-3.5 w-3.5" strokeWidth={2} />
                         )}
@@ -1163,7 +1305,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                         type="button"
                         onClick={() => handleRegenerar(msg.id)}
                         disabled={pensando}
-                        className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95 disabled:opacity-40"
+                        className="flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-control)] transition-colors hover:bg-[var(--fin-card-hover)] hover:text-[var(--fin-ink)] active:scale-95 disabled:opacity-40"
                         title="Regenerar respuesta"
                         aria-label="Regenerar"
                       >
@@ -1208,11 +1350,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       {/* Input */}
       {errorIA && textoParaReintentar ? (
-        <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[12px]" role="status" aria-live="polite">
+        <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[13px]" role="status" aria-live="polite">
           <span className="text-[var(--fin-ink-soft)]">{errorIA}</span>
           <button
             type="button"
-            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-1.5 font-semibold text-[var(--fin-on-accent)]"
+            className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-3 py-2 font-semibold text-[var(--fin-on-accent)]"
             onClick={() => void handleSend(textoParaReintentar, true)}
             disabled={pensando}
           >
@@ -1223,7 +1365,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       <div className="sticky bottom-0 bg-[var(--fin-bg)] pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(dictado.status === 'listening' || dictado.status === 'processing' || dictado.error) && (
           <p
-            className={`mx-auto mb-2 max-w-2xl px-3 text-center text-[12px] font-medium ${
+            className={`mx-auto mb-2 max-w-2xl px-3 text-center text-[13px] font-medium ${
               dictado.error ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink-soft)]'
             }`}
             aria-live="polite"
@@ -1235,7 +1377,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 : dictado.interim || 'Te escucho… toca el botón para terminar'}
           </p>
         )}
-        <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-1.5">
+        <div className="mx-auto flex max-w-2xl items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-2">
           <input
             type="text"
             className="min-w-0 flex-1 bg-transparent px-3 py-2 text-[17px] text-[var(--fin-ink)] border-none shadow-none !outline-none focus:!border-transparent focus:!outline-none focus:!ring-0 focus-visible:!outline-none placeholder:text-[var(--fin-ink-faint)]"
@@ -1293,10 +1435,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             aria-label="Enviar pregunta"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-30"
           >
-            <Send className="mr-0.5 h-4 w-4" strokeWidth={2.5} />
+            <Send className="mr-1 h-4 w-4" strokeWidth={2.5} />
           </button>
         </div>
-        <p className="mt-2 text-center text-[11px] text-[var(--fin-ink-faint)]">
+        <p className="mt-2 text-center text-[13px] text-[var(--fin-ink-faint)]">
           LukApp es una IA y puede cometer errores. Verifica cualquier consejo sobre dinero antes de actuar.
         </p>
       </div>
@@ -1306,7 +1448,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[12px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] border border-[var(--fin-line)] px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink)] shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200"
         >
           <span>{toast}</span>
         </div>

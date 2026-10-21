@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Check, AlertTriangle, Square } from 'lucide-react';
 import { COPY } from '../copy';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 export type FaseDictado = 'escuchando' | 'procesando' | 'revelando' | 'error';
 
@@ -18,6 +19,7 @@ interface DictadoOverlayProps {
   onTerminar: () => void;
   /** Confirma el texto definitivo y abre la revisión del movimiento. */
   onContinuar: () => void;
+  onEscribir?: () => void;
 }
 
 /**
@@ -48,12 +50,14 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
   onCancelar,
   onTerminar,
   onContinuar,
+  onEscribir,
 }) => {
+  const movimientoReducido = useMovimientoReducido();
   const palabras = useMemo(() => texto.trim().split(/\s+/).filter(Boolean), [texto]);
 
   // Cuánto se demora cada palabra en aparecer: rápido para una frase corta,
   // pero nunca tan lento que una frase larga tarde una eternidad en revelarse.
-  const stagger = useMemo(() => Math.min(0.05, 1.1 / Math.max(1, palabras.length)), [palabras.length]);
+  const stagger = useMemo(() => movimientoReducido ? 0 : Math.min(0.05, 1.1 / Math.max(1, palabras.length)), [movimientoReducido, palabras.length]);
 
   return (
     <AnimatePresence>
@@ -62,7 +66,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
-          transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="fin-dictado-bg pointer-events-auto fixed inset-0 z-50 flex flex-col overflow-hidden rounded-t-[28px]"
           role="dialog"
           aria-modal="true"
@@ -79,14 +83,15 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 className="flex flex-col items-center gap-3"
               >
                 <AlertTriangle className="h-8 w-8 text-white/90" strokeWidth={2} aria-hidden="true" />
-                <p className="text-[19px] font-semibold leading-snug text-white">
+                <p className="text-[20px] font-semibold leading-snug text-white">
                   {error ?? 'Algo no salió bien.'}
                 </p>
+                {onEscribir ? <button type="button" onClick={onEscribir} className="mt-2 rounded-[var(--fin-r-control)] bg-white px-4 py-3 font-semibold text-black">Escribir el movimiento</button> : null}
               </motion.div>
             ) : palabras.length > 0 ? (
               <div className="flex flex-col items-center gap-5">
                 <div
-                  className="flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-black/15 px-3.5 py-1.5 text-[12px] font-bold uppercase tracking-[0.12em] text-white/85"
+                  className="flex items-center gap-2 rounded-[var(--fin-r-pill)] bg-black/15 px-4 py-2 text-[13px] font-bold uppercase tracking-[0.12em] text-white/85"
                   aria-live="polite"
                 >
                   {fase === 'escuchando' ? (
@@ -101,7 +106,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 <p
                   aria-label={fase === 'revelando' ? 'Transcripción final' : 'Transcripción en curso'}
                   aria-live="polite"
-                  className={`max-h-[45vh] overflow-y-auto px-1 text-[26px] font-bold leading-tight sm:text-[30px] ${
+                  className={`max-h-[45vh] overflow-y-auto px-1 text-[28px] font-bold leading-tight sm:text-[28px] ${
                     fase === 'escuchando' || fase === 'procesando' ? 'text-white/60 italic' : 'text-white'
                   }`}
                 >
@@ -114,9 +119,9 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 {palabras.map((palabra, i) => (
                   <React.Fragment key={`${i}-${palabra}`}>
                     <motion.span
-                      initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+                      initial={movimientoReducido ? false : { opacity: 0, y: 10, filter: 'blur(4px)' }}
                       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                      transition={{ duration: 0.32, delay: i * stagger, ease: 'easeOut' }}
+                      transition={{ duration: movimientoReducido ? 0 : 0.2, delay: i * stagger, ease: 'easeOut' }}
                       className="inline-block"
                     >
                       {palabra}
@@ -130,8 +135,8 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 {fase === 'escuchando' ? (
                   <motion.span
                     className="ml-1 inline-block h-3 w-3 rounded-[var(--fin-r-pill)] bg-white/70 align-middle"
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'easeInOut' }}
+                    animate={movimientoReducido ? { opacity: 0.7 } : { opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut' }}
                     aria-hidden="true"
                   />
                 ) : null}
@@ -147,11 +152,11 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                     Confirmando lo que dijiste…
                   </motion.div>
                 ) : fase === 'escuchando' ? (
-                  <p className="max-w-sm text-[14px] font-medium leading-relaxed text-white/70">
+                  <p className="max-w-sm text-[15px] font-medium leading-relaxed text-white/70">
                     Puedes seguir hablando. Toca <strong className="font-bold text-white">Terminé</strong> cuando acabes.
                   </p>
                 ) : (
-                  <p className="max-w-sm text-[14px] font-medium leading-relaxed text-white/75">
+                  <p className="max-w-sm text-[15px] font-medium leading-relaxed text-white/75">
                     Si quedó bien, confirma para revisar el movimiento antes de guardarlo.
                   </p>
                 )}
@@ -163,12 +168,12 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.75 }}
                   transition={{ duration: 0.3 }}
-                  className="text-[22px] font-semibold leading-snug text-white sm:text-[26px]"
+                  className="text-[20px] font-semibold leading-snug text-white sm:text-[28px]"
                 >
                   {fase === 'procesando' ? COPY.input.transcribiendo : COPY.input.dictadoPrompt}
                 </motion.p>
                 {fase === 'escuchando' ? (
-                  <p className="mt-3 max-w-sm text-[14px] font-medium leading-relaxed text-white/65">
+                  <p className="mt-3 max-w-sm text-[15px] font-medium leading-relaxed text-white/65">
                     También puedes abonar tarjetas, mover plata entre cuentas y cajitas, actualizar saldos o registrar rendimientos.
                   </p>
                 ) : null}
@@ -189,7 +194,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                         key={i}
                         className="h-3 w-3 rounded-[var(--fin-r-pill)] bg-white/80"
                         animate={{ y: [0, -10, 0] }}
-                        transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
+                        transition={{ duration: 0.9, repeat: movimientoReducido ? 0 : Infinity, delay: i * 0.15, ease: 'easeInOut' }}
                       />
                     ))
                   ) : (

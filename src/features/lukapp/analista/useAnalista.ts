@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AnalisisResultado, CodigoError, RespuestaAnalisis } from './tipos';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
+import { analizarTextoOCR, leerArchivoTabular } from './leerImportacion';
 
 const CLAVE_TOKEN = 'finanzas.analista.token';
 const RUTA_ANALIZAR = apiUrl('/api/analizar-extracto');
@@ -68,6 +69,16 @@ const nuevoJobId = (): string =>
     ? crypto.randomUUID()
     : `${Date.now().toString(16)}-${Math.floor(Math.random() * 1e9).toString(16)}`;
 
+const esPdf = (archivo: File): boolean => archivo.type === 'application/pdf' || archivo.name.toLowerCase().endsWith('.pdf');
+const esImagen = (archivo: File): boolean => /^image\/(jpeg|png|webp|tiff)$/.test(archivo.type) || /\.(jpe?g|png|webp|tiff?)$/i.test(archivo.name);
+const esTabular = (archivo: File): boolean => /\.(csv|xlsx)$/i.test(archivo.name) || archivo.type === 'text/csv' || archivo.type.includes('spreadsheetml');
+
+const analizarImagenLocal = async (archivo: File): Promise<AnalisisResultado> => {
+  const { default: Tesseract } = await import('tesseract.js');
+  const resultado = await Tesseract.recognize(archivo, 'spa');
+  return analizarTextoOCR(resultado.data.text);
+};
+
 /**
  * Drives the analyst flow for any number of concurrent files.
  *
@@ -124,6 +135,20 @@ export const useAnalista = (): UseAnalista => {
   const procesarArchivo = useCallback(
     (id: string, archivo: File, tokenActual?: string, contrasena?: string) => {
       void (async () => {
+        if (!esPdf(archivo)) {
+          try {
+            const resultado = esImagen(archivo)
+              ? await analizarImagenLocal(archivo)
+              : await leerArchivoTabular(archivo);
+            if (!cancelado.current) actualizarTrabajo(id, { fase: 'listo', resultado });
+          } catch (error) {
+            if (!cancelado.current) actualizarTrabajo(id, {
+              fase: 'error',
+              error: { codigo: 'pdf-invalido', mensaje: error instanceof Error ? error.message : 'No pudimos leer el archivo. Prueba exportarlo de nuevo.' },
+            });
+          }
+          return;
+        }
         let pdfBase64: string;
         try {
           pdfBase64 = await aBase64(archivo);
@@ -216,11 +241,11 @@ export const useAnalista = (): UseAnalista => {
           resultado: null,
         };
 
-        if (archivo.type !== 'application/pdf') {
+        if (!esPdf(archivo) && !esImagen(archivo) && !esTabular(archivo)) {
           creados.push({
             ...base,
             fase: 'error',
-            error: { codigo: 'pdf-invalido', mensaje: `"${archivo.name}" no es un PDF.` },
+            error: { codigo: 'pdf-invalido', mensaje: `"${archivo.name}" no es compatible. Usa PDF, imagen, Excel .xlsx o CSV.` },
           });
           continue;
         }

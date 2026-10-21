@@ -1,5 +1,6 @@
 import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { monthKey } from './localDate';
+import { extraerContraparte } from './contraparte';
 
 /**
  * Algo que se repite todos los meses: el arriendo, Netflix, el gimnasio.
@@ -128,4 +129,114 @@ export const totalMensual = (
     else gastoCop += r.amountCop;
   }
   return { gastoCop, ingresoCop };
+};
+
+export interface SugerenciaSuscripcion {
+  clave: string;
+  nombre: string;
+  kind: TxKind;
+  amountCop: number;
+  categoria: CategoriaClave;
+  cuentaId: string | null;
+  diaDelMes: number;
+  meses: number;
+  promedioCop: number;
+  ultimaFecha: string;
+  recurrenteExistente: Recurrente | null;
+  cambioPrecio: boolean;
+}
+
+const parteNormalizada = (texto: string): string =>
+  (extraerContraparte(texto) ?? texto).trim().toLocaleLowerCase('es-CO').replace(/\\s+/g, ' ');
+
+const numeroMes = (fecha: string): number => {
+  const [anio, mes] = fecha.slice(0, 7).split('-').map(Number);
+  return anio * 12 + mes;
+};
+
+/**
+ * Encuentra cobros mensuales suficientemente consistentes para sugerir una
+ * plantilla. Las sugerencias nunca se registran como movimiento por sí solas.
+ */
+export const detectarSuscripciones = (
+  transacciones: readonly Transaction[],
+  recurrentes: readonly Recurrente[],
+  hoy: string,
+): SugerenciaSuscripcion[] => {
+  const grupos = new Map<string, Transaction[]>();
+  for (const tx of transacciones) {
+    if (tx.afectaSaldo === false || tx.kind === 'transferencia' || tx.amountCop <= 0) continue;
+    const parte = parteNormalizada(tx.description);
+    if (!parte) continue;
+    const clave = `${tx.kind}|${parte}`;
+    const grupo = grupos.get(clave) ?? [];
+    grupo.push(tx);
+    grupos.set(clave, grupo);
+  }
+
+  const vivos = recurrentes.filter((r) => r.archivedAt === null);
+  const sugerencias: SugerenciaSuscripcion[] = [];
+  for (const [clave, grupo] of grupos) {
+    const porMes = new Map<string, Transaction[]>();
+    for (const tx of grupo) {
+      const mes = monthKey(tx.occurredOn);
+      const filas = porMes.get(mes) ?? [];
+      filas.push(tx);
+      porMes.set(mes, filas);
+    }
+    const meses = [...porMes.keys()].sort();
+    if (meses.length < 3) continue;
+    const ultimosTres = meses.slice(-3);
+    const ultimosIndex = ultimosTres.map(numeroMes);
+    if (ultimosIndex[2] !== numeroMes(hoy) && ultimosIndex[2] !== numeroMes(hoy) - 1) continue;
+    if (ultimosIndex[1] !== ultimosIndex[2] - 1 || ultimosIndex[0] !== ultimosIndex[1] - 1) continue;
+
+    const filasMes = ultimosTres.map((mes) => {
+      const filas = porMes.get(mes) ?? [];
+      return filas.sort((a, b) => b.occurredOn.localeCompare(a.occurredOn))[0];
+    });
+    const montos = filasMes.map((tx) => tx.amountCop).sort((a, b) => a - b);
+    const mediana = montos[1];
+    if (montos.some((monto) => Math.abs(monto - mediana) / mediana > 0.15)) continue;
+    const ultima = filasMes[2];
+    const recurrente = vivos.find((r) => r.kind === ultima.kind && parteNormalizada(r.nombre) === clave.slice(clave.indexOf('|') + 1)) ?? null;
+    const cambioPrecio = recurrente !== null && Math.abs(ultima.amountCop - recurrente.amountCop) / recurrente.amountCop > 0.15;
+    if (recurrente && !cambioPrecio) continue;
+    sugerencias.push({
+      clave,
+      nombre: recurrente?.nombre ?? (extraerContraparte(ultima.description) ?? ultima.description).trim(),
+      kind: ultima.kind,
+      amountCop: ultima.amountCop,
+      categoria: ultima.category,
+      cuentaId: ultima.cuentaId,
+      diaDelMes: Number(ultima.occurredOn.slice(-2)),
+      meses: meses.length,
+      promedioCop: Math.round(montos.reduce((suma, monto) => suma + monto, 0) / montos.length),
+      ultimaFecha: ultima.occurredOn,
+      recurrenteExistente: recurrente,
+      cambioPrecio,
+    });
+  }
+  return sugerencias.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+};
+
+/** Próximas fechas de cobro programadas, limitadas a los siguientes 60 días. */
+export const proximosRecurrentes = (
+  recurrentes: readonly Recurrente[],
+  hoy: string,
+  transacciones: readonly Transaction[] = [],
+  dias = 60,
+): { recurrente: Recurrente; fecha: string }[] => {
+  const fin = new Date(`${hoy}T12:00:00`);
+  fin.setDate(fin.getDate() + dias);
+  const hasta = `${fin.getFullYear()}-${String(fin.getMonth() + 1).padStart(2, '0')}-${String(fin.getDate()).padStart(2, '0')}`;
+  const meses = new Set<string>();
+  for (let cursor = new Date(`${hoy}T12:00:00`); cursor.toISOString().slice(0, 10) <= hasta; cursor.setDate(cursor.getDate() + 1)) {
+    meses.add(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return recurrentes
+    .filter((r) => r.archivedAt === null && r.kind === 'gasto')
+    .flatMap((recurrente) => [...meses].map((mes) => ({ recurrente, fecha: fechaEnMes(recurrente, mes) })))
+    .filter(({ fecha, recurrente }) => fecha >= hoy && fecha <= hasta && !yaRegistrado(recurrente, transacciones, monthKey(fecha)))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.recurrente.nombre.localeCompare(b.recurrente.nombre, 'es'));
 };

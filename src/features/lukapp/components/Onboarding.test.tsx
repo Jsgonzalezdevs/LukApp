@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Onboarding } from './Onboarding';
 
@@ -28,4 +28,28 @@ describe('Onboarding — fuente inicial de dinero', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Efectivo ya viene incluido');
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
   });
+  it('dejar el saldo pendiente descarta los dígitos escritos y conserva null', async () => {
+    const terminar = vi.fn().mockResolvedValue(true);
+    render(<Onboarding onTerminar={terminar} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Prefiero no decirlo' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Nequi' }));
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
+    fireEvent.click(await screen.findByRole('button', { name: '5' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Dejar saldo pendiente' }));
+    await screen.findByText('Saldo pendiente de confirmar');
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar a LukApp' }));
+    await waitFor(() => expect(terminar).toHaveBeenCalledWith(expect.objectContaining({ banco: 'Nequi', saldoCop: null })));
+  });
+
+  it('omitir una fuente seleccionada no crea esa cuenta ni pide un saldo sin destino', async () => {
+    const terminar = vi.fn().mockResolvedValue(true);
+    render(<Onboarding onTerminar={terminar} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Prefiero no decirlo' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Nequi' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ninguna por ahora' }));
+    await screen.findByText('No crearás cuentas todavía');
+    fireEvent.click(screen.getByRole('button', { name: 'Entrar a LukApp' }));
+    await waitFor(() => expect(terminar).toHaveBeenCalledWith(expect.objectContaining({ banco: null, saldoCop: null })));
+  });
+
 });

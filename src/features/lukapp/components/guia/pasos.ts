@@ -56,7 +56,7 @@ export const PASOS_BASICOS: PasoGuia[] = [
     ancla: 'nav-ajustes',
     titulo: 'Aquí está lo demás',
     texto:
-      'Cuentas, categorías propias, topes de gasto, metas de ahorro, pagos fijos, extractos del banco, el 4x1000 y Vaquitas. Es la puerta que menos se ve y la que más guarda.',
+      'Dinero reúne cuentas, metas, importaciones y gastos compartidos. Mes reúne pagos, calendario y proyección. En Más quedan las preferencias, los datos y la búsqueda de funciones.',
     aire: 4,
     radio: 14,
   },
@@ -96,5 +96,5 @@ export const PASOS_POR_SECCION: Partial<Record<SectionId, PasoGuia[]>> = {
     radio: 14,
   }],
   calendario: [{ ancla: 'nav', titulo: 'Calendario financiero', texto: 'Aquí ves pagos, ingresos y compromisos futuros. La precisión indica si la fecha y el monto son conocidos o estimados.', aire: 6, radio: 18 }],
-  ajustes: [{ ancla: 'nav-ajustes', titulo: 'Configura tu sistema', texto: 'En Más encuentras categorías, topes, metas, pagos fijos, extractos, respaldos y preferencias. Cada cambio alimenta los cálculos de LukApp.', aire: 4, radio: 14 }],
+  ajustes: [{ ancla: 'nav-ajustes', titulo: 'Configura tu sistema', texto: 'En Más encuentras categorías, período, respaldos y preferencias. Las metas y las importaciones están en Dinero; los pagos y la proyección, en Mes. También puedes buscar una función por su nombre.', aire: 4, radio: 14 }],
 };

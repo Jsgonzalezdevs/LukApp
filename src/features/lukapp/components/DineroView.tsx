@@ -1,3 +1,5 @@
+import type { PanelAjustes } from '../sections';
+import { AccesosFunciones } from './AccesosFunciones';
 import React from 'react';
 import { Star } from 'lucide-react';
 import type { Transaction } from '../types';
@@ -11,6 +13,7 @@ import { resumenTarjeta } from '../lib/tarjetas';
 import { monthKey, bogotaDate } from '../lib/localDate';
 
 interface DineroViewProps {
+  onAbrirHerramienta?: (panel: PanelAjustes) => void;
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
   movimientos: readonly CajitaMovimiento[];
@@ -25,34 +28,22 @@ interface DineroViewProps {
 }
 
 /** Los tres grupos en que se parte la lista. */
-const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string }> = [
+const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string; inversion?: boolean }> = [
   { tipos: ['cuenta'], titulo: 'Cuentas' },
-  { tipos: ['cajita'], titulo: 'Ahorros' },
+  { tipos: ['cajita'], titulo: '🐷 Ahorro disponible', inversion: false },
+  { tipos: ['cajita'], titulo: '📈 Inversiones', inversion: true },
   { tipos: ['tarjeta'], titulo: 'Tarjetas de crédito' },
   { tipos: ['deuda'], titulo: 'Deudas' },
 ];
 
-/**
- * "Dinero": dónde está tu plata.
- *
- * Junta cinco sitios que antes estaban separados —Cuentas, Ahorro › Cajitas,
- * Ahorro › Metas, Deudas y Configuración › Ajustes— en una sola lista.
- *
- * Las metas dejaron de ser una pantalla entera (334 líneas) y son una barrita
- * debajo del nombre. Una meta no es una cosa aparte: es el objetivo de una
- * cajita, y el modelo de datos ya lo decía así (`Cajita.metaCop` existe desde
- * siempre). Tenerla como sección propia obligaba a mirar en dos sitios para
- * saber una sola cosa.
- *
- * Las deudas usan el mismo modelo con el signo al revés (`ES_PASIVO`), así que
- * aquí son el mismo tipo de fila, solo que el saldo se pinta en rojo.
- */
+/** Cuentas, ahorros y pasivos, con accesos a metas, importación y herramientas compartidas. */
 export const DineroView: React.FC<DineroViewProps> = ({
   transacciones,
   cajitas,
   movimientos,
   mostrarAhorro,
   onAbrir,
+  onAbrirHerramienta,
   onAbrirTarjetas,
   onCrear,
   modoPrivacidad = false,
@@ -61,9 +52,11 @@ export const DineroView: React.FC<DineroViewProps> = ({
   const saldos = saldosPorCajita(movimientos, transacciones, idsPasivos(cajitas));
   const vivas = cajitas.filter((c) => c.archivedAt === null);
   const resumen = patrimonio(cajitas, movimientos, transacciones);
-  const reservadoCop = mostrarAhorro ? 0 : resumen.cajitasCop;
+  const inversionesCop = vivas.filter((c) => c.tipo === 'cajita' && c.esInversion).reduce((s, c) => s + (saldos.get(c.id) ?? 0), 0);
+  const ahorrosDisponiblesCop = vivas.filter((c) => c.tipo === 'cajita' && !c.esInversion).reduce((s, c) => s + (saldos.get(c.id) ?? 0), 0);
+  const reservadoCop = mostrarAhorro ? 0 : ahorrosDisponiblesCop;
   const deudaTarjetasCop = Math.abs(totalPorTipo(cajitas, movimientos, 'tarjeta', transacciones));
-  const disponibleCop = resumen.totalCop - reservadoCop - (resumen.deudasCop - deudaTarjetasCop);
+  const disponibleCop = resumen.totalCop - inversionesCop - reservadoCop - (resumen.deudasCop - deudaTarjetasCop);
 
   return (
     <div className="flex flex-col gap-8">
@@ -84,14 +77,15 @@ export const DineroView: React.FC<DineroViewProps> = ({
           />
         </p>
       </div>
-      <p className="-mt-6 text-center text-[12px] text-[var(--fin-ink-faint)]">
+      <p className="-mt-6 text-center text-[13px] text-[var(--fin-ink-faint)]">
         Saldo total menos ahorros reservados y obligaciones.
       </p>
 
+      {onAbrirHerramienta ? <AccesosFunciones paneles={['metas', 'extractos']} onAbrir={onAbrirHerramienta} /> : null}
       {vivas.length === 0 ? (
         <div className="rounded-[var(--fin-r-card)] border border-dashed border-[var(--fin-line)] px-5 py-8 text-center">
           <p className="text-[17px] font-semibold text-[var(--fin-ink)]">Empieza por tu banco</p>
-          <p className="mx-auto mt-1.5 max-w-xs text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <p className="mx-auto mt-2 max-w-xs text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
             Agrega dónde tienes la plata y escribe cuánto hay. Lo demás se calcula solo.
           </p>
           <button
@@ -106,7 +100,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
 
       {GRUPOS.map((grupo) => {
         const delGrupo = vivas
-          .filter((c) => grupo.tipos.includes(c.tipo))
+          .filter((c) => grupo.tipos.includes(c.tipo) && (grupo.inversion === undefined || Boolean(c.esInversion) === grupo.inversion))
           .sort((a, b) => {
             const saldoA = saldos.get(a.id) ?? 0;
             const saldoB = saldos.get(b.id) ?? 0;
@@ -171,21 +165,21 @@ export const DineroView: React.FC<DineroViewProps> = ({
                             {cajita.nombre}
                           </span>
                           {cajita.id === cuentaFavoritaId && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                              <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> Principal
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-warn-bg)] px-2 py-1 text-[13px] font-bold text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]">
+                              <Star className="h-3 w-3 fill-amber-500 text-[var(--fin-warn-ink)]" /> Principal
                             </span>
                           )}
                         </div>
-                        <span className="mt-0.5 block text-[12px] text-[var(--fin-ink-faint)]">
+                        <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
                           {cajita.tipo === 'tarjeta' && pagoMensualCop > 0
                             ? `Pago mensual estimado: ${formatCop(pagoMensualCop)}`
                             : etiquetaTipoCajita(cajita)}
                         </span>
                         {pct !== null ? (
                           <>
-                            <span className="mt-1.5 block h-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
+                            <span className="mt-2 block h-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
                               <span
-                                className="block h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-in)]"
+                                className="block h-full rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]"
                                 style={{ width: `${pct}%` }}
                               />
                             </span>
@@ -216,19 +210,20 @@ export const DineroView: React.FC<DineroViewProps> = ({
           <button
             type="button"
             onClick={onCrear}
-            className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)]"
           >
             Agregar cuenta
           </button>
           <button
             type="button"
             onClick={onAbrirTarjetas}
-            className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-3.5 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-line)]"
+            className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] px-4 py-4 text-[15px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-line)]"
           >
             Tarjetas de crédito
           </button>
         </div>
       ) : null}
+      {onAbrirHerramienta ? <details className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] p-4"><summary className="cursor-pointer font-semibold text-[var(--fin-ink)]">Compartir gastos e impuestos</summary><div className="mt-3"><AccesosFunciones paneles={['compartido', 'vaquitas', 'dividir-cuenta', 'gmf']} onAbrir={onAbrirHerramienta} /></div></details> : null}
     </div>
   );
 };

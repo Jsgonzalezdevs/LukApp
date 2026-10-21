@@ -25,7 +25,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
     <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5" aria-label={title}>
       <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">{title}</h2>
 
-      <ul className="mt-4 flex flex-col gap-3.5">
+      <ul className="mt-4 flex flex-col gap-4">
         {slices.map((slice, idx) => {
           const entrada = catalogo.de(slice.category);
           const color = entrada.color;
@@ -37,7 +37,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
           return (
             <li key={slice.category}>
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <span
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-control)]"
                   style={{ backgroundColor: tint(color, 0.14), color: color }}
@@ -58,7 +58,7 @@ export const CategoryBreakdown: React.FC<CategoryBreakdownProps> = ({ slices, ti
 
                   {/* The percentage is written out, so the bar length is never
  the only way to read the value. */}
-                  <div className="mt-1.5 flex flex-nowrap items-center gap-2">
+                  <div className="mt-2 flex flex-nowrap items-center gap-2">
                     <div className="h-2 flex-1 min-w-0 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
                       <motion.div
                         initial={{ width: 0 }}

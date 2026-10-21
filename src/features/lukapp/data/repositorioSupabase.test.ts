@@ -1,20 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Cajita, CajitaTipo } from './modelos';
+import type { RevisionDudosa } from './revisiones';
+import type { DocumentoNegocio } from '../negocio/modelo';
 import { ES_PASIVO } from './modelos';
 import { RepositorioSupabase } from './repositorioSupabase';
 
 const TIPOS = Object.keys(ES_PASIVO) as CajitaTipo[];
 
 /** Minimal client that replays fixed rows, so the mappers can be exercised. */
-const clienteCon = (cajitas: Record<string, unknown>[]) => {
+const clienteCon = (cajitas: Record<string, unknown>[], transacciones: Record<string, unknown>[] = [], movimientos: Record<string, unknown>[] = []) => {
   const vacio = { data: [], error: null };
   const guardado: Record<string, unknown>[] = [];
 
   const cliente = {
     from: (tabla: string) => ({
       select: () => ({
-        eq: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : vacio),
+        eq: () => ({ order: () => ({ range: () => Promise.resolve(tabla === 'cajitas' ? { data: cajitas, error: null } : tabla === 'transacciones' ? { data: transacciones, error: null } : tabla === 'cajita_movimientos' ? { data: movimientos, error: null } : vacio) }) }),
       }),
       upsert: (filas: Record<string, unknown> | Record<string, unknown>[]) => {
         guardado.push(...(Array.isArray(filas) ? filas : [filas]));
@@ -85,7 +87,111 @@ describe('RepositorioSupabase — el tipo de una cajita', () => {
   });
 });
 
+describe('RepositorioSupabase — activos multimoneda', () => {
+  it('lee la moneda, tipo de activo y datos originales del movimiento', async () => {
+    const { cliente } = clienteCon(
+      [{ ...fila('cajita'), es_inversion: true, moneda: 'USD' }],
+      [],
+      [{ id: 'm1', cajita_id: 'c-cajita', kind: 'deposito', delta_cop: 42000, categoria: null, occurred_on: '2026-10-20', nota: '', created_at: '2026-10-20T12:00:00Z', monto_original: '10.5', moneda_original: 'USD', tasa_cambio_cop: '4000' }],
+    );
+    const { cajitas, cajitaMovimientos } = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+
+    expect(cajitas[0]).toMatchObject({ esInversion: true, moneda: 'USD' });
+    expect(cajitaMovimientos[0]).toMatchObject({ montoOriginal: 10.5, monedaOriginal: 'USD', tasaCambioCop: 4000, occurredOn: '2026-10-20' });
+  });
+});
+
+describe('RepositorioSupabase — bandeja de revisión', () => {
+  const revision: RevisionDudosa = {
+    id: 'documento:tx-1', tipo: 'documento', estado: 'pendiente', referenciaId: 'tx-1',
+    titulo: 'Confirma la lectura', detalle: 'Revisa el monto.', documento: 'octubre.pdf',
+    resolucion: null, createdAt: '2026-10-20T00:00:00Z', updatedAt: '2026-10-20T00:00:00Z',
+  };
+
+  it('mapea decisiones guardadas al formato de la tabla dentro del lote atómico', async () => {
+    const argumentos: unknown[][] = [];
+    const rpc = vi.fn(async (...args: unknown[]) => { argumentos.push(args); return { error: null }; });
+    const cliente = { rpc } as unknown as SupabaseClient;
+    await new RepositorioSupabase(cliente, 'u1').aplicarCambios({ guardar: { revisiones: [revision] } });
+    const parametros = argumentos[0]?.[1] as { cambios: { guardar: Record<string, unknown[]> } };
+    const cambios = parametros.cambios;
+    expect(cambios.guardar.revisiones_dudosas).toEqual([{
+      id: revision.id, user_id: 'u1', tipo: 'documento', estado: 'pendiente',
+      referencia_id: 'tx-1', titulo: 'Confirma la lectura', detalle: 'Revisa el monto.',
+      documento: 'octubre.pdf', resolucion: null,
+      created_at: revision.createdAt, updated_at: revision.updatedAt,
+    }]);
+  });
+
+  it('lee los estados de revisión persistidos desde Supabase', async () => {
+    const filaRevision = {
+      id: revision.id, tipo: revision.tipo, estado: revision.estado,
+      referencia_id: revision.referenciaId, titulo: revision.titulo, detalle: revision.detalle,
+      documento: revision.documento, resolucion: revision.resolucion,
+      created_at: revision.createdAt, updated_at: revision.updatedAt,
+    };
+    const cliente = {
+      from: (tabla: string) => ({
+        select: () => ({
+          eq: () => ({ order: () => ({ range: async () => ({ data: tabla === 'revisiones_dudosas' ? [filaRevision] : [], count: 0, error: null }) }) }),
+        }),
+      }),
+    } as unknown as SupabaseClient;
+    const datos = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+    expect(datos.revisiones).toEqual([revision]);
+  });
+});
+
+describe('RepositorioSupabase — documentos de negocio', () => {
+  const documento: DocumentoNegocio = { id: '9ee4a012-0c4d-49c3-8ef3-e43a2d02dfe1', tipo: 'por_cobrar', estado: 'enviado', contraparte: 'Cliente', concepto: 'Diseño', totalCop: 50000, fecha: '2026-10-20', vence: null, abonos: [], cotizacionOrigenId: null };
+
+  it('incluye registros de negocio en los lotes atómicos con propiedad de usuario', async () => {
+    const rpc = vi.fn(async (..._args: unknown[]) => ({ error: null }));
+    const cliente = { rpc } as unknown as SupabaseClient;
+    await new RepositorioSupabase(cliente, 'u1').guardarDocumentosNegocio([documento]);
+    const parametros = rpc.mock.calls[0]?.[1] as { cambios: { guardar: Record<string, unknown[]> } };
+    expect(parametros.cambios.guardar.documentos_negocio?.[0]).toMatchObject({
+      id: documento.id,
+      user_id: 'u1',
+      datos: documento,
+    });
+  });
+});
+
 describe('RepositorioSupabase — errores legibles', () => {
+  it('lee como balance-afectante los registros anteriores y conserva la marca histórica', async () => {
+    const base = {
+      kind: 'gasto', amount_cop: 1000, category: 'comida', description: 'Café', occurred_on: '2025-01-01',
+      cuenta_id: 'c1', raw_transcript: 'extracto', cuotas_total: null, cuota_cop: null, created_at: '2025-01-01T00:00:00.000Z',
+    };
+    const { cliente } = clienteCon([], [
+      { ...base, id: 't-historico', afecta_saldo: false },
+      { ...base, id: 't-legado' },
+    ]);
+
+    const { transacciones } = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+
+    expect(transacciones.map((tx) => tx.afectaSaldo)).toEqual([false, true]);
+  });
+
+  it('persiste si una transacción histórica debe dejar intacto el saldo actual', async () => {
+    const { cliente, guardado } = clienteCon([]);
+    const base = {
+      id: 't-hist', kind: 'gasto' as const, amountCop: 1000, category: 'comida', description: 'Café',
+      occurredOn: '2025-01-01', cuentaId: 'c1', rawTranscript: 'extracto', createdAt: '2025-01-01T00:00:00.000Z',
+    };
+
+    await new RepositorioSupabase(cliente, 'u1').guardarTransacciones([
+      { ...base, afectaSaldo: false },
+      { ...base, id: 't-actual', afectaSaldo: true },
+    ]);
+
+    expect(guardado).toMatchObject([
+      { id: 't-hist', afecta_saldo: false },
+      { id: 't-actual', afecta_saldo: true },
+    ]);
+  });
+
   it('traduce una restricción de Postgres a algo accionable', async () => {
     const cliente = {
       from: () => ({
@@ -120,10 +226,9 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
     ({
       from: (tabla: string) => ({
         select: () => ({
-          eq: () =>
-            Promise.resolve(
+          eq: () => ({ order: () => ({ range: () => Promise.resolve(
               tabla === 'categorias' ? { data: null, error: { message: mensaje } } : { data: [], error: null },
-            ),
+            ) }) }),
         }),
       }),
     }) as unknown as SupabaseClient;
@@ -218,25 +323,9 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
     });
   });
 
-  it('compensa el movimiento si falla la transacción remota', async () => {
-    const borrados: { tabla: string; id: string }[] = [];
-    const cliente = {
-      from: (tabla: string) => ({
-        upsert: () =>
-          Promise.resolve(
-            tabla === 'transacciones'
-              ? { error: { message: 'violates check constraint "transacciones_cuotas_validas"' } }
-              : { error: null },
-          ),
-        delete: () => ({
-          eq: (_col: string, val: string) => {
-            borrados.push({ tabla, id: val });
-            return Promise.resolve({ error: null });
-          },
-        }),
-      }),
-    } as unknown as SupabaseClient;
-
+  it('envía todos los rastros en una llamada atómica y comunica el rechazo', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: { message: 'importe rechazado' } });
+    const cliente = { rpc } as unknown as SupabaseClient;
     const mov = {
       id: 'm1', cajitaId: 'c1', kind: 'compra' as const, deltaCop: 50000,
       categoria: null, occurredOn: '2026-09-01', nota: '', createdAt: '2026-09-01T00:00:00.000Z',
@@ -251,26 +340,32 @@ describe('RepositorioSupabase — los fallos de sesión también hablan español
       new RepositorioSupabase(cliente, 'u1').guardarMovimientosConTransaccion([mov], tx),
     ).rejects.toThrow();
 
-    // Debe haber borrado el movimiento de la cajita para no dejarlo registrado a medias
-    expect(borrados).toContainEqual({ tabla: 'cajita_movimientos', id: 'm1' });
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][1].cambios.guardar).toMatchObject({
+      cajita_movimientos: [{ id: 'm1', user_id: 'u1' }],
+      transacciones: [{ id: 't1', user_id: 'u1' }],
+    });
   });
 
-  it('elimina primero el rastro redundante y después la transacción canónica', async () => {
-    const orden: string[] = [];
-    const cliente = {
-      from: (tabla: string) => ({
-        delete: () => ({
-          eq: async (_col: string, id: string) => {
-            orden.push(`${tabla}:${id}`);
-            return { error: null };
-          },
-        }),
-      }),
-    } as unknown as SupabaseClient;
-
-    await new RepositorioSupabase(cliente, 'u1')
-      .borrarMovimientoConTransaccion('mov-1', 'tx-1');
-
-    expect(orden).toEqual(['cajita_movimientos:mov-1', 'transacciones:tx-1']);
+  it('borra el movimiento y la transacción en la misma operación', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const cliente = { rpc } as unknown as SupabaseClient;
+    await new RepositorioSupabase(cliente, 'u1').borrarMovimientoConTransaccion('mov-1', 'tx-1');
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][1].cambios.borrar).toEqual({ cajita_movimientos: ['mov-1'], transacciones: ['tx-1'] });
   });
+
+  it('lee todo el historial aunque el servidor entregue páginas menores que las solicitadas', async () => {
+    const filas = Array.from({ length: 7 }, (_, i) => ({ id: `t${i}`, kind: 'ingreso', amount_cop: 1000, category: 'ingreso', description: '', occurred_on: '2026-10-20', cuenta_id: null, raw_transcript: '', created_at: '2026-10-20T00:00:00Z' }));
+    const rangos: number[] = [];
+    const cliente = { from: (tabla: string) => ({ select: () => ({ eq: () => ({ order: () => ({ range: async (desde: number) => {
+      if (tabla !== 'transacciones') return { data: [], count: 0, error: null };
+      rangos.push(desde);
+      return { data: filas.slice(desde, desde + 2), count: filas.length, error: null };
+    } }) }) }) }) } as unknown as SupabaseClient;
+    const datos = await new RepositorioSupabase(cliente, 'u1').cargarTodo();
+    expect(datos.transacciones).toHaveLength(7);
+    expect(rangos).toEqual([0, 2, 4, 6]);
+  });
+
 });

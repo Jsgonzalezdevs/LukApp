@@ -44,6 +44,7 @@ const CONTADORES: ReadonlyArray<[keyof Instantanea, string, string]> = [
   ['contactos', 'contacto', 'contactos'],
   ['presupuestos', 'presupuesto', 'presupuestos'],
   ['recurrentes', 'recurrente', 'recurrentes'],
+  ['documentosNegocio', 'documento de negocio', 'documentos de negocio'],
 ];
 
 /** "34 movimientos · 3 cuentas y cajitas · 1 meta" */
@@ -141,7 +142,7 @@ const escapar = (valor: string): string =>
  */
 export const aCsv = (datos: Instantanea, nombreDeCuenta: (id: string | null) => string): string => {
   const filas = [
-    ['Fecha', 'Tipo', 'Monto', 'Categoría', 'Descripción', 'Cuenta'].join(';'),
+    ['Fecha', 'Tipo', 'Monto', 'Categoría', 'Descripción', 'Cuenta', 'Afecta saldo'].join(';'),
     ...[...datos.transacciones]
       .sort((a, b) => a.occurredOn.localeCompare(b.occurredOn))
       .map((tx) =>
@@ -154,6 +155,7 @@ export const aCsv = (datos: Instantanea, nombreDeCuenta: (id: string | null) => 
           escapar(tx.category),
           escapar(tx.description),
           escapar(nombreDeCuenta(tx.cuentaId)),
+          tx.afectaSaldo === false ? 'No' : 'Sí',
         ].join(';'),
       ),
   ];

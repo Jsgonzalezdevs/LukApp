@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { EstrellaAvatar, type EstrellaEmotion } from './EstrellaAvatar';
+import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 export type { EstrellaEmotion };
 
@@ -95,12 +96,15 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
   emotion,
   onAnimationEnd,
 }) => {
+  const movimientoReducido = useMovimientoReducido();
+  const animacionActual: EstrellaAnimation = movimientoReducido ? 'idle' : animation;
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
     setFrame(0);
+    if (movimientoReducido) return;
     const frameDuration = 50;
-    const maxFrames = FRAMES_POR_ANIMACION[animation];
+    const maxFrames = FRAMES_POR_ANIMACION[animacionActual];
 
     const interval = setInterval(() => {
       setFrame((prev) => {
@@ -114,12 +118,12 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
     }, frameDuration);
 
     return () => clearInterval(interval);
-  }, [animation, onAnimationEnd]);
+  }, [animacionActual, movimientoReducido, onAnimationEnd]);
 
   const getAnimationProps = (): AnimationProps => {
     const progress = frame / 60;
 
-    switch (animation) {
+    switch (animacionActual) {
       case 'waving':
         return {
           armRotation: {
@@ -293,7 +297,7 @@ export const EstrellaAnimada: React.FC<EstrellaAnimadaProps> = ({
   };
 
   const props = getAnimationProps();
-  const emocionFinal = emotion ?? EMOCION_POR_DEFECTO[animation];
+  const emocionFinal = movimientoReducido ? 'happy' : emotion ?? EMOCION_POR_DEFECTO[animacionActual];
 
   return (
     <EstrellaAvatar

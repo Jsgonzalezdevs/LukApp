@@ -37,10 +37,10 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Verdict */}
       <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <ClipboardList className="h-4 w-4" strokeWidth={2.5} /> Veredicto
           </h2>
-          <span className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-2.5 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)] capitalize">
+          <span className="shrink-0 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)] capitalize">
             {resultado.periodo.etiqueta}
           </span>
         </div>
@@ -104,11 +104,11 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
             {totales.excluidos.map((ex) => (
               <li
                 key={ex.motivo}
-                className="flex items-center justify-between gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-[var(--fin-r-control)] bg-[var(--fin-card)] px-3 py-3"
               >
                 <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--fin-ink)]">
                   {ex.motivo}
-                  <span className="ml-1.5 font-normal text-[var(--fin-ink-faint)]">
+                  <span className="ml-2 font-normal text-[var(--fin-ink-faint)]">
                     ({ex.cuantos})
                   </span>
                 </span>
@@ -124,7 +124,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Coherence warning: the narrative disagrees with the auditable rows. */}
       {!cuadra ? (
         <p className="flex items-start gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-media-bg)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-media-ink)]">
-          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" strokeWidth={3} />
+          <AlertTriangle className="mt-1 h-3.5 w-3.5 shrink-0" strokeWidth={3} />
           <span>
             La tabla de métricas no cuadra con los movimientos extraídos. Los totales de arriba se
             calcularon desde los movimientos, que se pueden auditar línea por línea.
@@ -135,7 +135,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Category bars */}
       {gastos.length > 0 ? (
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Target className="h-4 w-4" strokeWidth={2.5} /> En qué se fue
           </h2>
           <ul className="mt-4 flex flex-col gap-3">
@@ -143,7 +143,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
               const color = CATEGORY_COLOR[slice.categoria];
               const width = Math.max((slice.total / gastos[0].total) * 100, 4);
               return (
-                <li key={slice.categoria} className="flex items-center gap-2.5">
+                <li key={slice.categoria} className="flex items-center gap-3">
                   <span
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--fin-r-control)]"
                     style={{ backgroundColor: tint(color, 0.14), color: color }}
@@ -163,7 +163,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
                         {formatCop(slice.total)}
                       </span>
                     </div>
-                    <div className="mt-1.5 flex items-center gap-2">
+                    <div className="mt-2 flex items-center gap-2">
                       <div className="h-2 flex-1 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
                         <div
                           className="h-full rounded-[var(--fin-r-pill)]"
@@ -183,19 +183,19 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       ) : null}
 
       <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-        <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <ClipboardList className="h-4 w-4" strokeWidth={2.5} /> Movimientos reconocidos
         </h2>
         <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">Revisa el detalle antes de importar.</p>
         <ul className="mt-3 flex flex-col gap-2">
           {resultado.movimientos.map((movimiento, indice) => (
-            <li key={`${movimiento.fecha}-${movimiento.descripcion}-${indice}`} className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2.5">
+            <li key={`${movimiento.fecha}-${movimiento.descripcion}-${indice}`} className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-3">
               <div className="flex items-baseline justify-between gap-3">
                 <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--fin-ink)]">{movimiento.descripcion}</span>
                 <span className="shrink-0 text-[13px] font-semibold tabular-nums" style={{ color: movimiento.tipo === 'ingreso' ? 'var(--fin-in)' : 'var(--fin-out)' }}>{movimiento.tipo === 'ingreso' ? '+' : '-'}{formatCop(movimiento.montoCop)}</span>
               </div>
-              <p className="mt-1 text-[12px] text-[var(--fin-ink-soft)]">{movimiento.fecha} · {CATEGORY_LABELS[movimiento.categoria]}{movimiento.contraparte ? ` · ${movimiento.contraparte}` : ''}</p>
-              {movimiento.detalle ? <p className="mt-1 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">{movimiento.detalle}</p> : null}
+              <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">{movimiento.fecha} · {CATEGORY_LABELS[movimiento.categoria]}{movimiento.contraparte ? ` · ${movimiento.contraparte}` : ''}</p>
+              {movimiento.detalle ? <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">{movimiento.detalle}</p> : null}
             </li>
           ))}
         </ul>
@@ -204,10 +204,10 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Alerts */}
       {resultado.alertas.length > 0 ? (
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <AlertCircle className="h-4 w-4" strokeWidth={2.5} /> Alertas
           </h2>
-          <ul className="mt-3 flex flex-col gap-2.5">
+          <ul className="mt-3 flex flex-col gap-3">
             {resultado.alertas.map((alerta, idx) => {
               const tono = TONO_SEVERIDAD[alerta.severidad];
               return (
@@ -217,7 +217,7 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
                   style={{ backgroundColor: tono.bg }}
                 >
                   <p
-                    className="flex items-center gap-1.5 text-[13px] font-semibold"
+                    className="flex items-center gap-2 text-[13px] font-semibold"
                     style={{ color: tono.ink }}
                   >
                     <tono.icon className="h-4 w-4 shrink-0" aria-hidden="true" strokeWidth={2.5} />
@@ -236,22 +236,22 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Recommendations */}
       {resultado.recomendaciones.length > 0 ? (
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Lightbulb className="h-4 w-4" strokeWidth={2.5} /> Qué puedes hacer
           </h2>
           <ol className="mt-3 flex flex-col gap-3">
             {resultado.recomendaciones.map((rec, idx) => (
               <li key={`${rec.titulo}-${idx}`} className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[13px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
+                <span className="mt-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[13px] font-semibold text-[var(--fin-ink-soft)] tabular-nums">
                   {idx + 1}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-semibold text-[var(--fin-ink)]">{rec.titulo}</p>
-                  <p className="mt-0.5 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
+                  <p className="mt-1 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
                     {rec.detalle}
                   </p>
                   {rec.ahorroMensualCop !== null ? (
-                    <p className="mt-1.5 inline-flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-in-bg)] px-2.5 py-1 text-[13px] font-semibold text-[var(--fin-in)]">
+                    <p className="mt-2 inline-flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-in-bg)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-in)]">
                       <CheckCircle2 className="h-3 w-3" strokeWidth={3} />
                       Ahorras ~{formatCop(rec.ahorroMensualCop)}/mes
                     </p>
@@ -266,11 +266,11 @@ export const AnalistaReporte: React.FC<AnalistaReporteProps> = ({ resultado }) =
       {/* Things the model could not read confidently */}
       {resultado.advertencias.length > 0 ? (
         <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-baja-bg)] p-5">
-          <h2 className="flex items-center gap-1.5 text-[15px] font-semibold text-[var(--fin-baja-ink)]">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-baja-ink)]">
             <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
             Lo que no quedó claro
           </h2>
-          <ul className="mt-2.5 flex flex-col gap-1.5">
+          <ul className="mt-3 flex flex-col gap-2">
             {resultado.advertencias.map((adv, idx) => (
               <li key={idx} className="text-[15px] leading-relaxed text-[var(--fin-baja-ink)]">
                 · {adv}

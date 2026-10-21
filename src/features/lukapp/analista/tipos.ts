@@ -35,6 +35,8 @@ export interface MovimientoExtraido {
    * payment is not a new expense when the purchases it settles are also listed.
    */
   exclusion: MotivoExclusion | null;
+  /** Exportación propia de LukApp puede conservar que una fila histórica no mueva el saldo. */
+  afectaSaldo?: boolean;
 }
 
 export interface FilaMetrica {

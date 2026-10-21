@@ -31,6 +31,8 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
     const focoAnterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const selectoresFoco = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     const alPulsarTecla = (evento: KeyboardEvent) => {
+      const dialogos = document.querySelectorAll('[role="dialog"][aria-modal="true"]');
+      if (dialogos[dialogos.length - 1] !== dialogoRef.current) return;
       if (evento.key === 'Escape') {
         evento.preventDefault();
         cierreRef.current();
@@ -55,7 +57,10 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
     requestAnimationFrame(() => dialogoRef.current?.querySelector<HTMLElement>(selectoresFoco)?.focus());
     return () => {
       document.removeEventListener('keydown', alPulsarTecla);
-      focoAnterior?.focus();
+      const abiertos = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]');
+      const superior = abiertos[abiertos.length - 1];
+      if (superior) superior.querySelector<HTMLElement>(selectoresFoco)?.focus();
+      else focoAnterior?.focus();
     };
   }, []);
 
@@ -64,7 +69,7 @@ export const HojaPanel: React.FC<HojaPanelProps> = ({ titulo, onCerrar, children
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 16 }}
-      transition={{ type: 'spring', stiffness: 340, damping: 32 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
       className="fixed inset-0 z-40 overflow-y-auto overscroll-contain bg-[var(--fin-bg)]"
       role="dialog"
       aria-modal="true"
