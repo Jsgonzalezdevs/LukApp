@@ -16,7 +16,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 10 | Proponer suscripciones desde patrones; confirmar; próximos cobros, cambios de precio y costo mensual/anual. | Verificado, V9.2.0 |
 | 11 | Asesor con propuestas editables y efectos visibles antes de confirmar presupuestos, metas y movimientos. | Verificado, V9.3.0 |
 | 12 | Cifras y gráficas conectadas con sus movimientos; comparaciones y distinción entre real, programado y estimado. | Verificado, V9.4.0 |
-| 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Pendiente |
+| 13 | Invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles. | Verificado, V9.5.0 |
 | 14 | Aportes/retiros/valoraciones/rendimientos y multimoneda con importe original, tasa y fecha; separar disponible e invertido. | Pendiente |
 | 15 | Recepción de comprobantes por correo con procedencia y deduplicación; evaluar e implementar la vía bancaria viable. | Pendiente |
 | 16 | Modo opcional para independientes/negocios: cuentas por cobrar/pagar, abonos, devengo/caja, cotizaciones y facturas. | Pendiente |
@@ -159,6 +159,16 @@ El paso 7 quedó verificado en V8.0.3; los pasos 8 a 16 continúan pendientes. E
 - Tendencias aclara que sus líneas muestran movimientos guardados, y mantiene programaciones y estimaciones aparte en Calendario y Proyección. Los avisos de pagos distinguen importe confirmado, programado y estimado.
 - Revisión funcional con pruebas de selección por teclado/toque, vínculo a detalle y distinción del historial. Suite completa: 136 archivos y 1.483 pruebas aprobadas; 14 pruebas específicas de detalle/tendencias aprobadas. TypeScript, build Vite, lint de archivos tocados y `git diff --check` aprobados.
 
+## Cierre del paso 13: V9.5.0
+
+- Las invitaciones usan el menú de compartir del dispositivo cuando existe, copian el enlace si no y siempre dejan el enlace seleccionable como alternativa; el progreso y los errores aparecen en la pantalla, no en alertas del navegador.
+- Al volver a LukApp se recargan los espacios; los gastos se actualizan en tiempo real. Los fallos al guardar, borrar o saldar se explican y el formulario conserva lo escrito.
+- El pagador se identifica por su ID real aunque cambie el orden de integrantes. Un espacio de una sola persona no permite elegir un pagador inexistente ni presenta deudas a medias hasta que alguien acepte la invitación.
+- Las vaquitas ya muestran presupuesto, aportes, gastos y saldo disponible; registran fecha, importe y pagador, y permiten retirar un gasto con confirmación. Las cuotas reparten los pesos sin errores de redondeo y crear un proyecto deja los aportes en cero hasta marcarlos como pagados.
+- Los datos de vaquitas y espacios siguen separados por cuenta al cambiar de sesión. Los emojis 🥑💌🐮 siguen visibles como identidad, acompañados por etiquetas claras.
+- Pruebas específicas: 8 pruebas de componentes y lógica de espacios/vaquitas aprobadas. Suite completa: 138 archivos y 1.488 pruebas aprobadas. TypeScript, compilación Vite, lint de los archivos tocados y `git diff --check` aprobados.
+- Revisión visual local de Ajustes, pantalla compartida vacía y selector de emojis al crear un espacio; no se crearon datos en la cuenta abierta.
+
 ## Siguiente paso
 
-Implementar y revisar el paso 13: invitaciones, reparto y recarga fiables; proyectos con presupuesto y resultado; contexto y pagador visibles.
+Implementar y revisar el paso 14: aportes, retiros, valoraciones, rendimientos y multimoneda, separando disponible e invertido.

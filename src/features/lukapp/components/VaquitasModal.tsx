@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Users, Plus, CheckCircle2, ArrowRight, Trash2 } from 'lucide-react';
 import {
   calcularResumenVaquita,
+  repartirCuota,
   type Vaquita,
   type ParticipanteVaquita,
 } from '../lib/vaquitasColombia';
@@ -19,6 +20,7 @@ const STORAGE_KEY = 'lukapp_vaquitas_v1';
 
 export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, userId }) => {
   const claveStorage = `${STORAGE_KEY}:${userId ?? 'local'}`;
+  const [claveCargada, setClaveCargada] = useState(claveStorage);
   const [vaquitas, setVaquitas] = useState<Vaquita[]>(() => {
     try {
       const guardadas = localStorage.getItem(claveStorage);
@@ -31,26 +33,63 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
     return [];
   });
 
+  useEffect(() => {
+    try {
+      const guardadas = localStorage.getItem(claveStorage);
+      setVaquitas(guardadas ? JSON.parse(guardadas) : []);
+    } catch {
+      setVaquitas([]);
+    }
+    setClaveCargada(claveStorage);
+  }, [claveStorage]);
+
   const [vaquitaSeleccionadaId, setVaquitaSeleccionadaId] = useState<string>('');
   const [mostrarCrear, setMostrarCrear] = useState(false);
+  const [mostrarGasto, setMostrarGasto] = useState(false);
 
   // Formulario crear vaquita
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevaMetaStr, setNuevaMetaStr] = useState('');
   const [nombresAmigosStr, setNombresAmigosStr] = useState('');
+  const [descripcionGasto, setDescripcionGasto] = useState('');
+  const [montoGastoStr, setMontoGastoStr] = useState('');
+  const [pagadoGastoPor, setPagadoGastoPor] = useState('Yo');
 
   // Persistir en localStorage
   useEffect(() => {
+    if (claveCargada !== claveStorage) return;
     try {
       localStorage.setItem(claveStorage, JSON.stringify(vaquitas));
     } catch {
       // Ignorar errores de storage
     }
-  }, [claveStorage, vaquitas]);
+  }, [claveCargada, claveStorage, vaquitas]);
 
   const vaquitaActiva =
     vaquitas.find((v) => v.id === vaquitaSeleccionadaId) || (vaquitas.length > 0 ? vaquitas[0] : null);
   const resumen = vaquitaActiva ? calcularResumenVaquita(vaquitaActiva) : null;
+
+  const handleAgregarGasto = (e: React.FormEvent) => {
+    e.preventDefault();
+    const montoCop = Number(montoGastoStr.replace(/\D/g, ''));
+    if (!vaquitaActiva || !descripcionGasto.trim() || montoCop <= 0) return;
+    const gasto = {
+      id: `gasto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      descripcion: descripcionGasto.trim(),
+      montoCop,
+      pagadoPor: pagadoGastoPor,
+      fecha: new Date().toISOString().slice(0, 10),
+    };
+    setVaquitas((anteriores) => anteriores.map((vaquita) => vaquita.id === vaquitaActiva.id ? { ...vaquita, gastos: [...vaquita.gastos, gasto] } : vaquita));
+    setDescripcionGasto('');
+    setMontoGastoStr('');
+    setMostrarGasto(false);
+  };
+
+  const handleEliminarGasto = (gastoId: string) => {
+    if (!vaquitaActiva || !window.confirm('¿Eliminar este gasto del proyecto?')) return;
+    setVaquitas((anteriores) => anteriores.map((vaquita) => vaquita.id === vaquitaActiva.id ? { ...vaquita, gastos: vaquita.gastos.filter((gasto) => gasto.id !== gastoId) } : vaquita));
+  };
 
   const handleCrearVaquita = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,12 +102,13 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
 
     const todosParticipantes = ['Yo', ...amigos];
     const meta = Number(nuevaMetaStr.replace(/\D/g, '')) || 0;
-    const cuotaPorPersona = todosParticipantes.length > 0 ? Math.round(meta / todosParticipantes.length) : meta;
+    if (meta <= 0) return;
+    const cuotas = repartirCuota(meta, todosParticipantes.length);
 
-    const participantes: ParticipanteVaquita[] = todosParticipantes.map((p) => ({
+    const participantes: ParticipanteVaquita[] = todosParticipantes.map((p, indice) => ({
       nombre: p,
-      cuotaComprometida: cuotaPorPersona,
-      aportadoCop: p === 'Yo' ? cuotaPorPersona : 0,
+      cuotaComprometida: cuotas[indice],
+      aportadoCop: 0,
     }));
 
     const nuevaVaca: Vaquita = {
@@ -90,6 +130,8 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
   };
 
   const handleEliminarVaquita = (id: string) => {
+    const vaquita = vaquitas.find((item) => item.id === id);
+    if (!vaquita || !window.confirm(`¿Eliminar “${vaquita.nombre}” y sus aportes de este dispositivo? Esta acción no se puede deshacer.`)) return;
     const filtradas = vaquitas.filter((v) => v.id !== id);
     setVaquitas(filtradas);
     if (filtradas.length > 0) {
@@ -118,7 +160,7 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
     );
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || claveCargada !== claveStorage) return null;
 
   return (
     <AnimatePresence>
@@ -187,7 +229,7 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
                       <button
                         key={v.id}
                         type="button"
-                        onClick={() => setVaquitaSeleccionadaId(v.id)}
+                          onClick={() => { setVaquitaSeleccionadaId(v.id); setMostrarGasto(false); setPagadoGastoPor('Yo'); }}
                         className={`px-3 py-2 rounded-[var(--fin-r-control)] text-[13px] font-semibold shrink-0 transition-all ${
                           v.id === vaquitaActiva.id
                             ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-xs'
@@ -231,14 +273,47 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
 
                   <div className="grid grid-cols-2 gap-2 pt-1 text-[13px]">
                     <div>
-                      <span className="text-[var(--fin-ink-faint)] block text-[13px]">Meta Total:</span>
+                      <span className="text-[var(--fin-ink-faint)] block text-[13px]">🎯 Presupuesto:</span>
                       <span className="font-bold text-[var(--fin-ink)]">{formatCop(vaquitaActiva.metaCop)}</span>
                     </div>
                     <div>
-                      <span className="text-[var(--fin-ink-faint)] block text-[13px]">Recolectado:</span>
+                      <span className="text-[var(--fin-ink-faint)] block text-[13px]">🐮 Recolectado:</span>
                       <span className="font-bold text-[var(--fin-in)]">{formatCop(resumen.totalRecolectado)}</span>
                     </div>
+                    <div>
+                      <span className="text-[var(--fin-ink-faint)] block text-[13px]">🧾 Gastado:</span>
+                      <span className="font-bold text-[var(--fin-ink)]">{formatCop(resumen.totalGastado)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[var(--fin-ink-faint)] block text-[13px]">💰 Disponible:</span>
+                      <span className={`font-bold ${resumen.saldoDisponible < 0 ? 'text-[var(--fin-out)]' : 'text-[var(--fin-ink)]'}`}>{formatCop(resumen.saldoDisponible)}</span>
+                    </div>
                   </div>
+                </div>
+
+                <div className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h5 className="text-[15px] font-bold text-[var(--fin-ink)]">🧾 Gastos del proyecto</h5>
+                      <p className="mt-1 text-[13px] text-[var(--fin-ink-soft)]">{vaquitaActiva.gastos.length ? `${vaquitaActiva.gastos.length} gastos registrados` : 'Aún no han anotado gastos.'}</p>
+                    </div>
+                    <button type="button" onClick={() => setMostrarGasto((mostrar) => !mostrar)} className="shrink-0 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-bold text-[var(--fin-on-accent)]">{mostrarGasto ? 'Cancelar' : '＋ Anotar gasto'}</button>
+                  </div>
+                  {mostrarGasto && (
+                    <form onSubmit={handleAgregarGasto} className="mt-3 grid gap-3 border-t border-[var(--fin-line)] pt-3">
+                      <label className="grid gap-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">¿Qué pagaron?
+                        <input value={descripcionGasto} onChange={(evento) => setDescripcionGasto(evento.target.value)} required placeholder="Ej. Transporte del paseo" className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)]" />
+                      </label>
+                      <label className="grid gap-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">¿Cuánto costó?
+                        <input type="number" inputMode="numeric" min="1" step="1" value={montoGastoStr} onChange={(evento) => setMontoGastoStr(evento.target.value)} required placeholder="Ej. 85000" className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)]" />
+                      </label>
+                      <label className="grid gap-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">¿Quién pagó?
+                        <select value={pagadoGastoPor} onChange={(evento) => setPagadoGastoPor(evento.target.value)} className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)]">{vaquitaActiva.participantes.map((persona) => <option key={persona.nombre} value={persona.nombre}>{persona.nombre}</option>)}</select>
+                      </label>
+                      <button type="submit" className="justify-self-end rounded-[var(--fin-r-control)] bg-[var(--fin-ink)] px-4 py-2 text-[13px] font-bold text-[var(--fin-bg)]">Guardar gasto 🐮</button>
+                    </form>
+                  )}
+                  {vaquitaActiva.gastos.length > 0 && <ul className="mt-3 divide-y divide-[var(--fin-line)]">{vaquitaActiva.gastos.map((gasto) => <li key={gasto.id} className="flex items-center justify-between gap-3 py-2 text-[13px]"><span className="min-w-0"><strong className="block truncate text-[var(--fin-ink)]">{gasto.descripcion}</strong><span className="text-[var(--fin-ink-soft)]">Pagó {gasto.pagadoPor} · {gasto.fecha}</span></span><span className="flex shrink-0 items-center gap-2 font-bold text-[var(--fin-ink)]">{formatCop(gasto.montoCop)}<button type="button" aria-label={`Eliminar gasto ${gasto.descripcion}`} title="Eliminar gasto" onClick={() => handleEliminarGasto(gasto.id)} className="rounded p-1 text-[var(--fin-ink-faint)] hover:text-[var(--fin-out)]"><Trash2 className="h-4 w-4" /></button></span></li>)}</ul>}
                 </div>
 
                 {/* Participantes y cuotas */}
@@ -336,11 +411,13 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
                     Meta de plata total (COP):
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     placeholder="Ej. 200000"
                     value={nuevaMetaStr}
                     onChange={(e) => setNuevaMetaStr(e.target.value.replace(/\D/g, ''))}
                     required
+                    min="1"
+                    step="1"
                     className="w-full px-4 py-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] text-[17px] text-[var(--fin-ink)] font-bold"
                   />
                 </div>

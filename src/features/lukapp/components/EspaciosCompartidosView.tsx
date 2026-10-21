@@ -24,9 +24,8 @@ interface EspaciosCompartidosViewProps {
   onAnotarEnLukApp?: (montoCop: number, descripcion: string, categoria: string) => void;
 }
 
-const NOMBRES_ICONO: Record<string, string> = { '🥑': 'Mercado', '🏠': 'Hogar', '✈️': 'Viaje', '🍕': 'Comida', '☕': 'Café', '🚗': 'Carro', '🎁': 'Regalo', '🏖️': 'Vacaciones', '👩🏼': 'Mujer', '👦🏼': 'Hombre joven', '👧🏽': 'Mujer joven', '🧑🏻': 'Persona joven', '👩🏻': 'Mujer de piel clara', '🧔🏽': 'Persona con barba', '👱🏼‍♀️': 'Mujer rubia', '👤': 'Persona', '😊': 'Sonrisa', '❤️': 'Corazón', '🐱': 'Gato', '🐶': 'Perro', ShoppingCart: 'Mercado', Home: 'Hogar', Plane: 'Viaje', Utensils: 'Comida', Coffee: 'Café', Car: 'Carro', Gift: 'Regalo', Target: 'Meta', UserRound: 'Persona', Smile: 'Sonrisa', Heart: 'Corazón', Cat: 'Gato', Dog: 'Perro' };
+const NOMBRES_ICONO: Record<string, string> = { '🥑': 'Mercado', '🏠': 'Hogar', '✈️': 'Viaje', '🍕': 'Comida', '☕': 'Café', '🚗': 'Carro', '🎁': 'Regalo', '🏖️': 'Vacaciones', '👤': 'Persona', '😊': 'Sonrisa', '❤️': 'Corazón', '🐱': 'Gato', '🐶': 'Perro', ShoppingCart: 'Mercado', Home: 'Hogar', Plane: 'Viaje', Utensils: 'Comida', Coffee: 'Café', Car: 'Carro', Gift: 'Regalo', Target: 'Meta', UserRound: 'Persona', Smile: 'Sonrisa', Heart: 'Corazón', Cat: 'Gato', Dog: 'Perro' };
 const ICONOS_ESPACIO = ['🥑', '🏠', '✈️', '🍕', '☕', '🚗', '🎁', '🏖️'];
-const ICONOS_PERSONA = ['👤', '😊', '❤️', '👩🏼', '👦🏼', '👧🏽', '🧑🏻', '👩🏻', '🧔🏽', '👱🏼‍♀️', '🐶', '🐱'];
 
 export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = ({
   onCerrar,
@@ -55,7 +54,10 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   const [modalGastoAbierto, setModalGastoAbierto] = useState(false);
   const [modalNuevoEspacioAbierto, setModalNuevoEspacioAbierto] = useState(false);
   const [creandoEspacio, setCreandoEspacio] = useState(false);
+  const [invitando, setInvitando] = useState(false);
   const [mensajeCopiado, setMensajeCopiado] = useState(false);
+  const [enlaceInvitacion, setEnlaceInvitacion] = useState('');
+  const [aviso, setAviso] = useState('');
 
   // Formulario de nuevo gasto
   const [descGasto, setDescGasto] = useState('');
@@ -66,14 +68,12 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
   // Formulario de nuevo espacio
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevoIcono, setNuevoIcono] = useState('🥑');
-  const [nombrePareja, setNombrePareja] = useState('');
-  const [emojiPareja, setEmojiPareja] = useState('👤');
 
   const espacioActivo: EspacioCompartido | undefined =
     espacios.find((e) => e.id === espacioIdActivo) || espacios[0];
 
   // Cálculos de balances del espacio activo
-  const integrantes = espacioActivo?.integrantes || [];
+  const integrantes = [...(espacioActivo?.integrantes || [])].sort((a, b) => Number(b.id === 'yo') - Number(a.id === 'yo'));
   const gastos = espacioActivo?.gastos || [];
 
   const totalGastado = gastos.reduce((sum, g) => sum + g.montoCop, 0);
@@ -84,23 +84,44 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
 
   const mitadTeorica = totalGastado / 2;
   // Si pagué más de la mitad, me deben; si pagué menos, debo
-  const balanceYo = pagadoPorYo - mitadTeorica;
+  const balanceYo = integrantes.length > 1 ? pagadoPorYo - mitadTeorica : 0;
   const nombreOtro = integrantes.find((i) => i.id !== 'yo')?.nombre || 'Tu pareja';
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('invitacion');
     if (!token || !userId) return;
     void aceptarInvitacion(token).then((ok) => {
-      if (ok) { window.history.replaceState({}, '', window.location.pathname); window.alert('La cuenta quedó vinculada al espacio compartido.'); }
+      if (ok) { window.history.replaceState({}, '', window.location.pathname); setAviso('🎉 ¡Listo! Ya formas parte del espacio compartido.'); }
     });
   }, [userId, aceptarInvitacion]);
 
   const invitarPareja = async () => {
-    if (!espacioActivo) return;
-    const enlace = await crearInvitacion(espacioActivo.id);
-    if (!enlace) return;
-    await navigator.clipboard?.writeText(enlace);
-    window.alert('Enlace de invitación copiado. Tu pareja debe abrirlo con su propia cuenta de LukApp.');
+    if (!espacioActivo || invitando) return;
+    limpiarError();
+    setAviso('');
+    setInvitando(true);
+    try {
+      const enlace = await crearInvitacion(espacioActivo.id);
+      if (!enlace) return;
+      setEnlaceInvitacion(enlace);
+      if (navigator.share) {
+        await navigator.share({ title: `Invitación a ${espacioActivo.nombre}`, text: 'Únete a nuestro espacio compartido de LukApp 🥑', url: enlace });
+        setAviso('💌 Invitación lista para compartir. La otra persona debe abrirla con su cuenta de LukApp.');
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(enlace);
+        setAviso('🔗 Enlace copiado. La otra persona debe abrirlo con su cuenta de LukApp.');
+      } else {
+        setAviso('🔗 Copia el enlace para invitar a la otra persona; debe abrirlo con su cuenta de LukApp.');
+      }
+    } catch (fallo) {
+      if (fallo instanceof Error && fallo.name === 'AbortError') {
+        setAviso('🔗 Puedes copiar el enlace de abajo y enviarlo cuando quieras.');
+        return;
+      }
+      setAviso('🔗 Copia el enlace de abajo y envíaselo a la otra persona.');
+    } finally {
+      setInvitando(false);
+    }
   };
 
   const handleCrearEspacio = async (e: React.FormEvent) => {
@@ -108,13 +129,14 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
     if (!nuevoNombre.trim()) return;
     haptic.trigger('medium');
     audio.play('click');
+    limpiarError();
+    setAviso('');
     setCreandoEspacio(true);
-    const nuevo = await crearEspacio(nuevoNombre.trim(), nuevoIcono, '#8b5cf6', nombrePareja.trim() || 'Compañero/a', emojiPareja);
+    const nuevo = await crearEspacio(nuevoNombre.trim(), nuevoIcono, '#8b5cf6');
     setCreandoEspacio(false);
     if (!nuevo) return;
     setEspacioIdActivo(nuevo.id);
     setNuevoNombre('');
-    setNombrePareja('');
     setModalNuevoEspacioAbierto(false);
   };
 
@@ -128,6 +150,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
 
     const guardado = await agregarGasto(espacioActivo.id, descGasto.trim(), monto, pagadoPorId, 'otros');
     if (!guardado) return;
+    setAviso('✅ Gasto compartido guardado.');
 
     if (guardarEnPersonal && onAnotarEnLukApp && pagadoPorId === 'yo') {
       // Registrar la mitad correspondiente en la contabilidad personal de LukApp
@@ -211,7 +234,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
               <button
                 key={esp.id}
                 type="button"
-                onClick={() => setEspacioIdActivo(esp.id)}
+                onClick={() => { setEspacioIdActivo(esp.id); setPagadoPorId('yo'); setEnlaceInvitacion(''); setAviso(''); limpiarError(); }}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-[15px] font-semibold whitespace-nowrap transition-all ${
                   activo
                     ? 'bg-[var(--fin-ink)] text-[var(--fin-bg)] shadow-sm scale-100'
@@ -248,10 +271,10 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
               {/* Avatares circulares superpuestos (Estilo Monai / Memoji de referencia) */}
               <div className="flex items-center justify-center -space-x-4 mb-3">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#fed7aa] border-4 border-[var(--fin-card)] text-[28px] shadow-md z-10">
-                  <IconoSimbolo valor={integrantes[0]?.emoji} className="h-7 w-7" />
+                  <IconoSimbolo valor={integrantes[0]?.emoji || '🙂'} className="h-7 w-7" />
                 </div>
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#fbcfe8] border-4 border-[var(--fin-card)] text-[28px] shadow-md z-20">
-                  <IconoSimbolo valor={integrantes[1]?.emoji} className="h-7 w-7" />
+                  <IconoSimbolo valor={integrantes[1]?.emoji || '💌'} className="h-7 w-7" />
                 </div>
               </div>
 
@@ -269,12 +292,14 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 </span>
 
                 <div className="mt-2">
-                  {balanceYo > 0 ? (
-                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-in)] text-[var(--fin-in)]">
+                  {integrantes.length < 2 ? (
+                    <div className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">💌 Invita a alguien para empezar a repartir los gastos.</div>
+                  ) : balanceYo > 0 ? (
+                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-in)]">
                       {nombreOtro} te debe {formatCop(balanceYo)}
                     </div>
                   ) : balanceYo < 0 ? (
-                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-out)] text-[var(--fin-out)]">
+                    <div className="text-[20px] sm:text-[28px] font-bold text-[var(--fin-out)]">
                       Le debes {formatCop(Math.abs(balanceYo))} a {nombreOtro}
                     </div>
                   ) : (
@@ -301,6 +326,13 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 </div>
               </div>
 
+              {aviso && (
+                <div role="status" className="mt-3 rounded-[var(--fin-r-control)] border border-[var(--fin-in)]/30 bg-[var(--fin-in-bg)] px-3 py-2 text-left text-[13px] leading-5 text-[var(--fin-ink)]">
+                  {aviso}
+                  {enlaceInvitacion && <input aria-label="Enlace de invitación" readOnly value={enlaceInvitacion} onFocus={(e) => e.currentTarget.select()} className="mt-2 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)]" />}
+                </div>
+              )}
+
               {/* Botones de acción del balance */}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                 <RippleButton
@@ -314,10 +346,11 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                 <button
                   type="button"
                   onClick={invitarPareja}
+                  disabled={invitando}
                   className="flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[15px] font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-soft)] active:scale-95 transition-all"
                 >
                   <Share2 className="h-4 w-4" />
-                  <span>Vincular pareja</span>
+                  <span>{invitando ? 'Preparando enlace…' : 'Vincular pareja'}</span>
                 </button>
 
                 <button
@@ -369,22 +402,23 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
               ) : (
                 <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
                   {gastos.map((g) => {
-                    const pagadoPorTi = g.pagadoPorId === 'yo';
+                    const pagador = integrantes.find((integrante) => integrante.id === g.pagadoPorId);
+                    const nombrePagador = pagador?.nombre || (g.pagadoPorId === userId ? 'Tú' : nombreOtro);
+                    const emojiPagador = pagador?.emoji || '👤';
+                    const pagadoPorTi = g.pagadoPorId === 'yo' || g.pagadoPorId === userId;
                     return (
                       <div
                         key={g.id}
                         className="flex items-center justify-between rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]/60 border border-[var(--fin-line)]/60 p-3 text-[15px] transition-colors hover:bg-[var(--fin-soft)]"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="text-[17px]">
-                            <IconoSimbolo valor={pagadoPorTi ? integrantes[0]?.emoji : integrantes[1]?.emoji} />
-                          </span>
+                          <span className="text-[17px]" aria-label={`Pagó ${nombrePagador}`}><IconoSimbolo valor={emojiPagador} /></span>
                           <div className="min-w-0">
                             <div className="font-semibold text-[var(--fin-ink)] truncate">
                               {g.descripcion}
                             </div>
                             <div className="text-[13px] text-[var(--fin-ink-soft)]">
-                              Pagó {pagadoPorTi ? 'Tú' : nombreOtro} • {g.fecha}
+                              Pagó {pagadoPorTi ? 'Tú' : nombrePagador} • {g.fecha}
                             </div>
                           </div>
                         </div>
@@ -481,18 +515,20 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                         <span><IconoSimbolo valor="UserRound" /></span>
                         <span>Pagué Yo</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setPagadoPorId(integrantes[1]?.id || 'pareja')}
-                        className={`flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] py-3 text-[15px] font-bold transition-all ${
-                          pagadoPorId !== 'yo'
-                            ? 'bg-[var(--fin-ink)] text-[var(--fin-bg)] shadow-xs'
-                            : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
-                        }`}
-                      >
-                        <span><IconoSimbolo valor="UserRound" /></span>
-                        <span>Pagó {nombreOtro}</span>
-                      </button>
+                      {integrantes.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPagadoPorId(integrantes.find((integrante) => integrante.id !== 'yo')?.id || 'yo')}
+                          className={`flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] py-3 text-[15px] font-bold transition-all ${
+                            pagadoPorId !== 'yo'
+                              ? 'bg-[var(--fin-ink)] text-[var(--fin-bg)] shadow-xs'
+                              : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'
+                          }`}
+                        >
+                          <span><IconoSimbolo valor="UserRound" /></span>
+                          <span>Pagó {nombreOtro}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -598,42 +634,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
-                      Nombre de tu compañero/a o pareja
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Ej. Camila, Andrés, Mamá..."
-                      value={nombrePareja}
-                      onChange={(e) => setNombrePareja(e.target.value)}
-                      className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-4 py-3 text-[17px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)] uppercase tracking-wider">
-                      Avatar de tu compañero/a
-                    </label>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {ICONOS_PERSONA.map((emoji) => (
-                        <button
-                          key={emoji}
-                          aria-label={`Icono ${NOMBRES_ICONO[emoji]}`}
-                          aria-pressed={emojiPareja === emoji}
-                          type="button"
-                          onClick={() => setEmojiPareja(emoji)}
-                          className={`h-9 w-9 flex items-center justify-center rounded-[var(--fin-r-control)] text-[17px] transition-transform ${
-                            emojiPareja === emoji
-                              ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)] shadow-sm'
-                              : 'bg-[var(--fin-soft)] hover:bg-[var(--fin-card)]'
-                          }`}
-                        >
-                          <IconoSimbolo valor={emoji} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <p className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] leading-5 text-[var(--fin-ink-soft)]">💌 Cuando crees el espacio, podrás invitar a alguien con su propia cuenta de LukApp.</p>
 
                   <div className="mt-2 flex items-center justify-end gap-2">
                     <button
