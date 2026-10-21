@@ -55,6 +55,18 @@ const montar = (
 };
 
 describe('CajitasView — cuentas y cajitas son módulos separados', () => {
+  it('muestra el color reconocido mientras se escribe y propone el tipo de cuenta', () => {
+    montar('cuenta', []);
+    fireEvent.click(screen.getByRole('button', { name: /Agregar.*cuenta/i }));
+    const nombre = screen.getByLabelText('Nombre');
+    fireEvent.change(nombre, { target: { value: 'Neqii personal' } });
+    expect(screen.getByText('Nequi · Color reconocido automáticamente')).toHaveStyle({ backgroundColor: '#200020' });
+    expect(screen.getByLabelText('Tipo de cuenta')).toHaveValue('billetera');
+    expect(nombre).toHaveValue('Neqii personal');
+    fireEvent.change(nombre, { target: { value: 'Vacaciones' } });
+    expect(screen.queryByText(/Color reconocido automáticamente/)).not.toBeInTheDocument();
+  });
+
   it('la pantalla de cuentas no muestra cajitas', () => {
     montar('cuenta');
 

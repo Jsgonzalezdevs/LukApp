@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.11.0', fecha: '2026-10-21', texto: 'Tus cuentas toman el color de su banco o billetera: reconocemos nombres como Nu Bank y Nequi personal, incluso con pequeños errores. Al crear una cuenta ves su color automáticamente. 🏦🎨' },
   { version: '9.10.0', fecha: '2026-10-21', texto: 'Crear un ahorro ahora está a la vista y solo pide nombre y saldo para empezar; las metas, el rendimiento y el ícono quedan como opciones para personalizarlo. 🐷✨' },
   { version: '9.9.1', fecha: '2026-10-21', texto: 'Volvimos al botón rosado para anotar por voz y dejamos el resumen de saldos e ingresos visible, sin desplegable. 🌸' },
   { version: '9.9.0', fecha: '2026-10-21', texto: 'Inicio muestra tus movimientos completos, puedes ocultar los próximos pagos desde Más y los accesos para anotar quedan más limpios. ✨' },

@@ -1,3 +1,4 @@
+import { ENTIDADES_FINANCIERAS, reconocerEntidad, estiloEntidad } from '../lib/entidadesFinancieras';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
@@ -97,6 +98,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const resumenes = resumenDeCajitas(propias, movimientos, transacciones);
   const esCuenta = tipo === 'cuenta';
   const esTarjeta = tipo === 'tarjeta';
+  const entidadReconocida = esCuenta || esTarjeta ? reconocerEntidad(nombre) : null;
   const nombreTipo = esTarjeta ? 'tarjeta de crédito' : esCuenta ? 'cuenta' : 'cajita';
   const total = resumenes.reduce((t, r) => t + r.saldoCop, 0);
   const disponibles = resumenes.filter((r) => !r.cajita.esInversion);
@@ -241,13 +243,34 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             <input
               id="cajita-nombre"
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              onChange={(e) => {
+                setNombre(e.target.value);
+                const entidad = reconocerEntidad(e.target.value);
+                if (esCuenta && entidad) setClaseCuenta(entidad.claseCuenta);
+              }}
+              list={esCuenta || esTarjeta ? 'entidades-financieras' : undefined}
+              aria-describedby={entidadReconocida ? 'entidad-reconocida' : undefined}
               placeholder={
                 esTarjeta ? 'Ej. Bancolombia Mastercard' : esCuenta ? COPY.cuentas.nombrePlaceholder : COPY.cajitas.nombrePlaceholder
               }
               autoFocus
               className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
             />
+
+            {esCuenta || esTarjeta ? (
+              <>
+                <datalist id="entidades-financieras">
+                  {ENTIDADES_FINANCIERAS.map((entidad) => <option key={entidad.nombre} value={entidad.nombre} />)}
+                </datalist>
+                <div aria-live="polite" className="mt-2">
+                  {entidadReconocida ? (
+                    <p id="entidad-reconocida" className="rounded-xl px-4 py-3 text-[15px] font-semibold" style={estiloEntidad(entidadReconocida)}>
+                      {entidadReconocida.nombre} · Color reconocido automáticamente
+                    </p>
+                  ) : <p className="text-[13px] text-[var(--fin-ink-faint)]">Escribe el nombre de tu banco o billetera para reconocer su color.</p>}
+                </div>
+              </>
+            ) : null}
 
             {esCuenta ? (
               <label

@@ -1,3 +1,4 @@
+import { entidadDeCuenta, estiloEntidad } from '../lib/entidadesFinancieras';
 import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
@@ -86,6 +87,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   const haptic = useHapticFeedback();
   const audio = useAudioFeedback();
   const { cajita, saldoCop, pct } = resumen;
+  const entidad = entidadDeCuenta(cajita);
   const guardado = useGuardadoFinanciero();
   const [accion, setAccion] = useState<Accion | null>(null);
   const otras = destinos.filter((d) => d.id !== cajita.id);
@@ -169,7 +171,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
   return (
     <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
       {guardado.error ? <p role="alert" className="text-sm text-[var(--fin-out)]">{guardado.error}</p> : null}
-      <div className="flex items-start gap-3">
+      <div className={`flex items-start gap-3 ${entidad ? 'rounded-xl p-3' : ''}`} style={entidad ? estiloEntidad(entidad) : undefined}>
         <span
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]"
           aria-hidden="true"

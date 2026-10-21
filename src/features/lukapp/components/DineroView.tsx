@@ -1,3 +1,4 @@
+import { entidadDeCuenta, estiloEntidad } from '../lib/entidadesFinancieras';
 import type { PanelAjustes } from '../sections';
 import { AccesosFunciones } from './AccesosFunciones';
 import React from 'react';
@@ -129,6 +130,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
  compitiendo entre ellas. */}
             <ul className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)]">
               {delGrupo.map((cajita, i) => {
+                const entidad = entidadDeCuenta(cajita);
                 const Icono = iconoDeCajita(cajita.icon);
                 const saldo = saldos.get(cajita.id) ?? 0;
                 const pasivo = ES_PASIVO[cajita.tipo];
@@ -143,8 +145,9 @@ export const DineroView: React.FC<DineroViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onAbrir(cajita)}
-                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--fin-soft)]"
+                      className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--fin-soft)] focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-current"
                       style={{
+                        ...(entidad ? estiloEntidad(entidad) : {}),
                         // La línea empieza donde empieza el texto, no en el
                         // borde: así se lee como una lista y no como filas
                         // sueltas. Es el patrón de Ajustes de iOS.
@@ -192,7 +195,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
 
                       <span
                         className="shrink-0 text-[17px] font-semibold tabular-nums"
-                        style={{ color: pasivo ? 'var(--fin-out)' : 'var(--fin-ink)' }}
+                        style={{ color: entidad ? entidad.texto : pasivo ? 'var(--fin-out)' : 'var(--fin-ink)' }}
                       >
                         {modoPrivacidad ? '$ ••••••' : formatCop(saldo)}
                       </span>
