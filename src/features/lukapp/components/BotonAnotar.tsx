@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Camera, Loader2, Mic, Plus, Search, Square } from 'lucide-react';
+import { Camera, Loader2, Mic, Keyboard, Search, Square } from 'lucide-react';
 import { useDictation } from '../hooks/useDictation';
 import { useImageOCR } from '../hooks/useImageOCR';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -171,6 +171,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         onCancelar={cancelarDictado}
         onTerminar={confirmarDictado}
         onContinuar={continuarConTexto}
+        onEscribir={() => { cancelarDictado(); onManual(); }}
       />
 
       {/* Hidden File Input for Receipt/Photo Scanning */}
@@ -209,7 +210,9 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         data-guia="anotar"
         aria-hidden={overlayAbierto}
         inert={overlayAbierto ? true : undefined}
-        className="pointer-events-auto flex items-center gap-2.5"
+        className="pointer-events-auto flex items-center gap-2"
+        role="group"
+        aria-label="Registrar movimiento"
       >
         <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-1.5">
           <button
@@ -221,9 +224,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             }}
             aria-label="Anotar a mano"
             title="Anotar a mano"
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
+            className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
-            <Plus className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            <Keyboard className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            <span className="text-[10px] font-semibold">Escribir</span>
           </button>
           <button
             type="button"
@@ -239,13 +243,14 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             aria-label="Escanear comprobante o foto"
             title="Escanear recibo o comprobante de Nequi / Bancolombia"
             disabled={isScanning}
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90 disabled:opacity-50"
+            className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90 disabled:opacity-50"
           >
             {isScanning ? (
               <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
             ) : (
               <Camera className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             )}
+            <span className="text-[10px] font-semibold">Foto</span>
           </button>
           <button
             type="button"
@@ -256,9 +261,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             }}
             aria-label="Buscar un movimiento"
             title="Buscar movimientos"
-            className="flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
+            className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Search className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
+            <span className="text-[10px] font-semibold">Buscar</span>
           </button>
         </div>
 
@@ -281,10 +287,10 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             aria-label={
               procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
             }
-            className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-white shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
+            className={`flex h-16 w-16 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-on-accent)] shadow-lg transition-transform active:scale-95 ${
               escuchando ? 'animate-pulse' : ''
             }`}
-            style={{ backgroundColor: 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
+            style={{ backgroundColor: 'var(--fin-accent)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
           >
             {procesando ? (
               <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
@@ -293,6 +299,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             ) : (
               <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
             )}
+            <span className="text-[10px] font-semibold">{procesando ? 'Procesando' : escuchando ? 'Terminar' : 'Voz'}</span>
           </RippleButton>
         </div>
       </div>

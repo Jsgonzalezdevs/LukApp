@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '7.0.0', fecha: '2026-10-20', texto: 'Escribir, Foto y Voz se reconocen por su nombre. La captura permite escribir el monto con teclado, muestra primero las categorías frecuentes y adapta el formulario al computador sin perder el teclado de LukApp en el móvil.' },
   { version: '6.0.0', fecha: '2026-10-20', texto: 'El inicio pone primero tu disponible, los próximos pagos y los cinco movimientos más recientes. El análisis y las categorías se despliegan cuando los necesitas, con acceso al historial completo y etiquetas para los cobros programados o estimados.' },
   { version: '5.1.0', fecha: '2026-10-20', texto: 'El inicio te guía para confirmar tus saldos y anotar el primer movimiento. Un saldo pendiente ya no aparece como cero ni genera recomendaciones de gasto; puedes confirmar cero si esa cuenta está vacía.' },
   { version: '5.0.0', fecha: '2026-10-20', texto: 'Tus operaciones financieras se guardan completas, conservan los cambios pendientes aunque cierres la app y distinguen lo guardado en este dispositivo de lo sincronizado. Registrar varios movimientos seguidos ya no oculta los anteriores, y los errores de guardado conservan el formulario para corregirlos.' },

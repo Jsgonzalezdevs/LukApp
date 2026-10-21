@@ -18,6 +18,7 @@ interface DictadoOverlayProps {
   onTerminar: () => void;
   /** Confirma el texto definitivo y abre la revisión del movimiento. */
   onContinuar: () => void;
+  onEscribir?: () => void;
 }
 
 /**
@@ -48,6 +49,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
   onCancelar,
   onTerminar,
   onContinuar,
+  onEscribir,
 }) => {
   const palabras = useMemo(() => texto.trim().split(/\s+/).filter(Boolean), [texto]);
 
@@ -82,6 +84,7 @@ export const DictadoOverlay: React.FC<DictadoOverlayProps> = ({
                 <p className="text-[19px] font-semibold leading-snug text-white">
                   {error ?? 'Algo no salió bien.'}
                 </p>
+                {onEscribir ? <button type="button" onClick={onEscribir} className="mt-2 rounded-[var(--fin-r-control)] bg-white px-4 py-3 font-semibold text-black">Escribir el movimiento</button> : null}
               </motion.div>
             ) : palabras.length > 0 ? (
               <div className="flex flex-col items-center gap-5">

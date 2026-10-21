@@ -7,7 +7,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 1 | Guardado completo, cola durable, estados de sincronización, errores visibles y deshacer seguro; probar fallos, reapertura y operaciones seguidas. | Verificado, V5.0.0 |
 | 2 | Primera cuenta y primer registro guiados; distinguir datos incompletos de saldo cero; revisar el inicio vacío. | Verificado, V5.1.0 |
 | 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Verificado, V6.0.0 |
-| 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Pendiente |
+| 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Verificado, V7.0.0 |
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Pendiente |
 | 6 | Iconos, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Pendiente |
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Pendiente |
@@ -46,7 +46,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 
 ## Siguiente paso
 
-Implementar y revisar el paso 4 con su propia versión; el objetivo completo de 16 pasos continúa activo.
+Implementar y revisar el paso 5 con su propia versión; el objetivo completo de 16 pasos continúa activo.
 
 ## Cierre del paso 2: V5.1.0
 
@@ -65,3 +65,13 @@ Implementar y revisar el paso 4 con su propia versión; el objetivo completo de 
 - Se conserva espacio al final para evitar que las barras flotantes impidan alcanzar el último contenido. Los desplegables permanecen en el flujo del documento, sin superponer listas o remonte de la página.
 - Revisión visual local: jerarquía del inicio, abrir/cerrar el desglose y navegación efectiva al calendario. Evidencia `/tmp/lukapp-v6-inicio.png`.
 - Suite completa: 125 archivos y 1.433 pruebas aprobadas. Tras el ajuste final de accesibilidad, las seis pruebas de inicio/pagos y la compilación volvieron a pasar. TypeScript y diff aprobados; lint conserva seis advertencias previas.
+
+## Cierre del paso 4: V7.0.0
+
+- La barra identifica Escribir, Foto, Buscar y Voz con texto visible; el micrófono usa el color de acción en vez del color de salida de dinero. El dictado fallido ofrece pasar a escritura.
+- Captura usa un formulario con ancho limitado en escritorio y campos para monto y descripción; Enter valida el guardado. En móvil conserva el teclado de LukApp y permite alternar con escritura directa del monto sin perder el valor.
+- Cinco categorías frecuentes del mismo tipo de movimiento aparecen primero, junto con la seleccionada; todas siguen accesibles. Los chips conservan orden al elegir y usan iconos del catálogo en vez de emojis.
+- Se mantiene el foco dentro del diálogo y se devuelve al botón de entrada al cerrar; Escape respeta la selección de cuenta y no cierra durante el guardado. Se corrigió la pérdida de foco al alternar teclados, detectada en la revisión visual.
+- Revisión visual local: abrir escritura, escribir 2.500 con el teclado del dispositivo, volver al teclado de LukApp conservando el monto, pulsar Escape y comprobar regreso al inicio sin guardar el dato de prueba. Evidencia `/tmp/lukapp-v7-captura.png`.
+- Suite completa: 125 archivos y 1.437 pruebas aprobadas. Después del ajuste final de foco, las 12 pruebas de captura/dictado y TypeScript/Vite volvieron a pasar. Lint conserva únicamente las seis advertencias previas y diff aprobado.
+- La transcripción y el OCR se verifican con las pruebas existentes y sus dobles; esta revisión visual no grabó audio del usuario ni envió documentos personales.

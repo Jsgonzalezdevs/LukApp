@@ -1,5 +1,6 @@
+import { useCapturaEscritorio } from '../hooks/useCapturaEscritorio';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown, Ear, Keyboard, Loader2, Mic, Sparkles, Star, Wallet, X } from 'lucide-react';
 import { tint } from '../types';
 import type { CategoriaClave, Transaction, TxKind } from '../types';
@@ -68,6 +69,26 @@ export const Captura: React.FC<CapturaProps> = ({
   esPrimeraPrueba = false,
   onReintentarVoz,
 }) => {
+  const escritorio = useCapturaEscritorio();
+  const quieto = useReducedMotion();
+  const dialogoRef = useRef<HTMLDivElement>(null);
+  const montoRef = useRef<HTMLInputElement>(null);
+  const focoAnterior = useRef(document.activeElement instanceof HTMLElement ? document.activeElement : null);
+  const [editandoMonto, setEditandoMonto] = useState(false);
+  const [mostrarTodasCategorias, setMostrarTodasCategorias] = useState(false);
+  useEffect(() => {
+    if (editandoMonto) montoRef.current?.focus();
+    else if (!montoRef.current) dialogoRef.current?.focus();
+  }, [editandoMonto]);
+  useEffect(() => {
+    if (!montoRef.current) dialogoRef.current?.focus();
+    const mantenerFoco = (evento: FocusEvent) => {
+      if (evento.target instanceof Node && !dialogoRef.current?.contains(evento.target)) dialogoRef.current?.focus();
+    };
+    document.addEventListener('focusin', mantenerFoco);
+    const anterior = focoAnterior.current;
+    return () => { document.removeEventListener('focusin', mantenerFoco); if (anterior?.isConnected) anterior.focus(); };
+  }, []);
   const [guardando, setGuardando] = useState(false);
   const [errorGuardado, setErrorGuardado] = useState(false);
   const guardandoRef = useRef(false);
@@ -81,6 +102,12 @@ export const Captura: React.FC<CapturaProps> = ({
   const [editandoTexto, setEditandoTexto] = useState(false);
   const [desplegarCuentas, setDesplegarCuentas] = useState(false);
   const [pidiendoCuenta, setPidiendoCuenta] = useState(false);
+  useEffect(() => {
+    if (!pidiendoCuenta) return;
+    const raiz = dialogoRef.current;
+    raiz?.querySelector<HTMLButtonElement>('[data-confirmar-cuenta] button')?.focus();
+    return () => { if (raiz?.isConnected) raiz.focus(); };
+  }, [pidiendoCuenta]);
   const [resultadoImagen, setResultadoImagen] = useState<TxKind | null>(null);
 
   // Una tarjeta es un medio de pago aunque su saldo sea una deuda. Incluirla
@@ -235,11 +262,11 @@ export const Captura: React.FC<CapturaProps> = ({
   // Frecuencia de categorías para ordenar las más usadas primero
   const frecuenciaCategorias = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const t of transacciones) {
+    for (const t of transacciones.filter((t) => t.kind === kind)) {
       counts.set(t.category, (counts.get(t.category) || 0) + 1);
     }
     return counts;
-  }, [transacciones]);
+  }, [transacciones, kind]);
 
   const opciones = useMemo(() => {
     const lista = catalogo.lista.some((c) => c.clave === category)
@@ -247,8 +274,6 @@ export const Captura: React.FC<CapturaProps> = ({
       : [...catalogo.lista, catalogo.de(category)];
 
     return [...lista].sort((a, b) => {
-      if (a.clave === category) return -1;
-      if (b.clave === category) return 1;
       const countA = frecuenciaCategorias.get(a.clave) || 0;
       const countB = frecuenciaCategorias.get(b.clave) || 0;
       if (countA !== countB) return countB - countA;
@@ -257,6 +282,12 @@ export const Captura: React.FC<CapturaProps> = ({
       return 0;
     });
   }, [catalogo, category, frecuenciaCategorias]);
+
+  const opcionesFrecuentes = opciones.slice(0, 5);
+  if (!opcionesFrecuentes.some((c) => c.clave === category)) {
+    opcionesFrecuentes[opcionesFrecuentes.length - 1] = catalogo.de(category);
+  }
+  const opcionesVisibles = mostrarTodasCategorias ? opciones : opcionesFrecuentes;
 
   const escribirDigitos = (nuevos: string) => {
     setDigitos((prev) => (prev + nuevos).replace(/^0+(?=\d)/, '').slice(0, 12));
@@ -315,11 +346,28 @@ export const Captura: React.FC<CapturaProps> = ({
   const IconoCuenta = cuentaSeleccionada ? iconoDeCajita(cuentaSeleccionada.icon) : Wallet;
 
   return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--fin-scrim)] md:p-6">
     <motion.div
-      initial={{ opacity: 0 }}
+      ref={dialogoRef}
+      tabIndex={-1}
+      onKeyDown={(evento) => {
+        if (evento.key === 'Escape' && !guardando) {
+          evento.stopPropagation();
+          if (pidiendoCuenta) setPidiendoCuenta(false);
+          else onCancel();
+        }
+        if (evento.key !== 'Tab') return;
+        const raiz = pidiendoCuenta ? dialogoRef.current?.querySelector('[data-confirmar-cuenta]') : dialogoRef.current;
+        const elementos = Array.from(raiz?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([type="file"]):not([disabled]), textarea:not([disabled])') ?? []);
+        const primero = elementos[0];
+        const ultimo = elementos[elementos.length - 1];
+        if (evento.shiftKey && document.activeElement === primero) { evento.preventDefault(); ultimo?.focus(); }
+        else if (!evento.shiftKey && document.activeElement === ultimo) { evento.preventDefault(); primero?.focus(); }
+      }}
+      initial={quieto ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.15 }}
-      className="fixed inset-0 z-50 flex flex-col bg-[var(--fin-bg)] px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] overflow-y-auto"
+      className="relative flex h-full w-full max-w-2xl flex-col overflow-y-auto overscroll-contain bg-[var(--fin-bg)] px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1rem)] md:max-h-[calc(100dvh-3rem)] md:rounded-[var(--fin-r-sheet)] md:px-8 md:shadow-2xl"
       role="dialog"
       aria-modal="true"
       aria-label="Anotar un movimiento"
@@ -335,14 +383,14 @@ export const Captura: React.FC<CapturaProps> = ({
           <div className="leading-snug">
             {parsed.raw ? (
               <>
-                <span className="font-bold">✨ ¡Prueba por voz reconocida!</span>
+                <span className="font-bold">Prueba por voz reconocida</span>
                 <p className="mt-1 text-[12px] opacity-90">
                   Detectamos «{parsed.raw}». Revisa los datos y pulsa <strong>Guardar</strong> para confirmar tu primer movimiento de prueba.
                 </p>
               </>
             ) : (
               <>
-                <span className="font-bold">📝 Tu primer movimiento de prueba</span>
+                <span className="font-bold">Tu primer movimiento de prueba</span>
                 <p className="mt-1 text-[12px] opacity-90">
                   Ingresa un monto y categoría para conocer la app. Podrás editarlo o borrarlo fácilmente con un toque.
                 </p>
@@ -366,6 +414,7 @@ export const Captura: React.FC<CapturaProps> = ({
           <div className="flex items-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-0.5">
             <button
               type="button"
+              disabled={guardando}
               onClick={() => {
                 haptic.trigger('selection');
                 audio.play('selection');
@@ -382,6 +431,7 @@ export const Captura: React.FC<CapturaProps> = ({
             </button>
             <button
               type="button"
+              disabled={guardando}
               onClick={() => {
                 haptic.trigger('selection');
                 audio.play('selection');
@@ -423,7 +473,7 @@ export const Captura: React.FC<CapturaProps> = ({
               if (onFoto) onFoto();
               else abrirSelectorFotos();
             }}
-            disabled={escaneandoFoto}
+            disabled={guardando || escaneandoFoto}
             aria-label="Escanear comprobante"
             title="Escanear recibo o comprobante"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] transition-colors hover:text-[var(--fin-ink)] disabled:opacity-50"
@@ -438,6 +488,7 @@ export const Captura: React.FC<CapturaProps> = ({
           <button
             type="button"
             onClick={onCancel}
+            disabled={guardando}
             aria-label="Cerrar sin guardar"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
           >
@@ -463,6 +514,7 @@ export const Captura: React.FC<CapturaProps> = ({
             {onReintentarVoz ? (
               <button
                 type="button"
+                disabled={guardando}
                 onClick={onReintentarVoz}
                 className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1.5 text-[12px] font-semibold text-[var(--fin-ink-soft)]"
               >
@@ -545,6 +597,7 @@ export const Captura: React.FC<CapturaProps> = ({
         <div className="relative mt-3">
           <button
             type="button"
+            disabled={guardando}
             onClick={() => setDesplegarCuentas(!desplegarCuentas)}
             className={`flex w-full items-center gap-2 rounded-[var(--fin-r-control)] px-3.5 py-2.5 text-[13px] font-semibold transition-all ${
               cuentaSeleccionada
@@ -640,28 +693,29 @@ export const Captura: React.FC<CapturaProps> = ({
 
       {/* El centro: Monto y Descripción */}
       <div className="mt-5 min-h-0 flex-1">
-        <div
-          className="tabular-nums"
-          style={{
-            font: 'var(--fin-t-cifra)',
-            letterSpacing: 'var(--fin-track-cifra)',
-            color: amountCop === null ? 'var(--fin-ink-ghost)' : colorMonto,
-          }}
-        >
-          {esGasto ? '−' : '+'}$
-          <AnimatedNumber
-            value={amountCop}
-            format={(n) => formatAmountInput(n)}
-          />
+        <div className="tabular-nums" style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)', color: amountCop === null ? 'var(--fin-ink-ghost)' : colorMonto }}>
+          <label className="block text-xs font-semibold text-[var(--fin-ink-soft)]" htmlFor="captura-monto">Monto en pesos colombianos</label>
+          {escritorio || editandoMonto ? <div className="mt-2 flex items-baseline gap-2">
+            <span aria-hidden="true">{esGasto ? '−' : '+'}$</span>
+            <input id="captura-monto" ref={montoRef} autoFocus={escritorio} inputMode="numeric" type="text" autoComplete="off" value={formatAmountInput(amountCop)}
+              onChange={(e) => setDigitos(e.target.value.replace(/\D/g, '').replace(/^0+(?=\d)/, '').slice(0, 12))}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); guardar(); } }}
+              disabled={guardando} placeholder="0" className="min-w-0 w-full border-0 bg-transparent p-0 tabular-nums text-inherit outline-none focus:ring-0" />
+          </div> : <button id="captura-monto" type="button" disabled={guardando} onClick={() => setEditandoMonto(true)} aria-label="Escribir el monto" className="mt-2 w-full text-left">
+            {esGasto ? '−' : '+'}$<AnimatedNumber value={amountCop} format={(n) => formatAmountInput(n)} />
+          </button>}
+          {!escritorio && !editandoMonto ? <p className="mt-1 text-xs font-normal text-[var(--fin-ink-soft)]">Toca el monto para escribirlo con tu teclado.</p> : null}
+          {!escritorio && editandoMonto ? <button type="button" onClick={() => setEditandoMonto(false)} className="mt-2 block text-sm font-semibold text-[var(--fin-ink-soft)]">Usar teclado de LukApp</button> : null}
         </div>
 
-        {editandoTexto ? (
+        {editandoTexto || escritorio ? (
           <textarea
             ref={descRef}
-            autoFocus
+            autoFocus={!escritorio}
+            disabled={guardando}
             value={description}
             onChange={(e) => handleDescriptionChange(e.target.value)}
-            onBlur={() => setEditandoTexto(false)}
+            onBlur={() => { if (!escritorio) setEditandoTexto(false); }}
             aria-label="Descripción"
             className="mt-3 w-full max-h-32 resize-none border-0 bg-transparent text-[20px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] outline-none focus:outline-none focus-visible:outline-none focus-visible:ring-0"
             placeholder="¿En qué fue? Ej: Almuerzo, Uber, Mercado..."
@@ -670,6 +724,7 @@ export const Captura: React.FC<CapturaProps> = ({
         ) : (
           <button
             type="button"
+            disabled={guardando}
             onClick={() => setEditandoTexto(true)}
             className="mt-3 block w-full truncate text-left text-[24px] font-normal text-[var(--fin-ink)]"
           >
@@ -684,7 +739,7 @@ export const Captura: React.FC<CapturaProps> = ({
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between px-1">
             <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--fin-ink-soft)]">
-              Categoría
+              Categoría · {catalogo.de(category).nombre}
             </span>
             {categoriaDetectada && (
               <span className="flex items-center gap-1 text-[11.5px] font-bold text-amber-500 bg-amber-500/10 px-2.5 py-0.5 rounded-full animate-pulse">
@@ -696,9 +751,9 @@ export const Captura: React.FC<CapturaProps> = ({
             data-no-swipe
             role="group"
             aria-label="Categorías"
-            className="-mx-5 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-2 scroll-px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="-mx-5 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-2 scroll-px-5 md:mx-0 md:flex-wrap md:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {opciones.map((entrada) => {
+            {opcionesVisibles.map((entrada) => {
               const activa = category === entrada.clave;
               return (
                 <button
@@ -711,6 +766,7 @@ export const Captura: React.FC<CapturaProps> = ({
                     setCategoriaDetectada(null);
                   }}
                   aria-pressed={activa}
+                  disabled={guardando}
                   className={`flex min-w-max shrink-0 snap-start items-center gap-2 whitespace-nowrap rounded-[var(--fin-r-pill)] border px-3 py-2 text-[13px] font-semibold transition-all ${
                     activa ? 'shadow-sm' : 'border-transparent hover:bg-[var(--fin-soft)]'
                   }`}
@@ -721,23 +777,24 @@ export const Captura: React.FC<CapturaProps> = ({
                   }}
                 >
                   <span className="shrink-0 text-[16px]" aria-hidden="true">
-                    {entrada.emoji}
+                    <entrada.Icono className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <span>{entrada.nombre}</span>
                 </button>
               );
             })}
           </div>
+          <button type="button" disabled={guardando} onClick={() => setMostrarTodasCategorias((v) => !v)} aria-expanded={mostrarTodasCategorias} className="mt-1 rounded-lg px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">{mostrarTodasCategorias ? 'Solo frecuentes' : 'Ver todas las categorías'}</button>
         </div>
       </div>
 
       {/* Abajo: Teclado numérico y guardar */}
       <div className="mt-4 flex shrink-0 flex-col gap-3 border-t border-[var(--fin-line)] pt-4">
-        <TecladoNumerico
+        {!escritorio && !editandoMonto ? <div inert={guardando || undefined}><TecladoNumerico
           compacto
           onDigito={escribirDigitos}
           onBorrar={() => setDigitos((prev) => prev.slice(0, -1))}
-        />
+        /></div> : null}
 
           {errorGuardado ? <p role="alert" className="text-sm text-[var(--fin-out)]">No se pudo guardar. Tus datos siguen aquí para que puedas intentarlo de nuevo.</p> : null}
         <div className="flex items-center gap-2">
@@ -745,6 +802,7 @@ export const Captura: React.FC<CapturaProps> = ({
             <button
               type="button"
               onClick={onFoto}
+              disabled={guardando}
               aria-label="Foto del recibo"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
             >
@@ -753,6 +811,7 @@ export const Captura: React.FC<CapturaProps> = ({
           ) : null}
           <button
             type="button"
+            disabled={guardando}
             onClick={() => setEditandoTexto(true)}
             aria-label="Escribir la descripción"
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"
@@ -782,6 +841,7 @@ export const Captura: React.FC<CapturaProps> = ({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.95 }}
               transition={{ duration: 0.2 }}
+              data-confirmar-cuenta
               className="w-full max-w-md rounded-t-[var(--fin-r-sheet)] sm:rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-5 shadow-2xl"
             >
               <div className="flex items-center justify-between pb-3 border-b border-[var(--fin-line)]">
@@ -791,7 +851,7 @@ export const Captura: React.FC<CapturaProps> = ({
                   </div>
                   <div>
                     <h3 className="text-[17px] font-bold text-[var(--fin-ink)]">
-                      ¿De qué cuenta salió?
+                      {esGasto ? '¿De qué cuenta salió?' : '¿En qué cuenta entró?'}
                     </h3>
                     <p className="text-[12px] text-[var(--fin-ink-soft)]">
                       Elige el banco para actualizar tu saldo:
@@ -858,5 +918,6 @@ export const Captura: React.FC<CapturaProps> = ({
         )}
       </AnimatePresence>
     </motion.div>
+    </div>
   );
 };
