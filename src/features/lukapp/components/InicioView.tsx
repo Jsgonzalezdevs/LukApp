@@ -2,7 +2,6 @@ import { IconoSimbolo } from './IconoSimbolo';
 import { ProximosPagosInicio } from './ProximosPagosInicio';
 import { construirObligacionesFuturas, type ObligacionFutura } from '../lib/obligacionesFuturas';
 import { preparacionInicio } from '../lib/preparacionInicio';
-import { PrimerosPasos } from './PrimerosPasos';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -47,6 +46,7 @@ interface InicioViewProps {
   onVerPagos?: () => void;
   obligaciones?: readonly ObligacionFutura[];
   movimientos: readonly Transaction[];
+  historial?: readonly Transaction[];
   conSenal?: ReadonlySet<string>;
   onAbrirMovimiento: (tx: Transaction) => void;
   onRepetirMovimiento?: (tx: Transaction) => void;
@@ -68,6 +68,7 @@ interface InicioViewProps {
   liquidez: ContextoFinanciero['liquidez'];
   entrada: import('../lib/motorFinanciero').EntradaMotorFinanciero;
   mostrarDecisiones?: boolean;
+  mostrarProximosPagos?: boolean;
   resumenPremium?: {
     disponibleDiarioCop: number;
     dineroLibreCop: number;
@@ -107,6 +108,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   onVerPagos,
   obligaciones,
   movimientos,
+  historial = movimientos,
   conSenal,
   onAbrirMovimiento,
   onRepetirMovimiento,
@@ -127,6 +129,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   liquidez,
   entrada,
   mostrarDecisiones,
+  mostrarProximosPagos = true,
   resumenPremium = null,
   onVerResumenPremium,
 }) => {
@@ -214,10 +217,10 @@ export const InicioView: React.FC<InicioViewProps> = ({
   }, [movimientos, catalogo]);
 
   // Movimientos visibles (filtrados por categoría si se seleccionó una)
-  const movimientosAMostrar = useMemo(() => {
-    const elegidos = categoriaFiltro ? movimientos.filter((m) => m.category === categoriaFiltro) : movimientos;
+  const historialAMostrar = useMemo(() => {
+    const elegidos = categoriaFiltro ? historial.filter((m) => m.category === categoriaFiltro) : historial;
     return [...elegidos].sort((a, b) => b.occurredOn.localeCompare(a.occurredOn) || b.createdAt.localeCompare(a.createdAt));
-  }, [movimientos, categoriaFiltro]);
+  }, [historial, categoriaFiltro]);
 
   return (
     <div className="flex flex-col pb-32">
@@ -295,7 +298,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
       {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
       <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
         <span className="inline-flex items-center gap-2 rounded-full bg-[var(--fin-soft)]/75 px-3 py-1 text-[13px] font-bold text-[var(--fin-ink-soft)] tracking-wider uppercase">
-          {preparacion.saldosCompletos ? 'Dinero disponible' : 'Saldo por completar'}
+          Dinero disponible
         </span>
 
         <div className="mt-2">
@@ -313,7 +316,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </button>
         </div>
         <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
-          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
+          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : onConfigurarCuenta ? <button type="button" onClick={() => onConfigurarCuenta(null)} className="font-medium text-[var(--fin-accent)]">Completar saldos</button> : null}
         </p>
 
         <details className="mt-2 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-sm">
@@ -357,9 +360,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </details>
       </div>
 
-      <PrimerosPasos estado={preparacion} onCuenta={onConfigurarCuenta} onAnotar={onAnotar} />
-
-      <ProximosPagosInicio obligaciones={pagos} hoy={entrada.hoy} privacidad={modoPrivacidad} onVerPagos={onVerPagos ?? onVerMes} />
+      {mostrarProximosPagos ? <ProximosPagosInicio obligaciones={pagos} hoy={entrada.hoy} privacidad={modoPrivacidad} onVerPagos={onVerPagos ?? onVerMes} /> : null}
 
       {/* ── 6. Si se activó filtro por categoría ─────────────────────────── */}
       {categoriaFiltro && (
@@ -379,14 +380,13 @@ export const InicioView: React.FC<InicioViewProps> = ({
       )}
 
       {/* ── 7. Lista de transacciones (Siempre visible) ──────────────────── */}
-      <section ref={recientesRef} tabIndex={-1} aria-label="Movimientos recientes" className="mt-5">
+      <section ref={recientesRef} tabIndex={-1} aria-label="Historial de movimientos" className="mt-5">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="font-semibold text-[var(--fin-ink)]">Movimientos recientes</h2>
-          <button type="button" onClick={onBuscar} className="rounded-[var(--fin-r-control)] px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]">Ver historial completo</button>
+          <h2 className="font-semibold text-[var(--fin-ink)]">Movimientos</h2>
+          <button type="button" onClick={onBuscar} aria-label="Buscar en el historial" className="rounded-[var(--fin-r-control)] px-2 py-2 text-sm font-semibold text-[var(--fin-ink-soft)]"><Search className="h-4 w-4" aria-hidden="true" /></button>
         </div>
-        <p className="mb-3 text-xs text-[var(--fin-ink-faint)]">{etiquetaPeriodo} · hasta 5 movimientos</p>
-        {movimientosAMostrar.length === 0 ? <p className="py-4 text-center text-sm text-[var(--fin-ink-soft)]">{categoriaFiltro ? `No hay movimientos de ${catalogo.de(categoriaFiltro).nombre} en ${etiquetaPeriodo}.` : preparacion.primerMovimiento ? `No hay movimientos en ${etiquetaPeriodo}.` : 'Aquí aparecerán tus gastos e ingresos cuando guardes el primero.'}</p> : <TransactionList
-          transactions={movimientosAMostrar.slice(0, 5)}
+        {historialAMostrar.length === 0 ? <p className="py-4 text-center text-sm text-[var(--fin-ink-soft)]">{categoriaFiltro ? `No hay movimientos de ${catalogo.de(categoriaFiltro).nombre}.` : 'Aquí aparecerán tus movimientos.'}</p> : <TransactionList
+          transactions={historialAMostrar}
           conSenal={conSenal}
           onAbrir={onAbrirMovimiento}
           onRepetir={onRepetirMovimiento}

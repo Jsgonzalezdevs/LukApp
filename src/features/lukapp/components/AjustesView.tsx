@@ -16,6 +16,8 @@ interface AjustesViewProps {
   onMostrarEfectivoSeparado: (valor: boolean) => void;
   mostrarDecisiones: boolean;
   onMostrarDecisiones: (valor: boolean) => void;
+  mostrarProximosPagos: boolean;
+  onMostrarProximosPagos: (valor: boolean) => void;
   /** Ausente mientras la guía ya está visible: no hay nada que volver a abrir. */
   onVolverAVerGuia?: () => void;
   esAdmin?: boolean;
@@ -115,6 +117,8 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
   onMostrarEfectivoSeparado,
   mostrarDecisiones,
   onMostrarDecisiones,
+  mostrarProximosPagos,
+  onMostrarProximosPagos,
   onVolverAVerGuia,
   esAdmin,
 }) => {
@@ -155,6 +159,14 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
     <section>
       <h2 className="px-1 pb-2 text-[13px] text-[var(--fin-ink-faint)]">La app</h2>
       <div className="overflow-hidden rounded-[var(--fin-r-card)] bg-[var(--fin-card)]">
+        <label className="flex cursor-pointer items-center gap-3 px-4 py-4" style={{ boxShadow: 'inset 0 -1px 0 0 var(--fin-line)' }}>
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] text-[20px] leading-none" aria-hidden="true"><IconoSimbolo valor="CalendarDays" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Próximos pagos en Inicio</span>
+            <span className="mt-1 block text-[15px] leading-snug text-[var(--fin-ink-soft)]">Mostrar u ocultar esta sección</span>
+          </span>
+          <input type="checkbox" checked={mostrarProximosPagos} onChange={(e) => onMostrarProximosPagos(e.target.checked)} className="h-6 w-6 shrink-0 accent-[var(--fin-in)]" />
+        </label>
         {/* Este interruptor vivía escondido dentro de una vista de contenido, que
  es el sitio donde nadie va a buscar un ajuste. */}
         <label

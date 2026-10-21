@@ -227,7 +227,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Keyboard className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            <span className="text-[13px] font-semibold">Escribir</span>
           </button>
           <button
             type="button"
@@ -250,7 +249,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             ) : (
               <Camera className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
             )}
-            <span className="text-[13px] font-semibold">Foto</span>
           </button>
           <button
             type="button"
@@ -264,7 +262,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             className="flex h-12 w-14 flex-col gap-1 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink)] transition-transform active:scale-90"
           >
             <Search className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
-            <span className="text-[13px] font-semibold">Buscar</span>
           </button>
         </div>
 
@@ -299,7 +296,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             ) : (
               <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
             )}
-            <span className="text-[13px] font-semibold">{procesando ? 'Procesando' : escuchando ? 'Terminar' : 'Voz'}</span>
           </RippleButton>
         </div>
       </div>

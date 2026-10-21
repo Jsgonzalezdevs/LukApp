@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useGuiaApp, useMostrarAhorro } from './usePreferencias';
+import { useGuiaApp, useMostrarAhorro, useMostrarProximosPagosInicio } from './usePreferencias';
 
 const CLAVE = 'finanzas:resumen:ahorro';
 
@@ -104,6 +104,26 @@ describe('useMostrarAhorro', () => {
     });
 
     expect(result.current.mostrarAhorro).toBe(true);
+  });
+});
+
+describe('useMostrarProximosPagosInicio', () => {
+  it('muestra los próximos pagos de forma predeterminada y recuerda si se ocultan', () => {
+    const primera = renderHook(() => useMostrarProximosPagosInicio());
+    expect(primera.result.current.mostrarProximosPagos).toBe(true);
+    act(() => primera.result.current.setMostrarProximosPagos(false));
+    primera.unmount();
+
+    expect(renderHook(() => useMostrarProximosPagosInicio()).result.current.mostrarProximosPagos).toBe(false);
+  });
+
+  it('se actualiza cuando otra pestaña cambia la preferencia', () => {
+    const { result } = renderHook(() => useMostrarProximosPagosInicio());
+    act(() => {
+      localStorage.setItem('finanzas:inicio:proximos-pagos', 'no');
+      window.dispatchEvent(new StorageEvent('storage', { key: 'finanzas:inicio:proximos-pagos', newValue: 'no' }));
+    });
+    expect(result.current.mostrarProximosPagos).toBe(false);
   });
 });
 

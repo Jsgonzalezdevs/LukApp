@@ -52,6 +52,7 @@ import {
   useMostrarAhorro,
   useMostrarEfectivoSeparado,
   useMostrarDecisiones,
+  useMostrarProximosPagosInicio,
   useNovedades,
   useOnboarding,
   useRecordatorioRacha,
@@ -316,6 +317,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const { mostrarAhorro, setMostrarAhorro } = useMostrarAhorro();
   const { mostrarEfectivoSeparado, setMostrarEfectivoSeparado } = useMostrarEfectivoSeparado();
   const { mostrarDecisiones, setMostrarDecisiones } = useMostrarDecisiones();
+  const { mostrarProximosPagos, setMostrarProximosPagos } = useMostrarProximosPagosInicio();
   const { modoPrivacidad, alternarPrivacidad } = useModoPrivacidad();
   const onboarding = useOnboarding();
   const gmf = useAjustesGmf();
@@ -1031,6 +1033,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onVerPagos={() => setSection('calendario')}
             obligaciones={contextoFinanciero.obligaciones}
             movimientos={delMes}
+            historial={transacciones}
             conSenal={conSenal}
             onAbrirMovimiento={setDetalle}
             onRepetirMovimiento={repetirMovimiento}
@@ -1052,6 +1055,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             liquidez={contextoFinanciero.liquidez}
             entrada={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
             mostrarDecisiones={mostrarDecisiones}
+            mostrarProximosPagos={mostrarProximosPagos}
             resumenPremium={resumenPremium}
             onVerResumenPremium={abrirResumenPremium}
           />
@@ -1165,6 +1169,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onMostrarEfectivoSeparado={setMostrarEfectivoSeparado}
             mostrarDecisiones={mostrarDecisiones}
             onMostrarDecisiones={setMostrarDecisiones}
+            mostrarProximosPagos={mostrarProximosPagos}
+            onMostrarProximosPagos={setMostrarProximosPagos}
             esAdmin={esAdmin}
             onVolverAVerGuia={
               guiaBasicaAbierta

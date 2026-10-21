@@ -18,6 +18,7 @@ import { activarNotificacionesPush, desactivarNotificacionesPush } from '../lib/
 const CLAVE_AHORRO = 'finanzas:resumen:ahorro';
 const CLAVE_EFECTIVO_SEPARADO = 'finanzas:resumen:efectivo-separado';
 const CLAVE_DECISIONES = 'finanzas:resumen:decisiones';
+const CLAVE_PROXIMOS_PAGOS_INICIO = 'finanzas:inicio:proximos-pagos';
 const CLAVE_MODO_PRIVACIDAD = 'finanzas:modo-privacidad';
 const CLAVE_RECORDATORIO_ACTIVO = 'finanzas:recordatorio-racha:activo';
 const CLAVE_RECORDATORIO_HORA = 'finanzas:recordatorio-racha:hora';
@@ -80,6 +81,8 @@ export const sincronizarDesdeSupabase = (metadata: Record<string, any>) => {
     setIf(CLAVE_AHORRO, metadata[CLAVE_AHORRO] ? 'si' : 'no');
   if (metadata[CLAVE_EFECTIVO_SEPARADO] !== undefined)
     setIf(CLAVE_EFECTIVO_SEPARADO, metadata[CLAVE_EFECTIVO_SEPARADO] ? 'si' : 'no');
+  if (metadata[CLAVE_PROXIMOS_PAGOS_INICIO] !== undefined)
+    setIf(CLAVE_PROXIMOS_PAGOS_INICIO, metadata[CLAVE_PROXIMOS_PAGOS_INICIO] ? 'si' : 'no');
   if (metadata[CLAVE_NOMBRE] !== undefined) setIf(CLAVE_NOMBRE, metadata[CLAVE_NOMBRE]);
   // Nunca se baja a 'no' desde la nube: si en cualquier dispositivo ya se
   // terminó la bienvenida, se terminó en todos.
@@ -180,6 +183,25 @@ export const useMostrarDecisiones = () => {
     guardarBooleano(CLAVE_DECISIONES, valor);
   }, []);
   return { mostrarDecisiones, setMostrarDecisiones };
+};
+
+export const useMostrarProximosPagosInicio = () => {
+  const [mostrarProximosPagos, setEstado] = useState(() =>
+    leerBooleano(CLAVE_PROXIMOS_PAGOS_INICIO, true),
+  );
+  const setMostrarProximosPagos = useCallback((valor: boolean) => {
+    setEstado(valor);
+    guardarBooleano(CLAVE_PROXIMOS_PAGOS_INICIO, valor);
+  }, []);
+  useEffect(() => {
+    const alCambiar = (e: StorageEvent) => {
+      if (e.key !== null && e.key !== CLAVE_PROXIMOS_PAGOS_INICIO) return;
+      setEstado(leerBooleano(CLAVE_PROXIMOS_PAGOS_INICIO, true));
+    };
+    window.addEventListener('storage', alCambiar);
+    return () => window.removeEventListener('storage', alCambiar);
+  }, []);
+  return { mostrarProximosPagos, setMostrarProximosPagos };
 };
 
 /**

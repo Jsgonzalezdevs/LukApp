@@ -59,12 +59,17 @@ describe('BotonAnotar — reutilizar el micrófono', () => {
     props.onDictado.mockClear();
   });
 
-  it('identifica las tres formas de registrar y abre la escritura desde su botón', () => {
+  it('mantiene los accesos con iconos y etiquetas accesibles, sin texto bajo ellos', () => {
     props.onManual.mockClear();
     render(<BotonAnotar {...props} />);
-    expect(screen.getByText('Escribir')).toBeInTheDocument();
-    expect(screen.getByText('Foto')).toBeInTheDocument();
-    expect(screen.getByText('Voz')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Anotar a mano' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Escanear comprobante o foto' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Buscar movimientos y funciones' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Anotar hablando' })).toBeInTheDocument();
+    expect(screen.queryByText('Escribir')).not.toBeInTheDocument();
+    expect(screen.queryByText('Foto')).not.toBeInTheDocument();
+    expect(screen.queryByText('Buscar')).not.toBeInTheDocument();
+    expect(screen.queryByText('Voz')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Anotar a mano' }));
     expect(props.onManual).toHaveBeenCalledOnce();
   });
