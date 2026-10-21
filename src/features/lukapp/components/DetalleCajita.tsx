@@ -414,7 +414,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]/80'
               }`}
             >
-              {esFavorita ? 'Desmarcar' : 'Activar cuenta principal'}
+              {esFavorita ? 'Desmarcar' : 'Activar cuenta principal ⭐'}
             </button>
           </div>
         </section>

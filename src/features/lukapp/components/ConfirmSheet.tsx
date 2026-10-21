@@ -183,7 +183,6 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
     }
   };
 
-  const IconoCategoria = catalogo.de(category).Icono;
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -209,7 +208,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
           <div>
             <h2 className="flex items-center gap-2 text-[17px] font-semibold tracking-tight text-[var(--fin-ink)] sm:text-[20px]">
               <span className="text-[20px] mr-1" aria-hidden="true">
-                <IconoCategoria className="h-5 w-5" aria-hidden="true" />
+                <span aria-hidden="true">{catalogo.de(category).emoji}</span>
               </span>
               {editando ? COPY.confirm.titleEditar : COPY.confirm.title}
             </h2>
@@ -356,7 +355,7 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
                   }}
                 >
                   <span className="text-[17px] shrink-0" aria-hidden="true">
-                    <entrada.Icono className="h-5 w-5" aria-hidden="true" />
+                    <span aria-hidden="true">{entrada.emoji}</span>
                   </span>
                   <span className="truncate">{entrada.nombre}</span>
                 </motion.button>

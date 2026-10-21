@@ -199,7 +199,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                       style={{ backgroundColor: 'var(--fin-soft)', color: 'var(--fin-ink-soft)' }}
                       aria-hidden="true"
                     >
-                      <entrada.Icono className="h-5 w-5" aria-hidden="true" />
+                      <span aria-hidden="true">{entrada.emoji}</span>
                     </span>
 
                     <span className="min-w-0 flex-1">

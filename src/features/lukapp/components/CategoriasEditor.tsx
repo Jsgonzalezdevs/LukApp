@@ -6,6 +6,7 @@ import { Check, Lock, Pencil, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import type { Transaction } from '../types';
 import {
   COLORES_CATEGORIA,
+  EMOJIS_POPULARES_CATEGORIA,
   ICONOS_CATEGORIA,
   iconoDeCategoria,
   sugerirIconoCategoria,
@@ -28,6 +29,53 @@ export interface CategoriasEditorProps {
 /** 16px minimum: anything smaller makes iOS zoom the page in on focus. */
 const CAMPO =
   'w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
+
+const SelectorEmoji: React.FC<{ valor: string; onCambiar: (v: string) => void }> = ({
+  valor,
+  onCambiar,
+}) => (
+  <div>
+    <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto pr-1" role="radiogroup" aria-label="Emoji">
+      {EMOJIS_POPULARES_CATEGORIA.map((emoji) => {
+        const activo = valor === emoji;
+        return (
+          <button
+            key={emoji}
+            type="button"
+            role="radio"
+            aria-checked={activo}
+            aria-label={`Emoji ${emoji}`}
+            onClick={() => onCambiar(emoji)}
+            className={`flex h-11 w-11 items-center justify-center rounded-[var(--fin-r-control)] border text-[20px] transition-all ${
+              activo
+                ? 'border-[var(--fin-ink)] bg-[var(--fin-soft)] scale-105 shadow-xs ring-2 ring-[var(--fin-ink)]/20'
+                : 'border-[var(--fin-line)] bg-[var(--fin-card)] hover:border-[var(--fin-ink-faint)]'
+            }`}
+          >
+            {emoji}
+          </button>
+        );
+      })}
+    </div>
+
+    <div className="mt-2.5 flex items-center gap-2">
+      <input
+        type="text"
+        value={valor}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v.trim()) onCambiar(v.trim());
+        }}
+        aria-label="Emoji personalizado"
+        placeholder="O escribe tu propio emoji (ej: 🍕, 🚀, 🐱)"
+        className="flex-1 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[17px] text-[var(--fin-ink)] focus:outline-hidden focus:ring-2 focus:ring-[var(--fin-ink)]"
+      />
+      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--fin-soft)] text-[20px] border border-[var(--fin-line)] shrink-0">
+        {valor || '🏷️'}
+      </span>
+    </div>
+  </div>
+);
 
 const SelectorIcono: React.FC<{ valor: string; onCambiar: (v: string) => void }> = ({
   valor,
@@ -92,8 +140,7 @@ const Formulario: React.FC<{
 }> = ({ inicial, onGuardar, onCancelar }) => {
   const [nombre, setNombre] = useState(inicial?.nombre ?? '');
   const [icon, setIcon] = useState(inicial?.icon ?? 'Package');
-  const emoji = inicial?.emoji ?? sugerirEmojiCategoria(nombre);
-  const IconoElegido = iconoDeCategoria(icon);
+  const [emoji, setEmoji] = useState(inicial?.emoji ?? sugerirEmojiCategoria(inicial?.nombre ?? ''));
   const [color, setColor] = useState<string>(inicial?.color ?? COLORES_CATEGORIA[0]);
   const [manual, setManual] = useState(inicial !== undefined);
 
@@ -103,6 +150,7 @@ const Formulario: React.FC<{
     setNombre(valor);
     if (!manual) {
       setIcon(sugerirIconoCategoria(valor));
+      setEmoji(sugerirEmojiCategoria(valor));
     }
   };
 
@@ -110,6 +158,11 @@ const Formulario: React.FC<{
   const cambiarIconoManual = (valor: string) => {
     setManual(true);
     setIcon(valor);
+  };
+
+  const cambiarEmojiManual = (valor: string) => {
+    setManual(true);
+    setEmoji(valor);
   };
 
   return (
@@ -131,7 +184,7 @@ const Formulario: React.FC<{
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] text-[28px] shadow-xs"
           style={{ backgroundColor: tint(color, 0.2) }}
         >
-          <IconoElegido className="h-6 w-6" aria-hidden="true" />
+          <span aria-hidden="true">{emoji || '🏷️'}</span>
         </span>
         <div className="flex-1 min-w-0">
           <label
@@ -152,7 +205,12 @@ const Formulario: React.FC<{
         </div>
       </div>
 
-      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Ícono</p>
+      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Emoji</p>
+      <div className="mt-2">
+        <SelectorEmoji valor={emoji} onCambiar={cambiarEmojiManual} />
+      </div>
+
+      <p className="mt-4 text-[15px] font-semibold text-[var(--fin-ink-soft)]">Ícono alternativo</p>
       <div className="mt-2">
         <SelectorIcono valor={icon} onCambiar={cambiarIconoManual} />
       </div>
@@ -258,7 +316,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
             );
           }
 
-          const IconoActual = iconoDeCategoria(cat.icon);
+          const emojiActual = cat.emoji || sugerirEmojiCategoria(cat.nombre);
 
           return (
             <motion.li
@@ -275,7 +333,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] text-[20px] select-none"
                 style={{ backgroundColor: tint(cat.color, 0.18) }}
               >
-                <IconoActual className="h-5 w-5" aria-hidden="true" />
+                <span aria-hidden="true">{emojiActual}</span>
               </span>
 
               <span className="min-w-0 flex-1">
@@ -335,7 +393,7 @@ export const CategoriasEditor: React.FC<CategoriasEditorProps> = ({
             key={cat.clave}
             className="flex items-center gap-2 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[15px] font-medium text-[var(--fin-ink)] shadow-xs"
           >
-            <span className="text-[17px]"><cat.Icono className="h-4 w-4" aria-hidden="true" /></span>
+            <span className="text-[17px]"><span aria-hidden="true">{cat.emoji}</span></span>
             <span>{cat.nombre}</span>
           </li>
         ))}

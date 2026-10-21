@@ -112,7 +112,10 @@ npm run build    # tsc -b && vite build
 - **Todo en español**: nombres de variables, funciones, comentarios y textos.
 - **Los comentarios explican el porqué**, no el qué. Si un comentario describe
   lo que la línea siguiente ya dice, sobra.
-- **Nada de emojis** en la interfaz. La marca tiene su propio arte.
+- **Los emojis son parte de la identidad juvenil de LukApp**: conservarlos en
+  categorías, ajustes, espacios compartidos y mensajes con propósito; acompañarlos
+  con textos claros. Los controles de acción mantienen iconos reconocibles y el
+  arte oficial de marca se conserva.
 - **El color significa algo**: verde entró, rojo salió. Gastarlo en decorar
   quita ese significado.
 - **La marca**: el logo y el manual están en `public/brand/`. Los iconos no se

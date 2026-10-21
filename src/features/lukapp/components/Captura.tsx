@@ -779,7 +779,7 @@ export const Captura: React.FC<CapturaProps> = ({
                   }}
                 >
                   <span className="shrink-0 text-[17px]" aria-hidden="true">
-                    <entrada.Icono className="h-4 w-4" aria-hidden="true" />
+                    <span aria-hidden="true">{entrada.emoji}</span>
                   </span>
                   <span>{entrada.nombre}</span>
                 </button>

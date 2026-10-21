@@ -87,7 +87,7 @@ export const DetalleMovimiento: React.FC<DetalleMovimientoProps> = ({
             style={{ backgroundColor: 'var(--fin-soft)', color: 'var(--fin-ink-soft)' }}
             aria-hidden="true"
           >
-            <entrada.Icono className="h-5 w-5" aria-hidden="true" />
+            <span aria-hidden="true">{entrada.emoji}</span>
           </span>
 
           <p

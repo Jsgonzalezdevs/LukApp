@@ -128,7 +128,7 @@ export const MultiCapturaModal: React.FC<MultiCapturaModalProps> = ({
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--fin-r-control)] font-bold text-white shadow-sm"
                       style={{ backgroundColor: catObj.color || (esGasto ? 'var(--fin-out)' : 'var(--fin-in)') }}
                     >
-                      <IconoSimbolo valor="Wallet" />
+                      <IconoSimbolo valor={esGasto ? '💸' : '💰'} />
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-[15px] font-bold text-[var(--fin-ink)]">

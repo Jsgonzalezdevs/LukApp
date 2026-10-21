@@ -336,7 +336,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                       {progreso.ritmoMensualCop !== null ? (
                         <div className="mt-3 flex flex-col gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-card)]/80 border border-[var(--fin-line)]/50 p-3">
                           <div className="flex items-center justify-between text-[13px]">
-                            <span className="text-[var(--fin-ink-soft)] font-medium">Aparta por quincena:</span>
+                            <span className="text-[var(--fin-ink-soft)] font-medium">💡 Aparta por quincena:</span>
                             <span className="font-bold tabular-nums text-[var(--fin-warn-ink)]">
                               {formatCop(progreso.ritmoQuincenalCop ?? Math.ceil(progreso.ritmoMensualCop / 2))}
                             </span>

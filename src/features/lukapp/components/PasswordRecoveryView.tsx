@@ -117,7 +117,7 @@ export const PasswordRecoveryView: React.FC<PasswordRecoveryViewProps> = ({ emai
       )}
 
       <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4 text-[13px] text-[var(--fin-ink-soft)]">
-        <p className="font-semibold text-[var(--fin-ink)] mb-2">Consejos:</p>
+        <p className="font-semibold text-[var(--fin-ink)] mb-2">💡 Consejos:</p>
         <ul className="space-y-1.5">
           <li>• Verifica tu carpeta de spam si no ves el correo</li>
           <li>• El enlace expira en 24 horas</li>

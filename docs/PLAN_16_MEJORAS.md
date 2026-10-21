@@ -9,7 +9,7 @@ Solicitud: implementar los 16 puntos acordados, revisar cada uno, corregir lo qu
 | 3 | Inicio centrado en disponible, próximos pagos y movimientos; detalles desplegables sin saltos. | Verificado, V6.0.0 |
 | 4 | Voz, foto y escritura claras; categorías frecuentes; formulario y teclado adecuados para móvil y escritorio. | Verificado, V7.0.0 |
 | 5 | Metas en Dinero, pagos/calendario en Mes e importación en cuentas; Más para ajustes; búsqueda de funciones y navegación que conserva contexto. | Verificado, V8.0.0 |
-| 6 | Iconos, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Verificado, V8.0.1 |
+| 6 | Emojis de identidad, iconos de acción, tipografía, espacios, tarjetas, botones y colores coherentes con CLAUDE.md; comprobar legibilidad y estados. | Verificado, V8.0.2 |
 | 7 | Animaciones comunes y breves para interacción, paneles y cambios; respetar movimiento reducido y conservar estabilidad. | Pendiente |
 | 8 | Importación PDF/imagen/Excel/CSV; revisión de duplicados y efecto en saldo; modo histórico que conserva saldo actual. | Pendiente |
 | 9 | Bandeja de movimientos/documentos/transferencias dudosos con resolución clara y trazable. | Pendiente |
@@ -98,3 +98,9 @@ El siguiente paso son las animaciones comunes (7); los pasos 7 a 16 continúan p
 - La revisión visual encontró y corrigió un solapamiento al aumentar texto/controles: Captura ahora conserva la altura natural del contenido, permite desplazarlo completo y mantiene Cerrar en el encabezado. Las leyendas pequeñas del monto no heredan el espaciado de la cifra grande.
 - Se revisaron Ajustes en claro y oscuro, Captura con desplazamiento hasta Guardar y el editor de categorías con foco/selección. La preferencia de tema local volvió a Sistema; no se guardaron datos de prueba. Evidencias: `/tmp/lukapp-v8-0-1-captura-claro.png` y `/tmp/lukapp-v8-0-1-categorias-oscuro.png`.
 - Verificación final: 128 archivos y 1.443 pruebas aprobadas; TypeScript/Vite y diff aprobados. Lint conserva seis advertencias previas. Frontend cerrado localmente, sin publicación.
+
+## Corrección de identidad, V8.0.2
+
+- Por indicación del usuario, los emojis forman parte de la identidad juvenil: se recuperan en categorías, captura, movimientos, inicio, ajustes, rachas y espacios compartidos.
+- Se restaura el selector de emojis y se conservan los emojis personalizados guardados, junto con las mejoras de contraste, tipografía y controles del paso 6.
+- Verificación: 21 pruebas aprobadas (categorías, captura y versión), TypeScript y compilación Vite correctos; lint conserva seis advertencias anteriores. Revisión visual en Ajustes y selección de emoji en Categorías sin guardar datos de prueba.

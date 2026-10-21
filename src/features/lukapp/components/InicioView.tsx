@@ -473,7 +473,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
                     backgroundColor: 'var(--fin-soft)',
                   }}
                 >
-                  <cat.info.Icono className="h-5 w-5" aria-hidden="true" />
+                  <span aria-hidden="true">{cat.emoji}</span>
                 </div>
 
                 {/* Monto y nombre inferior */}

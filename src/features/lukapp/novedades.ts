@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '8.0.2', fecha: '2026-10-20', texto: 'Los emojis siguen siendo parte de LukApp: vuelven a categorías, ajustes, rachas y espacios compartidos, y puedes elegir el emoji de tus categorías. Conservamos los textos legibles y los controles fáciles de tocar.' },
   { version: '8.0.1', fecha: '2026-10-20', texto: 'Los iconos, controles y tarjetas comparten un mismo estilo. Los textos secundarios se leen mejor en claro y oscuro, los botones son más fáciles de tocar y los colores de entrada y salida quedan reservados para tus movimientos.' },
   { version: '8.0.0', fecha: '2026-10-20', texto: 'Las metas y las importaciones están en Dinero; los pagos fijos y la proyección, en Mes. Más reúne ajustes y datos. El buscador encuentra funciones además de movimientos y cerrar una herramienta te devuelve a su sección.' },
   { version: '7.0.0', fecha: '2026-10-20', texto: 'Escribir, Foto y Voz se reconocen por su nombre. La captura permite escribir el monto con teclado, muestra primero las categorías frecuentes y adapta el formulario al computador sin perder el teclado de LukApp en el móvil.' },

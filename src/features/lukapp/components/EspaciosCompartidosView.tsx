@@ -24,9 +24,9 @@ interface EspaciosCompartidosViewProps {
   onAnotarEnLukApp?: (montoCop: number, descripcion: string, categoria: string) => void;
 }
 
-const NOMBRES_ICONO: Record<string, string> = { '🥑': 'Mercado', '🏠': 'Hogar', '✈️': 'Viaje', '🍕': 'Comida', '☕': 'Café', '🚗': 'Carro', '🎁': 'Regalo', '🏖️': 'Vacaciones', '👤': 'Persona', '😊': 'Sonrisa', '❤️': 'Corazón', '🐱': 'Gato', '🐶': 'Perro', ShoppingCart: 'Mercado', Home: 'Hogar', Plane: 'Viaje', Utensils: 'Comida', Coffee: 'Café', Car: 'Carro', Gift: 'Regalo', Target: 'Meta', UserRound: 'Persona', Smile: 'Sonrisa', Heart: 'Corazón', Cat: 'Gato', Dog: 'Perro' };
+const NOMBRES_ICONO: Record<string, string> = { '🥑': 'Mercado', '🏠': 'Hogar', '✈️': 'Viaje', '🍕': 'Comida', '☕': 'Café', '🚗': 'Carro', '🎁': 'Regalo', '🏖️': 'Vacaciones', '👩🏼': 'Mujer', '👦🏼': 'Hombre joven', '👧🏽': 'Mujer joven', '🧑🏻': 'Persona joven', '👩🏻': 'Mujer de piel clara', '🧔🏽': 'Persona con barba', '👱🏼‍♀️': 'Mujer rubia', '👤': 'Persona', '😊': 'Sonrisa', '❤️': 'Corazón', '🐱': 'Gato', '🐶': 'Perro', ShoppingCart: 'Mercado', Home: 'Hogar', Plane: 'Viaje', Utensils: 'Comida', Coffee: 'Café', Car: 'Carro', Gift: 'Regalo', Target: 'Meta', UserRound: 'Persona', Smile: 'Sonrisa', Heart: 'Corazón', Cat: 'Gato', Dog: 'Perro' };
 const ICONOS_ESPACIO = ['🥑', '🏠', '✈️', '🍕', '☕', '🚗', '🎁', '🏖️'];
-const ICONOS_PERSONA = ['👤', '😊', '❤️', '🐱', '🐶'];
+const ICONOS_PERSONA = ['👤', '😊', '❤️', '👩🏼', '👦🏼', '👧🏽', '🧑🏻', '👩🏻', '🧔🏽', '👱🏼‍♀️', '🐶', '🐱'];
 
 export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = ({
   onCerrar,
@@ -377,7 +377,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="text-[17px]">
-                            <IconoSimbolo valor="UserRound" />
+                            <IconoSimbolo valor={pagadoPorTi ? integrantes[0]?.emoji : integrantes[1]?.emoji} />
                           </span>
                           <div className="min-w-0">
                             <div className="font-semibold text-[var(--fin-ink)] truncate">
@@ -583,7 +583,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                         <button
                           key={emoji}
                           aria-label={`Icono ${NOMBRES_ICONO[emoji]}`}
-                          aria-pressed={nuevoIcono === emoji || emojiPareja === emoji}
+                          aria-pressed={nuevoIcono === emoji}
                           type="button"
                           onClick={() => setNuevoIcono(emoji)}
                           className={`h-9 w-9 flex items-center justify-center rounded-[var(--fin-r-control)] text-[17px] transition-transform ${
@@ -620,7 +620,7 @@ export const EspaciosCompartidosView: React.FC<EspaciosCompartidosViewProps> = (
                         <button
                           key={emoji}
                           aria-label={`Icono ${NOMBRES_ICONO[emoji]}`}
-                          aria-pressed={nuevoIcono === emoji || emojiPareja === emoji}
+                          aria-pressed={emojiPareja === emoji}
                           type="button"
                           onClick={() => setEmojiPareja(emoji)}
                           className={`h-9 w-9 flex items-center justify-center rounded-[var(--fin-r-control)] text-[17px] transition-transform ${
