@@ -1,11 +1,10 @@
-import { Landmark, Smartphone, Star, Wallet } from 'lucide-react';
-import { createElement } from 'react';
+import { Star } from 'lucide-react';
 import type { Cajita } from '../data/modelos';
 import { etiquetaTipoCajita } from '../data/modelos';
-import { iconoDeCajita } from '../cajitaIconos';
 import { entidadDeCuenta, estiloEntidad } from '../lib/entidadesFinancieras';
 import { formatCop } from '../lib/formatCop';
 import './FilaCuenta.css';
+import { IconoCuenta } from './IconoCuenta';
 
 interface FilaCuentaProps {
   cuenta: Cajita;
@@ -17,15 +16,11 @@ interface FilaCuentaProps {
 
 export const FilaCuenta = ({ cuenta, saldo, privacidad, principal, onAbrir }: FilaCuentaProps) => {
   const entidad = entidadDeCuenta(cuenta);
-  const clase = cuenta.claseCuenta ?? entidad?.claseCuenta;
-  const Icono = cuenta.icon === 'PiggyBank'
-    ? clase === 'efectivo' ? Wallet : clase === 'billetera' ? Smartphone : Landmark
-    : iconoDeCajita(cuenta.icon);
 
   return (
     <button type="button" onClick={() => onAbrir(cuenta)} className="cuenta-fila">
       <span className="cuenta-identidad" style={entidad ? estiloEntidad(entidad) : undefined}>
-        <span className="cuenta-icono" aria-hidden="true">{createElement(Icono, { size: 19, strokeWidth: 1.8 })}</span>
+        <span className="cuenta-icono" aria-hidden="true"><IconoCuenta cuenta={cuenta} tamano={22} /></span>
         <span className="cuenta-etiquetas">
           <span className="cuenta-nombre">{cuenta.nombre}</span>
           <span className="cuenta-tipo">{etiquetaTipoCajita(cuenta)}</span>

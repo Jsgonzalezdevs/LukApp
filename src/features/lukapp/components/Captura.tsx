@@ -6,7 +6,7 @@ import { AlertTriangle, ArrowDownRight, ArrowUpRight, Camera, Check, ChevronDown
 import type { CategoriaClave, Transaction, TxKind } from '../types';
 import { etiquetaTipoCajita, type Cajita } from '../data/modelos';
 import type { CategoriaPersonal } from '../categorias';
-import { iconoDeCajita } from '../cajitaIconos';
+import { IconoCuenta } from './IconoCuenta';
 import { formatAmountInput } from '../lib/formatCop';
 import { parseTransaction } from '../lib/parseTransaction';
 import { LEXICO_VACIO } from '../lib/aprendizaje';
@@ -343,7 +343,6 @@ export const Captura: React.FC<CapturaProps> = ({
   };
 
   const colorMonto = esGasto ? 'var(--fin-out)' : 'var(--fin-in)';
-  const IconoCuenta = cuentaSeleccionada ? iconoDeCajita(cuentaSeleccionada.icon) : Wallet;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--fin-scrim)] md:p-6">
@@ -608,7 +607,9 @@ export const Captura: React.FC<CapturaProps> = ({
                 : 'border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)] hover:bg-[var(--fin-warn-bg)]'
             }`}
           >
-            <IconoCuenta className={`h-4 w-4 shrink-0 ${cuentaSeleccionada ? 'text-[var(--fin-ink-soft)]' : 'text-[var(--fin-warn-ink)]'}`} />
+            {cuentaSeleccionada
+              ? <IconoCuenta cuenta={cuentaSeleccionada} tamano={18} className="text-[var(--fin-ink-soft)]" />
+              : <Wallet className="h-4 w-4 shrink-0 text-[var(--fin-warn-ink)]" />}
             <span className="min-w-0 flex-1 truncate text-left">
               {cuentaSeleccionada ? cuentaSeleccionada.nombre : '¿Desde qué cuenta o tarjeta?'}
             </span>
@@ -634,7 +635,6 @@ export const Captura: React.FC<CapturaProps> = ({
                 </p>
                 <div className="mt-1 flex flex-col gap-1 max-h-52 overflow-y-auto">
                   {cuentasActivas.map((c) => {
-                    const Icon = iconoDeCajita(c.icon);
                     const activa = c.id === cuentaId;
                     return (
                       <button
@@ -653,7 +653,7 @@ export const Captura: React.FC<CapturaProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-3 truncate">
-                          <Icon className="h-4 w-4 shrink-0 text-[var(--fin-ink-soft)]" />
+                          <IconoCuenta cuenta={c} tamano={18} className="text-[var(--fin-ink-soft)]" />
                           <span className="min-w-0 truncate">
                             <span className="block truncate">{c.nombre}</span>
                             <span className="block text-[13px] font-normal text-[var(--fin-ink-faint)]">
@@ -872,7 +872,6 @@ export const Captura: React.FC<CapturaProps> = ({
 
               <div className="mt-4 flex flex-col gap-2 max-h-[55vh] overflow-y-auto">
                 {cuentasActivas.map((c) => {
-                  const Icon = iconoDeCajita(c.icon);
                   return (
                     <button
                       key={c.id}
@@ -886,7 +885,7 @@ export const Captura: React.FC<CapturaProps> = ({
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--fin-card)] text-[var(--fin-ink)]">
-                          <Icon className="h-5 w-5" />
+                          <IconoCuenta cuenta={c} tamano={22} />
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-bold text-[var(--fin-ink)]">

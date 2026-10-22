@@ -1,3 +1,4 @@
+import { IconoCuenta } from './IconoCuenta';
 import { ENTIDADES_FINANCIERAS, reconocerEntidad, estiloEntidad } from '../lib/entidadesFinancieras';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
@@ -264,7 +265,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 </datalist>
                 <div aria-live="polite" className="mt-2">
                   {entidadReconocida ? (
-                    <p id="entidad-reconocida" className="rounded-xl px-4 py-3 text-[15px] font-semibold" style={estiloEntidad(entidadReconocida)}>
+                    <p id="entidad-reconocida" className="flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-semibold" style={estiloEntidad(entidadReconocida)}>
+                      <IconoCuenta cuenta={{ nombre, tipo, icon, claseCuenta: esCuenta ? claseCuenta : null }} tamano={24} />
                       {entidadReconocida.nombre} · Color reconocido automáticamente
                     </p>
                   ) : <p className="text-[13px] text-[var(--fin-ink-faint)]">Escribe el nombre de tu banco o billetera para reconocer su color.</p>}

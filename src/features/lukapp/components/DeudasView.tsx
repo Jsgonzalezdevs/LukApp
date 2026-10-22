@@ -1,3 +1,4 @@
+import { IconoCuenta } from './IconoCuenta';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
@@ -121,7 +122,6 @@ const DeudaCard: React.FC<{
   const pagoDelMes = cajita.tipo === 'tarjeta'
     ? resumenTarjeta(cajita, saldoCop, transacciones, movimientos, monthKey(bogotaDate()), bogotaDate()).pagoSiguienteCop
     : 0;
-  const Icono = iconoDeCajita(cajita.icon);
   const leer = accion === 'saldo' ? parseSaldoInput : parseAmountInput;
   const valor = leer(texto);
 
@@ -196,7 +196,7 @@ const DeudaCard: React.FC<{
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)]"
           aria-hidden="true"
         >
-          <Icono className="h-6 w-6 text-[var(--fin-out)]" strokeWidth={1.75} />
+          <IconoCuenta cuenta={cajita} tamano={24} className="text-[var(--fin-out)]" trazo={1.75} />
         </span>
 
         <div className="min-w-0 flex-1">

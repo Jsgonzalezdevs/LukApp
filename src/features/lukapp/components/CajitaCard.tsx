@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Trash2 } from 'lucide-react';
 import { COPY } from '../copy';
-import { iconoDeCajita } from '../cajitaIconos';
+import { IconoCuenta } from './IconoCuenta';
 import type { CajitaMovKind } from '../data/modelos';
 import { CAJITA_MOV_ICON, CAJITA_MOV_LABELS } from '../data/modelos';
 import type { ResumenCajita } from '../lib/cajitas';
@@ -176,10 +176,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]"
           aria-hidden="true"
         >
-          {(() => {
-            const Icon = iconoDeCajita(cajita.icon);
-            return <Icon className="h-6 w-6 text-[var(--fin-ink-soft)]" strokeWidth={1.5} />;
-          })()}
+          <IconoCuenta cuenta={cajita} tamano={26} className="text-[var(--fin-ink-soft)]" trazo={1.5} />
         </span>
 
         <div className="min-w-0 flex-1">

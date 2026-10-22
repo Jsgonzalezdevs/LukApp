@@ -6,13 +6,13 @@ import { Star } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { ES_PASIVO, etiquetaTipoCajita } from '../data/modelos';
-import { iconoDeCajita } from '../cajitaIconos';
 import { idsPasivos, patrimonio, saldosPorCajita, totalPorTipo } from '../lib/cajitas';
 import { formatCop } from '../lib/formatCop';
 import { AnimatedNumber } from './AnimatedNumber';
 import { resumenTarjeta } from '../lib/tarjetas';
 import { monthKey, bogotaDate } from '../lib/localDate';
 import { FilaCuenta } from './FilaCuenta';
+import { IconoCuenta } from './IconoCuenta';
 import { componerCuentas } from '../lib/composicionCuentas';
 
 interface DineroViewProps {
@@ -134,7 +134,6 @@ export const DineroView: React.FC<DineroViewProps> = ({
                   return <li key={cajita.id}><FilaCuenta cuenta={cajita} saldo={saldos.get(cajita.id) ?? 0} privacidad={modoPrivacidad} principal={cajita.id === cuentaFavoritaId} onAbrir={onAbrir} /></li>;
                 }
                 const entidad = entidadDeCuenta(cajita);
-                const Icono = iconoDeCajita(cajita.icon);
                 const saldo = saldos.get(cajita.id) ?? 0;
                 const pasivo = ES_PASIVO[cajita.tipo];
                 const meta = cajita.metaCop;
@@ -162,7 +161,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
                         aria-hidden="true"
                       >
-                        <Icono className="h-5 w-5 text-[var(--fin-ink-soft)]" strokeWidth={2} />
+                        <IconoCuenta cuenta={cajita} tamano={22} className="text-[var(--fin-ink-soft)]" trazo={2} />
                       </span>
 
                       <span className="min-w-0 flex-1">

@@ -4,12 +4,18 @@ import { ENTIDADES_FINANCIERAS, entidadDeCuenta, reconocerEntidad } from './enti
 describe('reconocimiento de entidades financieras', () => {
   it.each([
     ['NuBank', 'Nu'], ['Nu Bank nómina', 'Nu'], ['NU', 'Nu'],
+    ['N u', 'Nu'], ['N u b a n k', 'Nu'], ['Nubnak', 'Nu'], ['Nu ban k personal', 'Nu'],
     ['Mi Nequi personal', 'Nequi'], ['Neqii', 'Nequi'],
+    ['Ne qui', 'Nequi'], ['Neqiu personal', 'Nequi'], ['Nqui', 'Nequi'], ['NÉ-QUI', 'Nequi'],
     ['Bancolmbia', 'Bancolombia'], ['Banco-Colombia', 'Bancolombia'],
+    ['Ban co lom bia', 'Bancolombia'], ['Bancolomiba', 'Bancolombia'], ['Ban col mbia nómina', 'Bancolombia'],
     ['Davi plata', 'DaviPlata'], ['Daviviendaa', 'Davivienda'],
+    ['Davi vie nda', 'Davivienda'], ['Da vi pla ta', 'DaviPlata'], ['Davipalta', 'DaviPlata'],
     ['Rapi', 'RappiPay'], ['Rappi', 'RappiPay'], ['Rappi Cuenta', 'RappiPay'],
+    ['Rap pi pay', 'RappiPay'], ['Rappipya', 'RappiPay'],
     ['Vacaciones', null], ['Manuel', null], ['Nube', null],
-    ['Nequi y Bancolombia', null], ['', null],
+    ['Nuria', null], ['Davi', null], ['Nuestro ahorro', null],
+    ['Nequi y Bancolombia', null], ['Nu y Neqiu', null], ['Ne qui y Ban col ombia', null], ['', null],
   ])('reconoce %s sin reescribir el nombre', (nombre, esperado) => {
     expect(reconocerEntidad(nombre)?.nombre ?? null).toBe(esperado);
   });

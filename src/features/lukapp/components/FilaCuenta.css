@@ -104,6 +104,6 @@
 
 @container (max-width: 360px) {
   .cuenta-fila { gap: 10px; padding-right: 12px; }
-  .cuenta-identidad { gap: 8px; padding: 10px; }
-  .cuenta-icono { display: none; }
+  .cuenta-identidad { gap: 6px; padding: 10px; }
+  .cuenta-icono { width: 28px; height: 28px; }
 }

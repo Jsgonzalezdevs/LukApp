@@ -10,6 +10,7 @@ import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoIn
 import { idsPasivos, saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
 import { RippleButton } from './RippleButton';
+import { IconoCuenta } from './IconoCuenta';
 
 const parseDia = (texto: string): number | null => {
   const dia = Number.parseInt(texto, 10);
@@ -103,7 +104,6 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   };
 
   const saldo = saldoDeCajita(movimientos, cajita.id, transacciones, idsPasivos([cajita]));
-  const Icono = iconoDeCajita(cajita.icon);
   const propios = movimientos.filter((m) => m.cajitaId === cajita.id);
   // Transferirse a sí misma no es una operación, es un no-op con dos apuntes.
   const destinosPosibles = destinos.filter((d) => d.id !== cajita.id);
@@ -164,7 +164,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
       {/* Cabecera con icono y nombre */}
       <div className="flex items-center gap-4">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--fin-r-card)] bg-[var(--fin-soft)]">
-          <Icono className="h-7 w-7 text-[var(--fin-ink-soft)]" strokeWidth={1.75} />
+          <IconoCuenta cuenta={cajita} tamano={28} className="text-[var(--fin-ink-soft)]" trazo={1.75} />
         </span>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[20px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
