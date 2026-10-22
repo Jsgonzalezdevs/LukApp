@@ -1,6 +1,6 @@
 import { Star } from 'lucide-react';
 import type { Cajita } from '../data/modelos';
-import { etiquetaTipoCajita } from '../data/modelos';
+import { claseDeCuenta, etiquetaTipoCajita } from '../data/modelos';
 import { entidadDeCuenta, estiloEntidad, nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { formatCop } from '../lib/formatCop';
 import './FilaCuenta.css';
@@ -19,7 +19,7 @@ export const FilaCuenta = ({ cuenta, saldo, privacidad, principal, onAbrir }: Fi
 
   return (
     <button type="button" onClick={() => onAbrir(cuenta)} className="cuenta-fila">
-      <span className="cuenta-identidad" style={entidad ? estiloEntidad(entidad) : undefined}>
+      <span className={`cuenta-identidad${claseDeCuenta(cuenta) === 'efectivo' ? ' cuenta-identidad-efectivo' : ''}`} style={entidad ? estiloEntidad(entidad) : undefined}>
         <span className="cuenta-icono" aria-hidden="true"><IconoCuenta cuenta={cuenta} tamano={22} /></span>
         <span className="cuenta-etiquetas">
           <span className="cuenta-nombre">{nombreVisibleCuenta(cuenta)}</span>

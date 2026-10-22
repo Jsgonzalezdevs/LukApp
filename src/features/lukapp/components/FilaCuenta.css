@@ -107,3 +107,11 @@
   .cuenta-identidad { gap: 6px; padding: 10px; }
   .cuenta-icono { width: 28px; height: 28px; }
 }
+
+/* El efectivo tiene una identidad propia, también en cuentas con nombres personalizados. */
+.cuenta-identidad-efectivo {
+  background: #18794E;
+  color: #FFFFFF;
+  --fin-ink: #FFFFFF;
+  --fin-ink-soft: #FFFFFF;
+}
