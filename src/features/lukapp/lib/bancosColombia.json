@@ -1,0 +1,157 @@
+[
+  {
+    "id": "agrario",
+    "url": "https://www.bancoagrario.gov.co/",
+    "nombre": "Banco Agrario de Colombia S.A."
+  },
+  {
+    "id": "bancamia",
+    "url": "https://www.bancamia.com.co/",
+    "nombre": "Banco de las Microfinanzas - Bancamía S.A."
+  },
+  {
+    "id": "btg",
+    "url": "https://www.btgpactual.com.co/",
+    "nombre": "Banco BTG Pactual Colombia S.A."
+  },
+  {
+    "id": "cajasocial",
+    "url": "https://www.bancocajasocial.com.co/",
+    "nombre": "Banco Caja Social S.A."
+  },
+  {
+    "id": "contactar",
+    "url": "https://bancocontactar.com/",
+    "nombre": "Banco Contactar S.A."
+  },
+  {
+    "id": "ban100",
+    "url": "https://www.ban100.com.co/",
+    "nombre": "Ban100 S.A."
+  },
+  {
+    "id": "bogota",
+    "url": "https://www.bancodebogota.com/",
+    "nombre": "Banco de Bogotá S.A."
+  },
+  {
+    "id": "gnb",
+    "url": "https://www.gnbsudameris.com.co/",
+    "nombre": "Banco GNB Sudameris S.A."
+  },
+  {
+    "id": "popular",
+    "url": "https://www.bancopopular.com.co/",
+    "nombre": "Banco Popular S.A."
+  },
+  {
+    "id": "bancolombia",
+    "url": "https://www.bancolombia.com/personas",
+    "nombre": "Bancolombia S.A."
+  },
+  {
+    "id": "coomeva",
+    "url": "https://www.bancoomeva.com.co/",
+    "nombre": "Banco Coomeva S. A."
+  },
+  {
+    "id": "falabella",
+    "url": "https://www.bancofalabella.com.co/",
+    "nombre": "Banco Falabella S.A."
+  },
+  {
+    "id": "santander",
+    "url": "https://www.santander.com.co/",
+    "nombre": "Banco Santander Colombia S.A."
+  },
+  {
+    "id": "serfinanza",
+    "url": "https://bancoserfinanza.com/",
+    "nombre": "Banco Serfinanza S.A."
+  },
+  {
+    "id": "lulo",
+    "url": "https://www.lulobank.com/",
+    "nombre": "Lulo Bank S.A."
+  },
+  {
+    "id": "revolut",
+    "url": "https://www.revolut.com/es-CO/",
+    "nombre": "Revolut Bank Colombia S.A."
+  },
+  {
+    "id": "avvillas",
+    "url": "https://www.avvillas.com.co/",
+    "nombre": "Banco Comercial AV Villas S.A."
+  },
+  {
+    "id": "bbva",
+    "url": "https://www.bbva.com.co/",
+    "nombre": "Banco BBVA Colombia S.A."
+  },
+  {
+    "id": "citi",
+    "url": "https://www.citibank.com/icg/sa/latam/colombia/",
+    "nombre": "Citibank Colombia"
+  },
+  {
+    "id": "davibank",
+    "url": "https://www.davibank.com/",
+    "nombre": "Banco DAVIbank"
+  },
+  {
+    "id": "coopcentral",
+    "url": "https://www.coopcentral.com.co/",
+    "nombre": "Banco Cooperativo Coopcentral"
+  },
+  {
+    "id": "davivienda",
+    "url": "https://www.davivienda.com/wps/portal/personas/davivienda/contenido/personas/inicio/%21ut/p/b1/hc69DoIwAATgJzK9khbi2FCltbUW_MMuhsGYJgIOxucXDKty2yXfJUcCqUnomne8N6_Yd81j7CG9njjKjSkodrZi0LJ02XolKAwfwGUA-BGBuf2ZhC_RKvd-JEXOJPTBWHArqefpBPw-UenWM0AtM2h7VKxyjgLJHMAE_px0qm9v5NnWiHohPvaKl6Q%21/dl4/d5/L2dBISEvZ0FBIS9nQSEh/",
+    "nombre": "Banco Davivienda S.A."
+  },
+  {
+    "id": "occidente",
+    "url": "https://www.bancodeoccidente.com.co/wps/portal/banco-occidente/",
+    "nombre": "Banco de Occidente S.A."
+  },
+  {
+    "id": "jpmorgan",
+    "url": "https://www.jpmorgan.com/CO/es/about-us",
+    "nombre": "Banco J.P. Morgan Colombia S.A."
+  },
+  {
+    "id": "itau",
+    "url": "https://www.itau.co/index",
+    "nombre": "Itaú Colombia S.A."
+  },
+  {
+    "id": "bancow",
+    "url": "https://www.bancow.com.co/",
+    "nombre": "Banco W S.A."
+  },
+  {
+    "id": "finandina",
+    "url": "https://www.bancofinandina.com/",
+    "nombre": "Banco Finandina S.A."
+  },
+  {
+    "id": "pichincha",
+    "url": "https://www.bancopichincha.com.co/",
+    "nombre": "Banco Pichincha S.A."
+  },
+  {
+    "id": "mundomujer",
+    "url": "https://www.bmm.com.co/",
+    "nombre": "Banco Mundo Mujer S.A."
+  },
+  {
+    "id": "mibanco",
+    "url": "https://www.mibanco.com.co/",
+    "nombre": "Banco de la Microempresa de Colombia S.A."
+  },
+  {
+    "id": "union",
+    "url": "https://www.bancounion.com/wps/portal/bancounion/web/inicio/",
+    "nombre": "Banco Unión S.A."
+  }
+]

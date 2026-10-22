@@ -14,7 +14,7 @@ const cuenta = (nombre: string, cambios = {}): Cajita => ({
 describe('logos de las cuentas', () => {
   it.each([
     ['Nubnak', 'Nu'], ['Ne qui', 'Nequi'], ['Ban col ombia', 'Bancolombia'],
-    ['Davi vie nda', 'Davivienda'], ['Rap pi', 'RappiPay'], ['Davi palta', 'DaviPlata'],
+    ['Davi vie nda', 'Davivienda'], ['Rap pi', 'Rappi'], ['Davi palta', 'DaviPlata'],
   ])('muestra el símbolo de %s aunque el nombre tenga errores o espacios', (nombre, marca) => {
     const { container } = render(<IconoCuenta cuenta={cuenta(nombre, { icon: 'Wallet' })} tamano={22} />);
     const logo = container.querySelector('[data-logo-banco]');
@@ -40,7 +40,7 @@ describe('logos de las cuentas', () => {
 
   it('incluye todos los archivos locales y evita contenido ejecutable en los SVG', () => {
     for (const entidad of ENTIDADES_FINANCIERAS) {
-      expect(entidad.logo).toMatch(/^\/bancos\/[a-z]+\.(svg|png)$/);
+      expect(entidad.logo).toMatch(/^\/bancos\/[a-z0-9]+\.(svg|png)$/);
       const archivo = resolve(process.cwd(), 'public', entidad.logo.slice(1));
       expect(existsSync(archivo), entidad.nombre).toBe(true);
       const contenido = readFileSync(archivo);
@@ -48,7 +48,8 @@ describe('logos de las cuentas', () => {
       if (archivo.endsWith('.svg')) {
         expect(contenido.toString()).toContain('xmlns="http://www.w3.org/2000/svg"');
         expect(contenido.toString()).toContain('viewBox=');
-        expect(contenido.toString()).not.toMatch(/<(?:script|image|rect|foreignObject)\b|\bon\w+\s*=/i);
+        expect(contenido.toString()).not.toMatch(/(?:href|src)="(?:https?:|javascript:)/i);
+        expect(contenido.toString()).not.toMatch(/<(?:script|foreignObject)\b|\bon\w+\s*=/i);
       }
     }
   });

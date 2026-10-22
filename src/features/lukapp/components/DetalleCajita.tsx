@@ -1,3 +1,4 @@
+import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
@@ -147,7 +148,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   };
 
   const confirmarEliminar = () => {
-    if (confirm(`¿Eliminar ${cajita.nombre}? Esta acción no se puede deshacer.`)) {
+    if (confirm(`¿Eliminar ${nombreVisibleCuenta(cajita)}? Esta acción no se puede deshacer.`)) {
       onEliminar(cajita.id);
     }
   };
@@ -167,7 +168,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           <IconoCuenta cuenta={cajita} tamano={28} className="text-[var(--fin-ink-soft)]" trazo={1.75} />
         </span>
         <div className="min-w-0 flex-1">
-          <h1 className="truncate text-[20px] font-semibold leading-tight text-[var(--fin-ink)]">{cajita.nombre}</h1>
+          <h1 className="truncate text-[20px] font-semibold leading-tight text-[var(--fin-ink)]">{nombreVisibleCuenta(cajita)}</h1>
           <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
             {etiquetaTipoCajita(cajita)}
             {cajita.tasaEaPct ? ` · ${cajita.tasaEaPct}% E.A.` : ''}
@@ -176,7 +177,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         <button
           type="button"
           onClick={() => setEditandoCuenta((v) => !v)}
-          aria-label={`Editar ${cajita.nombre}`}
+          aria-label={`Editar ${nombreVisibleCuenta(cajita)}`}
           aria-expanded={editandoCuenta}
           className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-faint)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
         >
@@ -298,7 +299,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
             <button
               type="button"
               onClick={abrirEditarSaldo}
-              aria-label={`Cambiar el saldo de ${cajita.nombre}`}
+              aria-label={`Cambiar el saldo de ${nombreVisibleCuenta(cajita)}`}
               className="mt-3 flex w-full items-baseline gap-3 rounded-[var(--fin-r-card)] text-left transition-opacity active:opacity-60"
             >
               <span
@@ -487,7 +488,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
           >
             <div className="mb-5 flex items-center justify-between">
               <h2 className="text-[17px] font-semibold text-[var(--fin-ink)]">
-                Enviar desde {cajita.nombre}
+                Enviar desde {nombreVisibleCuenta(cajita)}
               </h2>
               <button
                 type="button"

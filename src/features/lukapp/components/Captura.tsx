@@ -1,3 +1,4 @@
+import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 import { useCapturaEscritorio } from '../hooks/useCapturaEscritorio';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -573,7 +574,7 @@ export const Captura: React.FC<CapturaProps> = ({
           <p className="min-w-0 flex-1 text-[13px] leading-snug text-[var(--fin-ink-soft)]">
             <strong className="font-semibold text-[var(--fin-ink)]">Como la última vez:</strong>{' '}
             {catalogo.de(sugerenciaContextual.movimiento.category).nombre}
-            {sugerenciaContextual.cuenta ? ` · ${sugerenciaContextual.cuenta.nombre}` : ''}
+            {sugerenciaContextual.cuenta ? ` · ${nombreVisibleCuenta(sugerenciaContextual.cuenta)}` : ''}
           </p>
           <button
             type="button"
@@ -611,7 +612,7 @@ export const Captura: React.FC<CapturaProps> = ({
               ? <IconoCuenta cuenta={cuentaSeleccionada} tamano={18} className="text-[var(--fin-ink-soft)]" />
               : <Wallet className="h-4 w-4 shrink-0 text-[var(--fin-warn-ink)]" />}
             <span className="min-w-0 flex-1 truncate text-left">
-              {cuentaSeleccionada ? cuentaSeleccionada.nombre : '¿Desde qué cuenta o tarjeta?'}
+              {cuentaSeleccionada ? nombreVisibleCuenta(cuentaSeleccionada) : '¿Desde qué cuenta o tarjeta?'}
             </span>
             <ChevronDown
               className={`h-4 w-4 transition-transform duration-200 ${
@@ -655,7 +656,7 @@ export const Captura: React.FC<CapturaProps> = ({
                         <div className="flex items-center gap-3 truncate">
                           <IconoCuenta cuenta={c} tamano={18} className="text-[var(--fin-ink-soft)]" />
                           <span className="min-w-0 truncate">
-                            <span className="block truncate">{c.nombre}</span>
+                            <span className="block truncate">{nombreVisibleCuenta(c)}</span>
                             <span className="block text-[13px] font-normal text-[var(--fin-ink-faint)]">
                               {etiquetaTipoCajita(c)}
                             </span>
@@ -889,7 +890,7 @@ export const Captura: React.FC<CapturaProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[15px] font-bold text-[var(--fin-ink)]">
-                            {c.nombre}
+                            {nombreVisibleCuenta(c)}
                           </span>
                           {c.id === cuentaPorDefecto && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-warn-bg)] px-2 py-1 text-[13px] font-bold text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]">

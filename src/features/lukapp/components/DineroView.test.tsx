@@ -14,7 +14,7 @@ describe('DineroView — colores de las cuentas', () => {
     const nu = screen.getByRole('button', { name: /NuBank/ });
     expect(nu.querySelector('.cuenta-identidad')).toHaveStyle({ backgroundColor: '#820AD1', color: '#FFFFFF' });
     expect(screen.getByRole('button', { name: /Nequi personal/ }).querySelector('.cuenta-identidad')).toHaveStyle({ backgroundColor: '#200020' });
-    expect(screen.getByRole('button', { name: /Rapi/ }).querySelector('.cuenta-identidad')).toHaveStyle({ backgroundColor: '#FF441F' });
+    expect(screen.getByRole('button', { name: /Rappi/ }).querySelector('.cuenta-identidad')).toHaveStyle({ backgroundColor: '#FF441F' });
     expect(nu.style.backgroundColor).toBe('');
     expect(screen.getByRole('button', { name: /Efectivo/ }).style.backgroundColor).toBe('');
     expect(nu).toHaveTextContent('$ ••••••');

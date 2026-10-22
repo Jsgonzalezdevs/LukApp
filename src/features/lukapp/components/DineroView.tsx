@@ -1,3 +1,4 @@
+import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { entidadDeCuenta, estiloEntidad } from '../lib/entidadesFinancieras';
 import type { PanelAjustes } from '../sections';
 import { AccesosFunciones } from './AccesosFunciones';
@@ -167,7 +168,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
                       <span className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
-                            {cajita.nombre}
+                            {nombreVisibleCuenta(cajita)}
                           </span>
                           {cajita.id === cuentaFavoritaId && (
                             <span className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-warn-bg)] px-2 py-1 text-[13px] font-bold text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]">

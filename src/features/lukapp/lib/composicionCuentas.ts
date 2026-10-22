@@ -7,7 +7,7 @@ const cercaniaCromatica = (a: Cajita, b: Cajita): number => {
   const colorB = entidadDeCuenta(b)?.familiaColor;
   if (!colorA || !colorB) return 0;
   if (colorA === colorB) return colorA === 'morado' ? 2 : 12;
-  if (colorA === 'morado' || colorB === 'morado') return 0;
+  if (['morado', 'azul', 'verde', 'gris'].includes(colorA) || ['morado', 'azul', 'verde', 'gris'].includes(colorB)) return 0;
   if (colorA === 'rojo' || colorB === 'rojo') return colorA === 'naranja' || colorB === 'naranja' ? 8 : 6;
   return 3;
 };

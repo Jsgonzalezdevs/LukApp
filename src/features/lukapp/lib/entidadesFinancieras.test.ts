@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ENTIDADES_FINANCIERAS, entidadDeCuenta, reconocerEntidad } from './entidadesFinancieras';
+import bancosColombia from './bancosColombia.json';
+import { nombreVisibleCuenta, ENTIDADES_FINANCIERAS, entidadDeCuenta, reconocerEntidad } from './entidadesFinancieras';
 
 describe('reconocimiento de entidades financieras', () => {
   it.each([
@@ -11,13 +12,36 @@ describe('reconocimiento de entidades financieras', () => {
     ['Ban co lom bia', 'Bancolombia'], ['Bancolomiba', 'Bancolombia'], ['Ban col mbia nómina', 'Bancolombia'],
     ['Davi plata', 'DaviPlata'], ['Daviviendaa', 'Davivienda'],
     ['Davi vie nda', 'Davivienda'], ['Da vi pla ta', 'DaviPlata'], ['Davipalta', 'DaviPlata'],
-    ['Rapi', 'RappiPay'], ['Rappi', 'RappiPay'], ['Rappi Cuenta', 'RappiPay'],
-    ['Rap pi pay', 'RappiPay'], ['Rappipya', 'RappiPay'],
+    ['Rapi', 'Rappi'], ['Rappi', 'Rappi'], ['Rappi Cuenta', 'Rappi'],
+    ['Rap pi pay', 'Rappi'], ['Rappipya', 'Rappi'],
     ['Vacaciones', null], ['Manuel', null], ['Nube', null],
     ['Nuria', null], ['Davi', null], ['Nuestro ahorro', null],
     ['Nequi y Bancolombia', null], ['Nu y Neqiu', null], ['Ne qui y Ban col ombia', null], ['', null],
   ])('reconoce %s sin reescribir el nombre', (nombre, esperado) => {
     expect(reconocerEntidad(nombre)?.nombre ?? null).toBe(esperado);
+  });
+
+  it.each(bancosColombia)('reconoce el banco registrado $nombre', ({ nombre, id }) => {
+    expect(reconocerEntidad(nombre)?.logo, nombre).toMatch(new RegExp(`/bancos/${id}\\.(svg|png)$`));
+  });
+
+  it.each(ENTIDADES_FINANCIERAS)('reconoce $nombre con espacios adicionales', (entidad) => {
+    expect(reconocerEntidad(entidad.nombre)?.nombre).toBe(entidad.nombre);
+    expect(reconocerEntidad(entidad.alias[0].split('').join(' '))?.nombre).toBe(entidad.nombre);
+  });
+
+  it('no confunde la palabra banco con Banco W y conserva marcas anteriores', () => {
+    expect(reconocerEntidad('Banco personal')).toBeNull();
+    expect(reconocerEntidad('Banco W')?.nombre).toBe('Banco W');
+    expect(reconocerEntidad('Scotiabank Colpatria')?.nombre).toBe('DAVIbank');
+    expect(reconocerEntidad('BBVA y Banco W')).toBeNull();
+  });
+
+  it('muestra Rappi sin modificar el apodo ni los datos guardados', () => {
+    const cuenta = { nombre: 'Rapi viajes', tipo: 'cuenta' as const };
+    expect(nombreVisibleCuenta(cuenta)).toBe('Rappi viajes');
+    expect(cuenta.nombre).toBe('Rapi viajes');
+    expect(nombreVisibleCuenta({ ...cuenta, tipo: 'cajita' })).toBe('Rapi viajes');
   });
 
   it('no asigna marcas a efectivo ni a metas de ahorro', () => {

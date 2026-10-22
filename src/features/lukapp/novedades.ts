@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.12.0', fecha: '2026-10-21', texto: 'Reconocemos los 31 bancos del directorio de Fogafín y más billeteras de Colombia, con sus colores y símbolos. Rapi ahora se muestra como Rappi, y seguimos reconociendo nombres con pequeños errores o espacios de más. 🏦🎨' },
   { version: '9.11.2', fecha: '2026-10-21', texto: 'Tus bancos y billeteras ahora muestran su logo sin fondo, también dentro del círculo en móvil. Reconocemos nombres con espacios de más, letras omitidas o intercambiadas, y mantenemos el mismo símbolo en cuentas, detalles y al registrar movimientos. 🏦✨' },
   { version: '9.11.1', fecha: '2026-10-21', texto: 'Tus cuentas tienen colores más equilibrados: separamos cada marca, dejamos los saldos sobre fondo neutro y usamos letras blancas sobre los rojos. La cuenta principal queda primero y distribuimos los colores para evitar que se acumulen. 🎨🏦' },
   { version: '9.11.0', fecha: '2026-10-21', texto: 'Tus cuentas toman el color de su banco o billetera: reconocemos nombres como Nu Bank y Nequi personal, incluso con pequeños errores. Al crear una cuenta ves su color automáticamente. 🏦🎨' },

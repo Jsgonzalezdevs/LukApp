@@ -1,3 +1,4 @@
+import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { IconoCuenta } from './IconoCuenta';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
@@ -201,7 +202,7 @@ const DeudaCard: React.FC<{
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
-            {cajita.nombre}
+            {nombreVisibleCuenta(cajita)}
           </h3>
           <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">
             {TIPO_LABELS[cajita.tipo]}
@@ -219,7 +220,7 @@ const DeudaCard: React.FC<{
             <button
               type="button"
               onClick={() => setEditandoTarjeta((v) => !v)}
-              aria-label={`Editar ${cajita.nombre}`}
+              aria-label={`Editar ${nombreVisibleCuenta(cajita)}`}
               aria-expanded={editandoTarjeta}
               className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
             >
@@ -229,7 +230,7 @@ const DeudaCard: React.FC<{
           <button
             type="button"
             onClick={() => setConfirmando((v) => !v)}
-            aria-label={`Eliminar ${cajita.nombre}`}
+            aria-label={`Eliminar ${nombreVisibleCuenta(cajita)}`}
             className="rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
           >
             <Trash2 className="h-4 w-4" strokeWidth={2.5} />

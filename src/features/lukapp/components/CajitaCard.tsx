@@ -1,3 +1,4 @@
+import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { entidadDeCuenta, estiloEntidad } from '../lib/entidadesFinancieras';
 import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
@@ -181,7 +182,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[17px] font-semibold text-[var(--fin-ink)]">
-            {cajita.nombre}
+            {nombreVisibleCuenta(cajita)}
           </h3>
           {usaMonedaOrigen ? <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">📈 Inversión · {moneda}</p> : null}
           <p className="text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
@@ -196,7 +197,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
             audio.play('warning');
             setConfirmandoBorrado((v) => !v);
           }}
-          aria-label={`${T.eliminar}: ${cajita.nombre}`}
+          aria-label={`${T.eliminar}: ${nombreVisibleCuenta(cajita)}`}
           className="shrink-0 rounded-[var(--fin-r-control)] p-2 text-[var(--fin-ink-ghost)] transition-colors hover:bg-[var(--fin-out-bg)] hover:text-[var(--fin-out)]"
         >
           <Trash2 className="h-4 w-4" strokeWidth={2.5} />
