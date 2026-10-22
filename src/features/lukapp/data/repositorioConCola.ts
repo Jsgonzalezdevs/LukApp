@@ -71,7 +71,8 @@ const tieneDatos = (datos: Instantanea): boolean =>
   datos.contactos.length > 0 ||
   datos.presupuestos.length > 0 ||
   datos.recurrentes.length > 0 ||
-  datos.documentosNegocio.length > 0;
+  datos.documentosNegocio.length > 0 ||
+  datos.revisiones.length > 0;
 
 export class RepositorioConCola implements Repositorio {
   private readonly local: Repositorio;
@@ -136,6 +137,18 @@ export class RepositorioConCola implements Repositorio {
     return this.enOrden(() => this.leerTodo());
   }
 
+  obtenerIdEfectivoInicial(): Promise<string> {
+    return this.remoto.obtenerIdEfectivoInicial?.() ?? Promise.resolve(nuevoId());
+  }
+
+  async cargarInicial(): Promise<{ datos: Instantanea; desdeCache: boolean }> {
+    return this.enOrden(async () => {
+      const copia = await this.local.cargarTodo();
+      if (tieneDatos(copia)) return { datos: copia, desdeCache: true };
+      return { datos: await this.leerTodo(), desdeCache: false };
+    });
+  }
+
   private async leerTodo(): Promise<Instantanea> {
     if (navigator.onLine) {
       await this.sincronizarPendientes();
@@ -162,7 +175,11 @@ export class RepositorioConCola implements Repositorio {
         }
       }
     }
-    return this.local.cargarTodo();
+    const copia = await this.local.cargarTodo();
+    if (!tieneDatos(copia)) {
+      throw new Error('No hay una copia local de tus cuentas. Conéctate y vuelve a cargar LukApp para recuperar tus datos.');
+    }
+    return copia;
   }
 
   /** Copia todo lo del servidor al caché local, para que quede si se cae la señal. */

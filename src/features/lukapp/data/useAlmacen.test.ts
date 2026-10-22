@@ -1223,3 +1223,18 @@ describe('useAlmacen — el Efectivo duplicado', () => {
     expect(nombres).toEqual(['Efectivo', 'Nequi']);
   });
 });
+
+describe('carga inicial del almacenamiento', () => {
+  it('no lee ni siembra efectivo hasta que termine la preparación del repositorio', async () => {
+    const repo = new RepositorioMemoria();
+    const leer = vi.spyOn(repo, 'cargarTodo');
+    const guardar = vi.spyOn(repo, 'guardarCajita');
+    const { result, rerender } = renderHook(({ habilitado }) => useAlmacen(repo, habilitado), { initialProps: { habilitado: false } });
+    expect(leer).not.toHaveBeenCalled();
+    expect(guardar).not.toHaveBeenCalled();
+    expect(result.current.cargando).toBe(true);
+    rerender({ habilitado: true });
+    await waitFor(() => expect(result.current.cargando).toBe(false));
+    expect(result.current.datos.cajitas.filter((c) => c.nombre === 'Efectivo')).toHaveLength(1);
+  });
+});

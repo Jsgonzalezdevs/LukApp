@@ -1,7 +1,4 @@
-// Spanish-only, deliberately NOT wired into LanguageContext: that interface is
-// a Record<Language, Translations>, so adding a key here would force writing
-// English copy for a private tool and make the shared type a chokepoint that can
-// break the portfolio's type-check.
+// Textos de LukApp en español.
 export const COPY = {
   appName: 'LukApp',
 

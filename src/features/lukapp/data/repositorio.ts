@@ -20,7 +20,10 @@ import type { DocumentoNegocio } from '../negocio/modelo';
  * easily, and full records keep that decision in one place later.
  */
 export interface Repositorio {
+  obtenerIdEfectivoInicial?(): Promise<string>;
   cargarTodo(): Promise<Instantanea>;
+  /** Copia confirmada del mismo usuario, para abrir sin esperar a la red. */
+  cargarInicial?(): Promise<{ datos: Instantanea; desdeCache: boolean }>;
   aplicarCambios(cambios: CambiosFinancieros): Promise<void>;
 
   guardarTransacciones(transacciones: readonly Transaction[]): Promise<void>;

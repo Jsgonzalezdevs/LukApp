@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.14.0', fecha: '2026-10-22', texto: 'LukApp carga menos pantallas al iniciar y ya no espera los permisos administrativos para abrir tus finanzas. Evitamos crear cuentas de Efectivo por una descarga fallida y repetir respaldos locales completados. También retiramos restos del antiguo portafolio. ⚡' },
   { version: '9.13.1', fecha: '2026-10-22', texto: 'El efectivo ahora se distingue con un verde esmeralda y letras blancas, conservando el saldo sobre fondo neutro. 💵💚' },
   { version: '9.13.0', fecha: '2026-10-22', texto: 'Crea un ahorro desde Dinero y configura sus opciones avanzadas: activa los rendimientos con un interruptor y configura su tasa E.A. al crear o editar el ahorro. El ícono y la meta quedan a la vista, y la tasa sigue siendo opcional. 🐷⚙️' },
   { version: '9.12.0', fecha: '2026-10-21', texto: 'Reconocemos los 31 bancos del directorio de Fogafín y más billeteras de Colombia, con sus colores y símbolos. Rapi ahora se muestra como Rappi, y seguimos reconociendo nombres con pequeños errores o espacios de más. 🏦🎨' },

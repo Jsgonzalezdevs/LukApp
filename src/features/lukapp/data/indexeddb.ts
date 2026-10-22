@@ -74,8 +74,10 @@ export const soportaIndexedDB = (): boolean =>
 /** Copia el libro sin cuenta al repositorio de la cuenta recién creada.
  * No borra el origen: así una interrupción nunca deja a la persona sin datos,
  * y los mismos ids hacen que repetir la operación sea seguro (upsert). */
-export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> => {
+export const migrarLibroLocal = async (destino: Repositorio, usuario?: string): Promise<boolean> => {
   if (!soportaIndexedDB()) return false;
+  const clave = usuario ? `lukapp-migracion-local-v1:${usuario}` : null;
+  try { if (clave && localStorage.getItem(clave) === 'completa') return false; } catch { /* La migración funciona aunque el navegador bloquee preferencias. */ }
   const origen = new RepositorioIndexedDB(DB_NOMBRE_LOCAL);
   const datos = await origen.cargarTodo();
   const tieneDatos = Object.values(datos).some((lista) => lista.length > 0);
@@ -99,6 +101,9 @@ export const migrarLibroLocal = async (destino: Repositorio): Promise<boolean> =
   const rechazados = resultados.filter((resultado): resultado is PromiseRejectedResult => resultado.status === 'rejected');
   if (rechazados.length > 0) {
     console.warn('Algunos datos locales no se pudieron migrar; se conservaron en este dispositivo.', rechazados.length);
+  }
+  if (rechazados.length === 0 && clave) {
+    try { localStorage.setItem(clave, 'completa'); } catch { /* Los datos siguen respaldados aunque no se pueda guardar la marca. */ }
   }
   return true;
 };

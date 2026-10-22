@@ -19,7 +19,7 @@
 
   /* Finance tool. A monochrome palette cannot encode sign, so these carry
      direction — always paired with an icon or +/− so colour is never the only
-     cue. Tailwind v4 emits nothing for unused tokens, so the portfolio bundle
+     cue. Tailwind v4 emits nothing for unused tokens, so the LukApp bundle
      is unaffected. */
   --color-fin-in: #b6f246;
   --color-fin-out: #d4025a;

@@ -1,5 +1,5 @@
 /**
- * Avisar que alguien está mirando el portafolio.
+ * Avisar que alguien está mirando el sitio de LukApp.
  *
  * Manda dos cosas y ninguna más: qué página y de qué dominio llegó. El país, el
  * tipo de dispositivo y la huella del día los deduce el borde de Vercel a

@@ -1717,7 +1717,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 <div>
                   <h2 className="text-2xl font-extrabold tracking-tight">Analítica de tráfico</h2>
                   <p className="mt-1 text-xs text-[var(--fin-ink-soft)]">
-                    Quién visita tu portafolio, de dónde vienen y a qué horas, 100% privado y sin cookies.
+                    Quién visita tu sitio de LukApp, de dónde vienen y a qué horas, 100% privado y sin cookies.
                   </p>
                 </div>
 

@@ -1,4 +1,4 @@
-import { nuevoId } from '../lib/id';
+import { nuevoId, idEfectivoParaUsuario } from '../lib/id';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Category, Transaction, TxKind } from '../types';
 import type { Cajita, CajitaMovimiento, CajitaMovKind, CajitaTipo, ClaseCuenta, Meta } from './modelos';
@@ -43,6 +43,10 @@ export class RepositorioSupabase implements Repositorio {
   constructor(cliente: SupabaseClient, userId: string) {
     this.cliente = cliente;
     this.userId = userId;
+  }
+
+  obtenerIdEfectivoInicial(): Promise<string> {
+    return idEfectivoParaUsuario(this.userId);
   }
 
   private fallar(contexto: string, error: { message: string } | null): void {

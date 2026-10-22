@@ -185,7 +185,7 @@ export interface Almacen {
 
 const mensajeDeError = (e: unknown): string => mensajeDeErrorPersistencia(e);
 
-export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
+export const useAlmacen = (repositorioInyectado?: Repositorio, habilitado = true): Almacen => {
   const elegido = useMemo(
     () =>
       repositorioInyectado
@@ -276,7 +276,7 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
    * problema que arregla.
    */
   const recargar = useCallback(async () => {
-    if (escrituras.current > 0) return;
+    if (!habilitado || escrituras.current > 0) return;
     const revisionAlEmpezar = revisionDeDatos.current;
     try {
       const fresco = await repo.cargarTodo();
@@ -296,14 +296,19 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
     // leer, así que este es también el momento natural de refrescar cuántos
     // cambios quedaron pendientes después de ese intento.
     await actualizarPendientes();
-  }, [repo, actualizarPendientes, setDatos]);
+  }, [repo, actualizarPendientes, setDatos, habilitado]);
 
   useEffect(() => {
+    if (!habilitado) return;
+    setCargando(true);
+    let refrescarEnSegundoPlano = false;
     let cancelado = false;
     (async () => {
       try {
         const revisionAlEmpezar = revisionDeDatos.current;
-        const cargado = await repo.cargarTodo();
+        const inicial = repo.cargarInicial ? await repo.cargarInicial() : null;
+        const cargado = inicial ? inicial.datos : await repo.cargarTodo();
+        refrescarEnSegundoPlano = inicial?.desdeCache ?? false;
         // La carga inicial puede durar más que el primer guardado (por ejemplo
         // al abrir la app con una red lenta). Si aplicáramos esa foto vieja al
         // terminar, el movimiento recién anotado desaparecería de la pantalla
@@ -315,111 +320,113 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           revisionDeDatos.current !== revisionAlEmpezar
         ) return;
 
-        // La cuenta de Efectivo nació con el id 'efectivo', que es legible pero
-        // no es un UUID — y `cajitas.id` en Postgres sí lo es. La cuenta nunca
-        // llegó a guardarse y cualquier movimiento que la nombrara moría con
-        // "invalid input syntax for type uuid". Aquí se reescribe todo lo que
-        // haya quedado apuntando al id viejo, antes de tocar nada más.
-        const tocado =
-          cargado.cajitas.some((c) => c.id === ID_EFECTIVO_VIEJO) ||
-          cargado.transacciones.some((t) => t.cuentaId === ID_EFECTIVO_VIEJO) ||
-          cargado.cajitaMovimientos.some((m) => m.cajitaId === ID_EFECTIVO_VIEJO);
+        if (!refrescarEnSegundoPlano) {
+          // La cuenta de Efectivo nació con el id 'efectivo', que es legible pero
+          // no es un UUID — y `cajitas.id` en Postgres sí lo es. La cuenta nunca
+          // llegó a guardarse y cualquier movimiento que la nombrara moría con
+          // "invalid input syntax for type uuid". Aquí se reescribe todo lo que
+          // haya quedado apuntando al id viejo, antes de tocar nada más.
+          const tocado =
+            cargado.cajitas.some((c) => c.id === ID_EFECTIVO_VIEJO) ||
+            cargado.transacciones.some((t) => t.cuentaId === ID_EFECTIVO_VIEJO) ||
+            cargado.cajitaMovimientos.some((m) => m.cajitaId === ID_EFECTIVO_VIEJO);
 
-        if (tocado) {
-          const arregladas = cargado.cajitas.map((c) =>
-            c.id === ID_EFECTIVO_VIEJO ? { ...c, id: ID_EFECTIVO } : c,
-          );
-          const arregladasTx = cargado.transacciones.map((t) =>
-            t.cuentaId === ID_EFECTIVO_VIEJO ? { ...t, cuentaId: ID_EFECTIVO } : t,
-          );
-          const arregladosMov = cargado.cajitaMovimientos.map((m) =>
-            m.cajitaId === ID_EFECTIVO_VIEJO ? { ...m, cajitaId: ID_EFECTIVO } : m,
-          );
+          if (tocado) {
+            const arregladas = cargado.cajitas.map((c) =>
+              c.id === ID_EFECTIVO_VIEJO ? { ...c, id: ID_EFECTIVO } : c,
+            );
+            const arregladasTx = cargado.transacciones.map((t) =>
+              t.cuentaId === ID_EFECTIVO_VIEJO ? { ...t, cuentaId: ID_EFECTIVO } : t,
+            );
+            const arregladosMov = cargado.cajitaMovimientos.map((m) =>
+              m.cajitaId === ID_EFECTIVO_VIEJO ? { ...m, cajitaId: ID_EFECTIVO } : m,
+            );
 
-          cargado.cajitas = arregladas;
-          cargado.transacciones = arregladasTx;
-          cargado.cajitaMovimientos = arregladosMov;
+            cargado.cajitas = arregladas;
+            cargado.transacciones = arregladasTx;
+            cargado.cajitaMovimientos = arregladosMov;
 
-          // Se borra la fila vieja ANTES de escribir la nueva: en IndexedDB son
-          // dos claves distintas y quedarían las dos, con la misma cuenta
-          // duplicada y los saldos partidos entre ellas.
-          await repo.borrarCajita(ID_EFECTIVO_VIEJO);
-          const efectivo = arregladas.find((c) => c.id === ID_EFECTIVO);
-          if (efectivo) await repo.guardarCajita(efectivo);
-          await repo.guardarTransacciones(arregladasTx.filter((t) => t.cuentaId === ID_EFECTIVO));
-          await repo.guardarCajitaMovimientos(
-            arregladosMov.filter((m) => m.cajitaId === ID_EFECTIVO),
-          );
-        }
+            // Se borra la fila vieja ANTES de escribir la nueva: en IndexedDB son
+            // dos claves distintas y quedarían las dos, con la misma cuenta
+            // duplicada y los saldos partidos entre ellas.
+            await repo.borrarCajita(ID_EFECTIVO_VIEJO);
+            const efectivo = arregladas.find((c) => c.id === ID_EFECTIVO);
+            if (efectivo) await repo.guardarCajita(efectivo);
+            await repo.guardarTransacciones(arregladasTx.filter((t) => t.cuentaId === ID_EFECTIVO));
+            await repo.guardarCajitaMovimientos(
+              arregladosMov.filter((m) => m.cajitaId === ID_EFECTIVO),
+            );
+          }
 
-        /* LOS EFECTIVOS DUPLICADOS
-           El sembrado de abajo dejó de ser idempotente el día que se le pasó
-           `nuevoId('caj')` en vez del `ID_EFECTIVO` que `cuentaEfectivo` trae
-           por defecto. Ese cambio arreglaba un choque real de clave primaria
-           —con un id fijo, el Efectivo de un usuario colisionaba con el de
-           otro en Postgres— pero a cambio dejó al id sin poder identificar
-           nunca la cuenta ya sembrada: de las tres condiciones de la guarda,
-           las dos de id son ahora inalcanzables y solo queda comparar el
-           nombre, que depende de haber leído antes lo que ya existe.
+          /* LOS EFECTIVOS DUPLICADOS
+             El sembrado de abajo dejó de ser idempotente el día que se le pasó
+             `nuevoId('caj')` en vez del `ID_EFECTIVO` que `cuentaEfectivo` trae
+             por defecto. Ese cambio arreglaba un choque real de clave primaria
+             —con un id fijo, el Efectivo de un usuario colisionaba con el de
+             otro en Postgres— pero a cambio dejó al id sin poder identificar
+             nunca la cuenta ya sembrada: de las tres condiciones de la guarda,
+             las dos de id son ahora inalcanzables y solo queda comparar el
+             nombre, que depende de haber leído antes lo que ya existe.
 
-           Y hay dos momentos en que no se ha leído: un aparato nuevo cuya
-           primera carga se cae a la caché local por un fallo de red —la caché
-           está vacía, así que siembra otro— y el doble montaje de StrictMode.
-           Los dos acaban con dos filas «Efectivo» de ids distintos que luego
-           se sincronizan tan campantes.
+             Y hay dos momentos en que no se ha leído: un aparato nuevo cuya
+             primera carga se cae a la caché local por un fallo de red —la caché
+             está vacía, así que siembra otro— y el doble montaje de StrictMode.
+             Los dos acaban con dos filas «Efectivo» de ids distintos que luego
+             se sincronizan tan campantes.
 
-           Aquí se colapsan. El superviviente es el MÁS VIEJO, y a igualdad de
-           fecha el de id menor: tiene que ser una regla determinista o dos
-           aparatos elegirían supervivientes distintos y se borrarían el uno al
-           otro en bucle. Y solo se retiran los que no tienen nada dentro: si
-           un duplicado llegó a tener saldo o movimientos se deja en paz y que
-           lo resuelva su dueño. Enseñar dos cuentas es feo; mover la plata de
-           alguien sin preguntarle es otra cosa. */
-        const esEfectivo = (c: (typeof cargado.cajitas)[number]) =>
-          c.id === ID_EFECTIVO ||
-          c.id === ID_EFECTIVO_VIEJO ||
-          c.nombre.trim().toLowerCase() === 'efectivo';
+             Aquí se colapsan. El superviviente es el MÁS VIEJO, y a igualdad de
+             fecha el de id menor: tiene que ser una regla determinista o dos
+             aparatos elegirían supervivientes distintos y se borrarían el uno al
+             otro en bucle. Y solo se retiran los que no tienen nada dentro: si
+             un duplicado llegó a tener saldo o movimientos se deja en paz y que
+             lo resuelva su dueño. Enseñar dos cuentas es feo; mover la plata de
+             alguien sin preguntarle es otra cosa. */
+          const esEfectivo = (c: (typeof cargado.cajitas)[number]) =>
+            c.id === ID_EFECTIVO ||
+            c.id === ID_EFECTIVO_VIEJO ||
+            c.nombre.trim().toLowerCase() === 'efectivo';
 
-        const efectivos = cargado.cajitas.filter(esEfectivo);
-        if (efectivos.length > 1) {
-          const porAntiguedad = [...efectivos].sort((a, b) =>
-            a.createdAt === b.createdAt
-              ? a.id.localeCompare(b.id)
-              : a.createdAt.localeCompare(b.createdAt),
-          );
+          const efectivos = cargado.cajitas.filter(esEfectivo);
+          if (efectivos.length > 1) {
+            const porAntiguedad = [...efectivos].sort((a, b) =>
+              a.createdAt === b.createdAt
+                ? a.id.localeCompare(b.id)
+                : a.createdAt.localeCompare(b.createdAt),
+            );
 
-          const vacia = (id: string) =>
-            !cargado.cajitaMovimientos.some((m) => m.cajitaId === id) &&
-            !cargado.transacciones.some((t) => t.cuentaId === id);
+            const vacia = (id: string) =>
+              !cargado.cajitaMovimientos.some((m) => m.cajitaId === id) &&
+              !cargado.transacciones.some((t) => t.cuentaId === id);
 
-          const sobrantes = porAntiguedad.slice(1).filter((c) => vacia(c.id));
-          if (sobrantes.length > 0) {
-            const fuera = new Set(sobrantes.map((c) => c.id));
-            cargado.cajitas = cargado.cajitas.filter((c) => !fuera.has(c.id));
-            for (const c of sobrantes) {
-              try {
-                await repo.borrarCajita(c.id);
-              } catch {
-                // Sin conexión se queda en la cola. La lista de arriba ya está
-                // limpia, así que el duplicado deja de verse igualmente.
+            const sobrantes = porAntiguedad.slice(1).filter((c) => vacia(c.id));
+            if (sobrantes.length > 0) {
+              const fuera = new Set(sobrantes.map((c) => c.id));
+              cargado.cajitas = cargado.cajitas.filter((c) => !fuera.has(c.id));
+              for (const c of sobrantes) {
+                try {
+                  await repo.borrarCajita(c.id);
+                } catch {
+                  // Sin conexión se queda en la cola. La lista de arriba ya está
+                  // limpia, así que el duplicado deja de verse igualmente.
+                }
               }
             }
           }
-        }
 
-        // Efectivo es la única cuenta que LukApp trae de base. No usamos el id
-        // legado fijo porque es compartido entre usuarios en Supabase: cada
-        // persona recibe el suyo, con saldo cero, una sola vez.
-        // Una cuenta archivada también cuenta: sembrar otra ignorando esa
-        // decisión haría que Efectivo reapareciera después de que la persona
-        // eligió ocultarlo.
-        const hayEfectivo = cargado.cajitas.some((c) => claseDeCuenta(c) === 'efectivo');
-        if (!hayEfectivo) {
-          const efectivoPredeterminado = cuentaEfectivo(new Date().toISOString(), nuevoId('caj'));
-          cargado.cajitas = [...cargado.cajitas, efectivoPredeterminado];
-          await repo.guardarCajita(efectivoPredeterminado);
+          // Efectivo es la única cuenta que LukApp trae de base. No usamos el id
+          // legado fijo porque es compartido entre usuarios en Supabase: cada
+          // persona recibe el suyo, con saldo cero, una sola vez.
+          // Una cuenta archivada también cuenta: sembrar otra ignorando esa
+          // decisión haría que Efectivo reapareciera después de que la persona
+          // eligió ocultarlo.
+          const hayEfectivo = cargado.cajitas.some((c) => claseDeCuenta(c) === 'efectivo');
+          if (!hayEfectivo) {
+            const id = repo.obtenerIdEfectivoInicial ? await repo.obtenerIdEfectivoInicial() : nuevoId('caj');
+            const efectivoPredeterminado = cuentaEfectivo(new Date().toISOString(), id);
+            cargado.cajitas = [...cargado.cajitas, efectivoPredeterminado];
+            await repo.guardarCajita(efectivoPredeterminado);
+          }
         }
-
         if (cancelado || !montado.current || escrituras.current > 0 || revisionDeDatos.current !== revisionAlEmpezar) return;
         setDatos(cargado);
         setError(null);
@@ -436,13 +443,16 @@ export const useAlmacen = (repositorioInyectado?: Repositorio): Almacen => {
           }
         }
       } finally {
-        if (!cancelado) setCargando(false);
+        if (!cancelado) {
+          setCargando(false);
+          if (refrescarEnSegundoPlano) void recargar();
+        }
       }
     })();
     return () => {
       cancelado = true;
     };
-  }, [elegido.persistente, repo, actualizarPendientes, setDatos]);
+  }, [elegido.persistente, repo, actualizarPendientes, setDatos, habilitado, recargar]);
 
   /**
    * Applies a change to the screen first, then writes it.

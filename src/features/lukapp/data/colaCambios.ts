@@ -3,7 +3,7 @@ import type { Repositorio } from './repositorio';
 
 /** Cualquier método de escritura del repositorio. `cargarTodo` no cuenta: no
  *  hay nada que reintentar cuando lo que falló fue solo leer. */
-export type MetodoDeEscritura = Exclude<keyof Repositorio, 'cargarTodo'>;
+export type MetodoDeEscritura = Exclude<keyof Repositorio, 'cargarTodo' | 'cargarInicial' | 'obtenerIdEfectivoInicial'>;
 
 /** Un cambio a la espera de subirse, tal como salió de la cola. */
 export interface CambioPendiente {

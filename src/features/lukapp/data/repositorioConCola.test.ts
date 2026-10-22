@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 import type { Cajita } from './modelos';
 import type { Repositorio } from './repositorio';
@@ -281,5 +281,21 @@ describe('RepositorioConCola — vaciar (restaurar un respaldo)', () => {
 
     expect((await local.cargarTodo()).cajitas).toHaveLength(0);
     expect(await cola.contar()).toBe(1);
+  });
+});
+
+describe('primer inicio sin una copia válida', () => {
+  beforeEach(() => { indexedDB = new IDBFactory(); enLinea(true); });
+  it('rechaza un fallo de red con caché vacía para no sembrar otra cuenta Efectivo', async () => {
+    const remoto = new RepositorioMemoria();
+    vi.spyOn(remoto, 'cargarTodo').mockRejectedValue(new TypeError('Failed to fetch'));
+    const repo = new RepositorioConCola(new RepositorioMemoria(), remoto, new ColaCambios('primera-red-fallida'));
+    await expect(repo.cargarTodo()).rejects.toThrow('No hay una copia local');
+  });
+  it('conserva las cuentas reales del caché si falla la red', async () => {
+    const remoto = new RepositorioMemoria();
+    vi.spyOn(remoto, 'cargarTodo').mockRejectedValue(new TypeError('Failed to fetch'));
+    const repo = new RepositorioConCola(new RepositorioMemoria({ cajitas: [cajita('real')] }), remoto, new ColaCambios('copia-real-red-fallida'));
+    expect((await repo.cargarTodo()).cajitas[0].id).toBe('real');
   });
 });

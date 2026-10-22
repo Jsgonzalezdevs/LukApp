@@ -49,7 +49,7 @@ describe('esBot', () => {
   });
 
   it('reconoce el previsualizador de enlaces de las mensajerías', () => {
-    // Mandar el portafolio por WhatsApp a cinco personas no son cinco visitas.
+    // Mandar el sitio de LukApp por WhatsApp a cinco personas no son cinco visitas.
     expect(esBot('WhatsApp/2.23.20')).toBe(true);
     expect(esBot('facebookexternalhit/1.1')).toBe(true);
     expect(esBot('TelegramBot (like TwitterBot)')).toBe(true);
@@ -76,7 +76,7 @@ describe('hostDeReferente', () => {
   });
 
   it('no cuenta el propio sitio como procedencia', () => {
-    // Si no, el portafolio aparece como su propio mayor referente.
+    // Si no, el sitio de LukApp aparece como su propio mayor referente.
     expect(hostDeReferente('https://juliangonzalez.lat/proyectos', PROPIO)).toBeNull();
     expect(hostDeReferente('https://www.juliangonzalez.lat/', PROPIO)).toBeNull();
   });

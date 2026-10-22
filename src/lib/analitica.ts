@@ -8,7 +8,7 @@
  * "vino por LinkedIn".
  *
  * Nada de esto vive en `features/lukapp`, aunque allá haya fechas de Bogotá:
- * el portafolio y el ecosistema son bundles disjuntos a propósito, y un import
+ * el sitio de LukApp y el ecosistema son bundles disjuntos a propósito, y un import
  * cruzado metería el código de finanzas en la descarga de cualquier visitante.
  */
 

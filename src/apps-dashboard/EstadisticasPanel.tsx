@@ -308,7 +308,7 @@ export const EstadisticasPanel: React.FC<EstadisticasPanelProps> = ({
         <div className="mx-auto max-w-5xl">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight">Quién pasa por el portafolio</h2>
+              <h2 className="text-3xl font-extrabold tracking-tight">Quién pasa por el sitio de LukApp</h2>
               <p className="mt-2 text-sm text-[var(--fin-ink-soft)]">
                 Sin cookies y sin guardar una sola IP.
               </p>

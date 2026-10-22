@@ -31,16 +31,16 @@ import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
 import { ES_PASIVO, etiquetaTipoCajita } from './data/modelos';
 import { idsPasivos, saldosPorCajita } from './lib/cajitas';
-import { ContactosView } from './components/ContactosView';
-import { BuscadorMovimientos } from './components/BuscadorMovimientos';
-import { PanelAtajos } from './components/PanelAtajos';
-import { FuncionesSolicitadasView } from './components/FuncionesSolicitadasView';
-import { CuentaView } from './components/CuentaView';
-import { PanelGmf } from './components/PanelGmf';
-import { PanelRespaldo } from './components/PanelRespaldo';
-import { PresupuestosView } from './components/PresupuestosView';
-import { PanelPeriodo } from './components/PanelPeriodo';
-import { RecurrentesView } from './components/RecurrentesView';
+
+
+
+
+
+
+
+
+
+
 import { FILTRO_VACIO, filtrarMovimientos, filtroActivo } from './lib/filtros';
 import type { Filtro } from './lib/filtros';
 import {
@@ -60,30 +60,30 @@ import {
 } from './data/usePreferencias';
 import { NOVEDADES } from './novedades';
 import { contactoPorApodo } from './lib/contactos';
-import { DivisionCuentasModal } from './components/DivisionCuentasModal';
-import { EspaciosCompartidosView } from './components/EspaciosCompartidosView';
+
+
 import { calcularRacha } from './lib/racha';
 import { verificarRecordatorioRacha } from './lib/recordatorioRacha';
-import { CategoriasEditor } from './components/CategoriasEditor';
-import { AnalisisMovimiento } from './components/AnalisisMovimiento';
+
+
 import { crearIndiceSenales, senalesConIndice } from './lib/senales';
 import { analizarAnomalias } from './lib/senalesAvanzadas';
 import { ConfirmSheet } from './components/ConfirmSheet';
 import type { ConfirmDraft } from './components/ConfirmSheet';
 import { CatalogoProvider } from './catalogoContexto';
 import { hacerCatalogo } from './categorias';
-import { CajitasView } from './components/CajitasView';
-import { DeudasView } from './components/DeudasView';
-import { MetasView } from './components/MetasView';
+
+
+
 import { LukAppShell } from './components/LukAppShell';
 import { InicioView } from './components/InicioView';
 import { ForecastResumen } from './components/ForecastResumen';
 import { useAiInsights } from './hooks/useAiInsights';
 import type { Insight } from './lib/insights';
 import { DineroView } from './components/DineroView';
-import { DetalleCajita } from './components/DetalleCajita';
-import { AjustesView } from './components/AjustesView';
-import { PasswordRecoveryView } from './components/PasswordRecoveryView';
+
+
+
 import { HojaPanel } from './components/HojaPanel';
 import { BotonAnotar } from './components/BotonAnotar';
 import { DetalleMovimiento } from './components/DetalleMovimiento';
@@ -94,14 +94,14 @@ import { Onboarding } from './components/Onboarding';
 import { PANELES_AJUSTES, SECTIONS } from './sections';
 import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
-import { VaquitasModal } from './components/VaquitasModal';
+
 import { TemaToggle } from './components/TemaToggle';
 import type { Tema } from './data/useTema';
 import { TransactionList } from './components/TransactionList';
-import { GuiaApp } from './components/guia/GuiaApp';
+
 import { construirContextoFinanciero } from './lib/motorFinanciero';
 import { construirContextoParaAsesor } from './lib/centroInteligenciaFinanciera';
-import { CalendarioFinancieroView } from './components/CalendarioFinancieroView';
+
 import { PASOS_BASICOS, PASOS_POR_SECCION } from './components/guia/pasos';
 import { instalarConsolaDeVistas } from './dev/consolaVistas';
 import type { VistaDePrueba } from './dev/consolaVistas';
@@ -295,7 +295,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       setMigracionLista(true);
       return undefined;
     }
-    void migrarLibroLocal(repositorio)
+    void migrarLibroLocal(repositorio, userId)
       .catch((error) => console.error('No se pudieron migrar los datos locales:', error))
       .finally(() => {
         if (!cancelado) setMigracionLista(true);
@@ -303,7 +303,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     return () => { cancelado = true; };
   }, [repositorio, userId]);
 
-  const almacen = useAlmacen(migracionLista ? repositorio : undefined);
+  const almacen = useAlmacen(repositorio, migracionLista);
 
   // Vuelve a leer cada vez que regresas a la app. Sin esto, la app instalada en
   // la pantalla de inicio se queda con la foto del momento en que se abrió, y
@@ -892,11 +892,23 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   const saldoCuentasSinEfectivoCop = contextoFinanciero.saldo.saldoBancosCop ?? 0;
 
-  if (almacen.cargando) {
+  if (!migracionLista || almacen.cargando) {
     return (
       <div className="bg-[var(--fin-bg)]">
         <SkeletonInicio />
       </div>
+    );
+  }
+
+  if (almacen.error && Object.values(almacen.datos).every((lista) => lista.length === 0)) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center bg-[var(--fin-bg)] p-6 text-[var(--fin-ink)]">
+        <section className="max-w-md text-center" role="alert">
+          <h1 className="text-xl font-semibold">No pudimos cargar tus cuentas</h1>
+          <p className="mt-3 text-[var(--fin-ink-soft)]">Revisa la conexión y vuelve a intentarlo. Tus datos no se han reemplazado por saldos en cero.</p>
+          <button type="button" className="mt-6 rounded-full bg-[var(--fin-accent)] px-6 py-3 text-white" onClick={() => window.location.reload()}>Volver a cargar</button>
+        </section>
+      </main>
     );
   }
 
@@ -1696,3 +1708,49 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     </CatalogoProvider>
   );
 };
+
+const ContactosView = lazy(() => import('./components/ContactosView').then((modulo) => ({ default: modulo.ContactosView })));
+
+const BuscadorMovimientos = lazy(() => import('./components/BuscadorMovimientos').then((modulo) => ({ default: modulo.BuscadorMovimientos })));
+
+const PanelAtajos = lazy(() => import('./components/PanelAtajos').then((modulo) => ({ default: modulo.PanelAtajos })));
+
+const FuncionesSolicitadasView = lazy(() => import('./components/FuncionesSolicitadasView').then((modulo) => ({ default: modulo.FuncionesSolicitadasView })));
+
+const CuentaView = lazy(() => import('./components/CuentaView').then((modulo) => ({ default: modulo.CuentaView })));
+
+const PanelGmf = lazy(() => import('./components/PanelGmf').then((modulo) => ({ default: modulo.PanelGmf })));
+
+const PanelRespaldo = lazy(() => import('./components/PanelRespaldo').then((modulo) => ({ default: modulo.PanelRespaldo })));
+
+const PresupuestosView = lazy(() => import('./components/PresupuestosView').then((modulo) => ({ default: modulo.PresupuestosView })));
+
+const PanelPeriodo = lazy(() => import('./components/PanelPeriodo').then((modulo) => ({ default: modulo.PanelPeriodo })));
+
+const RecurrentesView = lazy(() => import('./components/RecurrentesView').then((modulo) => ({ default: modulo.RecurrentesView })));
+
+const DivisionCuentasModal = lazy(() => import('./components/DivisionCuentasModal').then((modulo) => ({ default: modulo.DivisionCuentasModal })));
+
+const EspaciosCompartidosView = lazy(() => import('./components/EspaciosCompartidosView').then((modulo) => ({ default: modulo.EspaciosCompartidosView })));
+
+const CategoriasEditor = lazy(() => import('./components/CategoriasEditor').then((modulo) => ({ default: modulo.CategoriasEditor })));
+
+const AnalisisMovimiento = lazy(() => import('./components/AnalisisMovimiento').then((modulo) => ({ default: modulo.AnalisisMovimiento })));
+
+const CajitasView = lazy(() => import('./components/CajitasView').then((modulo) => ({ default: modulo.CajitasView })));
+
+const DeudasView = lazy(() => import('./components/DeudasView').then((modulo) => ({ default: modulo.DeudasView })));
+
+const MetasView = lazy(() => import('./components/MetasView').then((modulo) => ({ default: modulo.MetasView })));
+
+const DetalleCajita = lazy(() => import('./components/DetalleCajita').then((modulo) => ({ default: modulo.DetalleCajita })));
+
+const AjustesView = lazy(() => import('./components/AjustesView').then((modulo) => ({ default: modulo.AjustesView })));
+
+const PasswordRecoveryView = lazy(() => import('./components/PasswordRecoveryView').then((modulo) => ({ default: modulo.PasswordRecoveryView })));
+
+const VaquitasModal = lazy(() => import('./components/VaquitasModal').then((modulo) => ({ default: modulo.VaquitasModal })));
+
+const CalendarioFinancieroView = lazy(() => import('./components/CalendarioFinancieroView').then((modulo) => ({ default: modulo.CalendarioFinancieroView })));
+
+const GuiaApp = lazy(() => import('./components/guia/GuiaApp').then((modulo) => ({ default: modulo.GuiaApp })));

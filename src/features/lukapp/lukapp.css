@@ -1,5 +1,5 @@
 /* The finance app is a separate Vite HTML entry with its own <head> and body
-   class, so nothing here can reach the portfolio. The classes are stamped on
+   class, so nothing here can reach the LukApp. The classes are stamped on
    <html>/<body> in finanzas/index.html rather than set from an effect: a class
    is declarative, needs no cleanup, and cannot leak across a StrictMode
    double-invoke.

@@ -392,7 +392,7 @@ export const AppsRoot: React.FC = () => {
     return <VistaConCarga><LegalLukApp onVolver={() => ir('/')} /></VistaConCarga>;
   }
 
-  if (sesion.estado.modo === 'cargando' || (sesion.estado.modo === 'autenticado' && loadingRol)) {
+  if (sesion.estado.modo === 'cargando' || (sesion.estado.modo === 'autenticado' && loadingRol && activeApp !== 'finanzas')) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
         <Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" />
