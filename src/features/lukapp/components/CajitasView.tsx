@@ -4,7 +4,7 @@ import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, PiggyBank, Plus } from 'lucide-react';
+import { PiggyBank, Plus } from 'lucide-react';
 import { COPY } from '../copy';
 import { iconoDeCajita } from '../cajitaIconos';
 import type { Transaction } from '../types';
@@ -14,6 +14,7 @@ import { resumenDeCajitas } from '../lib/cajitas';
 import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoInput } from '../lib/formatCop';
 import { CajitaCard } from './CajitaCard';
 import { RippleButton } from './RippleButton';
+import { AvanzadoAhorro } from './AvanzadoAhorro';
 import { AnimatedNumber } from './AnimatedNumber';
 
 const parseDia = (texto: string): number | null => {
@@ -90,6 +91,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
   const [saldoTexto, setSaldoTexto] = useState('');
   const [metaTexto, setMetaTexto] = useState('');
   const [tasaTexto, setTasaTexto] = useState('');
+  const [generaRendimientos, setGeneraRendimientos] = useState(false);
+  const [errorTasa, setErrorTasa] = useState(false);
   const [limiteTexto, setLimiteTexto] = useState('');
   const [corteTexto, setCorteTexto] = useState('');
   const [pagoTexto, setPagoTexto] = useState('');
@@ -111,14 +114,18 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     if (!limpio) return;
 
     // Comma is the decimal separator on a Colombian keyboard; accept both.
-    const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
+    const tasa = Number(tasaTexto.replace(',', '.'));
+    if (tipo === 'cajita' && generaRendimientos && (!Number.isFinite(tasa) || tasa <= 0)) {
+      setErrorTasa(true);
+      return;
+    }
     if (!await guardado.ejecutar(() => onCrear({
       nombre: limpio,
       icon,
       tipo,
       claseCuenta: esCuenta ? claseCuenta : null,
       metaCop: parseAmountInput(metaTexto),
-      tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+      tasaEaPct: tipo === 'cajita' && generaRendimientos ? tasa : null,
       limiteCreditoCop: esTarjeta ? parseAmountInput(limiteTexto) : null,
       diaCorte: esTarjeta ? parseDia(corteTexto) : null,
       diaPago: esTarjeta ? parseDia(pagoTexto) : null,
@@ -135,6 +142,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
     setSaldoTexto('');
     setMetaTexto('');
     setTasaTexto('');
+    setGeneraRendimientos(false);
+    setErrorTasa(false);
     setLimiteTexto(''); setCorteTexto(''); setPagoTexto(''); setMinimoTexto('');
     setCreando(false);
   };
@@ -371,12 +380,8 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
             ) : null}
 
             {tipo === 'cajita' ? (
-              <details className="mt-4 rounded-[var(--fin-r-card)] bg-[var(--fin-bg)] px-4 py-3">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-[14px] font-semibold text-[var(--fin-ink-soft)] [&::-webkit-details-marker]:hidden">
-                  <span>✨ Personalizar ahorro</span>
-                  <ChevronDown className="h-4 w-4 transition-transform open:rotate-180" aria-hidden="true" />
-                </summary>
-                <div className="pt-3">
+              <div className="mt-4">
+                <div>
                   <fieldset>
                     <legend className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Ícono</legend>
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -397,14 +402,15 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                     <input id="cajita-meta" value={metaTexto} onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))} inputMode="numeric" placeholder="0" className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none" />
                   </div>
 
-                  <label htmlFor="cajita-tasa" className="mt-4 block text-[13px] font-semibold text-[var(--fin-ink-soft)]">{COPY.cajitas.tasaOpcional}</label>
-                  <div className="mt-2 flex items-center gap-2 rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3">
-                    <input id="cajita-tasa" value={tasaTexto} onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))} inputMode="decimal" placeholder="13,5" className="w-full bg-transparent text-[20px] font-semibold tabular-nums text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] focus:outline-none" />
-                    <span className="shrink-0 text-[15px] font-semibold text-[var(--fin-ink-faint)]">% E.A.</span>
-                  </div>
-                  <p className="mt-2 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">{COPY.cajitas.tasaHint}</p>
                 </div>
-              </details>
+                <AvanzadoAhorro
+                  habilitado={generaRendimientos}
+                  tasaTexto={tasaTexto}
+                  error={errorTasa}
+                  onHabilitado={(valor) => { setGeneraRendimientos(valor); setErrorTasa(false); }}
+                  onTasa={(valor) => { setTasaTexto(valor); setErrorTasa(false); }}
+                />
+              </div>
             ) : null}
 
             <div className="mt-5 flex gap-2">

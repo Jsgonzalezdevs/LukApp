@@ -1084,6 +1084,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               setPanelDineroCajitaId(null);
               setPanelDinero('tarjeta');
             }}
+            onCrearAhorro={() => {
+              setPanelDineroCajitaId(null);
+              setPanelDinero('cajita');
+            }}
             onCrear={() => {
               setPanelDineroCajitaId(null);
               setPanelDinero('cuenta');

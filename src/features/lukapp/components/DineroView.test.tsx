@@ -32,3 +32,12 @@ describe('DineroView — colores de las cuentas', () => {
     expect(fila.querySelector('.cuenta-nombre')).toHaveTextContent('Davivienda');
   });
 });
+
+it('permite abrir los ahorros desde Dinero incluso sin cajitas existentes', () => {
+  const onCrearAhorro = vi.fn();
+  const onCrear = vi.fn();
+  render(<DineroView cajitas={[]} movimientos={[]} transacciones={[]} mostrarAhorro onAbrir={vi.fn()} onAbrirTarjetas={vi.fn()} onCrear={onCrear} onCrearAhorro={onCrearAhorro} />);
+  fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+  expect(onCrearAhorro).toHaveBeenCalledTimes(1);
+  expect(onCrear).not.toHaveBeenCalled();
+});

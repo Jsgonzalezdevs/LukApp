@@ -11,6 +11,7 @@ import { formatAmountInput, conPuntos, formatCop, parseAmountInput, parseSaldoIn
 import { idsPasivos, saldoDeCajita } from '../lib/cajitas';
 import { iconoDeCajita } from '../cajitaIconos';
 import { RippleButton } from './RippleButton';
+import { AvanzadoAhorro } from './AvanzadoAhorro';
 import { IconoCuenta } from './IconoCuenta';
 
 const parseDia = (texto: string): number | null => {
@@ -76,6 +77,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   const [tasaTexto, setTasaTexto] = useState(
     cajita.tasaEaPct === null ? '' : String(cajita.tasaEaPct),
   );
+  const [generaRendimientos, setGeneraRendimientos] = useState((cajita.tasaEaPct ?? 0) > 0);
+  const [errorTasa, setErrorTasa] = useState(false);
   const [bajoMonto, setBajoMonto] = useState(cajita.esBajoMonto ?? false);
   const [limiteTexto, setLimiteTexto] = useState(formatAmountInput(cajita.limiteCreditoCop ?? null));
   const [corteTexto, setCorteTexto] = useState(cajita.diaCorte ? String(cajita.diaCorte) : '');
@@ -88,13 +91,17 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
     e.preventDefault();
     const limpio = nombre.trim();
     if (!limpio) return;
-    const tasa = Number.parseFloat(tasaTexto.replace(',', '.'));
+    const tasa = Number(tasaTexto.replace(',', '.'));
+    if (cajita.tipo === 'cajita' && generaRendimientos && (!Number.isFinite(tasa) || tasa <= 0)) {
+      setErrorTasa(true);
+      return;
+    }
     if (!await guardado.ejecutar(() => onActualizar({
       ...cajita,
       nombre: limpio,
       icon,
       metaCop: parseAmountInput(metaTexto),
-      tasaEaPct: Number.isFinite(tasa) && tasa > 0 ? tasa : null,
+      tasaEaPct: cajita.tipo === 'cajita' ? (generaRendimientos ? tasa : null) : cajita.tasaEaPct,
       esBajoMonto: bajoMonto,
       limiteCreditoCop: cajita.tipo === 'tarjeta' ? parseAmountInput(limiteTexto) : null,
       diaCorte: cajita.tipo === 'tarjeta' ? parseDia(corteTexto) : null,
@@ -199,8 +206,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
             />
           </label>
 
-          {!pasivo ? (
-            <div className="mt-3 grid grid-cols-2 gap-2">
+          {cajita.tipo === 'cajita' ? (
+            <div className="mt-3">
               <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                 Meta
                 <input
@@ -208,16 +215,6 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   onChange={(e) => setMetaTexto(formatAmountInput(parseAmountInput(e.target.value)))}
                   inputMode="numeric"
                   placeholder="0"
-                  className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
-                />
-              </label>
-              <label className="block text-[13px] font-semibold text-[var(--fin-ink-soft)]">
-                % E.A.
-                <input
-                  value={tasaTexto}
-                  onChange={(e) => setTasaTexto(e.target.value.replace(/[^0-9.,]/g, ''))}
-                  inputMode="decimal"
-                  placeholder="13,5"
                   className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] font-semibold tabular-nums text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none"
                 />
               </label>
@@ -257,6 +254,16 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
               })}
             </div>
           </fieldset>
+
+          {cajita.tipo === 'cajita' ? (
+            <AvanzadoAhorro
+              habilitado={generaRendimientos}
+              tasaTexto={tasaTexto}
+              error={errorTasa}
+              onHabilitado={(valor) => { setGeneraRendimientos(valor); setErrorTasa(false); }}
+              onTasa={(valor) => { setTasaTexto(valor); setErrorTasa(false); }}
+            />
+          ) : null}
 
           {!pasivo ? (
             <label className="mt-3 flex cursor-pointer items-start gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3">

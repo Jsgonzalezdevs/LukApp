@@ -27,6 +27,7 @@ interface DineroViewProps {
   /** Abre el espacio dedicado a tarjetas, incluso si aún no hay ninguna. */
   onAbrirTarjetas: () => void;
   onCrear: () => void;
+  onCrearAhorro?: () => void;
   modoPrivacidad?: boolean;
   cuentaFavoritaId?: string | null;
 }
@@ -50,6 +51,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
   onAbrirHerramienta,
   onAbrirTarjetas,
   onCrear,
+  onCrearAhorro,
   modoPrivacidad = false,
   cuentaFavoritaId = null,
 }) => {
@@ -210,6 +212,16 @@ export const DineroView: React.FC<DineroViewProps> = ({
           </section>
         );
       })}
+
+      {onCrearAhorro ? (
+        <button
+          type="button"
+          onClick={onCrearAhorro}
+          className="min-h-12 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)] px-5 py-3 text-[15px] font-semibold text-[var(--fin-on-accent)] transition-transform active:scale-[0.98] motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fin-accent)]"
+        >
+          🐷 Crear ahorro
+        </button>
+      ) : null}
 
       {vivas.length > 0 ? (
         <div className="grid grid-cols-2 gap-3">

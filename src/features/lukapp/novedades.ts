@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.13.0', fecha: '2026-10-22', texto: 'Crea un ahorro desde Dinero y configura sus opciones avanzadas: activa los rendimientos con un interruptor y configura su tasa E.A. al crear o editar el ahorro. El ícono y la meta quedan a la vista, y la tasa sigue siendo opcional. 🐷⚙️' },
   { version: '9.12.0', fecha: '2026-10-21', texto: 'Reconocemos los 31 bancos del directorio de Fogafín y más billeteras de Colombia, con sus colores y símbolos. Rapi ahora se muestra como Rappi, y seguimos reconociendo nombres con pequeños errores o espacios de más. 🏦🎨' },
   { version: '9.11.2', fecha: '2026-10-21', texto: 'Tus bancos y billeteras ahora muestran su logo sin fondo, también dentro del círculo en móvil. Reconocemos nombres con espacios de más, letras omitidas o intercambiadas, y mantenemos el mismo símbolo en cuentas, detalles y al registrar movimientos. 🏦✨' },
   { version: '9.11.1', fecha: '2026-10-21', texto: 'Tus cuentas tienen colores más equilibrados: separamos cada marca, dejamos los saldos sobre fondo neutro y usamos letras blancas sobre los rojos. La cuenta principal queda primero y distribuimos los colores para evitar que se acumulen. 🎨🏦' },

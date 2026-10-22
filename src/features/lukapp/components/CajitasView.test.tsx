@@ -150,14 +150,66 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     expect(screen.queryByText('Rendimiento (opcional)')).not.toBeInTheDocument();
   });
 
-  it('sí las ofrece en una cajita, donde sí significan algo', () => {
+  it('sí las ofrece en una cajita, donde sí significan algo', async () => {
     montar('cajita', []);
     fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
 
-    expect(screen.getByText('✨ Personalizar ahorro').closest('details')).not.toHaveAttribute('open');
-    fireEvent.click(screen.getByText('✨ Personalizar ahorro'));
-    expect(screen.getByLabelText(/Meta a la que quieres llegar/)).toBeInTheDocument();
-    expect(screen.getByText('Rendimiento (opcional)')).toBeInTheDocument();
+    const avanzado = screen.getByRole('button', { name: /Avanzado/ });
+    expect(avanzado).toHaveAttribute('aria-expanded', 'false');
+    await waitFor(() => expect(screen.getByLabelText(/Meta a la que quieres llegar/)).toBeVisible());
+    expect(screen.getByRole('group', { name: 'Ícono' })).toBeVisible();
+    expect(screen.queryByLabelText('Tasa efectiva anual (E.A.)')).not.toBeInTheDocument();
+    fireEvent.click(avanzado);
+    fireEvent.click(screen.getByRole('switch', { name: 'Este ahorro genera rendimientos' }));
+    await waitFor(() => expect(screen.getByLabelText('Tasa efectiva anual (E.A.)')).toBeVisible());
+  });
+
+  it('conserva la tasa al apagar y encender, pero solo la guarda si está activa', async () => {
+    const { onCrear } = montar('cajita', []);
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Mi ahorro' } });
+    fireEvent.click(screen.getByRole('button', { name: /Avanzado/ }));
+    const interruptor = screen.getByRole('switch');
+    fireEvent.click(interruptor);
+    fireEvent.change(screen.getByLabelText('Tasa efectiva anual (E.A.)'), { target: { value: '10,5' } });
+    fireEvent.click(interruptor);
+    expect(screen.queryByLabelText('Tasa efectiva anual (E.A.)')).not.toBeInTheDocument();
+    fireEvent.click(interruptor);
+    expect(screen.getByLabelText('Tasa efectiva anual (E.A.)')).toHaveValue('10,5');
+    fireEvent.click(interruptor);
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({ tasaEaPct: null })));
+    await waitFor(() => expect(screen.queryByRole('switch', { hidden: true })).not.toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Avanzado/ }));
+    expect(screen.getByRole('switch')).not.toBeChecked();
+  });
+
+  it.each(['', '0', '1,2,3', '1.2.3'])('no guarda una tasa inválida %s aunque Avanzado esté cerrado', async (valor) => {
+    const { onCrear } = montar('cajita', []);
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Mi ahorro' } });
+    const avanzado = screen.getByRole('button', { name: /Avanzado/ });
+    fireEvent.click(avanzado);
+    fireEvent.click(screen.getByRole('switch'));
+    fireEvent.change(screen.getByLabelText('Tasa efectiva anual (E.A.)'), { target: { value: valor } });
+    fireEvent.click(avanzado);
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    expect(onCrear).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.getByLabelText('Tasa efectiva anual (E.A.)')).toBeVisible());
+    expect(screen.getByRole('alert')).toHaveTextContent('Escribe una tasa mayor que cero');
+  });
+
+  it('guarda una tasa decimal sin exigir una meta y conserva el saldo inicial', async () => {
+    const { onCrear } = montar('cajita', []);
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Mi ahorro' } });
+    fireEvent.change(screen.getByLabelText('¿Con cuánto empiezas? (opcional)'), { target: { value: '50000' } });
+    fireEvent.click(screen.getByRole('button', { name: /Avanzado/ }));
+    fireEvent.click(screen.getByRole('switch'));
+    fireEvent.change(screen.getByLabelText('Tasa efectiva anual (E.A.)'), { target: { value: '10,5' } });
+    fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
+    await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({ tasaEaPct: 10.5, saldoInicialCop: 50000, metaCop: null })));
   });
 
   it('clasifica una inversión aparte y permite definir su moneda con emojis de identidad', async () => {
