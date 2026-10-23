@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.10', fecha: '2026-10-23', texto: 'La barra Premium ahora deja ver mejor el fondo difuminado y suma reflejos morados suaves en movimiento. 💜' },
   { version: '10.1.9', fecha: '2026-10-23', texto: 'En Chrome y Brave, la barra Premium ahora refracta el fondo como un lente morado; en Safari conserva el vidrio difuminado. 💜' },
   { version: '10.1.6', fecha: '2026-10-23', texto: 'La barra para escribir, escanear y buscar ahora luce un cristal morado en Premium. Retiramos la tarjeta de estado del Inicio. 💜' },
   { version: '10.1.5', fecha: '2026-10-23', texto: 'Tu plan Premium ahora se identifica en Inicio, muestra su vigencia y destaca las prestaciones incluidas. 💜' },
