@@ -57,10 +57,12 @@
   --fin-glass-filter: blur(28px) saturate(180%);
   --fin-glass-highlight: rgb(255 255 255 / 0.55);
   --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(85 34 130 / 23%), rgb(126 67 196 / 23%) 48%, rgb(76 39 124 / 24%));
-  --fin-premium-lens-border: rgb(255 255 255 / 38%);
-  --fin-premium-lens-specular: rgb(255 255 255 / 32%);
-  --fin-premium-lens-glow: 0 0 32px -20px rgb(129 67 194 / 62%);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(99 43 159 / 15%), rgb(127 74 185 / 12%) 48%, rgb(71 35 118 / 16%));
+  --fin-premium-lens-border: rgb(255 255 255 / 30%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 25%);
+  --fin-premium-lens-rim: rgb(255 255 255 / 40%);
+  --fin-premium-lens-bottom-rim: rgb(84 48 121 / 16%);
+  --fin-premium-lens-glow: 0 0 28px -20px rgb(129 67 194 / 42%);
 
   /* Text, darkest to lightest */
   --fin-ink: #1c1917;
@@ -201,10 +203,12 @@
        visibly lifts off a background that is nearly as dark as it is. */
     --fin-glass-highlight: rgb(255 255 255 / 0.12);
     --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-    --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 38 96 / 35%), rgb(126 67 196 / 29%) 48%, rgb(42 28 65 / 42%));
-    --fin-premium-lens-border: rgb(255 255 255 / 24%);
-    --fin-premium-lens-specular: rgb(255 255 255 / 23%);
-    --fin-premium-lens-glow: 0 0 34px -20px rgb(145 92 211 / 48%);
+    --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 38 96 / 22%), rgb(126 67 196 / 18%) 48%, rgb(42 28 65 / 26%));
+    --fin-premium-lens-border: rgb(255 255 255 / 22%);
+    --fin-premium-lens-specular: rgb(255 255 255 / 18%);
+    --fin-premium-lens-rim: rgb(255 255 255 / 24%);
+    --fin-premium-lens-bottom-rim: rgb(0 0 0 / 30%);
+    --fin-premium-lens-glow: 0 0 30px -20px rgb(145 92 211 / 35%);
 
     --fin-ink: #f5f3f0;
     --fin-ink-soft: #c2bbb4;
@@ -268,10 +272,12 @@
 
   --fin-glass-highlight: rgb(255 255 255 / 0.12);
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 38 96 / 35%), rgb(126 67 196 / 29%) 48%, rgb(42 28 65 / 42%));
-  --fin-premium-lens-border: rgb(255 255 255 / 24%);
-  --fin-premium-lens-specular: rgb(255 255 255 / 23%);
-  --fin-premium-lens-glow: 0 0 34px -20px rgb(145 92 211 / 48%);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 38 96 / 22%), rgb(126 67 196 / 18%) 48%, rgb(42 28 65 / 26%));
+  --fin-premium-lens-border: rgb(255 255 255 / 22%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 18%);
+  --fin-premium-lens-rim: rgb(255 255 255 / 24%);
+  --fin-premium-lens-bottom-rim: rgb(0 0 0 / 30%);
+  --fin-premium-lens-glow: 0 0 30px -20px rgb(145 92 211 / 35%);
 
   --fin-ink: #f5f3f0;
   --fin-ink-soft: #c2bbb4;
@@ -333,8 +339,8 @@
   --cristal-x: 50%;
   --cristal-y: 50%;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 62%),
-    inset 0 -1px 0 rgb(84 48 121 / 20%),
+    inset 0 1px 0 var(--fin-premium-lens-rim),
+    inset 0 -1px 0 var(--fin-premium-lens-bottom-rim),
     0 16px 38px -20px rgb(45 24 67 / 55%),
     var(--fin-premium-lens-glow);
   transition: transform 260ms cubic-bezier(.2, .8, .2, 1), box-shadow 260ms ease;
@@ -361,7 +367,7 @@
   z-index: 2;
   inset: 1px;
   border-radius: inherit;
-  border-top: 1px solid rgb(255 255 255 / 43%);
+  border-top: 1px solid var(--fin-premium-lens-rim);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
   pointer-events: none;
 }
