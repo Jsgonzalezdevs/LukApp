@@ -22,7 +22,7 @@ describe('BandejaRevision', () => {
     const abrir = vi.fn();
     render(<BandejaRevision transacciones={[tx('uno'), tx('dos')]} revisiones={[]} onGuardar={guardar} onAbrirMovimiento={abrir} />);
 
-    expect(screen.getByText('🧭 Todo claro, a tu ritmo')).toBeInTheDocument();
+    expect(screen.getByText('Pendientes por revisar')).toBeInTheDocument();
     expect(screen.getAllByText('💸')).toHaveLength(2);
     fireEvent.click(screen.getAllByRole('button', { name: 'Ver movimiento' })[0]);
     expect(abrir).toHaveBeenCalledTimes(1);

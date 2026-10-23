@@ -170,8 +170,8 @@ const senalInusual = (tx: Transaction, indice: IndiceSenales): Senal | null => {
 
   return {
     tipo: 'inusual',
-    titulo: `${veces.toFixed(1)}× tu gasto habitual en ${indice.nombreCategoria(tx.category)}`,
-    detalle: `Sueles gastar cerca de ${formatCop(base)}. Este fue ${formatCop(tx.amountCop)}.`,
+    titulo: 'El monto fue mayor de lo normal',
+    detalle: `En ${indice.nombreCategoria(tx.category)}, suele rondar ${formatCop(base)}. Este movimiento fue de ${formatCop(tx.amountCop)}.`,
     tono: veces >= 5 ? 'alerta' : 'aviso',
   };
 };

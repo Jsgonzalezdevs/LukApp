@@ -31,7 +31,8 @@ describe('inusual', () => {
 
     const senal = senalesDeMovimiento(grande, historial).find((s) => s.tipo === 'inusual');
     expect(senal).toBeDefined();
-    expect(senal!.titulo).toMatch(/× tu gasto habitual en Comida/);
+    expect(senal!.titulo).toBe('El monto fue mayor de lo normal');
+    expect(senal!.detalle).toMatch(/En Comida, suele rondar/);
   });
 
   it('stays quiet without enough history to have a baseline', () => {

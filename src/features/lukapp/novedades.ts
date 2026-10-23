@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.1', fecha: '2026-10-23', texto: 'La bandeja de revisión ahora muestra pocos avisos a la vez y explica los montos con palabras más claras. ✨' },
   { version: '10.1.0', fecha: '2026-10-23', texto: 'Personaliza tus períodos: elige cuántos días dura cada ciclo y desde qué fecha comienza, con una vista previa de su avance. ✨📅' },
   { version: '10.0.0', fecha: '2026-10-23', texto: 'Retiramos «Tu trabajo» por completo y eliminamos sus registros guardados en este dispositivo y en la nube. ✨' },
   { version: '9.14.5', fecha: '2026-10-23', texto: 'Quitamos el botón «Completar saldos» de Inicio. El saldo pendiente ahora solo muestra una indicación breve para confirmarlo desde Cuentas. 💰' },

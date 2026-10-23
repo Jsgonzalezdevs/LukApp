@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeftRight, Check, Clock3, FileText, Wallet } from 'lucide-react';
 import type { Transaction } from '../types';
@@ -30,14 +30,18 @@ const actualizarEstado = (
   updatedAt: new Date().toISOString(),
 });
 
+const AVISOS_POR_GRUPO = 5;
+
 export const BandejaRevision: React.FC<BandejaRevisionProps> = ({
   transacciones,
   revisiones,
   onGuardar,
   onAbrirMovimiento,
 }) => {
+  const [cantidadVisible, setCantidadVisible] = useState(AVISOS_POR_GRUPO);
   const items = construirBandejaRevision(transacciones, revisiones);
   const pendientes = items.filter((item) => item.estado === 'pendiente');
+  const pendientesVisibles = pendientes.slice(0, cantidadVisible);
   const resueltas = items.filter((item) => item.estado !== 'pendiente');
   const transaccionPorId = new Map(transacciones.map((tx) => [tx.id, tx]));
 
@@ -47,13 +51,13 @@ export const BandejaRevision: React.FC<BandejaRevisionProps> = ({
   return (
     <div className="flex flex-col gap-5">
       <header className="rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4">
-        <p className="text-[17px] font-semibold text-[var(--fin-ink)]">🧭 Todo claro, a tu ritmo</p>
+        <p className="text-[17px] font-semibold text-[var(--fin-ink)]">Pendientes por revisar</p>
         <p className="mt-1 text-[15px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Aquí aparecen movimientos que podrían repetirse y filas dudosas de tus extractos. Revisa el detalle y guarda cada decisión; nada cambia tu saldo desde esta bandeja.
+          Revisa movimientos repetidos o datos del extracto que quieras confirmar. Tus decisiones aquí no cambian los saldos.
         </p>
-        <p className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-warn-ink)]">
+        <p className="mt-3 flex items-center gap-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           <Clock3 className="h-4 w-4" aria-hidden="true" />
-          {pendientes.length} pendiente{pendientes.length === 1 ? '' : 's'}
+          {pendientes.length} aviso{pendientes.length === 1 ? '' : 's'} por revisar
         </p>
       </header>
 
@@ -65,7 +69,7 @@ export const BandejaRevision: React.FC<BandejaRevisionProps> = ({
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {pendientes.map((item, indice) => {
+          {pendientesVisibles.map((item, indice) => {
             const tipo = IDENTIDAD[item.tipo];
             const tx = item.referenciaId ? transaccionPorId.get(item.referenciaId) : undefined;
             return (
@@ -105,6 +109,16 @@ export const BandejaRevision: React.FC<BandejaRevisionProps> = ({
           })}
         </ul>
       )}
+
+      {pendientesVisibles.length < pendientes.length ? (
+        <button
+          type="button"
+          onClick={() => setCantidadVisible((actual) => actual + AVISOS_POR_GRUPO)}
+          className="min-h-11 self-center rounded-[var(--fin-r-pill)] px-5 py-2 text-[14px] font-semibold text-[var(--fin-accent)] hover:bg-[var(--fin-soft)]"
+        >
+          Mostrar {Math.min(AVISOS_POR_GRUPO, pendientes.length - pendientesVisibles.length)} más
+        </button>
+      ) : null}
 
       {resueltas.length > 0 ? (
         <details className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
