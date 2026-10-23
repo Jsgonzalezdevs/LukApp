@@ -22,7 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
-  { version: '10.1.7', fecha: '2026-10-23', texto: 'La barra Premium ahora deja ver el contenido a través de un cristal morado con más desenfoque y reflejos interactivos. 💜' },
+  { version: '10.1.8', fecha: '2026-10-23', texto: 'La barra Premium desenfoca más lo que pasa por detrás y responde a tus toques con un reflejo de luz. 💜' },
   { version: '10.1.6', fecha: '2026-10-23', texto: 'La barra para escribir, escanear y buscar ahora luce un cristal morado en Premium. Retiramos la tarjeta de estado del Inicio. 💜' },
   { version: '10.1.5', fecha: '2026-10-23', texto: 'Tu plan Premium ahora se identifica en Inicio, muestra su vigencia y destaca las prestaciones incluidas. 💜' },
   { version: '10.1.4', fecha: '2026-10-23', texto: 'El botón para dictar distingue Premium con un degradado morado que se mueve suavemente. 💜' },

@@ -320,8 +320,8 @@
   isolation: isolate;
   --cristal-x: 50%;
   --cristal-y: 50%;
-  backdrop-filter: blur(30px) saturate(175%) brightness(1.04) !important;
-  -webkit-backdrop-filter: blur(30px) saturate(175%) brightness(1.04) !important;
+  backdrop-filter: blur(34px) saturate(190%) brightness(1.03) !important;
+  -webkit-backdrop-filter: blur(34px) saturate(190%) brightness(1.03) !important;
   background: linear-gradient(140deg, rgb(66 40 91 / 13%), rgb(131 84 191 / 11%) 48%, rgb(67 40 99 / 16%));
   border-color: rgb(255 255 255 / 43%);
   box-shadow:
@@ -371,6 +371,12 @@
   filter: drop-shadow(0 0 5px rgb(219 194 255 / 45%));
 }
 
+.fin-page .fin-glass.fin-premium-crystal:active::before {
+  background:
+    radial-gradient(190px circle at var(--cristal-x) var(--cristal-y), rgb(255 255 255 / 48%), rgb(217 190 255 / 22%) 30%, transparent 74%),
+    linear-gradient(112deg, transparent 20%, rgb(255 255 255 / 8%) 40%, rgb(255 255 255 / 26%) 49%, rgb(234 218 255 / 13%) 53%, transparent 70%);
+}
+
 @keyframes fin-crystal-destello {
   0%, 18% { background-position: center, -120% 0; }
   62%, 100% { background-position: center, 120% 0; }
@@ -381,6 +387,15 @@
   .fin-page .fin-glass.fin-premium-crystal > button {
     animation: none;
     transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .fin-page .fin-glass.fin-premium-crystal {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgb(73 46 98 / 94%);
+    border-color: rgb(255 255 255 / 72%);
   }
 }
 
