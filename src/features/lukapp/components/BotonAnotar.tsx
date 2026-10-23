@@ -308,9 +308,9 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
                 borderRadius: 'inherit',
                 // El blur vive en su propia capa transparente, separada del
                 // reflejo y de los botones para difuminar filas de verdad.
-                backdropFilter: 'blur(32px) saturate(1.75) contrast(1.08)',
-                WebkitBackdropFilter: 'blur(32px) saturate(1.75) contrast(1.08)',
-                background: 'var(--fin-premium-lens-fill, linear-gradient(140deg, rgb(255 255 255 / 5%), rgb(126 34 206 / 8%) 48%, rgb(139 92 246 / 5%)))',
+                backdropFilter: 'blur(48px) saturate(1.65) contrast(1.06)',
+                WebkitBackdropFilter: 'blur(48px) saturate(1.65) contrast(1.06)',
+                background: 'var(--fin-premium-lens-fill, linear-gradient(140deg, rgb(255 255 255 / 3%), rgb(126 34 206 / 6%) 48%, rgb(139 92 246 / 3%)))',
                 pointerEvents: 'none',
               }}
             />
@@ -322,7 +322,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
                 zIndex: 1,
                 inset: '1px',
                 borderRadius: 'inherit',
-                backgroundImage: 'radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), var(--fin-premium-lens-specular, rgb(255 255 255 / 22%)), rgb(217 190 255 / 14%) 31%, transparent 75%), linear-gradient(145deg, rgb(255 255 255 / 20%), transparent 34%, rgb(199 164 255 / 12%) 72%, transparent), linear-gradient(180deg, rgb(255 255 255 / 10%), transparent 28%)',
+                backgroundImage: 'radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), var(--fin-premium-lens-specular, rgb(255 255 255 / 18%)), rgb(217 190 255 / 10%) 31%, transparent 75%), linear-gradient(145deg, rgb(255 255 255 / 14%), transparent 34%, rgb(199 164 255 / 8%) 72%, transparent), linear-gradient(180deg, rgb(255 255 255 / 7%), transparent 28%)',
                 backgroundSize: 'auto, 220% 220%, 100% 100%',
                 backgroundPosition: 'center, 0% 35%, center',
                 mixBlendMode: 'screen',
