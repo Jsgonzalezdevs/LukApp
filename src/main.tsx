@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './features/lukapp/styles/premium-glass.css'
 import { BarreraErrores } from './components/BarreraErrores'
 import { RaizAplicacion } from './RaizAplicacion'
 import { iniciarInstalacionPwa } from './features/lukapp/data/instalacionPwa'

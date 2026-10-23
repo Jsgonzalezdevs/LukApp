@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.19', fecha: '2026-10-23', texto: 'El cristal Premium ahora carga sus reflejos y desenfoque junto con la app. 💜' },
   { version: '10.1.18', fecha: '2026-10-23', texto: 'El cristal Premium difumina el fondo desde la propia barra y mantiene su reflejo morado. 💜' },
   { version: '10.1.17', fecha: '2026-10-23', texto: 'El cristal morado de la barra Premium ahora difumina los movimientos que pasan detrás. 💜' },
   { version: '10.1.16', fecha: '2026-10-23', texto: 'El cristal Premium ahora difumina más el fondo y refuerza sus reflejos morados. 💜' },

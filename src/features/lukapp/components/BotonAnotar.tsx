@@ -303,7 +303,34 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             onPointerMove={actualizarReflejoCristal}
             onPointerLeave={centrarReflejoCristal}
           >
-            {controlesRapidos}
+            <span
+              aria-hidden="true"
+              className="fin-premium-lens-light"
+              style={{
+                position: 'absolute',
+                zIndex: 1,
+                inset: '1px',
+                borderRadius: 'inherit',
+                backgroundImage: 'radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), var(--fin-premium-lens-specular, rgb(255 255 255 / 18%)), rgb(217 190 255 / 12%) 31%, transparent 75%), linear-gradient(145deg, rgb(255 255 255 / 14%), transparent 34%, rgb(199 164 255 / 9%) 72%, transparent)',
+                backgroundSize: 'auto, 220% 220%',
+                backgroundPosition: 'center, 0% 35%',
+                mixBlendMode: 'screen',
+                pointerEvents: 'none',
+              }}
+            />
+            <span
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                zIndex: 2,
+                inset: '1px',
+                borderRadius: 'inherit',
+                borderTop: '1px solid var(--fin-premium-lens-rim, rgb(255 255 255 / 56%))',
+                boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 12%)',
+                pointerEvents: 'none',
+              }}
+            />
+            <div style={{ position: 'relative', zIndex: 4 }}>{controlesRapidos}</div>
           </div>
         ) : (
           <div className="fin-glass rounded-[var(--fin-r-pill)] bg-[var(--fin-card)]">
