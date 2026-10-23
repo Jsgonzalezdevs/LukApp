@@ -115,7 +115,10 @@ export const instalarConsolaDeVistas = ({ abrir, cerrar, permitirEnProduccion = 
         else if (destino === 'ayuda') ayuda();
         else if (destino === 'instalar-pwa') consola.instalarPwa();
         else consola.abrir(destino);
-        return undefined;
+        if (destino === 'cerrar') return 'LukApp · vistas cerradas.';
+        if (destino === 'ayuda') return 'LukApp · consulta la lista de atajos arriba.';
+        if (destino === 'instalar-pwa') return 'LukApp · vista de instalación abierta.';
+        return `LukApp · vista «${destino}» abierta.`;
       },
     });
   }

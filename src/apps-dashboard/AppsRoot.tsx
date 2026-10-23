@@ -481,6 +481,7 @@ export const AppsRoot: React.FC = () => {
           esAdmin={true}
           permitirConsolaEnProduccion={rol === 'admin'}
         />
+        {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} forzarVistaPrevia={vistaPreviaInstalacionPwa} />}
       </div>
       </VistaConCarga>
     );
