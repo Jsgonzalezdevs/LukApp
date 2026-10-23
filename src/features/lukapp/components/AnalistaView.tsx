@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
@@ -661,7 +662,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
         <label className="block text-[15px] font-semibold text-[var(--fin-ink)]" htmlFor="cuenta-extracto">
           ¿A qué cuenta de LukApp pertenece este extracto?
         </label>
-        <select
+        <SelectorApp
           id="cuenta-extracto"
           value={cuentaId ?? ''}
           onChange={(e) => setCuentaId(e.target.value || null)}
@@ -669,7 +670,7 @@ export const AnalistaView: React.FC<AnalistaViewProps> = ({ existentes, cuentas,
         >
           <option value="" disabled>Selecciona una cuenta</option>
           {cuentas.map((cuenta) => <option key={cuenta.id} value={cuenta.id}>{cuenta.nombre}</option>)}
-        </select>
+        </SelectorApp>
         <p className="mt-2 text-[13px] text-[var(--fin-ink-faint)]">
           Elige la cuenta a la que pertenece el extracto. Puedes importar los movimientos como actividad actual o conservar un historial antiguo sin alterar el saldo de hoy.
         </p>

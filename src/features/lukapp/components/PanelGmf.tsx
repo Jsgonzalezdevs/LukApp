@@ -1,6 +1,8 @@
+import { SelectorApp } from './SelectorApp';
 import React, { useState } from 'react';
 import { AlertTriangle, Landmark, Scale } from 'lucide-react';
 import type { Transaction } from '../types';
+import type { CajitaMovimiento } from '../data/modelos';
 import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import {
   ADVERTENCIA_GMF,
@@ -13,12 +15,13 @@ import { formatCop, formatAmountInput, parseAmountInput, conPuntos } from '../li
 
 interface PanelGmfProps {
   transacciones: readonly Transaction[];
+  movimientos: readonly CajitaMovimiento[];
   mes: string;
   anioActual: number;
-  cuentas: readonly { id: string; nombre: string; etiqueta?: string; esBajoMonto?: boolean }[];
+  cuentas: readonly { id: string; nombre: string; etiqueta?: string; esBajoMonto?: boolean; esFinanciera?: boolean }[];
   uvt: ValorUvt;
   onCambiarUvt: (uvt: ValorUvt) => void;
-  cuentasGmf: readonly string[];
+  cuentasGmf: readonly string[] | null;
   onCambiarCuentas: (ids: readonly string[]) => void;
   regimen: RegimenGmf;
   onCambiarRegimen: (r: RegimenGmf) => void;
@@ -40,6 +43,7 @@ const CAMPO =
  */
 export const PanelGmf: React.FC<PanelGmfProps> = ({
   transacciones,
+  movimientos,
   mes,
   anioActual,
   cuentas,
@@ -55,17 +59,19 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
   const [editandoUvt, setEditandoUvt] = useState(false);
   const [borrador, setBorrador] = useState('');
 
-  const cubiertas = new Set(cuentasGmf);
+  const idsCubiertos = cuentasGmf ?? cuentas.filter((c) => c.esFinanciera).map((c) => c.id);
+  const cubiertas = new Set(idsCubiertos);
   const bajoMontoIds = new Set(cuentas.filter((c) => c.esBajoMonto).map((c) => c.id));
   const consumo = consumoDelMes(transacciones, mes, uvt, cubiertas, {
     regimen,
     cuentaExentaId,
     bajoMontoIds,
+    movimientosTransferencia: movimientos,
   });
   const vieja = uvtDesactualizada(uvt, anioActual);
 
   const alternar = (id: string) =>
-    onCambiarCuentas(cubiertas.has(id) ? cuentasGmf.filter((x) => x !== id) : [...cuentasGmf, id]);
+    onCambiarCuentas(cubiertas.has(id) ? idsCubiertos.filter((x) => x !== id) : [...idsCubiertos, id]);
 
   return (
     <section className="flex flex-col gap-4">
@@ -136,7 +142,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
             >
               ¿Cuál marcaste en el banco?
             </label>
-            <select
+            <SelectorApp
               id="cuenta-exenta"
               value={cuentaExentaId ?? ''}
               onChange={(e) => onCambiarCuentaExenta(e.target.value || null)}
@@ -148,7 +154,7 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
                   {c.etiqueta ?? c.nombre}
                 </option>
               ))}
-            </select>
+            </SelectorApp>
           </div>
         ) : null}
       </fieldset>
@@ -180,8 +186,8 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
         </div>
 
         <p className="mt-2 text-[13px] text-[var(--fin-ink-soft)]">
-          Han salido <b className="text-[var(--fin-ink)]">{formatCop(consumo.baseCop)}</b> de las
-          cuentas que marcaste.
+          Han salido <b className="text-[var(--fin-ink)]">{formatCop(consumo.salidasCop)}</b> de tus
+          cuentas financieras incluidas.
           {consumo.sinCupoCop > 0 ? (
             <>
               {' '}
@@ -206,6 +212,9 @@ export const PanelGmf: React.FC<PanelGmfProps> = ({
               <b className="text-[var(--fin-out)]">~{formatCop(consumo.gmfEstimadoCop)}</b> de
               4x1000 sobre {formatCop(consumo.gravadoCop)}.
             </>
+          ) : null}
+          {consumo.salidasCop > 0 && consumo.gravadoCop === 0 ? (
+            <> Por ahora no se estima cobro: las salidas siguen dentro de los cupos exentos aplicables.</>
           ) : null}
         </p>
       </div>

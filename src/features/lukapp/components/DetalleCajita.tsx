@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
@@ -510,7 +511,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
             <label className="block text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]" htmlFor="destino">
               Hacia
             </label>
-            <select
+            <SelectorApp
               id="destino"
               value={destinoId}
               onChange={(e) => setDestinoId(e.target.value)}
@@ -522,7 +523,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                   {d.nombre}
                 </option>
               ))}
-            </select>
+            </SelectorApp>
 
             <label className="mt-5 block text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]" htmlFor="monto">
               Cuánto

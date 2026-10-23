@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
+import type { CajitaMovimiento } from '../data/modelos';
 import {
   ADVERTENCIA_GMF,
   NOTAS_GMF,
@@ -26,6 +27,17 @@ const tx = (over: Partial<Transaction> = {}): Transaction => ({
 });
 
 const CUBIERTAS = new Set(['nequi', 'banco']);
+const movTransferencia = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => ({
+  id: 'm1',
+  cajitaId: 'nequi',
+  kind: 'retiro',
+  deltaCop: -2_000_000,
+  categoria: null,
+  occurredOn: '2026-08-10',
+  nota: 'Enviado a Daviplata',
+  createdAt: '2026-08-10T00:00:00.000Z',
+  ...over,
+});
 
 describe('la tarifa y el tope', () => {
   it('cobra cuatro por mil', () => {
@@ -74,6 +86,17 @@ describe('consumo del cupo exento', () => {
     expect(c.disponibleCop).toBe(16_330_900);
     expect(c.gravadoCop).toBe(0);
     expect(c.gmfEstimadoCop).toBe(0);
+  });
+
+  it('cuenta el origen de las transferencias y excluye el depósito recibido', () => {
+    const c = consumoDelMes([], '2026-08', UVT_POR_DEFECTO, CUBIERTAS, {
+      movimientosTransferencia: [
+        movTransferencia(),
+        movTransferencia({ id: 'm2', cajitaId: 'banco', kind: 'deposito', deltaCop: 2_000_000, nota: 'Recibido de Nequi' }),
+      ],
+    });
+
+    expect(c.baseCop).toBe(2_000_000);
   });
 
   it('un ingreso NO consume cupo', () => {

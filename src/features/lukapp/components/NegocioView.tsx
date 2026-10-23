@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import React, { useEffect, useRef, useState } from 'react';
 import { BriefcaseBusiness, Check, FilePlus2, HandCoins, Loader2, ReceiptText } from 'lucide-react';
 import { formatCop } from '../lib/formatCop';
@@ -197,7 +198,7 @@ export const NegocioView: React.FC<NegocioViewProps> = ({ userId, documentos, ca
         </h3>
         <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
           ¿Qué vas a registrar?
-          <select
+          <SelectorApp
             value={tipo}
             onChange={(evento) => setTipo(evento.target.value as TipoDocumentoNegocio)}
             className="mt-1 min-h-11 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 text-[16px] text-[var(--fin-ink)]"
@@ -205,7 +206,7 @@ export const NegocioView: React.FC<NegocioViewProps> = ({ userId, documentos, ca
             <option value="por_cobrar">Cuenta por cobrar / factura emitida</option>
             <option value="por_pagar">Cuenta por pagar / factura recibida</option>
             <option value="cotizacion">Cotización para un cliente</option>
-          </select>
+          </SelectorApp>
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo titulo={tipo === 'por_pagar' ? 'Proveedor' : 'Cliente'} valor={contraparte} cambiar={setContraparte} />

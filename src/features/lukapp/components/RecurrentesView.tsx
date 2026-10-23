@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -282,7 +283,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 >
                   Tipo
                 </label>
-                <select
+                <SelectorApp
                   id="rec-kind"
                   value={kind}
                   onChange={(e) => setKind(e.target.value as 'gasto' | 'ingreso')}
@@ -290,7 +291,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 >
                   <option value="gasto">Sale</option>
                   <option value="ingreso">Entra</option>
-                </select>
+                </SelectorApp>
               </div>
               <div>
                 <label
@@ -299,7 +300,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 >
                   Categoría
                 </label>
-                <select
+                <SelectorApp
                   id="rec-cat"
                   value={categoria}
                   onChange={(e) => setCategoria(e.target.value)}
@@ -310,7 +311,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                     {c.nombre}
                     </option>
                   ))}
-                </select>
+                </SelectorApp>
               </div>
             </div>
 
@@ -322,7 +323,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                 >
                   ¿De qué cuenta? (opcional)
                 </label>
-                <select
+                <SelectorApp
                   id="rec-cuenta"
                   value={cuentaId}
                   onChange={(e) => setCuentaId(e.target.value)}
@@ -334,7 +335,7 @@ export const RecurrentesView: React.FC<RecurrentesViewProps> = ({
                       {c.etiqueta ?? c.nombre}
                     </option>
                   ))}
-                </select>
+                </SelectorApp>
               </div>
             ) : null}
 

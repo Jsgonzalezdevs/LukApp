@@ -1,3 +1,5 @@
+import { SelectorApp } from './SelectorApp';
+import { SelectorFechaApp } from './SelectorFechaApp';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send,
@@ -1167,9 +1169,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                           <div className="mt-2 space-y-2">
                             <p className="text-[13px] text-[var(--fin-ink-soft)]">Tope de {categoriaNombre}{actual ? ` · hoy ${actual.toLocaleString('es-CO')} COP` : ''}; en el período llevas {gastado.toLocaleString('es-CO')} COP.</p>
                             <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Categoría
-                              <select aria-label="Categoría del presupuesto" disabled={msg.propuestaConfirmada} value={propuesta.categoria} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, categoria: evento.target.value } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)] disabled:opacity-60">
+                              <SelectorApp aria-label="Categoría del presupuesto" disabled={msg.propuestaConfirmada} value={propuesta.categoria} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, categoria: evento.target.value } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)] disabled:opacity-60">
                                 {catalogoCategorias.lista.map((categoria) => <option key={categoria.clave} value={categoria.clave}>{categoria.emoji} {categoria.nombre}</option>)}
-                              </select>
+                              </SelectorApp>
                             </label>
                             <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Nuevo tope mensual (COP)
                             <input aria-label="Nuevo tope mensual en COP" type="number" min="1" step="1000" disabled={msg.propuestaConfirmada} value={propuesta.montoCop} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'presupuesto' ? { ...p, montoCop: Math.max(1, Number(evento.target.value) || 1) } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
@@ -1186,7 +1188,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                             <input aria-label="Objetivo total de la meta en COP" type="number" min="1" step="1000" disabled={msg.propuestaConfirmada} value={msg.propuesta.objetivoCop} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, objetivoCop: Math.max(1, Number(evento.target.value) || 1) } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
                           </label>
                           <label className="block text-[12px] font-semibold text-[var(--fin-ink-faint)]">Fecha objetivo (opcional)
-                            <input aria-label="Fecha objetivo de la meta" type="date" disabled={msg.propuestaConfirmada} value={msg.propuesta.fechaObjetivo ?? ''} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, fechaObjetivo: evento.target.value || null } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
+                            <SelectorFechaApp aria-label="Fecha objetivo de la meta" disabled={msg.propuestaConfirmada} value={msg.propuesta.fechaObjetivo ?? ''} onChange={(evento) => actualizarPropuesta(msg.id, (p) => p.tipo === 'meta' ? { ...p, fechaObjetivo: evento.target.value || null } : p)} className="mt-1 w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[17px] text-[var(--fin-ink)] disabled:opacity-60" />
                           </label>
                           <p className="text-[13px] text-[var(--fin-ink-soft)]">La meta empezará con $0 ahorrados; el objetivo será {msg.propuesta.objetivoCop.toLocaleString('es-CO')} COP.</p>
                           {msg.propuesta.fechaObjetivo && entradaFinanciera ? (() => {

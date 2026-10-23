@@ -1,3 +1,5 @@
+import { SelectorApp } from './SelectorApp';
+import { SelectorFechaApp } from './SelectorFechaApp';
 import React, { useMemo, useState } from 'react';
 import { AlertTriangle, Check, Mic, X } from 'lucide-react';
 import type { Cajita } from '../data/modelos';
@@ -121,18 +123,18 @@ export const ConfirmarComandoVoz: React.FC<ConfirmarComandoVozProps> = ({
         <div className="mt-4 flex flex-col gap-3">
           {comando.tipo === 'transferencia' ? (
             <>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta de origen<select aria-label="Cuenta de origen" value={origenId} onChange={(e) => setOrigenId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(activos, destinoId)}</select></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta o cajita de destino<select aria-label="Cuenta o cajita de destino" value={destinoId} onChange={(e) => setDestinoId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(activos, origenId)}</select></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta de origen<SelectorApp aria-label="Cuenta de origen" value={origenId} onChange={(e) => setOrigenId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(activos, destinoId)}</SelectorApp></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Cuenta o cajita de destino<SelectorApp aria-label="Cuenta o cajita de destino" value={destinoId} onChange={(e) => setDestinoId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(activos, origenId)}</SelectorApp></label>
             </>
           ) : comando.tipo === 'abono' ? (
             <>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Tarjeta o deuda<select aria-label="Tarjeta o deuda" value={deudaId} onChange={(e) => setDeudaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(pasivos)}</select></label>
-              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pagar desde<select aria-label="Pagar desde" value={cuentaId} onChange={(e) => setCuentaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(cuentas)}</select></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Tarjeta o deuda<SelectorApp aria-label="Tarjeta o deuda" value={deudaId} onChange={(e) => setDeudaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(pasivos)}</SelectorApp></label>
+              <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Pagar desde<SelectorApp aria-label="Pagar desde" value={cuentaId} onChange={(e) => setCuentaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(cuentas)}</SelectorApp></label>
             </>
           ) : (
             <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
               {comando.tipo === 'saldo' ? 'Cuenta, cajita, tarjeta o deuda' : 'Cajita que recibió el rendimiento'}
-              <select aria-label={comando.tipo === 'saldo' ? 'Saldo de' : 'Cajita'} value={cajitaId} onChange={(e) => setCajitaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(comando.tipo === 'saldo' ? activas : ahorros)}</select>
+              <SelectorApp aria-label={comando.tipo === 'saldo' ? 'Saldo de' : 'Cajita'} value={cajitaId} onChange={(e) => setCajitaId(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]">{opciones(comando.tipo === 'saldo' ? activas : ahorros)}</SelectorApp>
             </label>
           )}
 
@@ -146,7 +148,7 @@ export const ConfirmarComandoVoz: React.FC<ConfirmarComandoVozProps> = ({
           {comando.tipo !== 'saldo' ? (
             <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
               Fecha
-              <input aria-label="Fecha" type="date" value={fecha} max={bogotaDate()} onChange={(e) => setFecha(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]" />
+              <SelectorFechaApp aria-label="Fecha" value={fecha} max={bogotaDate()} onChange={(e) => setFecha(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] text-[var(--fin-ink)]" />
               <span className="mt-1 block text-[13px] font-normal text-[var(--fin-ink-faint)]">Vacía significa hoy.</span>
             </label>
           ) : null}

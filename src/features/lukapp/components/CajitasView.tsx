@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import { IconoCuenta } from './IconoCuenta';
 import { ENTIDADES_FINANCIERAS, reconocerEntidad, estiloEntidad } from '../lib/entidadesFinancieras';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
@@ -289,7 +290,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 className="mt-4 block text-[15px] font-semibold text-[var(--fin-ink-soft)]"
               >
                 Tipo de cuenta
-                <select
+                <SelectorApp
                   id="cajita-clase-cuenta"
                   value={claseCuenta}
                   onChange={(e) => setClaseCuenta(e.target.value as ClaseCuenta)}
@@ -298,7 +299,7 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                   {(['banco', 'billetera', 'efectivo'] as const).map((clase) => (
                     <option key={clase} value={clase}>{CLASE_CUENTA_LABELS[clase]}</option>
                   ))}
-                </select>
+                </SelectorApp>
               </label>
             ) : null}
 
@@ -326,9 +327,9 @@ export const CajitasView: React.FC<CajitasViewProps> = ({
                 {esInversion ? (
                   <label htmlFor="cajita-moneda" className="mt-3 block text-[14px] font-semibold text-[var(--fin-ink-soft)]">
                     Moneda
-                    <select id="cajita-moneda" value={moneda} onChange={(e) => setMoneda(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none">
+                    <SelectorApp id="cajita-moneda" value={moneda} onChange={(e) => setMoneda(e.target.value)} className="mt-2 w-full rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:outline-none">
                       {MONEDAS_DISPONIBLES.map((codigo) => <option key={codigo} value={codigo}>{codigo}</option>)}
-                    </select>
+                    </SelectorApp>
                     <span className="mt-1 block text-[12px] font-normal text-[var(--fin-ink-faint)]">Tus totales siguen en COP; cada aporte guarda su moneda y tasa. 💱</span>
                   </label>
                 ) : null}

@@ -7,7 +7,7 @@ asesor con IA. React + Vite + Supabase, todo en español.
 
 ## ⚠️ ESTE PROYECTO SE MANEJA POR VERSIONES
 
-**Si eres una IA analizando este código —Claude, Gemini, Copilot, la que sea—
+**Si eres una IA analizando este código —Claude, Gemini, Codex, Copilot, la que sea—
 esta sección es lo primero que tienes que leer.**
 
 ### 1. Mira la versión antes de tocar nada

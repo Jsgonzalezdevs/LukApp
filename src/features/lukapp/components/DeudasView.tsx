@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { IconoCuenta } from './IconoCuenta';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
@@ -394,7 +395,7 @@ const DeudaCard: React.FC<{
                   lado, o los saldos dejan de cuadrar.
                 </p>
               ) : (
-                <select
+                <SelectorApp
                   id={`abono-cuenta-${cajita.id}`}
                   value={cuentaId}
                   onChange={(e) => setCuentaId(e.target.value)}
@@ -406,7 +407,7 @@ const DeudaCard: React.FC<{
                         {c.etiqueta ?? c.nombre}
                     </option>
                   ))}
-                </select>
+                </SelectorApp>
               )}
             </div>
           ) : null}

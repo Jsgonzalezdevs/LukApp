@@ -1,4 +1,5 @@
 import type { Transaction } from '../types';
+import type { CajitaMovimiento } from '../data/modelos';
 import { monthKey } from './localDate';
 
 /**
@@ -73,6 +74,8 @@ export type RegimenGmf =
 
 export interface ConsumoDelMes {
   mes: string;
+  /** Total de salidas incluidas, también las que siguen dentro de una exención. */
+  salidasCop: number;
   /** Retiros del mes que cuentan contra el cupo exento (350 UVT). */
   baseCop: number;
   topeCop: number;
@@ -101,15 +104,15 @@ export interface ConsumoDelMes {
  * Cuánto del cupo exento consumió un mes.
  *
  * Solo cuentan las SALIDAS: el GMF grava disponer del dinero, no recibirlo, así
- * que un ingreso no consume cupo. Los movimientos sin cuenta asignada quedan
- * fuera a propósito — no se sabe si salieron de una cuenta bancaria o del
- * bolsillo, y contarlos infla el consumo con plata que quizá nunca tocó un banco.
+ * que un ingreso no consume cupo. Los traslados entre cuentas también cuentan
+ * por la cuenta de origen; se reconocen por su retiro emparejado en el libro.
+ * Los movimientos sin cuenta asignada quedan fuera a propósito.
  */
 export const consumoDelMes = (
   transacciones: readonly Transaction[],
   mes: string,
   uvt: ValorUvt,
-  /** Cuentas cuyos retiros cuentan. Vacío = ninguna, y el consumo da cero. */
+  /** Cuentas cuyos retiros cuentan. */
   cuentasCubiertas: ReadonlySet<string>,
   opciones: {
     regimen?: RegimenGmf;
@@ -117,6 +120,8 @@ export const consumoDelMes = (
     cuentaExentaId?: string | null;
     /** Cuentas marcadas como Depósito de Bajo Monto (tienen exención propia de 65 UVT). */
     bajoMontoIds?: ReadonlySet<string>;
+    /** Retiro de origen de los traslados internos entre cuentas. */
+    movimientosTransferencia?: readonly CajitaMovimiento[];
   } = {},
 ): ConsumoDelMes => {
   const regimen = opciones.regimen ?? 'distribuido';
@@ -125,27 +130,38 @@ export const consumoDelMes = (
 
   let baseCop = 0;
   let sinCupoCop = 0;
+  let salidasCop = 0;
   const consumoBajoMonto = new Map<string, number>();
 
-  for (const tx of transacciones) {
-    if (tx.kind !== 'gasto') continue;
-    if (tx.cuentaId === null || !cuentasCubiertas.has(tx.cuentaId)) continue;
-    if (monthKey(tx.occurredOn) !== mes) continue;
-
+  const agregarSalida = (cuentaId: string, occurredOn: string, montoCop: number) => {
+    if (!cuentasCubiertas.has(cuentaId) || monthKey(occurredOn) !== mes) return;
+    salidasCop += montoCop;
     // Si es una cuenta de bajo monto, consume su propio tope de 65 UVT, independiente del régimen
-    if (bajoMontoIds.has(tx.cuentaId)) {
-      consumoBajoMonto.set(tx.cuentaId, (consumoBajoMonto.get(tx.cuentaId) ?? 0) + tx.amountCop);
-      continue;
+    if (bajoMontoIds.has(cuentaId)) {
+      consumoBajoMonto.set(cuentaId, (consumoBajoMonto.get(cuentaId) ?? 0) + montoCop);
+      return;
     }
 
     // Bajo `marcada`, lo que sale de cualquier otra cuenta nunca tuvo cupo: no
     // consume nada, simplemente paga. Meterlo en `baseCop` haría creer que el
     // cupo se agotó cuando en realidad ni siquiera aplicaba.
-    if (regimen === 'marcada' && tx.cuentaId !== cuentaExentaId) {
-      sinCupoCop += tx.amountCop;
-      continue;
+    if (regimen === 'marcada' && cuentaId !== cuentaExentaId) {
+      sinCupoCop += montoCop;
+      return;
     }
-    baseCop += tx.amountCop;
+    baseCop += montoCop;
+  };
+
+  for (const tx of transacciones) {
+    if (tx.kind !== 'gasto' || tx.cuentaId === null) continue;
+    agregarSalida(tx.cuentaId, tx.occurredOn, tx.amountCop);
+  }
+
+  for (const mov of opciones.movimientosTransferencia ?? []) {
+    // transferirEntreCuentas genera el retiro con esta nota. El depósito
+    // emparejado no cuenta, porque recibir dinero no causa GMF.
+    if (mov.kind !== 'retiro' || !mov.nota.startsWith('Enviado a ')) continue;
+    agregarSalida(mov.cajitaId, mov.occurredOn, Math.abs(mov.deltaCop));
   }
 
   const topeCop = topeExentoCop(uvt);
@@ -163,6 +179,7 @@ export const consumoDelMes = (
 
   return {
     mes,
+    salidasCop,
     baseCop,
     topeCop,
     disponibleCop: Math.max(0, topeCop - baseCop),

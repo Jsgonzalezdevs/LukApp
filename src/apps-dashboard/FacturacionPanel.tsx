@@ -1,3 +1,5 @@
+import { SelectorApp } from '../features/lukapp/components/SelectorApp';
+import { SelectorFechaApp } from '../features/lukapp/components/SelectorFechaApp';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, CreditCard, Loader2, Pencil, RefreshCw, Save, ShieldCheck, UserPlus, XCircle } from 'lucide-react';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
@@ -368,13 +370,13 @@ export const FacturacionPanel: React.FC = () => {
               <div className="flex items-center gap-2"><UserPlus className="h-4 w-4 text-purple-500" /><h3 className="text-base font-extrabold">Otorgar Premium de cortesía</h3></div>
               <p className="mt-1 text-xs text-[var(--fin-ink-soft)]">Solo el superadmin fijo puede dar o retirar beneficios manualmente.</p>
               <label className="mt-4 block text-xs font-bold text-[var(--fin-ink-soft)]">Cuenta
-                <select value={usuarioSeleccionado} onChange={(evento) => setUsuarioSeleccionado(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm">
+                <SelectorApp value={usuarioSeleccionado} onChange={(evento) => setUsuarioSeleccionado(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm">
                   <option value="">Selecciona una persona</option>
                   {datos.usuarios.map((usuario) => <option key={usuario.id} value={usuario.id}>{usuario.usuario ? `${usuario.usuario} — ${usuario.email}` : usuario.email}</option>)}
-                </select>
+                </SelectorApp>
               </label>
               <label className="mt-3 block text-xs font-bold text-[var(--fin-ink-soft)]">Vence el
-                <input required type="date" value={venceEn} onChange={(evento) => setVenceEn(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
+                <SelectorFechaApp required value={venceEn} onChange={(evento) => setVenceEn(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
               </label>
               <label className="mt-3 block text-xs font-bold text-[var(--fin-ink-soft)]">Nota interna opcional
                 <textarea value={nota} maxLength={280} onChange={(evento) => setNota(evento.target.value)} rows={2} className="mt-1.5 w-full resize-none rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
@@ -415,7 +417,7 @@ export const FacturacionPanel: React.FC = () => {
                             <p className="mt-1 text-[11px] leading-relaxed text-[var(--fin-ink-soft)]">El ciclo y el valor del pago no cambian aquí; ajusta solo hasta cuándo tendrá acceso la cuenta.</p>
                             <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
                               <label className="block text-xs font-bold text-[var(--fin-ink-soft)]">Nueva fecha de vencimiento
-                                <input required type="date" value={venceEnEdicion} onChange={(evento) => setVenceEnEdicion(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
+                                <SelectorFechaApp required value={venceEnEdicion} onChange={(evento) => setVenceEnEdicion(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
                               </label>
                               <label className="block text-xs font-bold text-[var(--fin-ink-soft)]">Nota interna opcional
                                 <input maxLength={280} value={notaEdicion} onChange={(evento) => setNotaEdicion(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2 text-[16px] text-[var(--fin-ink)] sm:text-sm" />

@@ -22,6 +22,10 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.14.4', fecha: '2026-10-23', texto: 'El cálculo del 4x1000 incluye las transferencias desde la cuenta de origen, marca bancos y billeteras por defecto y muestra cuánto dinero moviste aunque siga dentro de la exención. Puedes ajustar qué cuentas contar. 💸' },
+  { version: '9.14.3', fecha: '2026-10-23', texto: 'Las fechas ahora se eligen en un calendario de LukApp, con meses en español y navegación clara desde cualquier formulario. 🗓️' },
+  { version: '9.14.2', fecha: '2026-10-23', texto: 'Los menús de selección ahora tienen el mismo diseño de LukApp en tus cuentas, filtros y ajustes, y puedes recorrerlos con el teclado. 🎛️' },
+  { version: '9.14.1', fecha: '2026-10-23', texto: 'La barra de navegación ahora llega hasta los bordes al consultar documentos largos, incluso cuando aparece la barra de desplazamiento. 📄' },
   { version: '9.14.0', fecha: '2026-10-22', texto: 'LukApp carga menos pantallas al iniciar y ya no espera los permisos administrativos para abrir tus finanzas. Evitamos crear cuentas de Efectivo por una descarga fallida y repetir respaldos locales completados. También retiramos restos del antiguo portafolio. ⚡' },
   { version: '9.13.1', fecha: '2026-10-22', texto: 'El efectivo ahora se distingue con un verde esmeralda y letras blancas, conservando el saldo sobre fondo neutro. 💵💚' },
   { version: '9.13.0', fecha: '2026-10-22', texto: 'Crea un ahorro desde Dinero y configura sus opciones avanzadas: activa los rendimientos con un interruptor y configura su tasa E.A. al crear o editar el ahorro. El ícono y la meta quedan a la vista, y la tasa sigue siendo opcional. 🐷⚙️' },

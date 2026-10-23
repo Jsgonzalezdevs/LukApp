@@ -1,3 +1,5 @@
+import { SelectorApp } from './SelectorApp';
+import { SelectorFechaApp } from './SelectorFechaApp';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -10,7 +12,6 @@ import {
   User,
   MapPin,
   Tag,
-  ChevronDown,
 } from 'lucide-react';
 import type { CategoriaClave, Transaction } from '../types';
 import type { TxKind } from '../types';
@@ -72,10 +73,7 @@ interface ConfirmSheetProps {
 // etiquetas se leía más grande que la otra mitad dentro de la misma hoja.
 const ETIQUETA = 'block text-[13px] font-semibold text-[var(--fin-ink-soft)] sm:text-[15px]';
 
-// `min-w-0` + `appearance-none` no son adorno: en iOS el <input type="date"> y
-// el <select> traen un ancho intrínseco propio y NO se encogen con w-full. Al
-// desbordar, el formulario —que hereda overflow-x:auto de su overflow-y-auto—
-// gana scroll horizontal y la hoja aparece corrida y cortada por la izquierda.
+// Mantiene los campos ajustados al ancho de la hoja en pantallas angostas.
 const CAMPO =
   'mt-2 block w-full min-w-0 max-w-full appearance-none rounded-[var(--fin-r-card)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-3 text-[17px] font-normal text-[var(--fin-ink)] focus:border-[var(--fin-ink-faint)] focus:outline-none';
 
@@ -402,26 +400,19 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             >
               {kind === 'ingreso' ? COPY.confirm.cuentaIngreso : COPY.confirm.cuenta}
             </label>
-            <div className="relative">
-              <select
-                id="fin-cuenta"
-                value={cuentaId ?? ''}
-                onChange={(e) => setCuentaId(e.target.value || null)}
-                className={`${CAMPO} pr-11`}
-              >
-                <option value="">{COPY.confirm.sinCuenta}</option>
-                {cuentas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.etiqueta ?? c.nombre}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="pointer-events-none absolute right-4 bottom-[1.375rem] h-4 w-4 text-[var(--fin-ink-faint)]"
-                strokeWidth={2.5}
-                aria-hidden="true"
-              />
-            </div>
+            <SelectorApp
+              id="fin-cuenta"
+              value={cuentaId ?? ''}
+              onChange={(e) => setCuentaId(e.target.value || null)}
+              className={CAMPO}
+            >
+              <option value="">{COPY.confirm.sinCuenta}</option>
+              {cuentas.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.etiqueta ?? c.nombre}
+                </option>
+              ))}
+            </SelectorApp>
             <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
               {COPY.confirm.cuentaHint}
             </p>
@@ -455,9 +446,8 @@ export const ConfirmSheet: React.FC<ConfirmSheetProps> = ({
             >
               {COPY.confirm.fecha}
             </label>
-            <input
+            <SelectorFechaApp
               id="fin-fecha"
-              type="date"
               value={fecha}
               max={fechaMax}
               onChange={(e) => setFecha(e.target.value)}

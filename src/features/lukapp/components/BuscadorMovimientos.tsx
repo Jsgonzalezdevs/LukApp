@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import React from 'react';
 import { Search, X } from 'lucide-react';
 import { useCatalogo } from '../catalogoContexto';
@@ -56,7 +57,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
       {complementoConsulta ? <div className="mt-3">{complementoConsulta}</div> : null}
       {incluirFunciones ? <p className="mt-4 text-xs font-semibold text-[var(--fin-ink-soft)]">Filtrar movimientos</p> : null}
       <div className="mt-2 flex flex-wrap gap-2">
-        <select
+        <SelectorApp
           value={filtro.kind ?? ''}
           onChange={(e) => cambiar({ kind: (e.target.value || null) as Filtro['kind'] })}
           aria-label="Tipo"
@@ -65,9 +66,9 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
           <option value="">Todo</option>
           <option value="gasto">Solo gastos</option>
           <option value="ingreso">Solo ingresos</option>
-        </select>
+        </SelectorApp>
 
-        <select
+        <SelectorApp
           value={filtro.categoria ?? ''}
           onChange={(e) => cambiar({ categoria: e.target.value || null })}
           aria-label="Categoría"
@@ -79,10 +80,10 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
               {c.nombre}
             </option>
           ))}
-        </select>
+        </SelectorApp>
 
         {cuentas.length > 0 ? (
-          <select
+          <SelectorApp
             value={filtro.cuentaId ?? ''}
             onChange={(e) => cambiar({ cuentaId: e.target.value || null })}
             aria-label="Cuenta"
@@ -94,7 +95,7 @@ export const BuscadorMovimientos: React.FC<BuscadorMovimientosProps> = ({
                 {c.etiqueta ?? c.nombre}
               </option>
             ))}
-          </select>
+          </SelectorApp>
         ) : null}
       </div>
 

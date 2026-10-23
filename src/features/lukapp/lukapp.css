@@ -330,6 +330,12 @@
    llegar a la superficie para conservar separación sin dibujar una línea. */
 .fin-page .fin-navigation {
   position: fixed;
+  /* `inset-x-0` sigue el ancho de maquetación y puede dejar visible la
+     franja de la barra de desplazamiento al consultar documentos largos. */
+  left: 0;
+  right: auto;
+  width: 100vw;
+  max-width: none;
   isolation: isolate;
   border: 0;
   box-shadow: none;
@@ -575,12 +581,8 @@
 .division-save { background: var(--fin-accent); color: var(--fin-on-accent); box-shadow: 0 10px 20px color-mix(in srgb, var(--fin-accent) 25%, transparent); transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease; }
 .division-save:hover { background: var(--fin-accent-hover); box-shadow: 0 13px 24px color-mix(in srgb, var(--fin-accent) 30%, transparent); transform: translateY(-1px); }
 
-/* En iOS el <input type="date"> trae un ancho intrínseco propio y se planta en
-   él: `width: 100%` no lo encoge, así que dentro de una hoja angosta se sale de
-   su contenedor y arrastra el formulario entero hacia el lado. Estas tres
-   líneas lo devuelven a comportarse como una caja normal. El calendario nativo
-   se sigue abriendo igual — esto es ancho, no comportamiento. */
-input[type='date'],
+/* Los selectores nativos de mes y hora pueden imponer un ancho mínimo en iOS.
+   Se limitan al formulario; las fechas usan el calendario propio de LukApp. */
 input[type='month'],
 input[type='time'] {
   -webkit-appearance: none;

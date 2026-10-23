@@ -1,3 +1,5 @@
+import { SelectorApp } from './SelectorApp';
+import { SelectorFechaApp } from './SelectorFechaApp';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
@@ -193,9 +195,8 @@ export const MetasView: React.FC<MetasViewProps> = ({
             >
               {COPY.metas.fecha}
             </label>
-            <input
+            <SelectorFechaApp
               id="meta-fecha"
-              type="date"
               value={fecha}
               min={hoy}
               onChange={(e) => setFecha(e.target.value)}
@@ -208,7 +209,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
             >
               {COPY.metas.enlazar}
             </label>
-            <select
+            <SelectorApp
               id="meta-cajita"
               value={cajitaId}
               onChange={(e) => setCajitaId(e.target.value)}
@@ -220,7 +221,7 @@ export const MetasView: React.FC<MetasViewProps> = ({
                   {c.nombre}
                 </option>
               ))}
-            </select>
+            </SelectorApp>
 
             <div className="mt-5 flex gap-2">
               <RippleButton

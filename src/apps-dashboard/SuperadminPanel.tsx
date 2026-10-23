@@ -1,3 +1,4 @@
+import { SelectorApp } from '../features/lukapp/components/SelectorApp';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ArrowLeft,
@@ -2156,14 +2157,14 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
 
               <div>
                 <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Rol</label>
-                <select
+                <SelectorApp
                   value={nuevoRol}
                   onChange={(e) => setNuevoRol(e.target.value as 'admin' | 'usuario')}
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 >
                   <option value="usuario">Usuario Normal</option>
                   <option value="admin">Superadmin</option>
-                </select>
+                </SelectorApp>
                 {nuevoRol === 'admin' && (
                   <p className="mt-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
                     Un superadmin existente otorga este acceso de inmediato. Úsalo solo para personas de confianza.
@@ -2177,7 +2178,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
               {rol === 'admin' && editando && !editaSoloRolPropio && (
                 <div>
                   <label className="text-xs font-bold text-[var(--fin-ink-soft)]">Rol personalizado</label>
-                  <select
+                  <SelectorApp
                     value={nuevoRolPersonalizadoId}
                     onChange={(e) => setNuevoRolPersonalizadoId(e.target.value)}
                     disabled={nuevoRol === 'admin'}
@@ -2187,7 +2188,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                     {roles.map((r) => (
                       <option key={r.id} value={r.id}>{r.nombre}</option>
                     ))}
-                  </select>
+                  </SelectorApp>
                   {nuevoRol === 'admin' && (
                     <p className="mt-1 text-[11px] text-[var(--fin-ink-faint)]">
                       Superadmin ya tiene acceso total; un rol personalizado no le añade nada.

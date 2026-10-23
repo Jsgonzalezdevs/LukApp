@@ -1,3 +1,4 @@
+import { SelectorApp } from './SelectorApp';
 import { IconoSimbolo } from './IconoSimbolo';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -308,7 +309,7 @@ export const VaquitasModal: React.FC<VaquitasModalProps> = ({ isOpen, onClose, u
                         <input type="number" inputMode="numeric" min="1" step="1" value={montoGastoStr} onChange={(evento) => setMontoGastoStr(evento.target.value)} required placeholder="Ej. 85000" className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)]" />
                       </label>
                       <label className="grid gap-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">¿Quién pagó?
-                        <select value={pagadoGastoPor} onChange={(evento) => setPagadoGastoPor(evento.target.value)} className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)]">{vaquitaActiva.participantes.map((persona) => <option key={persona.nombre} value={persona.nombre}>{persona.nombre}</option>)}</select>
+                        <SelectorApp value={pagadoGastoPor} onChange={(evento) => setPagadoGastoPor(evento.target.value)} className="w-full rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[16px] font-normal text-[var(--fin-ink)]">{vaquitaActiva.participantes.map((persona) => <option key={persona.nombre} value={persona.nombre}>{persona.nombre}</option>)}</SelectorApp>
                       </label>
                       <button type="submit" className="justify-self-end rounded-[var(--fin-r-control)] bg-[var(--fin-ink)] px-4 py-2 text-[13px] font-bold text-[var(--fin-bg)]">Guardar gasto 🐮</button>
                     </form>

@@ -1,3 +1,5 @@
+import { SelectorApp } from './SelectorApp';
+import { SelectorFechaApp } from './SelectorFechaApp';
 import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { entidadDeCuenta, estiloEntidad } from '../lib/entidadesFinancieras';
 import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
@@ -350,7 +352,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                   ) : null}
                   <label className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">
                     Fecha del movimiento
-                    <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)]" />
+                    <SelectorFechaApp value={fecha} onChange={(e) => setFecha(e.target.value)} className="mt-1 w-full rounded-[var(--fin-r-control)] border-2 border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-3 text-[17px] font-normal text-[var(--fin-ink)]" />
                   </label>
                   {valorActual !== null ? <p className="col-span-2 text-[13px] text-[var(--fin-ink-faint)]">≈ {formatCop(Math.abs(valorActual))} · se guardan importe, tasa y fecha 💱</p> : null}
                 </div>
@@ -371,7 +373,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                         : 'Necesitas otra cuenta o cajita para poder transferir.'}
                     </p>
                   ) : (
-                    <select
+                    <SelectorApp
                       id={`destino-${cajita.id}`}
                       value={destinoId}
                       onChange={(e) => setDestinoId(e.target.value)}
@@ -382,7 +384,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
                           {d.nombre}
                         </option>
                       ))}
-                    </select>
+                    </SelectorApp>
                   )}
                 </div>
               ) : null}

@@ -29,7 +29,7 @@ import { crearRepositorio } from './data/crearRepositorio';
 import { ColaCambios } from './data/colaCambios';
 import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
-import { ES_PASIVO, etiquetaTipoCajita } from './data/modelos';
+import { ES_PASIVO, claseDeCuenta, etiquetaTipoCajita } from './data/modelos';
 import { idsPasivos, saldosPorCajita } from './lib/cajitas';
 
 
@@ -500,6 +500,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           nombre: c.nombre,
           etiqueta: `${c.nombre} · ${etiquetaTipoCajita(c)}`,
           esBajoMonto: c.esBajoMonto,
+          esFinanciera: claseDeCuenta(c) !== 'efectivo',
         })),
     [cajitas],
   );
@@ -1409,6 +1410,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             ) : panelAjustes === 'gmf' ? (
               <PanelGmf
                 transacciones={transacciones}
+                movimientos={cajitaMovimientos}
                 mes={mesCalendarioActivo}
                 anioActual={Number(bogotaDate().slice(0, 4))}
                 cuentas={cuentasParaElegir}

@@ -497,7 +497,7 @@ export const useNovedades = () => {
  */
 export const useAjustesGmf = () => {
   const [uvt, setEstadoUvt] = useState<ValorUvt>(() => leerUvt());
-  const [cuentasGmf, setEstadoCuentas] = useState<string[]>(() => leerLista(CLAVE_CUENTAS_GMF));
+  const [cuentasGmf, setEstadoCuentas] = useState<string[] | null>(() => leerListaOpcional(CLAVE_CUENTAS_GMF));
   const [regimen, setEstadoRegimen] = useState<RegimenGmf>(() => leerRegimen());
   const [cuentaExentaId, setEstadoExenta] = useState<string | null>(() =>
     leerTexto(CLAVE_CUENTA_EXENTA),
@@ -555,7 +555,7 @@ export const useAjustesGmf = () => {
       // When synced from Supabase, key is passed as null to force a full re-read.
       if (e.key === null || e.key === CLAVE_UVT) setEstadoUvt(leerUvt());
       if (e.key === null || e.key === CLAVE_CUENTAS_GMF)
-        setEstadoCuentas(leerLista(CLAVE_CUENTAS_GMF));
+        setEstadoCuentas(leerListaOpcional(CLAVE_CUENTAS_GMF));
       if (e.key === null || e.key === CLAVE_REGIMEN) setEstadoRegimen(leerRegimen());
       if (e.key === null || e.key === CLAVE_CUENTA_EXENTA)
         setEstadoExenta(leerTexto(CLAVE_CUENTA_EXENTA));
@@ -749,6 +749,20 @@ const leerLista = (clave: string): string[] => {
     // Igual.
   }
   return [];
+};
+
+/** `null` distingue la configuración nueva por defecto de haber desmarcado todo. */
+const leerListaOpcional = (clave: string): string[] | null => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const crudo = localStorage.getItem(clave);
+    if (crudo === null) return null;
+    const leido = JSON.parse(crudo) as unknown;
+    if (Array.isArray(leido)) return leido.filter((x): x is string => typeof x === 'string');
+  } catch {
+    // Preferencia dañada: dejar que la app use su selección automática.
+  }
+  return null;
 };
 
 /**
