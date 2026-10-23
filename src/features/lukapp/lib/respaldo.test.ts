@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import type { Transaction } from '../types';
 import { instantaneaVacia } from '../data/repositorio';
 import type { Instantanea } from '../data/repositorio';
-import type { DocumentoNegocio } from '../negocio/modelo';
 import {
   VERSION_RESPALDO,
   aCsv,
@@ -32,7 +31,6 @@ const conDatos = (over: Partial<Instantanea> = {}): Instantanea => ({
 });
 
 const nombreDeCuenta = (id: string | null) => (id === null ? '' : `Cuenta ${id}`);
-const documento: DocumentoNegocio = { id: 'doc-1', tipo: 'cotizacion', estado: 'borrador', contraparte: 'Cliente', concepto: 'Diseño', totalCop: 50000, fecha: '2026-10-20', vence: null, abonos: [], cotizacionOrigenId: null };
 
 describe('ida y vuelta', () => {
   it('lo que sale es exactamente lo que entra', () => {
@@ -54,11 +52,10 @@ describe('ida y vuelta', () => {
     expect(r.generado).toBe('2026-08-13T00:00:00.000Z');
   });
 
-  it('incluye documentos de negocio en el respaldo y su resumen', () => {
-    const datos = conDatos({ documentosNegocio: [documento] });
-    const lectura = leerRespaldo(JSON.stringify(armarRespaldo(datos, '2026-10-21T00:00:00.000Z')));
-    expect(lectura.respaldo?.datos.documentosNegocio).toEqual([documento]);
-    expect(lectura.resumen).toContain('1 documento de negocio');
+  it('descarta documentos de negocio de respaldos anteriores', () => {
+    const anterior = { ...instantaneaVacia(), documentosNegocio: [{ id: 'doc-1', totalCop: 50000 }] };
+    const lectura = leerRespaldo(JSON.stringify({ version: VERSION_RESPALDO, generado: '', datos: anterior }));
+    expect(lectura.respaldo?.datos).not.toHaveProperty('documentosNegocio');
   });
 });
 

@@ -251,6 +251,16 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const [migracionLista, setMigracionLista] = useState(false);
   const [enLinea, setEnLinea] = useState(() => navigator.onLine);
   useEffect(() => {
+    try {
+      for (let indice = localStorage.length - 1; indice >= 0; indice -= 1) {
+        const clave = localStorage.key(indice);
+        if (clave?.startsWith('lukapp.negocio.')) localStorage.removeItem(clave);
+      }
+    } catch {
+      // La limpieza antigua no debe impedir abrir la app si el navegador bloquea el almacenamiento.
+    }
+  }, []);
+  useEffect(() => {
     const actualizar = () => setEnLinea(navigator.onLine);
     window.addEventListener('online', actualizar);
     window.addEventListener('offline', actualizar);

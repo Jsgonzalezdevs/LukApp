@@ -5,7 +5,6 @@ import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
 import type { Recurrente } from '../lib/recurrentes';
 import type { RevisionDudosa } from './revisiones';
-import type { DocumentoNegocio } from '../negocio/modelo';
 import type { CambiosFinancieros, Instantanea, Repositorio } from './repositorio';
 import { instantaneaVacia } from './repositorio';
 
@@ -21,10 +20,8 @@ import { instantaneaVacia } from './repositorio';
  * código tenga un error en otro lado.
  */
 const DB_NOMBRE_LOCAL = 'finanzas';
-// Bumped when a store is added: `onupgradeneeded` only fires on a version
-// change, so a device that already opened the database at v1 would otherwise
-// never get the new store.
-const DB_VERSION = 8;
+// Cada cambio del esquema requiere una versión nueva para migrar bases existentes.
+const DB_VERSION = 9;
 
 const STORES = {
   transacciones: 'transacciones',
@@ -36,7 +33,6 @@ const STORES = {
   presupuestos: 'presupuestos',
   recurrentes: 'recurrentes',
   revisiones: 'revisiones',
-  documentosNegocio: 'documentosNegocio',
   /**
    * Cambios hechos sin conexión, a la espera de subirse. Solo lo usa
    * `ColaCambios` (`data/colaCambios.ts`); vive en el mismo archivo de base de
@@ -96,7 +92,6 @@ export const migrarLibroLocal = async (destino: Repositorio, usuario?: string): 
     ...datos.presupuestos.map((p) => destino.guardarPresupuesto(p)),
     ...datos.recurrentes.map((r) => destino.guardarRecurrente(r)),
     destino.aplicarCambios({ guardar: { revisiones: datos.revisiones } }),
-    destino.guardarDocumentosNegocio(datos.documentosNegocio),
   ]);
   const rechazados = resultados.filter((resultado): resultado is PromiseRejectedResult => resultado.status === 'rejected');
   if (rechazados.length > 0) {
@@ -123,6 +118,9 @@ export const abrirBase = (nombre: string): Promise<IDBDatabase> =>
 
     request.onupgradeneeded = () => {
       const db = request.result;
+      if (db.objectStoreNames.contains('documentosNegocio')) {
+        db.deleteObjectStore('documentosNegocio');
+      }
       for (const nombreDeTienda of Object.values(STORES)) {
         if (db.objectStoreNames.contains(nombreDeTienda)) continue;
         if (nombreDeTienda === STORES.colaPendiente) {
@@ -144,6 +142,32 @@ export const abrirBase = (nombre: string): Promise<IDBDatabase> =>
       const store = request.transaction?.objectStore(STORES.cajitaMovimientos);
       if (store && !store.indexNames.contains('porCajita')) {
         store.createIndex('porCajita', 'cajitaId', { unique: false });
+      }
+      const cola = request.transaction?.objectStore(STORES.colaPendiente);
+      if (cola) {
+        const cursor = cola.openCursor();
+        cursor.onsuccess = () => {
+          const actual = cursor.result;
+          if (!actual) return;
+          const cambio = actual.value as { metodo?: string; args?: unknown[] };
+          if (cambio.metodo === 'guardarDocumentosNegocio') {
+            actual.delete();
+          } else if (cambio.metodo === 'aplicarCambios' && Array.isArray(cambio.args)) {
+            const [cambios] = cambio.args as [{ guardar?: Record<string, unknown>; borrar?: Record<string, unknown>; reemplazar?: Record<string, unknown> }?];
+            if (cambios && typeof cambios === 'object') {
+              const sinDocumentosDeNegocio = (valor?: Record<string, unknown>) => {
+                const limpio = { ...valor };
+                delete limpio.documentosNegocio;
+                return limpio;
+              };
+              const guardar = sinDocumentosDeNegocio(cambios.guardar);
+              const borrar = sinDocumentosDeNegocio(cambios.borrar);
+              const reemplazar = cambios.reemplazar ? sinDocumentosDeNegocio(cambios.reemplazar) : undefined;
+              actual.update({ ...cambio, args: [{ ...cambios, guardar, borrar, ...(reemplazar ? { reemplazar } : {}) }] });
+            }
+          }
+          actual.continue();
+        };
       }
     };
 
@@ -256,7 +280,6 @@ export class RepositorioIndexedDB implements Repositorio {
       presupuestos,
       recurrentes,
       revisiones,
-      documentosNegocio,
     ] = await Promise.all([
       pedir<Transaction[]>(tx.objectStore(STORES.transacciones).getAll()),
       pedir<Cajita[]>(tx.objectStore(STORES.cajitas).getAll()),
@@ -267,7 +290,6 @@ export class RepositorioIndexedDB implements Repositorio {
       pedir<Presupuesto[]>(tx.objectStore(STORES.presupuestos).getAll()),
       pedir<Recurrente[]>(tx.objectStore(STORES.recurrentes).getAll()),
       pedir<RevisionDudosa[]>(tx.objectStore(STORES.revisiones).getAll()),
-      pedir<DocumentoNegocio[]>(tx.objectStore(STORES.documentosNegocio).getAll()),
     ]);
 
     return {
@@ -280,7 +302,6 @@ export class RepositorioIndexedDB implements Repositorio {
       presupuestos,
       recurrentes,
       revisiones,
-      documentosNegocio,
     };
   }
 
@@ -407,14 +428,6 @@ export class RepositorioIndexedDB implements Repositorio {
   async guardarRecurrente(recurrente: Recurrente): Promise<void> {
     await this.escribir([STORES.recurrentes], (tx) => {
       tx.objectStore(STORES.recurrentes).put(recurrente);
-    });
-  }
-
-  async guardarDocumentosNegocio(documentos: readonly DocumentoNegocio[]): Promise<void> {
-    if (documentos.length === 0) return;
-    await this.escribir([STORES.documentosNegocio], (tx) => {
-      const store = tx.objectStore(STORES.documentosNegocio);
-      for (const documento of documentos) store.put(documento);
     });
   }
 

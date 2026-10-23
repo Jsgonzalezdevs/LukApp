@@ -5,7 +5,6 @@ insert into auth.users (id,email,raw_user_meta_data) values
  ('f72b7b47-e9b4-47aa-b196-7a7340608972','prueba-atomica-2@example.invalid','{}');
 insert into public.cajitas(id,user_id,nombre,tipo) values ('f72b7b47-e9b4-47aa-b196-7a7340608999','f72b7b47-e9b4-47aa-b196-7a7340608972','Ajena de prueba','cuenta');
 insert into public.revisiones_dudosas(id,user_id,tipo,estado,titulo,detalle) values ('revision-ajena','f72b7b47-e9b4-47aa-b196-7a7340608972','documento','pendiente','Ajena','No debe ser visible');
-insert into public.documentos_negocio(id,user_id,datos) values ('f72b7b47-e9b4-47aa-b196-7a7340608998','f72b7b47-e9b4-47aa-b196-7a7340608972','{"id":"f72b7b47-e9b4-47aa-b196-7a7340608998","tipo":"por_cobrar"}');
 select set_config('request.jwt.claim.sub','f72b7b47-e9b4-47aa-b196-7a7340608971',true);
 set local role authenticated;
 do $$
@@ -18,17 +17,14 @@ declare
   rechazado boolean := false;
 begin
   assert not exists(select 1 from public.revisiones_dudosas where id='revision-ajena'), 'Una cuenta puede leer las revisiones de otra';
-  assert not exists(select 1 from public.documentos_negocio where id='f72b7b47-e9b4-47aa-b196-7a7340608998'), 'Una cuenta puede leer documentos de negocio de otra';
   datos := jsonb_build_object('guardar',jsonb_build_object(
     'cajitas',jsonb_build_array(jsonb_build_object('id',cuenta,'nombre','Cuenta de prueba','tipo','cuenta')),
     'cajita_movimientos',jsonb_build_array(jsonb_build_object('id',mov,'cajita_id',cuenta,'kind','deposito','delta_cop',500000,'occurred_on','2026-10-20')),
-    'revisiones_dudosas',jsonb_build_array(jsonb_build_object('id','documento:prueba','tipo','documento','estado','pendiente','titulo','Revisar fila','detalle','Comprobar cifra')),
-    'documentos_negocio',jsonb_build_array(jsonb_build_object('id','f72b7b47-e9b4-47aa-b196-7a7340608905','datos',jsonb_build_object('id','f72b7b47-e9b4-47aa-b196-7a7340608905','tipo','por_cobrar','totalCop',50000)))));
+    'revisiones_dudosas',jsonb_build_array(jsonb_build_object('id','documento:prueba','tipo','documento','estado','pendiente','titulo','Revisar fila','detalle','Comprobar cifra'))));
   perform public.aplicar_cambios_financieros(datos,operacion);
   assert (select count(*) from public.cajitas where id=cuenta)=1, 'No guardó la cuenta';
   assert (select sum(delta_cop) from public.cajita_movimientos where cajita_id=cuenta)=500000, 'No guardó la apertura';
   assert (select count(*) from public.revisiones_dudosas where id='documento:prueba' and user_id=auth.uid())=1, 'No guardó la revisión con el lote';
-  assert (select d.datos->>'tipo' from public.documentos_negocio d where d.id='f72b7b47-e9b4-47aa-b196-7a7340608905')='por_cobrar', 'No guardó el documento de negocio';
   perform public.aplicar_cambios_financieros(datos,operacion);
   assert (select count(*) from public.cajita_movimientos where id=mov)=1, 'Duplicó el reintento';
   begin

@@ -44,7 +44,6 @@ const CONTADORES: ReadonlyArray<[keyof Instantanea, string, string]> = [
   ['contactos', 'contacto', 'contactos'],
   ['presupuestos', 'presupuesto', 'presupuestos'],
   ['recurrentes', 'recurrente', 'recurrentes'],
-  ['documentosNegocio', 'documento de negocio', 'documentos de negocio'],
 ];
 
 /** "34 movimientos · 3 cuentas y cajitas · 1 meta" */

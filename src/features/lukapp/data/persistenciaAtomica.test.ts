@@ -7,12 +7,10 @@ import { RepositorioConCola } from './repositorioConCola';
 import { ColaCambios } from './colaCambios';
 import type { Cajita, CajitaMovimiento } from './modelos';
 import type { RevisionDudosa } from './revisiones';
-import type { DocumentoNegocio } from '../negocio/modelo';
 
 const cuenta = (id: string): Cajita => ({ id, nombre: id, tipo: 'cuenta', icon: 'Wallet', metaCop: null, tasaEaPct: null, createdAt: '2026-10-20T00:00:00Z', archivedAt: null });
 const movimiento = (id: string): CajitaMovimiento => ({ id, cajitaId: 'banco', kind: 'deposito', deltaCop: 1000, categoria: null, occurredOn: '2026-10-20', nota: '', createdAt: '2026-10-20T00:00:00Z' });
 const revision = (id: string): RevisionDudosa => ({ id, tipo: 'documento', estado: 'pendiente', referenciaId: 'tx-1', titulo: 'Confirma la lectura', detalle: 'Revisa el monto', documento: 'octubre.pdf', resolucion: null, createdAt: '2026-10-20T00:00:00Z', updatedAt: '2026-10-20T00:00:00Z' });
-const documento: DocumentoNegocio = { id: 'doc-1', tipo: 'por_cobrar', estado: 'enviado', contraparte: 'Cliente', concepto: 'Diseño', totalCop: 50000, fecha: '2026-10-20', vence: null, abonos: [{ id: 'abono-1', montoCop: 10000, fecha: '2026-10-20', nota: '' }], cotizacionOrigenId: null };
 
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
@@ -20,9 +18,9 @@ beforeEach(() => {
 });
 
 describe('guardado financiero atómico', () => {
-  it('actualiza una base v7 y conserva el libro al crear la tienda de negocio', async () => {
+  it('elimina los registros y envíos pendientes de negocio al actualizar el almacenamiento', async () => {
     const antigua = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open('antes-de-negocio', 7);
+      const request = indexedDB.open('antes-de-negocio', 8);
       request.onupgradeneeded = () => {
         const db = request.result;
         for (const nombre of ['transacciones', 'cajitas', 'metas', 'categorias', 'contactos', 'recurrentes', 'revisiones']) {
@@ -31,6 +29,8 @@ describe('guardado financiero atómico', () => {
         db.createObjectStore('presupuestos', { keyPath: 'categoria' });
         db.createObjectStore('colaPendiente', { autoIncrement: true });
         db.createObjectStore('cajitaMovimientos', { keyPath: 'id' }).createIndex('porCajita', 'cajitaId');
+        db.createObjectStore('documentosNegocio', { keyPath: 'id' }).put({ id: 'doc-1', abonos: [] });
+        request.transaction?.objectStore('colaPendiente').add({ metodo: 'guardarDocumentosNegocio', args: [[{ id: 'doc-1' }]] });
       };
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
@@ -38,8 +38,20 @@ describe('guardado financiero atómico', () => {
     antigua.close();
 
     const repo = new RepositorioIndexedDB('antes-de-negocio');
-    await repo.guardarDocumentosNegocio([documento]);
-    expect((await repo.cargarTodo()).documentosNegocio).toEqual([documento]);
+    expect((await repo.cargarTodo()).transacciones).toEqual([]);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('antes-de-negocio');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    expect(db.objectStoreNames.contains('documentosNegocio')).toBe(false);
+    const pendientes = await new Promise<unknown[]>((resolve, reject) => {
+      const request = db.transaction('colaPendiente').objectStore('colaPendiente').getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    expect(pendientes).toEqual([]);
+    db.close();
   });
 
   it('actualiza una base existente de la versión anterior para crear la tienda de revisiones', async () => {
@@ -96,20 +108,6 @@ describe('guardado financiero atómico', () => {
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
     await reabierto.sincronizar();
     expect((await remoto.cargarTodo()).revisiones).toEqual([revision('documento:tx-1')]);
-    expect(await reabierto.cambiosPendientes()).toBe(0);
-  });
-
-  it('mantiene documentos de negocio en IndexedDB, cola offline y sincronización', async () => {
-    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
-    const remoto = new RepositorioMemoria();
-    const repo = new RepositorioConCola(new RepositorioIndexedDB('negocio-offline'), remoto, new ColaCambios('negocio-offline'));
-    await repo.guardarDocumentosNegocio([documento]);
-    const reabierto = new RepositorioConCola(new RepositorioIndexedDB('negocio-offline'), remoto, new ColaCambios('negocio-offline'));
-    expect((await reabierto.cargarTodo()).documentosNegocio).toEqual([documento]);
-    expect(await reabierto.cambiosPendientes()).toBe(1);
-    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
-    await reabierto.sincronizar();
-    expect((await remoto.cargarTodo()).documentosNegocio).toEqual([documento]);
     expect(await reabierto.cambiosPendientes()).toBe(0);
   });
 

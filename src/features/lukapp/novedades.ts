@@ -22,7 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
-  { version: '9.14.6', fecha: '2026-10-23', texto: 'Quitamos «Tu trabajo» de Más y de la búsqueda de funciones. Tus registros se conservan. 💼' },
+  { version: '10.0.0', fecha: '2026-10-23', texto: 'Retiramos «Tu trabajo» por completo y eliminamos sus registros guardados en este dispositivo y en la nube. ✨' },
   { version: '9.14.5', fecha: '2026-10-23', texto: 'Quitamos el botón «Completar saldos» de Inicio. El saldo pendiente ahora solo muestra una indicación breve para confirmarlo desde Cuentas. 💰' },
   { version: '9.14.4', fecha: '2026-10-23', texto: 'El cálculo del 4x1000 incluye las transferencias desde la cuenta de origen, marca bancos y billeteras por defecto y muestra cuánto dinero moviste aunque siga dentro de la exención. Puedes ajustar qué cuentas contar. 💸' },
   { version: '9.14.3', fecha: '2026-10-23', texto: 'Las fechas ahora se eligen en un calendario de LukApp, con meses en español y navegación clara desde cualquier formulario. 🗓️' },
@@ -39,8 +39,6 @@ export const NOVEDADES: readonly Novedad[] = [
   { version: '9.9.1', fecha: '2026-10-21', texto: 'Volvimos al botón rosado para anotar por voz y dejamos el resumen de saldos e ingresos visible, sin desplegable. 🌸' },
   { version: '9.9.0', fecha: '2026-10-21', texto: 'Inicio muestra tus movimientos completos, puedes ocultar los próximos pagos desde Más y los accesos para anotar quedan más limpios. ✨' },
   { version: '9.8.2', fecha: '2026-10-21', texto: 'Mejoramos la preparación de LukApp para publicar: la compilación usa el binario correcto de esbuild y mantiene bloqueado el script opcional de donaciones de Tesseract. 🛠️' },
-  { version: '9.8.1', fecha: '2026-10-21', texto: 'Tus registros de 💼 negocio ahora se guardan junto con tus finanzas, se sincronizan al volver la conexión y entran en los respaldos; también migramos los que ya tenías en este dispositivo.' },
-  { version: '9.8.0', fecha: '2026-10-21', texto: 'Activa el modo 💼 Independientes y negocios para llevar cotizaciones, cuentas por cobrar y pagar, registrar abonos y comparar lo emitido con lo realmente recibido. Tus registros de trabajo quedan separados de tus finanzas personales.' },
   { version: '9.7.0', fecha: '2026-10-21', texto: 'Cuando actives la recepción por correo, podrás reenviar comprobantes, ver quién los envió y descargar sus archivos para revisarlos antes de importarlos; no cambiarán tu saldo sin confirmación. 📩🧾' },
   { version: '9.6.0', fecha: '2026-10-21', texto: 'Separa el ahorro disponible de tus inversiones y registra aportes, retiros, rendimientos y cambios de valor en COP o en otra moneda, guardando el importe original, la tasa y la fecha. Tus movimientos conservan emojis 📈💱🐷.' },
   { version: '9.5.0', fecha: '2026-10-21', texto: 'Las invitaciones a espacios compartidos se pueden enviar o copiar y muestran avisos claros; los gastos identifican quién pagó y el reparto empieza cuando se une otra persona. Las vaquitas ahora registran sus gastos, presupuesto y saldo sin inventar aportes, conservando los emojis 🥑💌🐮.' },
