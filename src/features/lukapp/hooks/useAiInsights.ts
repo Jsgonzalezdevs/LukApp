@@ -7,12 +7,6 @@ import { PERIODO_POR_DEFECTO, type ConfigPeriodo } from '../lib/periodo';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
-export interface SuscripcionPremiumResumen {
-  ciclo: 'mensual' | 'anual' | 'cortesia';
-  venceEn: string;
-  cancelarAlVencer: boolean;
-}
-
 interface UseAiInsightsOptions {
   transacciones: readonly Transaction[];
   presupuestos: readonly Presupuesto[];
@@ -41,7 +35,6 @@ export const useAiInsights = ({
   cargandoIa: boolean;
   origenIa: boolean;
   esPremium: boolean;
-  suscripcionPremium: SuscripcionPremiumResumen | null;
   /** Solo verdadero después de validar estas prestaciones en el servidor. */
   tieneAsesorIa: boolean;
   tieneInsightsIa: boolean;
@@ -60,7 +53,6 @@ export const useAiInsights = ({
     pulsoPremium: false,
     esPremium: false,
   });
-  const [suscripcionPremium, setSuscripcionPremium] = useState<SuscripcionPremiumResumen | null>(null);
   const lastFetchKey = useRef<string>('');
 
   // 1. Insights deterministas locales inmediatos (garantía offline / sin demora)
@@ -86,7 +78,6 @@ export const useAiInsights = ({
       if (!cliente) {
         if (!cancelado) {
           setPrestaciones({ asesorIa: false, insightsIa: false, pulsoPremium: false, esPremium: false });
-          setSuscripcionPremium(null);
         }
         return;
       }
@@ -96,7 +87,6 @@ export const useAiInsights = ({
         if (!sesion?.access_token) {
           if (!cancelado) {
             setPrestaciones({ asesorIa: false, insightsIa: false, pulsoPremium: false, esPremium: false });
-            setSuscripcionPremium(null);
           }
           return;
         }
@@ -106,11 +96,6 @@ export const useAiInsights = ({
         });
         const plan = await respuesta.json().catch(() => ({})) as {
           codigo?: unknown;
-          suscripcion?: {
-            ciclo?: unknown;
-            venceEn?: unknown;
-            cancelarAlVencer?: unknown;
-          } | null;
           beneficios?: Array<{ clave?: unknown; activo?: unknown }>;
         };
         const tiene = (clave: string): boolean => respuesta.ok
@@ -122,19 +107,10 @@ export const useAiInsights = ({
           pulsoPremium: tiene('pulso_premium'),
           esPremium: respuesta.ok && plan.codigo === 'premium',
         });
-        const suscripcion = plan.suscripcion;
-        const cicloValido = suscripcion?.ciclo === 'mensual' || suscripcion?.ciclo === 'anual' || suscripcion?.ciclo === 'cortesia';
-        const resumenValido = respuesta.ok && plan.codigo === 'premium' && suscripcion && cicloValido && typeof suscripcion.venceEn === 'string';
-        if (!cancelado) setSuscripcionPremium(resumenValido ? {
-          ciclo: suscripcion.ciclo as SuscripcionPremiumResumen['ciclo'],
-          venceEn: suscripcion.venceEn as string,
-          cancelarAlVencer: suscripcion.cancelarAlVencer === true,
-        } : null);
       } catch {
         // Si no se puede comprobar el plan, no se arriesga una llamada a IA.
         if (!cancelado) {
           setPrestaciones({ asesorIa: false, insightsIa: false, pulsoPremium: false, esPremium: false });
-          setSuscripcionPremium(null);
         }
       }
     };
@@ -224,7 +200,6 @@ export const useAiInsights = ({
     tieneAsesorIa: prestaciones.asesorIa,
     tienePulsoPremium: prestaciones.pulsoPremium,
     esPremium: prestaciones.esPremium,
-    suscripcionPremium,
     refrescar: () => {
       lastFetchKey.current = '';
       fetchAiInsights();

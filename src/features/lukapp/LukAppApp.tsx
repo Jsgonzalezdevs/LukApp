@@ -849,7 +849,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     tieneAsesorIa,
     tienePulsoPremium,
     esPremium,
-    suscripcionPremium,
   } = useAiInsights({
     transacciones,
     presupuestos: almacen.datos.presupuestos,
@@ -1080,9 +1079,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             mostrarDecisiones={mostrarDecisiones}
             mostrarProximosPagos={mostrarProximosPagos}
             resumenPremium={resumenPremium}
-            esPremium={esPremium}
-            suscripcionPremium={suscripcionPremium}
-            onVerPlanPremium={() => setMostrarPlanesPremium(true)}
             onVerResumenPremium={abrirResumenPremium}
           />
         ) : null}

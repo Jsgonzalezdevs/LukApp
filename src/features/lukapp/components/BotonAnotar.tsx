@@ -216,7 +216,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         role="group"
         aria-label="Registrar movimiento"
       >
-        <div className="fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-2">
+        <div className={`fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-2 ${esPremium ? 'fin-premium-crystal' : ''}`}>
           <button
             type="button"
             onClick={() => {

@@ -310,6 +310,57 @@
     var(--fin-glass-shadow);
 }
 
+/* La barra de captura recibe un cristal morado animado solo en Premium. Se
+   conserva la transparencia para que se funda con el contenido bajo ella y
+   una franja de luz lenta hace visible el acabado sin competir con los iconos. */
+.fin-page .fin-glass.fin-premium-crystal {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  backdrop-filter: blur(24px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+  background: linear-gradient(132deg, rgb(112 45 211 / 25%), rgb(139 86 222 / 17%) 48%, rgb(87 43 151 / 24%));
+  border-color: rgb(190 157 255 / 48%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    inset 0 0 0 1px rgb(144 91 224 / 13%),
+    0 12px 34px -16px rgb(95 40 183 / 78%),
+    0 0 22px -14px rgb(165 104 255 / 80%);
+}
+
+.fin-page .fin-glass.fin-premium-crystal::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: -120% -45%;
+  background: linear-gradient(108deg, transparent 42%, rgb(229 211 255 / 16%) 49%, rgb(255 255 255 / 30%) 51%, rgb(190 143 255 / 15%) 54%, transparent 62%);
+  transform: translateX(-38%) rotate(-8deg);
+  animation: fin-crystal-reflejo 11s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.fin-page .fin-glass.fin-premium-crystal > button {
+  position: relative;
+  z-index: 1;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.fin-page .fin-glass.fin-premium-crystal > button:hover {
+  background-color: rgb(173 126 255 / 15%);
+}
+
+@keyframes fin-crystal-reflejo {
+  0%, 12% { transform: translateX(-38%) rotate(-8deg); }
+  58%, 100% { transform: translateX(38%) rotate(-8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fin-page .fin-glass.fin-premium-crystal::before {
+    animation: none;
+    transform: translateX(0) rotate(-8deg);
+  }
+}
+
 /* Desactiva también los desenfoques declarados como utilidades o estilos
    inline dentro del dashboard, incluidos overlays y hojas. */
 .fin-page [class*="backdrop-blur"],
