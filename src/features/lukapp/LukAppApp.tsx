@@ -116,9 +116,6 @@ const AnalistaView = lazy(() =>
 const BandejaRevision = lazy(() =>
   import('./components/BandejaRevision').then(({ BandejaRevision }) => ({ default: BandejaRevision })),
 );
-const NegocioView = lazy(() =>
-  import('./components/NegocioView').then(({ NegocioView }) => ({ default: NegocioView })),
-);
 const AsesorView = lazy(() =>
   import('./components/AsesorView').then(({ AsesorView }) => ({ default: AsesorView })),
 );
@@ -1395,8 +1392,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 onImportar={(nuevos, revisiones) => almacen.importarTransacciones(nuevos, revisiones)}
                 onCompletar={(movimiento) => almacen.actualizarTransaccion(movimiento)}
               />
-            ) : panelAjustes === 'negocio' ? (
-              <NegocioView userId={userId ?? 'usuario-local-pruebas'} documentos={almacen.datos.documentosNegocio} cargando={almacen.cargando} onGuardar={almacen.guardarDocumentosNegocio} />
             ) : panelAjustes === 'revisiones' ? (
               <BandejaRevision
                 transacciones={transacciones}

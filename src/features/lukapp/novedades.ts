@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '9.14.6', fecha: '2026-10-23', texto: 'Quitamos «Tu trabajo» de Más y de la búsqueda de funciones. Tus registros se conservan. 💼' },
   { version: '9.14.5', fecha: '2026-10-23', texto: 'Quitamos el botón «Completar saldos» de Inicio. El saldo pendiente ahora solo muestra una indicación breve para confirmarlo desde Cuentas. 💰' },
   { version: '9.14.4', fecha: '2026-10-23', texto: 'El cálculo del 4x1000 incluye las transferencias desde la cuenta de origen, marca bancos y billeteras por defecto y muestra cuánto dinero moviste aunque siga dentro de la exención. Puedes ajustar qué cuentas contar. 💸' },
   { version: '9.14.3', fecha: '2026-10-23', texto: 'Las fechas ahora se eligen en un calendario de LukApp, con meses en español y navegación clara desde cualquier formulario. 🗓️' },
