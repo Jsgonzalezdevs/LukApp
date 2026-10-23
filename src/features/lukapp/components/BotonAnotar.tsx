@@ -78,6 +78,21 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   const escuchando = dictation.status === 'listening';
   const procesando = dictation.status === 'processing';
 
+  const actualizarReflejoCristal = (evento: React.PointerEvent<HTMLDivElement>) => {
+    if (!esPremium) return;
+    const limites = evento.currentTarget.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (evento.clientX - limites.left) / limites.width));
+    const y = Math.min(1, Math.max(0, (evento.clientY - limites.top) / limites.height));
+    evento.currentTarget.style.setProperty('--cristal-x', `${(x * 100).toFixed(1)}%`);
+    evento.currentTarget.style.setProperty('--cristal-y', `${(y * 100).toFixed(1)}%`);
+  };
+
+  const centrarReflejoCristal = (evento: React.PointerEvent<HTMLDivElement>) => {
+    if (!esPremium) return;
+    evento.currentTarget.style.setProperty('--cristal-x', '50%');
+    evento.currentTarget.style.setProperty('--cristal-y', '50%');
+  };
+
   useEffect(() => {
     if (!escuchando) confirmacionEnCursoRef.current = false;
   }, [escuchando]);
@@ -216,7 +231,11 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         role="group"
         aria-label="Registrar movimiento"
       >
-        <div className={`fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-2 ${esPremium ? 'fin-premium-crystal' : ''}`}>
+        <div
+          className={`fin-glass flex gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-card)] p-2 ${esPremium ? 'fin-premium-crystal' : ''}`}
+          onPointerMove={esPremium ? actualizarReflejoCristal : undefined}
+          onPointerLeave={esPremium ? centrarReflejoCristal : undefined}
+        >
           <button
             type="button"
             onClick={() => {

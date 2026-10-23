@@ -310,54 +310,107 @@
     var(--fin-glass-shadow);
 }
 
-/* La barra de captura recibe un cristal morado animado solo en Premium. Se
-   conserva la transparencia para que se funda con el contenido bajo ella y
-   una franja de luz lenta hace visible el acabado sin competir con los iconos. */
+/* Crystal Glass Premium: esta cápsula es una capa flotante de controles. El
+   material deja que el fondo real pase por el cristal y lo desenfoca; las
+   luces especulares, el borde refractado y su respuesta al puntero aportan la
+   lectura de lente. No usar este tratamiento en tarjetas de contenido. */
 .fin-page .fin-glass.fin-premium-crystal {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  backdrop-filter: blur(24px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
-  background: linear-gradient(132deg, rgb(112 45 211 / 25%), rgb(139 86 222 / 17%) 48%, rgb(87 43 151 / 24%));
-  border-color: rgb(190 157 255 / 48%);
+  --cristal-x: 50%;
+  --cristal-y: 50%;
+  backdrop-filter: blur(30px) saturate(175%) brightness(1.04) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(175%) brightness(1.04) !important;
+  background: linear-gradient(140deg, rgb(66 40 91 / 13%), rgb(131 84 191 / 11%) 48%, rgb(67 40 99 / 16%));
+  border-color: rgb(255 255 255 / 43%);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 45%),
-    inset 0 0 0 1px rgb(144 91 224 / 13%),
-    0 12px 34px -16px rgb(95 40 183 / 78%),
-    0 0 22px -14px rgb(165 104 255 / 80%);
+    inset 0 1px 0 rgb(255 255 255 / 66%),
+    inset 0 0 0 1px rgb(153 112 206 / 16%),
+    inset 0 -7px 15px -13px rgb(48 21 77 / 58%),
+    0 13px 34px -17px rgb(57 32 83 / 53%),
+    0 0 28px -18px rgb(129 67 194 / 74%);
 }
 
 .fin-page .fin-glass.fin-premium-crystal::before {
   content: '';
   position: absolute;
   z-index: 0;
-  inset: -120% -45%;
-  background: linear-gradient(108deg, transparent 42%, rgb(229 211 255 / 16%) 49%, rgb(255 255 255 / 30%) 51%, rgb(190 143 255 / 15%) 54%, transparent 62%);
-  transform: translateX(-38%) rotate(-8deg);
-  animation: fin-crystal-reflejo 11s ease-in-out infinite;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(145px circle at var(--cristal-x) var(--cristal-y), rgb(255 255 255 / 38%), rgb(217 190 255 / 17%) 28%, transparent 72%),
+    linear-gradient(112deg, transparent 20%, rgb(255 255 255 / 8%) 40%, rgb(255 255 255 / 26%) 49%, rgb(234 218 255 / 13%) 53%, transparent 70%);
+  background-size: auto, 230% 100%;
+  background-position: center, -120% 0;
+  mix-blend-mode: screen;
+  animation: fin-crystal-destello 13s cubic-bezier(.42, 0, .24, 1) infinite;
+  pointer-events: none;
+}
+
+.fin-page .fin-glass.fin-premium-crystal::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 1px;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgb(255 255 255 / 12%), transparent 24%, transparent 78%, rgb(91 57 125 / 8%));
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 38%), inset 0 -1px 1px rgb(75 40 112 / 11%);
   pointer-events: none;
 }
 
 .fin-page .fin-glass.fin-premium-crystal > button {
   position: relative;
-  z-index: 1;
-  transition: background-color 180ms ease, transform 180ms ease;
+  z-index: 2;
+  transition: background-color 180ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1), filter 180ms ease;
 }
 
 .fin-page .fin-glass.fin-premium-crystal > button:hover {
-  background-color: rgb(173 126 255 / 15%);
+  background-color: rgb(255 255 255 / 17%);
+  filter: drop-shadow(0 0 5px rgb(219 194 255 / 45%));
 }
 
-@keyframes fin-crystal-reflejo {
-  0%, 12% { transform: translateX(-38%) rotate(-8deg); }
-  58%, 100% { transform: translateX(38%) rotate(-8deg); }
+@keyframes fin-crystal-destello {
+  0%, 18% { background-position: center, -120% 0; }
+  62%, 100% { background-position: center, 120% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fin-page .fin-glass.fin-premium-crystal::before {
+  .fin-page .fin-glass.fin-premium-crystal::before,
+  .fin-page .fin-glass.fin-premium-crystal > button {
     animation: none;
-    transform: translateX(0) rotate(-8deg);
+    transition: none;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .fin-html:not([data-tema='claro']):not([data-tema='oscuro']) .fin-page .fin-glass.fin-premium-crystal {
+    background: linear-gradient(140deg, rgb(34 19 49 / 45%), rgb(99 61 138 / 32%) 48%, rgb(30 18 45 / 48%));
+    border-color: rgb(229 211 255 / 39%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 34%),
+      inset 0 0 0 1px rgb(181 140 232 / 19%),
+      inset 0 -8px 16px -13px rgb(12 5 20 / 80%),
+      0 14px 38px -16px rgb(0 0 0 / 78%),
+      0 0 26px -17px rgb(154 94 222 / 72%);
+  }
+}
+
+.fin-html[data-tema='oscuro'] .fin-page .fin-glass.fin-premium-crystal {
+  background: linear-gradient(140deg, rgb(34 19 49 / 45%), rgb(99 61 138 / 32%) 48%, rgb(30 18 45 / 48%));
+  border-color: rgb(229 211 255 / 39%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 34%),
+    inset 0 0 0 1px rgb(181 140 232 / 19%),
+    inset 0 -8px 16px -13px rgb(12 5 20 / 80%),
+    0 14px 38px -16px rgb(0 0 0 / 78%),
+    0 0 26px -17px rgb(154 94 222 / 72%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fin-page .fin-glass.fin-premium-crystal {
+    background: rgb(69 43 94 / 82%);
   }
 }
 
