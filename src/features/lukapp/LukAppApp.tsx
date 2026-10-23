@@ -847,6 +847,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     refrescar: refrescarInsights,
     tieneInsightsIa,
     tienePulsoPremium,
+    esPremium,
   } = useAiInsights({
     transacciones,
     presupuestos: almacen.datos.presupuestos,
@@ -949,6 +950,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         accion={
           section === 'asesor' ? null : (
             <BotonAnotar
+              esPremium={esPremium}
               onDictado={handleSubmit}
               onManual={() => setPending(movimientoEnBlanco())}
               onBuscar={() => setCapa('buscar')}

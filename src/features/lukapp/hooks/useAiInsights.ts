@@ -34,6 +34,7 @@ export const useAiInsights = ({
   insights: Insight[];
   cargandoIa: boolean;
   origenIa: boolean;
+  esPremium: boolean;
   /** Solo verdadero después de validar estas prestaciones en el servidor. */
   tieneInsightsIa: boolean;
   tienePulsoPremium: boolean;
@@ -45,7 +46,7 @@ export const useAiInsights = ({
   // Hasta comprobar las prestaciones no se envía ningún dato al generador de
   // insights. Así Super Admin puede cambiar Premium sin dejar un acceso vivo
   // solo porque una pantalla se abrió antes del cambio.
-  const [prestaciones, setPrestaciones] = useState({ insightsIa: false, pulsoPremium: false });
+  const [prestaciones, setPrestaciones] = useState({ insightsIa: false, pulsoPremium: false, esPremium: false });
   const lastFetchKey = useRef<string>('');
 
   // 1. Insights deterministas locales inmediatos (garantía offline / sin demora)
@@ -69,14 +70,14 @@ export const useAiInsights = ({
     const consultarPlan = async () => {
       const cliente = obtenerSupabase();
       if (!cliente) {
-        if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false });
+        if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false, esPremium: false });
         return;
       }
 
       try {
         const sesion = (await cliente.auth.getSession()).data.session;
         if (!sesion?.access_token) {
-          if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false });
+          if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false, esPremium: false });
           return;
         }
 
@@ -84,15 +85,20 @@ export const useAiInsights = ({
           headers: { Authorization: `Bearer ${sesion.access_token}` },
         });
         const plan = await respuesta.json().catch(() => ({})) as {
+          codigo?: unknown;
           beneficios?: Array<{ clave?: unknown; activo?: unknown }>;
         };
         const tiene = (clave: string): boolean => respuesta.ok
           && Array.isArray(plan.beneficios)
           && plan.beneficios.some((beneficio) => beneficio?.clave === clave && beneficio?.activo === true);
-        if (!cancelado) setPrestaciones({ insightsIa: tiene('insights_ia'), pulsoPremium: tiene('pulso_premium') });
+        if (!cancelado) setPrestaciones({
+          insightsIa: tiene('insights_ia'),
+          pulsoPremium: tiene('pulso_premium'),
+          esPremium: respuesta.ok && plan.codigo === 'premium',
+        });
       } catch {
         // Si no se puede comprobar el plan, no se arriesga una llamada a IA.
-        if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false });
+        if (!cancelado) setPrestaciones({ insightsIa: false, pulsoPremium: false, esPremium: false });
       }
     };
 
@@ -179,6 +185,7 @@ export const useAiInsights = ({
     origenIa,
     tieneInsightsIa: prestaciones.insightsIa,
     tienePulsoPremium: prestaciones.pulsoPremium,
+    esPremium: prestaciones.esPremium,
     refrescar: () => {
       lastFetchKey.current = '';
       fetchAiInsights();

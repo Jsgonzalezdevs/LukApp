@@ -130,6 +130,31 @@ select {
   animation: fin-dictado-respirar 9s ease-in-out infinite;
 }
 
+/* Solo el botón de dictado distingue Premium con el violeta de la marca. El
+   fondo anima en una capa aparte para que siga moviéndose mientras escucha. */
+.dictado-premium-fondo {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(125deg, #48146f 0%, #772aea 34%, #a443f5 58%, #5c1ba5 82%, #48146f 100%);
+  background-size: 260% 260%;
+  animation: fin-dictado-premium-mover 14s ease-in-out infinite;
+  box-shadow: 0 10px 28px -8px rgb(105 30 190 / 65%);
+  pointer-events: none;
+}
+
+@keyframes fin-dictado-premium-mover {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dictado-premium-fondo {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
 @keyframes fin-dictado-respirar {
   0%, 100% { background-position: 0% 0%; }
   50% { background-position: 100% 60%; }

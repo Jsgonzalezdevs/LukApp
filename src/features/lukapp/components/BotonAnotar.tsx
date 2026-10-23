@@ -9,6 +9,7 @@ import { DictadoOverlay } from './DictadoOverlay';
 import type { FaseDictado } from './DictadoOverlay';
 
 interface BotonAnotarProps {
+  esPremium?: boolean;
   /** Se llama con lo que la persona dijo, ya transcrito. */
   onDictado: (texto: string) => void;
   /** Abrir la pantalla de anotar en blanco, para escribir a mano. */
@@ -25,6 +26,7 @@ interface BotonAnotarProps {
  * La barra flotante de abajo: anotar a mano, buscar, escanear foto y el micrófono.
  */
 export const BotonAnotar: React.FC<BotonAnotarProps> = ({
+  esPremium = false,
   onDictado,
   onManual,
   onBuscar,
@@ -284,17 +286,18 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             aria-label={
               procesando ? 'Transcribiendo' : escuchando ? 'Dejar de escuchar' : 'Anotar hablando'
             }
-            className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-on-out)] shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)] transition-transform active:scale-95 ${
+            className={`flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-on-out)] ${esPremium ? '' : 'shadow-[0_10px_28px_-8px_rgb(190_18_60/0.6)]'} transition-transform active:scale-95 ${
               escuchando ? 'animate-pulse' : ''
             }`}
-            style={{ backgroundColor: 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
+            style={{ backgroundColor: esPremium ? 'transparent' : 'var(--fin-out)', opacity: procesando || dictation.status === 'blocked' ? 0.5 : 1 }}
           >
+            {esPremium ? <span className="dictado-premium-fondo" aria-hidden="true" /> : null}
             {procesando ? (
-              <Loader2 className="h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
+              <Loader2 className="relative z-10 h-6 w-6 animate-spin" strokeWidth={2.5} aria-hidden="true" />
             ) : escuchando ? (
-              <Square className="h-6 w-6" strokeWidth={3} aria-hidden="true" />
+              <Square className="relative z-10 h-6 w-6" strokeWidth={3} aria-hidden="true" />
             ) : (
-              <Mic className="h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
+              <Mic className="relative z-10 h-7 w-7" strokeWidth={2.5} aria-hidden="true" />
             )}
           </RippleButton>
         </div>
