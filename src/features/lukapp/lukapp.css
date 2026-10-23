@@ -57,6 +57,10 @@
   --fin-glass-filter: blur(28px) saturate(180%);
   --fin-glass-highlight: rgb(255 255 255 / 0.55);
   --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(85 34 130 / 23%), rgb(126 67 196 / 23%) 48%, rgb(76 39 124 / 24%));
+  --fin-premium-lens-border: rgb(255 255 255 / 38%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 32%);
+  --fin-premium-lens-glow: 0 0 32px -20px rgb(129 67 194 / 62%);
 
   /* Text, darkest to lightest */
   --fin-ink: #1c1917;
@@ -197,6 +201,10 @@
        visibly lifts off a background that is nearly as dark as it is. */
     --fin-glass-highlight: rgb(255 255 255 / 0.12);
     --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
+    --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 38 96 / 35%), rgb(126 67 196 / 29%) 48%, rgb(42 28 65 / 42%));
+    --fin-premium-lens-border: rgb(255 255 255 / 24%);
+    --fin-premium-lens-specular: rgb(255 255 255 / 23%);
+    --fin-premium-lens-glow: 0 0 34px -20px rgb(145 92 211 / 48%);
 
     --fin-ink: #f5f3f0;
     --fin-ink-soft: #c2bbb4;
@@ -260,6 +268,10 @@
 
   --fin-glass-highlight: rgb(255 255 255 / 0.12);
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 38 96 / 35%), rgb(126 67 196 / 29%) 48%, rgb(42 28 65 / 42%));
+  --fin-premium-lens-border: rgb(255 255 255 / 24%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 23%);
+  --fin-premium-lens-glow: 0 0 34px -20px rgb(145 92 211 / 48%);
 
   --fin-ink: #f5f3f0;
   --fin-ink-soft: #c2bbb4;
@@ -324,7 +336,7 @@
     inset 0 1px 0 rgb(255 255 255 / 62%),
     inset 0 -1px 0 rgb(84 48 121 / 20%),
     0 16px 38px -20px rgb(45 24 67 / 55%),
-    0 0 32px -20px rgb(129 67 194 / 62%);
+    var(--fin-premium-lens-glow);
   transition: transform 260ms cubic-bezier(.2, .8, .2, 1), box-shadow 260ms ease;
 }
 
@@ -335,7 +347,7 @@
   inset: 1px;
   border-radius: inherit;
   background:
-    radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), rgb(255 255 255 / 32%), rgb(217 190 255 / 12%) 31%, transparent 75%),
+    radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), var(--fin-premium-lens-specular), rgb(217 190 255 / 12%) 31%, transparent 75%),
     linear-gradient(145deg, rgb(255 255 255 / 13%), transparent 34%, rgb(199 164 255 / 9%) 72%, transparent);
   mix-blend-mode: screen;
   pointer-events: none;

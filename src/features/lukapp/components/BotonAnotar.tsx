@@ -290,8 +290,8 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             className="fin-premium-lens"
             style={{
               borderRadius: 'var(--fin-r-pill)',
-              background: 'linear-gradient(140deg, rgb(85 34 130 / 23%), rgb(126 67 196 / 23%) 48%, rgb(76 39 124 / 24%))',
-              border: '1px solid rgb(255 255 255 / 38%)',
+              background: 'var(--fin-premium-lens-fill)',
+              border: '1px solid var(--fin-premium-lens-border)',
             }}
             optics={{
               strength: 0.18,
