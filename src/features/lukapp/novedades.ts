@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.17', fecha: '2026-10-23', texto: 'El cristal morado de la barra Premium ahora difumina los movimientos que pasan detrás. 💜' },
   { version: '10.1.16', fecha: '2026-10-23', texto: 'El cristal Premium ahora difumina más el fondo y refuerza sus reflejos morados. 💜' },
   { version: '10.1.15', fecha: '2026-10-23', texto: 'La barra Premium ahora difumina directamente los movimientos que pasan detrás, con un reflejo morado más suave. 💜' },
   { version: '10.1.14', fecha: '2026-10-23', texto: 'La barra Premium conserva el blur con un cristal más claro, filo sutil y un tinte morado discreto. 💜' },

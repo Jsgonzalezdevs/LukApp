@@ -57,12 +57,12 @@
   --fin-glass-filter: blur(28px) saturate(180%);
   --fin-glass-highlight: rgb(255 255 255 / 0.55);
   --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(255 255 255 / 18%), rgb(126 34 206 / 40%) 48%, rgb(139 92 246 / 30%));
-  --fin-premium-lens-border: rgb(255 255 255 / 36%);
-  --fin-premium-lens-specular: rgb(255 255 255 / 28%);
-  --fin-premium-lens-rim: rgb(255 255 255 / 64%);
-  --fin-premium-lens-bottom-rim: rgb(84 48 121 / 24%);
-  --fin-premium-lens-glow: 0 9px 34px -16px rgb(129 67 194 / 55%);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(255 255 255 / 8%), rgb(126 34 206 / 12%) 48%, rgb(139 92 246 / 8%));
+  --fin-premium-lens-border: rgb(255 255 255 / 30%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 18%);
+  --fin-premium-lens-rim: rgb(255 255 255 / 56%);
+  --fin-premium-lens-bottom-rim: rgb(84 48 121 / 14%);
+  --fin-premium-lens-glow: 0 8px 28px -17px rgb(129 67 194 / 36%);
 
   /* Text, darkest to lightest */
   --fin-ink: #1c1917;
@@ -203,12 +203,12 @@
        visibly lifts off a background that is nearly as dark as it is. */
     --fin-glass-highlight: rgb(255 255 255 / 0.12);
     --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-    --fin-premium-lens-fill: linear-gradient(140deg, rgb(196 156 255 / 28%), rgb(115 58 174 / 48%) 48%, rgb(38 24 54 / 54%));
-    --fin-premium-lens-border: rgb(255 255 255 / 30%);
-    --fin-premium-lens-specular: rgb(236 220 255 / 27%);
-    --fin-premium-lens-rim: rgb(255 255 255 / 52%);
-    --fin-premium-lens-bottom-rim: rgb(0 0 0 / 38%);
-    --fin-premium-lens-glow: 0 9px 36px -16px rgb(145 92 211 / 58%);
+    --fin-premium-lens-fill: linear-gradient(140deg, rgb(196 156 255 / 15%), rgb(115 58 174 / 25%) 48%, rgb(38 24 54 / 34%));
+    --fin-premium-lens-border: rgb(255 255 255 / 23%);
+    --fin-premium-lens-specular: rgb(236 220 255 / 20%);
+    --fin-premium-lens-rim: rgb(255 255 255 / 45%);
+    --fin-premium-lens-bottom-rim: rgb(0 0 0 / 30%);
+    --fin-premium-lens-glow: 0 8px 30px -17px rgb(145 92 211 / 46%);
 
     --fin-ink: #f5f3f0;
     --fin-ink-soft: #c2bbb4;
@@ -272,12 +272,12 @@
 
   --fin-glass-highlight: rgb(255 255 255 / 0.12);
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(196 156 255 / 28%), rgb(115 58 174 / 48%) 48%, rgb(38 24 54 / 54%));
-  --fin-premium-lens-border: rgb(255 255 255 / 30%);
-  --fin-premium-lens-specular: rgb(236 220 255 / 27%);
-  --fin-premium-lens-rim: rgb(255 255 255 / 52%);
-  --fin-premium-lens-bottom-rim: rgb(0 0 0 / 38%);
-  --fin-premium-lens-glow: 0 9px 36px -16px rgb(145 92 211 / 58%);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(196 156 255 / 15%), rgb(115 58 174 / 25%) 48%, rgb(38 24 54 / 34%));
+  --fin-premium-lens-border: rgb(255 255 255 / 23%);
+  --fin-premium-lens-specular: rgb(236 220 255 / 20%);
+  --fin-premium-lens-rim: rgb(255 255 255 / 45%);
+  --fin-premium-lens-bottom-rim: rgb(0 0 0 / 30%);
+  --fin-premium-lens-glow: 0 8px 30px -17px rgb(145 92 211 / 46%);
 
   --fin-ink: #f5f3f0;
   --fin-ink-soft: #c2bbb4;
@@ -331,14 +331,14 @@
 /* Aproximación web de la cápsula Premium. El blur nativo del navegador debe
    quedar visible por sí solo; una lente SVG compuesta con backdrop-filter
    dejaba pasar el color, pero no difuminaba claramente el texto bajo la barra. */
-.fin-page .fin-premium-lens {
+.fin-root .fin-premium-lens {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   --cristal-x: 50%;
   --cristal-y: 50%;
-  backdrop-filter: blur(48px) saturate(1.9) contrast(1.06) brightness(1.04);
-  -webkit-backdrop-filter: blur(48px) saturate(1.9) contrast(1.06) brightness(1.04);
+  backdrop-filter: blur(32px) saturate(1.7) contrast(1.04) brightness(1.02);
+  -webkit-backdrop-filter: blur(32px) saturate(1.7) contrast(1.04) brightness(1.02);
   box-shadow:
     inset 0 1px 0 var(--fin-premium-lens-rim),
     inset 0 -1px 0 var(--fin-premium-lens-bottom-rim),
@@ -347,22 +347,22 @@
   transition: transform 260ms cubic-bezier(.2, .8, .2, 1), box-shadow 260ms ease;
 }
 
-.fin-page .fin-premium-lens::before {
+.fin-root .fin-premium-lens::before {
   content: '';
   position: absolute;
   z-index: 1;
   inset: 1px;
   border-radius: inherit;
   background:
-    radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), var(--fin-premium-lens-specular), rgb(217 190 255 / 22%) 31%, transparent 75%),
-    linear-gradient(145deg, rgb(255 255 255 / 24%), transparent 34%, rgb(199 164 255 / 20%) 72%, transparent);
+    radial-gradient(155px circle at var(--cristal-x) var(--cristal-y), var(--fin-premium-lens-specular), rgb(217 190 255 / 12%) 31%, transparent 75%),
+    linear-gradient(145deg, rgb(255 255 255 / 14%), transparent 34%, rgb(199 164 255 / 9%) 72%, transparent);
   mix-blend-mode: screen;
   pointer-events: none;
   background-size: auto, 220% 220%;
   animation: fin-lens-light-drift 22s ease-in-out infinite alternate;
 }
 
-.fin-page .fin-premium-lens::after {
+.fin-root .fin-premium-lens::after {
   content: '';
   position: absolute;
   z-index: 2;
@@ -378,26 +378,26 @@
   to { background-position: center, 100% 65%; }
 }
 
-.fin-page .fin-premium-lens:active::before {
+.fin-root .fin-premium-lens:active::before {
   background: radial-gradient(190px circle at var(--cristal-x) var(--cristal-y), rgb(255 255 255 / 44%), rgb(217 190 255 / 18%) 30%, transparent 74%);
 }
 
-.fin-page .fin-premium-lens .fin-premium-lens-controls {
+.fin-root .fin-premium-lens .fin-premium-lens-controls {
   position: relative;
   z-index: 4;
 }
 
-.fin-page .fin-premium-lens button {
+.fin-root .fin-premium-lens button {
   position: relative;
   z-index: 3;
   transition: background-color 180ms ease, transform 220ms cubic-bezier(.2, .8, .2, 1);
 }
 
-.fin-page .fin-premium-lens button:hover {
+.fin-root .fin-premium-lens button:hover {
   background-color: rgb(255 255 255 / 14%);
 }
 
-.fin-page .fin-premium-lens:active {
+.fin-root .fin-premium-lens:active {
   transform: scale(.985);
   box-shadow:
     0 9px 25px -15px rgb(57 32 83 / 58%),
@@ -405,41 +405,41 @@
 }
 
 @supports not (backdrop-filter: blur(1px)) {
-  .fin-page .fin-premium-lens {
+  .fin-root .fin-premium-lens {
     background: rgb(79 48 103 / 88%) !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fin-page .fin-premium-lens,
-  .fin-page .fin-premium-lens button {
+  .fin-root .fin-premium-lens,
+  .fin-root .fin-premium-lens button {
     transition: none;
   }
 
-  .fin-page .fin-premium-lens::before {
+  .fin-root .fin-premium-lens::before {
     animation: none;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .fin-page .fin-premium-lens {
+  .fin-root .fin-premium-lens {
     /* Apple vuelve el material más esmerilado para ocultar más el fondo; no lo
        convierte en una placa lisa. Conservamos el blur y elevamos el velo para
        reducir transparencia sin perder la señal de cristal. */
-    backdrop-filter: blur(48px) saturate(1.35) !important;
-    -webkit-backdrop-filter: blur(48px) saturate(1.35) !important;
+    backdrop-filter: blur(32px) saturate(1.35) !important;
+    -webkit-backdrop-filter: blur(32px) saturate(1.35) !important;
     background: rgb(237 225 252 / 88%) !important;
     border-color: rgb(255 255 255 / 78%) !important;
   }
 
-  .fin-html[data-tema='oscuro'] .fin-page .fin-premium-lens {
+  .fin-html[data-tema='oscuro'] .fin-root .fin-premium-lens {
     background: rgb(43 31 57 / 93%) !important;
     border-color: rgb(255 255 255 / 48%) !important;
   }
 }
 
 @media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
-  .fin-html:not([data-tema='claro']) .fin-page .fin-premium-lens {
+  .fin-html:not([data-tema='claro']) .fin-root .fin-premium-lens {
     background: rgb(43 31 57 / 93%) !important;
     border-color: rgb(255 255 255 / 48%) !important;
   }
@@ -447,8 +447,8 @@
 
 /* Desactiva desenfoques accidentales de utilidades en otras superficies; la
    única excepción explícita es el cristal de las acciones Premium. */
-.fin-page [class*="backdrop-blur"],
-.fin-page [style*="backdrop-filter"]:not(.fin-premium-lens) {
+.fin-root [class*="backdrop-blur"],
+.fin-root [style*="backdrop-filter"]:not(.fin-premium-lens) {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
