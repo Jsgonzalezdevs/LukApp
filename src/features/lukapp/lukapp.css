@@ -57,7 +57,7 @@
   --fin-glass-filter: blur(28px) saturate(180%);
   --fin-glass-highlight: rgb(255 255 255 / 0.55);
   --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(255 255 255 / 8%), rgb(126 34 206 / 12%) 48%, rgb(139 92 246 / 8%));
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(255 255 255 / 5%), rgb(126 34 206 / 8%) 48%, rgb(139 92 246 / 5%));
   --fin-premium-lens-border: rgb(255 255 255 / 30%);
   --fin-premium-lens-specular: rgb(255 255 255 / 18%);
   --fin-premium-lens-rim: rgb(255 255 255 / 56%);
@@ -203,7 +203,7 @@
        visibly lifts off a background that is nearly as dark as it is. */
     --fin-glass-highlight: rgb(255 255 255 / 0.12);
     --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-    --fin-premium-lens-fill: linear-gradient(140deg, rgb(196 156 255 / 15%), rgb(115 58 174 / 25%) 48%, rgb(38 24 54 / 34%));
+    --fin-premium-lens-fill: linear-gradient(140deg, rgb(196 156 255 / 9%), rgb(115 58 174 / 16%) 48%, rgb(38 24 54 / 22%));
     --fin-premium-lens-border: rgb(255 255 255 / 23%);
     --fin-premium-lens-specular: rgb(236 220 255 / 20%);
     --fin-premium-lens-rim: rgb(255 255 255 / 45%);
@@ -331,7 +331,7 @@
 /* Desactiva desenfoques accidentales de utilidades en otras superficies; la
    única excepción explícita es el cristal de las acciones Premium. */
 .fin-root [class*="backdrop-blur"],
-.fin-root [style*="backdrop-filter"]:not(.fin-premium-lens) {
+.fin-root [style*="backdrop-filter"]:not(.fin-premium-lens):not(.fin-premium-lens-material) {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }

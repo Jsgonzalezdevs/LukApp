@@ -290,19 +290,30 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
             style={{
               borderRadius: 'var(--fin-r-pill)',
               position: 'relative',
-              isolation: 'isolate',
               overflow: 'hidden',
-              // El material base va inline para que no dependa de que el CSS
-              // de esta vista diferida haya terminado de cargar.
-              backdropFilter: 'blur(26px) saturate(1.8) contrast(1.08) brightness(1.03)',
-              WebkitBackdropFilter: 'blur(26px) saturate(1.8) contrast(1.08) brightness(1.03)',
-              background: 'var(--fin-premium-lens-fill, linear-gradient(140deg, rgb(255 255 255 / 8%), rgb(126 34 206 / 12%) 48%, rgb(139 92 246 / 8%)))',
+              background: 'transparent',
               border: '1px solid var(--fin-premium-lens-border, rgb(255 255 255 / 30%))',
               boxShadow: 'inset 0 1px 0 var(--fin-premium-lens-rim, rgb(255 255 255 / 56%)), inset 0 -1px 0 var(--fin-premium-lens-bottom-rim, rgb(84 48 121 / 14%)), 0 12px 28px -20px rgb(28 25 23 / 25%), var(--fin-premium-lens-glow, 0 8px 28px -17px rgb(129 67 194 / 36%))',
             }}
             onPointerMove={actualizarReflejoCristal}
             onPointerLeave={centrarReflejoCristal}
           >
+            <span
+              aria-hidden="true"
+              className="fin-premium-lens-material"
+              style={{
+                position: 'absolute',
+                zIndex: 0,
+                inset: 0,
+                borderRadius: 'inherit',
+                // El blur vive en su propia capa transparente, separada del
+                // reflejo y de los botones para difuminar filas de verdad.
+                backdropFilter: 'blur(32px) saturate(1.75) contrast(1.08)',
+                WebkitBackdropFilter: 'blur(32px) saturate(1.75) contrast(1.08)',
+                background: 'var(--fin-premium-lens-fill, linear-gradient(140deg, rgb(255 255 255 / 5%), rgb(126 34 206 / 8%) 48%, rgb(139 92 246 / 5%)))',
+                pointerEvents: 'none',
+              }}
+            />
             <span
               aria-hidden="true"
               className="fin-premium-lens-light"
