@@ -294,8 +294,8 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
               overflow: 'hidden',
               // El material base va inline para que no dependa de que el CSS
               // de esta vista diferida haya terminado de cargar.
-              backdropFilter: 'blur(32px) saturate(1.7) contrast(1.04) brightness(1.02)',
-              WebkitBackdropFilter: 'blur(32px) saturate(1.7) contrast(1.04) brightness(1.02)',
+              backdropFilter: 'blur(18px) saturate(1.7) contrast(1.06) brightness(1.02)',
+              WebkitBackdropFilter: 'blur(18px) saturate(1.7) contrast(1.06) brightness(1.02)',
               background: 'var(--fin-premium-lens-fill, linear-gradient(140deg, rgb(255 255 255 / 8%), rgb(126 34 206 / 12%) 48%, rgb(139 92 246 / 8%)))',
               border: '1px solid var(--fin-premium-lens-border, rgb(255 255 255 / 30%))',
               boxShadow: 'inset 0 1px 0 var(--fin-premium-lens-rim, rgb(255 255 255 / 56%)), inset 0 -1px 0 var(--fin-premium-lens-bottom-rim, rgb(84 48 121 / 14%)), 0 12px 28px -20px rgb(28 25 23 / 25%), var(--fin-premium-lens-glow, 0 8px 28px -17px rgb(129 67 194 / 36%))',
