@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.3', fecha: '2026-10-23', texto: 'La barra para desplazarte por la invitación Premium ahora es más delgada y combina con sus colores. ✨' },
   { version: '10.1.2', fecha: '2026-10-23', texto: 'Los atajos de revisión en consola ahora muestran también la vista de instalación y confirman al abrir cada pantalla. ✨' },
   { version: '10.1.1', fecha: '2026-10-23', texto: 'La bandeja de revisión ahora muestra pocos avisos a la vez y explica los montos con palabras más claras. ✨' },
   { version: '10.1.0', fecha: '2026-10-23', texto: 'Personaliza tus períodos: elige cuántos días dura cada ciclo y desde qué fecha comienza, con una vista previa de su avance. ✨📅' },

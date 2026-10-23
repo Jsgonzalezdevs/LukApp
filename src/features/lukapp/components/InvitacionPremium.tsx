@@ -179,7 +179,7 @@ export const InvitacionPremium: React.FC<InvitacionPremiumProps> = ({
               <div className="absolute right-16 top-32 h-20 w-20 rounded-full border border-white/10" />
             </div>
 
-            <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-7 sm:pt-7">
+            <div className="premium-invitacion-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-[calc(env(safe-area-inset-top)+1.25rem)] sm:px-7 sm:pt-7">
               <div className="flex items-start justify-between gap-4">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-[13px] font-bold tracking-[0.08em] text-white/85 uppercase">
                   <Sparkles className="h-3.5 w-3.5 text-lime-200" strokeWidth={2.35} aria-hidden="true" />
