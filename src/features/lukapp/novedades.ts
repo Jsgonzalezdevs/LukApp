@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.24', fecha: '2026-10-23', texto: 'Al otorgar Premium, una suscripción de pago vencida ya no bloquea el acceso de cortesía; conservamos el historial del pago. 💜' },
   { version: '10.1.23', fecha: '2026-10-23', texto: 'La barra Premium deja pasar más movimiento de color y difumina mejor lo que hay detrás. 💜' },
   { version: '10.1.22', fecha: '2026-10-23', texto: 'El cristal Premium ahora difumina el contenido desde una capa independiente y más clara. 💜' },
   { version: '10.1.21', fecha: '2026-10-23', texto: 'El cristal Premium difumina mejor el fondo y refleja la luz con un brillo suave. 💜' },

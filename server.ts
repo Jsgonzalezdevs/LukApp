@@ -2558,7 +2558,8 @@ app.post('/api/superadmin/suscripciones/otorgar', async (req, res) => {
     return res.status(201).json({ suscripcion });
   } catch (error: any) {
     console.error('Error otorgando Premium:', error);
-    return res.status(400).json({ error: error.message || 'No se pudo otorgar Premium.' });
+    const conflictoPagoActivo = error.message === 'La cuenta ya tiene Premium pagado. Adminístralo desde la pasarela.';
+    return res.status(conflictoPagoActivo ? 409 : 400).json({ error: error.message || 'No se pudo otorgar Premium.' });
   }
 });
 
