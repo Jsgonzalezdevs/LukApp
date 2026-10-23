@@ -57,12 +57,12 @@
   --fin-glass-filter: blur(28px) saturate(180%);
   --fin-glass-highlight: rgb(255 255 255 / 0.55);
   --fin-glass-shadow: 0 20px 45px -20px rgb(28 25 23 / 0.28);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(255 255 255 / 13%), rgb(119 74 169 / 10%) 48%, rgb(255 255 255 / 9%));
-  --fin-premium-lens-border: rgb(255 255 255 / 18%);
-  --fin-premium-lens-specular: rgb(255 255 255 / 19%);
-  --fin-premium-lens-rim: rgb(255 255 255 / 29%);
-  --fin-premium-lens-bottom-rim: rgb(84 48 121 / 9%);
-  --fin-premium-lens-glow: 0 0 20px -18px rgb(129 67 194 / 28%);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(255 255 255 / 7%), rgb(119 74 169 / 6%) 48%, rgb(255 255 255 / 5%));
+  --fin-premium-lens-border: rgb(255 255 255 / 16%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 13%);
+  --fin-premium-lens-rim: rgb(255 255 255 / 24%);
+  --fin-premium-lens-bottom-rim: rgb(84 48 121 / 7%);
+  --fin-premium-lens-glow: 0 0 18px -18px rgb(129 67 194 / 18%);
 
   /* Text, darkest to lightest */
   --fin-ink: #1c1917;
@@ -203,12 +203,12 @@
        visibly lifts off a background that is nearly as dark as it is. */
     --fin-glass-highlight: rgb(255 255 255 / 0.12);
     --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-    --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 48 83 / 24%), rgb(126 83 171 / 16%) 48%, rgb(42 34 51 / 28%));
-    --fin-premium-lens-border: rgb(255 255 255 / 15%);
-    --fin-premium-lens-specular: rgb(255 255 255 / 15%);
-    --fin-premium-lens-rim: rgb(255 255 255 / 19%);
-    --fin-premium-lens-bottom-rim: rgb(0 0 0 / 28%);
-    --fin-premium-lens-glow: 0 0 22px -19px rgb(145 92 211 / 24%);
+    --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 48 83 / 16%), rgb(126 83 171 / 10%) 48%, rgb(42 34 51 / 19%));
+    --fin-premium-lens-border: rgb(255 255 255 / 13%);
+    --fin-premium-lens-specular: rgb(255 255 255 / 11%);
+    --fin-premium-lens-rim: rgb(255 255 255 / 16%);
+    --fin-premium-lens-bottom-rim: rgb(0 0 0 / 22%);
+    --fin-premium-lens-glow: 0 0 18px -19px rgb(145 92 211 / 17%);
 
     --fin-ink: #f5f3f0;
     --fin-ink-soft: #c2bbb4;
@@ -272,12 +272,12 @@
 
   --fin-glass-highlight: rgb(255 255 255 / 0.12);
   --fin-glass-shadow: 0 24px 50px -18px rgb(0 0 0 / 0.55);
-  --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 48 83 / 24%), rgb(126 83 171 / 16%) 48%, rgb(42 34 51 / 28%));
-  --fin-premium-lens-border: rgb(255 255 255 / 15%);
-  --fin-premium-lens-specular: rgb(255 255 255 / 15%);
-  --fin-premium-lens-rim: rgb(255 255 255 / 19%);
-  --fin-premium-lens-bottom-rim: rgb(0 0 0 / 28%);
-  --fin-premium-lens-glow: 0 0 22px -19px rgb(145 92 211 / 24%);
+  --fin-premium-lens-fill: linear-gradient(140deg, rgb(67 48 83 / 16%), rgb(126 83 171 / 10%) 48%, rgb(42 34 51 / 19%));
+  --fin-premium-lens-border: rgb(255 255 255 / 13%);
+  --fin-premium-lens-specular: rgb(255 255 255 / 11%);
+  --fin-premium-lens-rim: rgb(255 255 255 / 16%);
+  --fin-premium-lens-bottom-rim: rgb(0 0 0 / 22%);
+  --fin-premium-lens-glow: 0 0 18px -19px rgb(145 92 211 / 17%);
 
   --fin-ink: #f5f3f0;
   --fin-ink-soft: #c2bbb4;
@@ -328,16 +328,17 @@
     var(--fin-glass-shadow);
 }
 
-/* Lente Liquid Glass para la cápsula Premium. El componente aporta la
-   refracción del contenido en Chromium y mantiene una superficie esmerilada
-   en motores que solo admiten backdrop blur. Esta capa aporta solo el reflejo
-   reactivo de marca y la sombra exterior; no sustituye el lente del componente. */
+/* Aproximación web de la cápsula Premium. El blur nativo del navegador debe
+   quedar visible por sí solo; una lente SVG compuesta con backdrop-filter
+   dejaba pasar el color, pero no difuminaba claramente el texto bajo la barra. */
 .fin-page .fin-premium-lens {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   --cristal-x: 50%;
   --cristal-y: 50%;
+  backdrop-filter: blur(32px) saturate(1.65);
+  -webkit-backdrop-filter: blur(32px) saturate(1.65);
   box-shadow:
     inset 0 1px 0 var(--fin-premium-lens-rim),
     inset 0 -1px 0 var(--fin-premium-lens-bottom-rim),
@@ -403,6 +404,12 @@
     0 0 32px -17px rgb(129 67 194 / 72%);
 }
 
+@supports not (backdrop-filter: blur(1px)) {
+  .fin-page .fin-premium-lens {
+    background: rgb(79 48 103 / 88%) !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fin-page .fin-premium-lens,
   .fin-page .fin-premium-lens button {
@@ -424,8 +431,8 @@
   }
 }
 
-/* Desactiva desenfoques de utilidades y estilos inline dentro del dashboard,
-   excepto el filtro SVG que necesita la lente Premium para refractar el fondo. */
+/* Desactiva desenfoques accidentales de utilidades en otras superficies; la
+   única excepción explícita es el cristal de las acciones Premium. */
 .fin-page [class*="backdrop-blur"],
 .fin-page [style*="backdrop-filter"]:not(.fin-premium-lens) {
   backdrop-filter: none !important;

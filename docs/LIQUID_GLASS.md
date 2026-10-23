@@ -26,29 +26,63 @@ Esas APIs realizan el muestreo, la adaptación y la refracción que el navegador
 
 ### Implementación nativa prevista para la cápsula Premium
 
-El contenedor debe ser una sola forma de cristal interactiva. Los tres botones conservan sus etiquetas accesibles y sus acciones; no se dibuja un fondo opaco ni se anima una imitación encima del material del sistema:
+La web actual no tiene target iOS ni `WKWebView`: es React/Vite y se puede instalar como PWA. Para paridad real, LukApp necesita una envoltura iOS nativa que aloje el sitio en `WKWebView` y dibuje la barra como una vista SwiftUI hermana, por encima del webview. No poner la vista nativa dentro de un `iframe` ni cubrirla con otra capa CSS.
+
+La barra completa es una sola forma de cristal. Los iconos y las acciones siguen siendo botones normales, accesibles y nítidos:
 
 ```swift
-GlassEffectContainer(spacing: 8) {
-    HStack(spacing: 4) {
-        Button(action: anotarAMano) { Label("Anotar a mano", systemImage: "keyboard") }
-        Button(action: escanearFoto) { Label("Escanear foto", systemImage: "camera") }
-        Button(action: buscarMovimiento) { Label("Buscar", systemImage: "magnifyingglass") }
+@available(iOS 26.0, *)
+struct BarraAccionesPremium: View {
+    let anotarAMano: () -> Void
+    let escanearFoto: () -> Void
+    let buscar: () -> Void
+
+    var body: some View {
+        GlassEffectContainer(spacing: 12) {
+            HStack(spacing: 4) {
+                Button(action: anotarAMano) { Image(systemName: "keyboard") }
+                    .accessibilityLabel("Anotar a mano")
+                Button(action: escanearFoto) { Image(systemName: "camera") }
+                    .accessibilityLabel("Escanear foto")
+                Button(action: buscar) { Image(systemName: "magnifyingglass") }
+                    .accessibilityLabel("Buscar movimientos")
+            }
+            .buttonStyle(.plain)
+            .padding(8)
+            .glassEffect(
+                .regular.tint(.purple.opacity(0.10)).interactive(),
+                in: Capsule()
+            )
+        }
     }
-    .padding(8)
-    .glassEffect(.regular.tint(.purple.opacity(0.12)).interactive(), in: Capsule())
 }
 ```
 
-Pasos para llevarlo a LukApp:
+#### Pasos de integración con el producto
 
-1. Crear el target SwiftUI para iOS y exponer una vista nativa de acciones con callbacks hacia el flujo de React. Mantener React como fuente de los datos y reglas financieras.
-2. Activar la cápsula nativa solo después de recibir el estado Premium ya validado por el servidor; el cliente no debe decidir el nivel de suscripción.
-3. Usar `.regular` para mantener legibilidad sobre saldos y movimientos, `.interactive()` para la respuesta táctil y un tinte morado discreto. Dejar que el sistema adapte reflejos, contraste y fondo.
-4. Integrar los botones con las mismas acciones de anotar, escanear y buscar; verificar accesibilidad, VoiceOver, tema, contraste y movimiento reducido en un dispositivo Apple real.
-5. Conservar la versión web como fallback. No declarar la réplica nativa terminada hasta comparar la vista en iOS con Liquid Glass del sistema.
+1. Crear el proyecto/target iOS con SwiftUI y `WKWebView`. Mantener los datos, navegación y reglas financieras en React; la vista nativa solo presenta controles y reenvía acciones.
+2. Poner la barra en un `safeAreaInset(edge: .bottom)` del contenedor SwiftUI, por encima del webview y del contenido desplazable. Reservar el espacio inferior para que los últimos movimientos no queden ocultos.
+3. Definir un puente pequeño de mensajes con acciones permitidas (`manual`, `scan`, `search`). Enviar la acción desde Swift hacia la web con un evento tipado; no interpolar texto libre en JavaScript. Enviar desde React el estado visual de Premium después de cargar la suscripción verificada.
+4. El estado Premium recibido controla solo el aspecto. El servidor y React siguen autorizando beneficios; la vista SwiftUI no concede funciones ni altera el plan.
+5. Usar `.regular` y `.interactive()`; añadir tinte morado tenue solo para Premium. No dibujar gradientes, blur, bordes ni animación CSS sobre la vista nativa. El sistema adapta luz, reflejo, contraste y respuesta táctil.
+6. Para sistemas anteriores a iOS 26, usar `Material.thin` o mantener la barra web actual como fallback. Nunca presentar el fallback como idéntico a Liquid Glass.
+7. Validar en iPhone real sobre movimientos claros y oscuros que se desplazan detrás: el texto debe difuminarse, los iconos seguir nítidos, la barra reaccionar al toque y no cubrir contenido. Revisar VoiceOver, Dynamic Type, movimiento/transparencia reducidos y modos claro/oscuro.
 
-Apple documenta este flujo con `glassEffect(_:in:)`, la variante `.regular`, tintes y `.interactive()`. La documentación también recomienda reservar el cristal para navegación y controles, y evitar apilar capas de vidrio.
+#### Contrato sugerido para el puente
+
+La dirección nativa → web usa una unión cerrada de acciones, conectada en React a los mismos manejadores de `BotonAnotar`:
+
+```ts
+type AccionBarraNativa = 'manual' | 'scan' | 'search';
+window.addEventListener('lukapp:quick-action', (event) => {
+  const accion = (event as CustomEvent<AccionBarraNativa>).detail;
+  // Enrutar a onManual, scanImage o onBuscar; sin lógica financiera aquí.
+});
+```
+
+La dirección web → nativo puede emitir `{ type: 'appearance', premium: true }` al handler `WKScriptMessageHandler` configurado para LukApp. Validar y limitar el esquema en ambos lados. No enviar saldos, movimientos, credenciales ni tokens por este canal.
+
+Apple documenta `glassEffect(_:in:)`, `.regular`, el tinte, `.interactive()` y `GlassEffectContainer` en [Applying Liquid Glass to custom views](https://developer.apple.com/documentation/SwiftUI/Applying-Liquid-Glass-to-custom-views). [Meet Liquid Glass — WWDC25](https://developer.apple.com/videos/play/wwdc2025/219/) explica cómo el material adapta blur, tinte, contraste y sombras al contenido que pasa debajo, y recomienda reservarlo a navegación y controles.
 
 ## Aproximación web de LukApp
 
@@ -65,12 +99,12 @@ La app actual es React/Vite y también se ejecuta como web/PWA. En ese entorno, 
 
 ## Componente actual
 
-La cápsula flotante para escribir, escanear y buscar usa `Glass` de `@samasante/liquid-glass` con `.fin-premium-lens` en `src/features/lukapp/components/BotonAnotar.tsx`. La configuración actual aplica 32 px de blur, eleva la saturación, curva el contenido con moderación y mezcla un tinte morado transparente. El tinte, el filo y el reflejo cambian entre el tema claro y el oscuro; la web aún no calcula la luminancia por píxel como el material del sistema. El brillo se mueve despacio en reposo y sigue el puntero cuando hay interacción; con movimiento reducido se queda quieto. El contenido y los botones se mantienen nítidos. En Chromium la lente curva el contenido vivo; Safari/WebKit y Firefox conservan el blur y el tinte, pero necesitan una copia del fondo para refractar la página. Mantener el tinte y el borde ligeros para que la superficie no parezca una placa de color. El reset global de `backdrop-filter` debe excluir `.fin-premium-lens` o apagará el efecto.
+La cápsula flotante para escribir, escanear y buscar usa una superficie CSS en `.fin-premium-lens`, dentro de `BotonAnotar.tsx`. Su `backdrop-filter` directo aplica 32 px de blur y saturación al contenido real que pasa debajo; una prueba local mostró que la combinación anterior de blur con filtro SVG mantenía visible el color, pero no difuminaba bien las letras. El tinte, el filo y el reflejo se adaptan al tema claro u oscuro; el reflejo se mueve lentamente y sigue el puntero, mientras el contenido y los botones permanecen nítidos. La web no calcula la luminancia ni refracta la luz como iOS; esta superficie es un fallback visual y no debe presentarse como Liquid Glass nativo.
 
 La intensidad del blur se nota según el contenido que haya detrás. Validar la barra sobre movimientos claros y oscuros y también mientras se desplazan; una superficie uniforme no deja ver la difusión aunque el filtro esté activo. La referencia de aceptación web es que se distingan a la vez el desenfoque real, la influencia cromática del contenido, el tinte morado, los reflejos de borde y los iconos nítidos.
 
-La biblioteca está fijada por `package-lock.json` en la versión `0.1.1`, tiene licencia MIT y no añade dependencias de ejecución. Su matriz de motores y las restricciones para paneles anchos están documentadas por el [proyecto original](https://github.com/samasante/liquid-glass). La barra es más ancha que alta; al ajustar el lente, mantener el desplazamiento moderado para evitar una forma ovalada exagerada.
+La barra usa las propiedades nativas de desenfoque del navegador y no necesita una biblioteca externa. Si un navegador no admite `backdrop-filter`, se conserva la superficie morada de fallback. La barra es más ancha que alta; mantener el radio de cápsula y evitar desplazar el contenido como si fuera un lente óptico.
 
-El botón de dictado mantiene su tratamiento propio. La lente web se acerca más al aspecto de Apple en Chromium, pero sigue sin ser el material nativo. Si la misma refracción debe ser idéntica en iPhone, seguir la implementación SwiftUI prevista arriba.
+El botón de dictado mantiene su tratamiento propio. La superficie CSS es solo una aproximación visual; no refracta la luz ni reproduce la respuesta del sistema Apple. Para obtener esa paridad en iPhone, seguir la implementación SwiftUI prevista arriba.
 
 Al revisar cambios, comprobar visualmente la cápsula sobre contenido claro y oscuro en movimiento, desplazar texto por detrás, mover y tocar el cristal, revisar el tema claro/oscuro y activar la preferencia de movimiento reducido. Confirmar que los iconos siguen siendo nítidos y que el fondo se ve realmente desenfocado. Esta matriz verifica la aproximación web; la aceptación de paridad con Apple requiere el target nativo y la comparación en iPhone descritos arriba.

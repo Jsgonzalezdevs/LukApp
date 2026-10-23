@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, Loader2, Mic, Keyboard, Search, Square } from 'lucide-react';
-import { Glass } from '@samasante/liquid-glass';
 import { useDictation } from '../hooks/useDictation';
 import { useImageOCR } from '../hooks/useImageOCR';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -286,34 +285,18 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
         aria-label="Registrar movimiento"
       >
         {esPremium ? (
-          <Glass
+          <div
             className="fin-premium-lens"
             style={{
               borderRadius: 'var(--fin-r-pill)',
               background: 'var(--fin-premium-lens-fill)',
               border: '1px solid var(--fin-premium-lens-border)',
             }}
-            optics={{
-              strength: 0.18,
-              depth: 0.92,
-              curvature: 0.46,
-              dispersion: 0.06,
-              bend: 0.5,
-              bendWidth: 0.16,
-              frost: 32,
-              saturate: 1.4,
-              brightness: 0.015,
-              specular: 0.78,
-              sheen: 0.4,
-              sheenWidth: 4,
-              sheenFalloff: 1.6,
-              glow: 0.1,
-            }}
             onPointerMove={actualizarReflejoCristal}
             onPointerLeave={centrarReflejoCristal}
           >
             {controlesRapidos}
-          </Glass>
+          </div>
         ) : (
           <div className="fin-glass rounded-[var(--fin-r-pill)] bg-[var(--fin-card)]">
             {controlesRapidos}
