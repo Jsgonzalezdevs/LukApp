@@ -64,7 +64,6 @@ interface InicioViewProps {
   novedad?: Novedad | null;
   onCerrarNovedad?: () => void;
   onAnotar?: () => void;
-  onConfigurarCuenta?: (id: string | null) => void;
   liquidez: ContextoFinanciero['liquidez'];
   entrada: import('../lib/motorFinanciero').EntradaMotorFinanciero;
   mostrarDecisiones?: boolean;
@@ -125,7 +124,6 @@ export const InicioView: React.FC<InicioViewProps> = ({
   novedad,
   onCerrarNovedad,
   onAnotar,
-  onConfigurarCuenta,
   liquidez,
   entrada,
   mostrarDecisiones,
@@ -316,7 +314,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </button>
         </div>
         <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
-          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : onConfigurarCuenta ? <button type="button" onClick={() => onConfigurarCuenta(null)} className="font-medium text-[var(--fin-accent)]">Completar saldos</button> : null}
+          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
         </p>
 
         {/* Desglose bancos y efectivo si existen */}

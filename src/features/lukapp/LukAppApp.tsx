@@ -1064,7 +1064,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             novedad={novedades.hayNovedad ? NOVEDADES[0] : null}
             onCerrarNovedad={() => novedades.marcarVista()}
             onAnotar={() => setPending(movimientoEnBlanco())}
-            onConfigurarCuenta={(id) => { setPanelDineroCajitaId(id); setPanelDinero('cuenta'); }}
             liquidez={contextoFinanciero.liquidez}
             entrada={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
             mostrarDecisiones={mostrarDecisiones}

@@ -14,23 +14,21 @@ const entrada = (confirmado = false) => ({
 
 const montar = (confirmado = false) => {
   const datos = entrada(confirmado);
-  const onCuenta = vi.fn();
   const onAnotar = vi.fn();
-  render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={[]} onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero(datos).liquidez} entrada={datos} onConfigurarCuenta={onCuenta} onAnotar={onAnotar} />);
-  return { onCuenta, onAnotar };
+  render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={[]} onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero(datos).liquidez} entrada={datos} onAnotar={onAnotar} />);
+  return { onAnotar };
 };
 
 describe('Inicio — saldo e historial', () => {
-  it('mantiene el saldo desconocido como guion y usa una indicación corta para completarlo', () => {
-    const { onCuenta } = montar();
+  it('mantiene el saldo desconocido como guion y explica cómo mostrar el saldo', () => {
+    montar();
     expect(screen.getByText('Dinero disponible')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Completar saldos' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Saldo todavía sin confirmar')).toBeInTheDocument();
+    expect(screen.getByText('Confirma tus saldos para calcular cuánto tienes disponible.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Completar saldos' })).not.toBeInTheDocument();
     expect(screen.queryByText('Pon tu dinero al día')).not.toBeInTheDocument();
-    expect(screen.queryByText(/Confirma tus saldos/)).not.toBeInTheDocument();
     expect(screen.queryByText('Comida')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Decisiones financieras' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Completar saldos' }));
-    expect(onCuenta).toHaveBeenCalledWith(null);
   });
 
   it('acepta cero confirmado sin mostrar una tarjeta de pasos en Inicio', () => {
