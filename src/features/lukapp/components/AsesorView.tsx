@@ -17,6 +17,7 @@ import {
   X,
   MessageSquareText,
   Mic,
+  Sparkles,
   Square,
   Loader2,
 } from 'lucide-react';
@@ -95,6 +96,7 @@ interface AsesorViewProps {
   onCrearMeta?: (meta: Omit<Meta, 'id' | 'createdAt' | 'completedAt'>) => Promise<boolean | void>;
   entradaFinanciera?: EntradaMotorFinanciero;
   contextoParaAsesor?: ContextoParaAsesor;
+  mostrarMarcaPremium?: boolean;
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -198,6 +200,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   onCrearMeta,
   entradaFinanciera,
   contextoParaAsesor,
+  mostrarMarcaPremium = false,
 }) => {
   const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
   const [imagenLuki] = useState(() => {
@@ -963,6 +966,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           />
           <span className="truncate">{etiquetaConexion(conexion)}</span>
         </button>
+        {mostrarMarcaPremium ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--fin-accent)]/20 bg-[var(--fin-accent)]/10 px-2 py-1 text-[10px] font-bold text-[var(--fin-accent)]">
+            <Sparkles className="h-3 w-3" aria-hidden="true" /> Premium
+          </span>
+        ) : null}
         <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
           <button
             type="button"

@@ -846,8 +846,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     cargandoIa,
     refrescar: refrescarInsights,
     tieneInsightsIa,
+    tieneAsesorIa,
     tienePulsoPremium,
     esPremium,
+    suscripcionPremium,
   } = useAiInsights({
     transacciones,
     presupuestos: almacen.datos.presupuestos,
@@ -1078,6 +1080,9 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             mostrarDecisiones={mostrarDecisiones}
             mostrarProximosPagos={mostrarProximosPagos}
             resumenPremium={resumenPremium}
+            esPremium={esPremium}
+            suscripcionPremium={suscripcionPremium}
+            onVerPlanPremium={() => setMostrarPlanesPremium(true)}
             onVerResumenPremium={abrirResumenPremium}
           />
         ) : null}
@@ -1172,6 +1177,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             onLimpiarPromptInicial={() => setAsesorPromptInicial(null)}
             entradaFinanciera={{ ...almacen.datos, hoy: today, periodo: periodoAjustes.periodo }}
             contextoParaAsesor={construirContextoParaAsesor(contextoFinanciero)}
+            mostrarMarcaPremium={esPremium && tieneAsesorIa}
             onCrearTransaccion={(tx) => {
               setSection('inicio');
               setPending(tx);

@@ -28,6 +28,7 @@ import { useCatalogo } from '../catalogoContexto';
 import { DecisionFinanciera } from './DecisionFinanciera';
 import type { ContextoFinanciero } from '../lib/motorFinanciero';
 import { useMovimientoReducido } from '../lib/useMovimientoReducido';
+import type { SuscripcionPremiumResumen } from '../hooks/useAiInsights';
 
 interface InicioViewProps {
   etiquetaPeriodo: string;
@@ -74,6 +75,9 @@ interface InicioViewProps {
     diasRestantes: number;
     confianza: 'alta' | 'media' | 'baja';
   } | null;
+  esPremium?: boolean;
+  suscripcionPremium?: SuscripcionPremiumResumen | null;
+  onVerPlanPremium?: () => void;
   onVerResumenPremium?: (insight: Insight | null) => void;
 }
 
@@ -129,6 +133,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
   mostrarDecisiones,
   mostrarProximosPagos = true,
   resumenPremium = null,
+  esPremium = false,
+  suscripcionPremium = null,
+  onVerPlanPremium,
   onVerResumenPremium,
 }) => {
   const quieto = useMovimientoReducido();
@@ -254,6 +261,18 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {esPremium ? (
+            <button
+              type="button"
+              onClick={onVerPlanPremium}
+              aria-label="Ver tu plan Premium"
+              title="Ver tu plan Premium"
+              className="inline-flex h-8.5 items-center gap-1.5 rounded-full border border-[var(--fin-accent)]/20 bg-[var(--fin-accent)]/10 px-2.5 text-[11px] font-bold text-[var(--fin-accent)] transition-colors hover:bg-[var(--fin-accent)]/15"
+            >
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              Premium
+            </button>
+          ) : null}
           {onTogglePrivacidad && (
             <button
               type="button"
@@ -292,6 +311,37 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </button>
         </div>
       </div>
+
+      {esPremium ? (
+        <button
+          type="button"
+          onClick={onVerPlanPremium}
+          className="mt-4 flex w-full items-center gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)]/20 bg-[var(--fin-accent)]/5 px-3.5 py-3 text-left transition-colors hover:bg-[var(--fin-accent)]/10"
+          aria-label="Ver estado y vigencia de tu plan Premium"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--fin-accent)]/12 text-[var(--fin-accent)]">
+            <Sparkles className="h-5 w-5" strokeWidth={2.1} aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold text-[var(--fin-ink)]">Premium activo</span>
+            <span className="mt-0.5 block truncate text-[12px] text-[var(--fin-ink-soft)]">
+              {suscripcionPremium ? (() => {
+                const fecha = new Date(suscripcionPremium.venceEn);
+                const fechaCorta = Number.isNaN(fecha.getTime())
+                  ? null
+                  : new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short', timeZone: 'America/Bogota' }).format(fecha);
+                const ciclo = suscripcionPremium.ciclo === 'cortesia'
+                  ? 'Acceso de cortesía'
+                  : `Plan ${suscripcionPremium.ciclo}`;
+                return fechaCorta
+                  ? `${ciclo} · ${suscripcionPremium.cancelarAlVencer ? 'Disponible hasta' : 'Renueva el'} ${fechaCorta}`
+                  : ciclo;
+              })() : 'Tus prestaciones Premium están activas'}
+            </span>
+          </span>
+          <span className="shrink-0 rounded-full bg-[var(--fin-accent)]/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">Activo</span>
+        </button>
+      ) : null}
 
       {/* ── 3. Dinero disponible (Patrimonio Total) + Pastilla de Ingresos/Gastos ── */}
       <div className="flex flex-col items-center justify-center pt-5 pb-2 text-center">
@@ -570,7 +620,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               <span className="truncate text-[var(--fin-ink-soft)]">
                 {insightActual.origenIa ? (
                   <span className="mr-2 rounded-[var(--fin-r-pill)] bg-[var(--fin-accent)]/10 px-2 py-1 text-[13px] font-bold uppercase tracking-wide text-[var(--fin-accent)]">
-                    Premium
+                    IA · Premium
                   </span>
                 ) : null}
                 <strong className="text-[var(--fin-ink)] font-semibold">
