@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.0', fecha: '2026-10-23', texto: 'Personaliza tus períodos: elige cuántos días dura cada ciclo y desde qué fecha comienza, con una vista previa de su avance. ✨📅' },
   { version: '10.0.0', fecha: '2026-10-23', texto: 'Retiramos «Tu trabajo» por completo y eliminamos sus registros guardados en este dispositivo y en la nube. ✨' },
   { version: '9.14.5', fecha: '2026-10-23', texto: 'Quitamos el botón «Completar saldos» de Inicio. El saldo pendiente ahora solo muestra una indicación breve para confirmarlo desde Cuentas. 💰' },
   { version: '9.14.4', fecha: '2026-10-23', texto: 'El cálculo del 4x1000 incluye las transferencias desde la cuenta de origen, marca bancos y billeteras por defecto y muestra cuánto dinero moviste aunque siga dentro de la exención. Puedes ajustar qué cuentas contar. 💸' },

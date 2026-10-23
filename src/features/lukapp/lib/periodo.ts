@@ -13,6 +13,7 @@ export type FrecuenciaPeriodo =
   | 'quincenal'
   | 'quincenas-mes'
   | 'mensual'
+  | 'personalizado'
   | 'todo-el-tiempo';
 
 export interface ConfigPeriodo {
@@ -23,6 +24,10 @@ export interface ConfigPeriodo {
    * alinear con un día de pago que no cae el día 1.
    */
   desfaseDiasMensual: number;
+  /** Duración del ciclo personalizado, entre 1 y 90 días. */
+  diasPersonalizados?: number;
+  /** Fecha de referencia desde la que se repiten los ciclos personalizados. */
+  fechaAnclaPersonalizada?: string;
 }
 
 export const PERIODO_POR_DEFECTO: ConfigPeriodo = { frecuencia: 'mensual', desfaseDiasMensual: 0 };
@@ -33,6 +38,14 @@ const esMensualPuro = (config: ConfigPeriodo): boolean =>
 
 /** No hay reinicio: un único período que cubre todo el historial. */
 export const CLAVE_TODO_EL_TIEMPO = 'todo';
+export const DIAS_PERSONALIZADOS_POR_DEFECTO = 14;
+export const FECHA_ANCLA_PERSONALIZADA_POR_DEFECTO = '2026-01-01';
+
+const diasPersonalizadosDe = (config: ConfigPeriodo): number =>
+  Math.min(90, Math.max(1, Math.round(config.diasPersonalizados ?? DIAS_PERSONALIZADOS_POR_DEFECTO)));
+
+const fechaAnclaPersonalizadaDe = (config: ConfigPeriodo): string =>
+  config.fechaAnclaPersonalizada ?? FECHA_ANCLA_PERSONALIZADA_POR_DEFECTO;
 
 const MONTHS_SHORT = [
   'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic',
@@ -100,6 +113,12 @@ export const inicioDePeriodo = (fecha: string, config: ConfigPeriodo): string =>
       return inicioQuincenaCalendarioDe(fecha);
     case 'mensual':
       return inicioMesConDesfaseDe(fecha, config.desfaseDiasMensual);
+    case 'personalizado': {
+      const ancla = fechaAnclaPersonalizadaDe(config);
+      const dias = diasPersonalizadosDe(config);
+      const periodosDesdeAncla = Math.floor(daysBetween(ancla, fecha) / dias);
+      return shiftDays(ancla, periodosDesdeAncla * dias);
+    }
     case 'todo-el-tiempo':
       return CLAVE_TODO_EL_TIEMPO;
   }
@@ -121,6 +140,8 @@ export const finDePeriodo = (inicio: string, config: ConfigPeriodo): string | nu
     }
     case 'mensual':
       return shiftDays(shiftMonthDate(inicio, 1), -1);
+    case 'personalizado':
+      return shiftDays(inicio, diasPersonalizadosDe(config) - 1);
     case 'todo-el-tiempo':
       return null;
   }

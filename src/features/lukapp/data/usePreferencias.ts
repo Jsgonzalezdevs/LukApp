@@ -3,6 +3,7 @@ import { UVT_POR_DEFECTO } from '../lib/gmf';
 import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import { PERIODO_POR_DEFECTO } from '../lib/periodo';
 import type { ConfigPeriodo, FrecuenciaPeriodo } from '../lib/periodo';
+import { bogotaDate } from '../lib/localDate';
 import { VERSION_ACTUAL } from '../novedades';
 import { obtenerSupabase } from './supabase';
 import { activarNotificacionesPush, desactivarNotificacionesPush } from '../lib/notificacionesPush';
@@ -653,8 +654,17 @@ const FRECUENCIAS_VALIDAS: readonly FrecuenciaPeriodo[] = [
   'quincenal',
   'quincenas-mes',
   'mensual',
+  'personalizado',
   'todo-el-tiempo',
 ];
+
+const esFechaIsoValida = (valor: unknown): valor is string => {
+  if (typeof valor !== 'string') return false;
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+  if (!partes) return false;
+  const fecha = new Date(Date.UTC(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3])));
+  return fecha.toISOString().slice(0, 10) === valor;
+};
 
 const leerPeriodo = (): ConfigPeriodo => {
   if (typeof window === 'undefined') return PERIODO_POR_DEFECTO;
@@ -670,7 +680,17 @@ const leerPeriodo = (): ConfigPeriodo => {
         leido.desfaseDiasMensual >= 0 &&
         leido.desfaseDiasMensual <= 27
       ) {
-        return { frecuencia: leido.frecuencia as FrecuenciaPeriodo, desfaseDiasMensual: leido.desfaseDiasMensual };
+        const periodo: ConfigPeriodo = {
+          frecuencia: leido.frecuencia as FrecuenciaPeriodo,
+          desfaseDiasMensual: leido.desfaseDiasMensual,
+        };
+        const dias = leido.diasPersonalizados;
+        if (typeof dias === 'number' && Number.isFinite(dias))
+          periodo.diasPersonalizados = Math.min(90, Math.max(1, Math.round(dias)));
+        if (esFechaIsoValida(leido.fechaAnclaPersonalizada))
+          periodo.fechaAnclaPersonalizada = leido.fechaAnclaPersonalizada;
+        else if (periodo.frecuencia === 'personalizado') periodo.fechaAnclaPersonalizada = bogotaDate();
+        return periodo;
       }
     }
   } catch {
