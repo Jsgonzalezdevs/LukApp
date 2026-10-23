@@ -300,7 +300,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
               dispersion: 0.06,
               bend: 0.5,
               bendWidth: 0.16,
-              frost: 26,
+              frost: 32,
               saturate: 1.4,
               brightness: 0.015,
               specular: 0.78,
