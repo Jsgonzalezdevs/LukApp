@@ -1,7 +1,7 @@
 {
   "name": "lukapp",
   "private": true,
-  "version": "10.1.8",
+  "version": "10.1.9",
   "type": "module",
   "description": "LukApp — Plataforma de finanzas personales asistida por IA y comandos de voz",
   "allowScripts": {
@@ -19,6 +19,7 @@
     "test:audio-cobertura": "vitest run --coverage --coverage.include=src/features/lukapp/hooks/useAudioCapture.ts --coverage.thresholds.lines=95 --coverage.thresholds.statements=95"
   },
   "dependencies": {
+    "@samasante/liquid-glass": "^0.1.1",
     "@supabase/supabase-js": "^2.112.2",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

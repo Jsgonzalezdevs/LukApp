@@ -55,7 +55,7 @@ Apple documenta este flujo con `glassEffect(_:in:)`, la variante `.regular`, tin
 La app actual es React/Vite y también se ejecuta como web/PWA. En ese entorno, estas pautas dan una aproximación fiel sin fingir que es el material nativo:
 
 1. Aplicar Liquid Glass solo a superficies flotantes de navegación y controles, nunca a las tarjetas de información de Inicio.
-2. Poner el contenido real por detrás de la superficie. Usar `backdrop-filter: blur(...) saturate(...)` (y su variante `-webkit-`) para difuminar ese contenido; una capa morada semitransparente sin `backdrop-filter` es solo un cuadro translúcido. Evitar `backdrop-filter: url(#svg)`: en la comparación local el filtro SVG quitó la lectura del fondo en Chromium, y no ofrece una solución consistente entre motores.
+2. Poner el contenido real por detrás de la superficie. Usar `backdrop-filter: blur(...) saturate(...)` (y su variante `-webkit-`) para difuminar ese contenido; una capa morada semitransparente sin `backdrop-filter` es solo un cuadro translúcido. Evitar crear un SVG de desplazamiento propio aplicado como `backdrop-filter: url(#svg)`: la comparación local dejó la placa sin el fondo visible.
 3. Mantener un tinte de marca moderado. Dejar que el fondo influya en el tono y conservar iconos legibles sobre ambos temas. El vidrio regular debe poder leerse sobre fondos variados; no usar la variante clara si no se puede asegurar contraste.
 4. Dibujar el borde con más de una señal óptica: filo superior brillante, borde interior suave, sombra exterior y reflejo amplio. Evitar un borde uniforme grueso y un halo neón constante.
 5. Hacer que una luz especular responda despacio al puntero o al toque. Animar reflejos, no el desenfoque: recalcular blur continuamente cuesta y suele verse como un filtro decorativo.
@@ -65,6 +65,10 @@ La app actual es React/Vite y también se ejecuta como web/PWA. En ese entorno, 
 
 ## Componente actual
 
-La cápsula flotante para escribir, escanear y buscar usa `.fin-premium-crystal` en `src/features/lukapp/components/BotonAnotar.tsx`, con desenfoque, tinte y reflejos en `src/features/lukapp/lukapp.css`. Solo se activa tras validar Premium en el servidor. El botón de dictado mantiene su tratamiento propio. Esta versión web aporta desenfoque y respuesta de luz; no curva los píxeles de la página y no debe presentarse como idéntica al material nativo de Apple.
+La cápsula flotante para escribir, escanear y buscar usa `Glass` de `@samasante/liquid-glass` con `.fin-premium-lens` en `src/features/lukapp/components/BotonAnotar.tsx`. En Chromium la lente de desplazamiento óptico curva el contenido vivo bajo la cápsula, mientras su capa esmerilada lo desenfoca; los botones permanecen en la capa nítida. En Safari/WebKit y Firefox la biblioteca conserva el blur, tinte y borde, pero no refracta la página viva si no se le entrega una copia del contenido. El reset global de `backdrop-filter` debe excluir `.fin-premium-lens` o apagará el efecto.
+
+La biblioteca está fijada por `package-lock.json` en la versión `0.1.1`, tiene licencia MIT y no añade dependencias de ejecución. Su matriz de motores y las restricciones para paneles anchos están documentadas por el [proyecto original](https://github.com/samasante/liquid-glass). La barra es más ancha que alta; al ajustar el lente, mantener el desplazamiento moderado para evitar una forma ovalada exagerada.
+
+El botón de dictado mantiene su tratamiento propio. La lente web se acerca más al aspecto de Apple en Chromium, pero sigue sin ser el material nativo. Si la misma refracción debe ser idéntica en iPhone, seguir la implementación SwiftUI prevista arriba.
 
 Al revisar cambios, comprobar visualmente la cápsula sobre contenido claro y oscuro en movimiento, desplazar texto por detrás, mover y tocar el cristal, revisar el tema claro/oscuro y activar la preferencia de movimiento reducido. Confirmar que los iconos siguen siendo nítidos y que el fondo se ve realmente desenfocado.
