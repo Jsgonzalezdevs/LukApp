@@ -36,7 +36,7 @@ GlassEffectContainer(spacing: 8) {
         Button(action: buscarMovimiento) { Label("Buscar", systemImage: "magnifyingglass") }
     }
     .padding(8)
-    .glassEffect(.regular.tint(.purple.opacity(0.16)).interactive(), in: Capsule())
+    .glassEffect(.regular.tint(.purple.opacity(0.12)).interactive(), in: Capsule())
 }
 ```
 
