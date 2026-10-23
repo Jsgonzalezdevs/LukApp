@@ -82,7 +82,22 @@ window.addEventListener('lukapp:quick-action', (event) => {
 
 La dirección web → nativo puede emitir `{ type: 'appearance', premium: true }` al handler `WKScriptMessageHandler` configurado para LukApp. Validar y limitar el esquema en ambos lados. No enviar saldos, movimientos, credenciales ni tokens por este canal.
 
-Apple documenta `glassEffect(_:in:)`, `.regular`, el tinte, `.interactive()` y `GlassEffectContainer` en [Applying Liquid Glass to custom views](https://developer.apple.com/documentation/SwiftUI/Applying-Liquid-Glass-to-custom-views). [Meet Liquid Glass — WWDC25](https://developer.apple.com/videos/play/wwdc2025/219/) explica cómo el material adapta blur, tinte, contraste y sombras al contenido que pasa debajo, y recomienda reservarlo a navegación y controles.
+Apple documenta `glassEffect(_:in:)`, `.regular`, el tinte, `.interactive()` y `GlassEffectContainer` en [Applying Liquid Glass to custom views](https://developer.apple.com/documentation/SwiftUI/Applying-Liquid-Glass-to-custom-views). [Meet Liquid Glass — WWDC25](https://developer.apple.com/videos/play/wwdc2025/219/) explica cómo el material adapta tinte, contraste, sombras y refracción al contenido que pasa debajo, y recomienda reservarlo a navegación y controles. La guía [Materials](https://developer.apple.com/design/human-interface-guidelines/materials) recomienda materiales del sistema y efectos como blur, vibrancy y blending para estructurar el contenido bajo Liquid Glass.
+
+### Qué significa «igual a Apple» en este proyecto
+
+Liquid Glass no es un preset de blur: Apple lo construye como un material del sistema con varias capas adaptativas, refracción en tiempo real, luz y respuesta física al tacto. SwiftUI y UIKit pueden usar ese motor del sistema; una web solo ofrece filtros y composición CSS. Por eso la barra web puede hacerse mucho más parecida y tener desenfoque real, pero no debe declararse idéntica. La paridad literal requiere un target Apple nativo.
+
+En el checkout v10.1.16 no hay proyecto Xcode ni target iOS. La máquina donde se prepara este checkout tampoco tiene instalado/configurado el SDK `iphoneos`; antes de compilar o validar la versión nativa se debe usar una máquina con Xcode completo y un iPhone con iOS 26 o posterior.
+
+Para completar esa integración en una fase futura:
+
+1. Crear un target iOS nativo en el mismo producto, con `WKWebView` para la app React y SwiftUI para la cápsula flotante. La vista SwiftUI debe ocupar el espacio de la barra sobre la vista web, no ser un overlay CSS dentro del documento.
+2. Aplicar `.glassEffect(.regular.tint(tintePremium).interactive(), in: Capsule())` a un contenedor con las acciones y usar `GlassEffectContainer` si los elementos necesitan fusionarse o cambiar de forma. No dibujar manualmente borde, blur, brillo o gradiente encima del material nativo.
+3. Dejar el contenido de movimientos desplazarse realmente detrás del control. Mantener la cápsula en una sola capa flotante para evitar vidrio sobre vidrio.
+4. Enviar acciones nativas a los manejadores existentes de React mediante el puente tipado documentado arriba. React comunica solo el estado visual Premium, derivado de la suscripción verificada; la autorización de prestaciones sigue del lado de la aplicación/servidor.
+5. Comparar una grabación del iPhone real con esta referencia: texto y montos se desplazan bajo la cápsula; la lente los adapta y refracta, el violeta modifica sus tonos sin taparlos, los símbolos conservan contraste y el material reacciona a toque. Revisar claro/oscuro, Reduce Transparency, Reduce Motion, VoiceOver y los límites del área segura.
+6. Si Apple cambia el material del sistema, seguir la API del SDK instalado en vez de perseguir valores visuales privados. La aplicación debe usar el material del SO, no copiar parámetros internos.
 
 ## Aproximación web de LukApp
 
@@ -99,9 +114,9 @@ La app actual es React/Vite y también se ejecuta como web/PWA. En ese entorno, 
 
 ## Componente actual
 
-La cápsula flotante para escribir, escanear y buscar usa una superficie CSS en `.fin-premium-lens`, dentro de `BotonAnotar.tsx`. Su `backdrop-filter` directo aplica 32 px de blur y saturación al contenido real que pasa debajo; una prueba local mostró que la combinación anterior de blur con filtro SVG mantenía visible el color, pero no difuminaba bien las letras. El tinte, el filo y el reflejo se adaptan al tema claro u oscuro; el reflejo se mueve lentamente y sigue el puntero, mientras el contenido y los botones permanecen nítidos. La web no calcula la luminancia ni refracta la luz como iOS; esta superficie es un fallback visual y no debe presentarse como Liquid Glass nativo.
+La cápsula flotante para escribir, escanear y buscar usa una superficie CSS en `.fin-premium-lens`, dentro de `BotonAnotar.tsx`, solo cuando la suscripción Premium ya se verificó. En v10.1.16 aplica 48 px de blur, saturación y un contraste leve al contenido real que pasa debajo. El tinte morado, el filo y el reflejo se adaptan al tema claro u oscuro; el reflejo se mueve lentamente y sigue el puntero, mientras el contenido y los botones permanecen nítidos. En navegadores con Reduce Transparency se mantiene un blur más esmerilado y un velo más opaco, siguiendo el resultado accesible que Apple describe para su material. La web no calcula la luminancia ni refracta la luz como iOS; esta superficie es un fallback visual y no debe presentarse como Liquid Glass nativo.
 
-La intensidad del blur se nota según el contenido que haya detrás. Validar la barra sobre movimientos claros y oscuros y también mientras se desplazan; una superficie uniforme no deja ver la difusión aunque el filtro esté activo. La referencia de aceptación web es que se distingan a la vez el desenfoque real, la influencia cromática del contenido, el tinte morado, los reflejos de borde y los iconos nítidos.
+La intensidad del blur se nota según el contenido que haya detrás. Validar la barra sobre movimientos claros y oscuros y también mientras se desplazan; una superficie uniforme no deja ver la difusión aunque el filtro esté activo. La referencia de aceptación web es que se distingan a la vez el desenfoque real, la influencia cromática del contenido, el tinte morado, los reflejos de borde y los iconos nítidos. Revisar que `prefers-reduced-transparency: reduce` no apague el filtro y vuelva a convertir el control en un cuadro liso.
 
 La barra usa las propiedades nativas de desenfoque del navegador y no necesita una biblioteca externa. Si un navegador no admite `backdrop-filter`, se conserva la superficie morada de fallback. La barra es más ancha que alta; mantener el radio de cápsula y evitar desplazar el contenido como si fuera un lente óptico.
 
