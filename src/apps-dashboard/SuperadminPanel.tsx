@@ -45,6 +45,7 @@ import { validarContrasenaSegura } from '../lib/seguridad';
 import { FacturacionPanel } from './FacturacionPanel';
 import { TerminosCondiciones } from '../features/lukapp/components/LegalLukApp';
 import { TextoMarkdown } from '../components/TextoMarkdown';
+import { RespuestaAsesor } from '../components/RespuestaAsesor';
 import { ContextoIAPanel } from './ContextoIAPanel';
 
 interface SuperadminPanelProps {
@@ -319,7 +320,7 @@ const RespuestaIA: React.FC<{ texto: string }> = ({ texto }) => {
   try {
     parsed = JSON.parse(texto);
   } catch {
-    return <TextoMarkdown texto={texto} />;
+    return <RespuestaAsesor texto={texto} />;
   }
 
   const esInsight = (v: unknown): v is InsightIA =>

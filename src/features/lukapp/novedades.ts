@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.3.1', fecha: '2026-10-24', texto: 'Los resúmenes del Asesor ahora muestran ingresos, gastos y balance en colores, con barras para comparar tus principales gastos. ✨' },
   { version: '10.3.0', fecha: '2026-10-24', texto: 'El Asesor se guía mejor por LukApp, entiende tus documentos de ayuda y ahora registra la respuesta local completa. ✨' },
   { version: '10.2.0', fecha: '2026-10-24', texto: 'El Asesor ahora guía mejor por LukApp y muestra sus respuestas con negrillas, cursivas y listas claras. ✨' },
   { version: '10.1.29', fecha: '2026-10-24', texto: 'El cristal Premium ahora tiene una luz más clara y deja ver mejor el contenido del fondo. 💜' },

@@ -45,7 +45,7 @@ import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
-import { TextoMarkdown } from '../../../components/TextoMarkdown';
+import { RespuestaAsesor } from '../../../components/RespuestaAsesor';
 import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
 
 interface Message {
@@ -1123,7 +1123,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
                   }`}
                 >
-                  <TextoMarkdown texto={msg.text} />
+                  <RespuestaAsesor texto={msg.text} />
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
                       {efectoMovimiento(msg.action)}
