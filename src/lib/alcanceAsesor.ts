@@ -23,4 +23,4 @@ export const clasificarAlcanceAsesor = (texto: string): AlcanceAsesor => {
 };
 
 export const RESPUESTA_TEMA_TECNICO =
-  'Este chat analiza tus finanzas; no configura bases de datos. Escribe “dime mi resumen del mes” para revisar ingresos, gastos y saldo.';
+  'Este Asesor te guía por las finanzas y funciones de LukApp, pero no configura bases de datos. Escribe “dime mi resumen del mes” para revisar ingresos, gastos y saldo.';

@@ -45,6 +45,7 @@ import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
+import { TextoMarkdown } from '../../../components/TextoMarkdown';
 
 interface Message {
   id: string;
@@ -153,20 +154,6 @@ const SUGERENCIAS_INICIALES = [
   'Mis suscripciones',
   'Sorpréndeme',
 ];
-
-const renderMarkdownLine = (line: string) => {
-  const parts = line.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <strong key={i} className="font-semibold">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    return part;
-  });
-};
 
 const limpiarTextoChat = (t: string): string => {
   if (!t) return '';
@@ -1125,18 +1112,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
                   }`}
                 >
-                  <div className="space-y-2">
-                    {msg.text.split('\n\n').map((paragraph, pIdx) => (
-                      <div key={pIdx}>
-                        {paragraph.split('\n').map((line, lIdx) => (
-                          <React.Fragment key={lIdx}>
-                            {renderMarkdownLine(line)}
-                            {lIdx !== paragraph.split('\n').length - 1 && <br />}
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
+                  <TextoMarkdown texto={msg.text} />
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
                       {efectoMovimiento(msg.action)}

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.2.0', fecha: '2026-10-24', texto: 'El Asesor ahora guía mejor por LukApp y muestra sus respuestas con negrillas, cursivas y listas claras. ✨' },
   { version: '10.1.29', fecha: '2026-10-24', texto: 'El cristal Premium ahora tiene una luz más clara y deja ver mejor el contenido del fondo. 💜' },
   { version: '10.1.28', fecha: '2026-10-24', texto: 'Ajustamos el cristal Premium para que se vea un poco más del fondo y conserve su efecto morado. 💜' },
   { version: '10.1.27', fecha: '2026-10-24', texto: 'La barra Premium ahora difumina con más claridad lo que hay detrás; Rappi muestra su identidad en blanco. 💜' },

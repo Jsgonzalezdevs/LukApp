@@ -44,6 +44,7 @@ import { VERSION_ETIQUETA } from '../version';
 import { validarContrasenaSegura } from '../lib/seguridad';
 import { FacturacionPanel } from './FacturacionPanel';
 import { TerminosCondiciones } from '../features/lukapp/components/LegalLukApp';
+import { TextoMarkdown } from '../components/TextoMarkdown';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -317,7 +318,7 @@ const RespuestaIA: React.FC<{ texto: string }> = ({ texto }) => {
   try {
     parsed = JSON.parse(texto);
   } catch {
-    return <p className="whitespace-pre-wrap">{texto}</p>;
+    return <TextoMarkdown texto={texto} />;
   }
 
   const esInsight = (v: unknown): v is InsightIA =>
@@ -2506,7 +2507,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                 </div>
                 <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-blue-600 text-white px-4 py-3 text-sm leading-relaxed shadow-sm">
                   <p className="font-semibold text-[11px] opacity-75 mb-1">Pregunta / Mensaje del Usuario</p>
-                  <p className="whitespace-pre-wrap">{consultaDetalle.promptText || 'No se registró texto de entrada.'}</p>
+                  <TextoMarkdown texto={consultaDetalle.promptText || 'No se registró texto de entrada.'} />
                 </div>
               </div>
 
