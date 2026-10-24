@@ -291,9 +291,9 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
               borderRadius: 'var(--fin-r-pill)',
               position: 'relative',
               overflow: 'hidden',
-              background: 'rgb(90 51 133 / 24%)',
-              backdropFilter: 'blur(30px) saturate(1.8)',
-              WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
+              background: 'rgb(90 51 133 / 20%)',
+              backdropFilter: 'blur(26px) saturate(1.8)',
+              WebkitBackdropFilter: 'blur(26px) saturate(1.8)',
               border: '1px solid var(--fin-premium-lens-border, rgb(255 255 255 / 30%))',
               boxShadow: 'inset 0 1px 0 var(--fin-premium-lens-rim, rgb(255 255 255 / 56%)), inset 0 -1px 0 var(--fin-premium-lens-bottom-rim, rgb(84 48 121 / 14%)), 0 12px 28px -20px rgb(28 25 23 / 25%), var(--fin-premium-lens-glow, 0 8px 28px -17px rgb(129 67 194 / 36%))',
             }}

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.28', fecha: '2026-10-24', texto: 'Ajustamos el cristal Premium para que se vea un poco más del fondo y conserve su efecto morado. 💜' },
   { version: '10.1.27', fecha: '2026-10-24', texto: 'La barra Premium ahora difumina con más claridad lo que hay detrás; Rappi muestra su identidad en blanco. 💜' },
   { version: '10.1.26', fecha: '2026-10-23', texto: 'LukApp renueva sus archivos al abrirse para que recibas el nuevo cristal Premium. 💜' },
   { version: '10.1.25', fecha: '2026-10-23', texto: 'El vidrio morado de la barra para anotar ahora mantiene el desenfoque real también en Safari. 💜' },
