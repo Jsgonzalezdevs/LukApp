@@ -291,7 +291,9 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
               borderRadius: 'var(--fin-r-pill)',
               position: 'relative',
               overflow: 'hidden',
-              background: 'transparent',
+              background: 'rgb(90 51 133 / 24%)',
+              backdropFilter: 'blur(30px) saturate(1.8)',
+              WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
               border: '1px solid var(--fin-premium-lens-border, rgb(255 255 255 / 30%))',
               boxShadow: 'inset 0 1px 0 var(--fin-premium-lens-rim, rgb(255 255 255 / 56%)), inset 0 -1px 0 var(--fin-premium-lens-bottom-rim, rgb(84 48 121 / 14%)), 0 12px 28px -20px rgb(28 25 23 / 25%), var(--fin-premium-lens-glow, 0 8px 28px -17px rgb(129 67 194 / 36%))',
             }}
@@ -306,10 +308,6 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
                 zIndex: 0,
                 inset: 0,
                 borderRadius: 'inherit',
-                // El blur vive en su propia capa transparente, separada del
-                // reflejo y de los botones para difuminar filas de verdad.
-                backdropFilter: 'blur(48px) saturate(1.65) contrast(1.06)',
-                WebkitBackdropFilter: 'blur(48px) saturate(1.65) contrast(1.06)',
                 background: 'var(--fin-premium-lens-fill, linear-gradient(140deg, rgb(255 255 255 / 3%), rgb(126 34 206 / 6%) 48%, rgb(139 92 246 / 3%)))',
                 pointerEvents: 'none',
               }}
