@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.1.26', fecha: '2026-10-23', texto: 'LukApp renueva sus archivos al abrirse para que recibas el nuevo cristal Premium. 💜' },
   { version: '10.1.25', fecha: '2026-10-23', texto: 'El vidrio morado de la barra para anotar ahora mantiene el desenfoque real también en Safari. 💜' },
   { version: '10.1.24', fecha: '2026-10-23', texto: 'Al otorgar Premium, una suscripción de pago vencida ya no bloquea el acceso de cortesía; conservamos el historial del pago. 💜' },
   { version: '10.1.23', fecha: '2026-10-23', texto: 'La barra Premium deja pasar más movimiento de color y difumina mejor lo que hay detrás. 💜' },
