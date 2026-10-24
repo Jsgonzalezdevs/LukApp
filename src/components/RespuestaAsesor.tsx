@@ -108,17 +108,17 @@ const formatoCop = (valor: number): string => new Intl.NumberFormat('es-CO', {
 
 const TarjetaCifra: React.FC<{ etiqueta: string; cifra: CifraResumen; tono: 'ingreso' | 'gasto' | 'balance' }> = ({ etiqueta, cifra, tono }) => {
   const color = tono === 'ingreso'
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100'
+    ? 'border-emerald-700 bg-gradient-to-br from-emerald-700 via-green-700 to-teal-800 text-white shadow-lg shadow-emerald-700/20'
     : tono === 'gasto'
-      ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-100'
+      ? 'border-rose-700 bg-gradient-to-br from-rose-700 via-pink-700 to-fuchsia-800 text-white shadow-lg shadow-rose-700/20'
       : cifra.valor < 0
-        ? 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-100'
-        : 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100';
+        ? 'border-rose-700 bg-gradient-to-br from-rose-700 via-pink-700 to-fuchsia-800 text-white shadow-lg shadow-rose-700/20'
+        : 'border-emerald-700 bg-gradient-to-br from-green-700 via-emerald-700 to-teal-800 text-white shadow-lg shadow-emerald-700/20';
   const Icono = tono === 'gasto' || (tono === 'balance' && cifra.valor < 0) ? ArrowDownRight : ArrowUpRight;
   return (
-    <div className={`min-w-0 rounded-2xl border p-3 ${color}`}>
-      <div className="flex items-center gap-1.5 text-[11px] font-bold opacity-80"><Icono className="h-3.5 w-3.5" />{etiqueta}</div>
-      <p className="mt-1 break-words text-lg font-extrabold leading-tight tabular-nums sm:text-xl">{formatoCop(cifra.valor)}</p>
+    <div className={`min-w-0 rounded-2xl border p-3.5 transition-transform duration-200 hover:-translate-y-0.5 ${color}`}>
+      <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/90"><Icono className="h-3.5 w-3.5" />{etiqueta}</div>
+      <p className="mt-1 break-words text-lg font-extrabold leading-tight tabular-nums text-white sm:text-xl">{formatoCop(cifra.valor)}</p>
     </div>
   );
 };
@@ -130,11 +130,11 @@ export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
 
   const mayorCategoria = Math.max(...resumen.categorias.map((categoria) => categoria.valor), 1);
   return (
-    <section className="w-full max-w-full space-y-3" aria-label="Resumen financiero visual">
+    <section className="w-full max-w-full space-y-3 rounded-3xl border border-violet-200/80 bg-gradient-to-br from-white via-violet-50/70 to-fuchsia-50/50 p-3 shadow-sm shadow-violet-900/5 dark:border-violet-400/20 dark:from-slate-950 dark:via-violet-950/30 dark:to-slate-950 sm:p-4" aria-label="Resumen financiero visual">
       <header className="flex flex-wrap items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-200"><ChartNoAxesColumnIncreasing className="h-4 w-4" /></span>
+        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-md shadow-violet-500/25"><ChartNoAxesColumnIncreasing className="h-4 w-4" /></span>
         <h3 className="text-sm font-extrabold text-[var(--fin-ink)]">Tu resumen financiero</h3>
-        {resumen.periodo && <span className="rounded-full bg-[var(--fin-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-ink-soft)]">{resumen.periodo}</span>}
+        {resumen.periodo && <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-1 text-[10px] font-bold text-violet-800 dark:border-violet-400/30 dark:bg-violet-500/15 dark:text-violet-200">{resumen.periodo}</span>}
       </header>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -151,10 +151,10 @@ export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
               <li key={`${categoria.nombre}-${categoria.valor}`}>
                 <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
                   <span className="truncate font-semibold capitalize text-[var(--fin-ink-soft)]">{categoria.nombre}</span>
-                  <span className="shrink-0 font-bold tabular-nums text-[var(--fin-ink)]">{formatoCop(categoria.valor)}</span>
+                  <span className="shrink-0 font-bold tabular-nums text-rose-700 dark:text-rose-300">{formatoCop(categoria.valor)}</span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-rose-100 dark:bg-rose-950/70">
-                  <div className="h-full rounded-full bg-rose-500" style={{ width: `${Math.max(6, categoria.valor / mayorCategoria * 100)}%` }} />
+                <div className="h-2.5 overflow-hidden rounded-full bg-rose-100 shadow-inner dark:bg-rose-950/70">
+                  <div className="h-full rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 shadow-sm shadow-rose-500/30" style={{ width: `${Math.max(6, categoria.valor / mayorCategoria * 100)}%` }} />
                 </div>
               </li>
             ))}
@@ -163,14 +163,14 @@ export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
       )}
 
       {resumen.recomendacion && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+        <div className="flex items-start gap-2.5 rounded-2xl border border-amber-400 bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100 p-3 text-amber-950 shadow-md shadow-amber-500/10 dark:border-amber-500/50 dark:from-amber-950/80 dark:via-yellow-950/60 dark:to-orange-950/80 dark:text-amber-50">
           <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
           <p className="text-xs leading-relaxed"><strong>Un paso para ti</strong><br />{resumen.recomendacion}</p>
         </div>
       )}
 
       <details className="group rounded-xl px-1 py-0.5 text-[11px] text-[var(--fin-ink-soft)]">
-        <summary className="w-fit cursor-pointer list-none font-semibold hover:text-[var(--fin-ink)] [&::-webkit-details-marker]:hidden">
+        <summary className="w-fit cursor-pointer list-none font-bold text-violet-700 hover:text-fuchsia-700 dark:text-violet-300 dark:hover:text-fuchsia-300 [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-center gap-1">Ver explicación completa <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" /></span>
         </summary>
         <div className="mt-2 border-t border-[var(--fin-line)] pt-2"><TextoMarkdown texto={texto} /></div>
