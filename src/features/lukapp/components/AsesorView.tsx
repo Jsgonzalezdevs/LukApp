@@ -46,6 +46,7 @@ import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
 import { TextoMarkdown } from '../../../components/TextoMarkdown';
+import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
 
 interface Message {
   id: string;
@@ -622,6 +623,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     const textoUsuario = (textoDirecto ?? input).trim();
     if (!textoUsuario || pensando || peticionIARef.current) return;
     const propuestaFinanciera = detectarPropuestaAsesor(textoUsuario, categorias, lexico);
+    const respuestaLocalDeAyuda = responderAyudaLukApp(textoUsuario);
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     if (!esReintento) {
@@ -635,6 +637,15 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         const ultimo = prev[prev.length - 1];
         return ultimo?.role === 'bot' ? prev.slice(0, -1) : prev;
       });
+    }
+    if (respuestaLocalDeAyuda) {
+      const mensajeAyuda: Message = { id: nuevoId(), role: 'bot', text: respuestaLocalDeAyuda, provider: 'Guía de LukApp' };
+      setMessages((prev) => [...prev, mensajeAyuda]);
+      void guardarMensaje(mensajeAyuda);
+      setInput('');
+      setErrorIA(null);
+      setTextoParaReintentar(null);
+      return;
     }
     setInput('');
     setPensando(true);
@@ -651,19 +662,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     let encabezadosTelemetria: Record<string, string> = { 'Content-Type': 'application/json' };
 
     const usarRespaldoLocal = (mensajeError: string) => {
-      // No esperamos esta señal ni dejamos que su fallo afecte el chat: el
-      // propósito es conservar evidencia del respaldo local cuando la petición
-      // original venció, fue bloqueada o perdió conectividad.
-      void fetch(apiUrl('/api/asesor-ia/respaldo-local'), {
-        method: 'POST',
-        headers: encabezadosTelemetria,
-        keepalive: true,
-        body: JSON.stringify({
-          idConsulta,
-          prompt: textoUsuario,
-          motivo: mensajeError,
-        }),
-      }).catch((error) => console.warn('[asesor] No se pudo enviar la telemetría del respaldo local:', error));
       setConexion('local');
       setErrorIA(mensajeError);
       setTextoParaReintentar(textoUsuario);
@@ -680,6 +678,19 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       };
       setMessages((prev) => [...prev, respuestaLocal]);
       void guardarMensaje(respuestaLocal);
+      // Guarda la respuesta visible para que el historial de Superadmin
+      // explique qué recibió la persona cuando el proveedor no estuvo disponible.
+      void fetch(apiUrl('/api/asesor-ia/respaldo-local'), {
+        method: 'POST',
+        headers: encabezadosTelemetria,
+        keepalive: true,
+        body: JSON.stringify({
+          idConsulta,
+          prompt: textoUsuario,
+          respuestaTexto: text,
+          motivo: mensajeError,
+        }),
+      }).catch((error) => console.warn('[asesor] No se pudo enviar la telemetría del respaldo local:', error));
     };
 
     try {

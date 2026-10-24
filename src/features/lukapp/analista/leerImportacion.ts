@@ -55,9 +55,9 @@ const PATRONES = {
   fecha: [/fecha/, /date/],
   descripcion: [/descripcion/, /concepto/, /detalle/, /comercio/, /referencia/, /merchant/, /establecimiento/, /nombre/],
   debito: [/debito/, /retiro/, /cargo/, /gasto/, /withdrawal/],
-  credito: [/credito/, /abono/, /deposito/, /ingreso/, /credit/],
+  credito: [/credito/, /abono/, /deposito/, /^ingresos?$/, /credit/],
   monto: [/monto/, /valor/, /importe/, /amount/, /transaccion/],
-  tipo: [/^tipo$/, /movimiento/],
+  tipo: [/^tipo$/, /movimiento/, /ingresogasto$/, /gastosingreso$/],
   categoria: [/categoria/, /category/],
   afectaSaldo: [/afectasaldo/, /impactasaldo/, /balanceactual/],
 };

@@ -3,6 +3,7 @@ import type { Transaction } from '../types';
 import type { Cajita } from '../data/modelos';
 import { normalizarNombre } from './contactos';
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from '../../../lib/alcanceAsesor';
+import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
 import type { LexicoAprendido } from './aprendizaje';
 import type { CategoriaPersonal } from '../categorias';
 import { analizarTopesRenta } from './tributarioColombia';
@@ -260,6 +261,8 @@ export function responderAsesor(
   context: AsesorContext,
   disponibleDiarioCop?: number,
 ): AsesorResponse {
+  const ayudaLukApp = responderAyudaLukApp(texto);
+  if (ayudaLukApp) return { text: ayudaLukApp, newContext: { ...context } };
   if (clasificarAlcanceAsesor(texto) === 'tecnica-sin-finanzas') {
     return { text: RESPUESTA_TEMA_TECNICO, newContext: { ...context } };
   }

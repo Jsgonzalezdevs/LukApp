@@ -45,6 +45,7 @@ import { validarContrasenaSegura } from '../lib/seguridad';
 import { FacturacionPanel } from './FacturacionPanel';
 import { TerminosCondiciones } from '../features/lukapp/components/LegalLukApp';
 import { TextoMarkdown } from '../components/TextoMarkdown';
+import { ContextoIAPanel } from './ContextoIAPanel';
 
 interface SuperadminPanelProps {
   rol: 'admin' | 'usuario';
@@ -1447,6 +1448,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   Actualizar
                 </button>
               </div>
+
+              {rol === 'admin' && <ContextoIAPanel />}
 
               {loadingMetricasIA && !metricasIA ? (
                 <div className="flex h-64 items-center justify-center">
