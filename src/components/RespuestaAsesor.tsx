@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowDownRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, Lightbulb } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, Sparkles } from 'lucide-react';
 import { TextoMarkdown } from './TextoMarkdown';
 
 interface CifraResumen {
@@ -18,7 +18,6 @@ interface ResumenFinanciero {
   gastos: CifraResumen;
   balance: CifraResumen;
   categorias: CategoriaResumen[];
-  recomendacion: string;
 }
 
 const normalizar = (texto: string): string => texto
@@ -80,31 +79,38 @@ const analizarResumen = (texto: string): ResumenFinanciero | null => {
   const gastos = leerCifra(texto, /gastos?\s+(?:totales?|del periodo|del mes)[^\d$+\-]{0,30}(?:cop\s*)?\$?\s*([+\-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
   const balance = leerCifra(texto, /balance(?:\s+acumulado|\s+del periodo|\s+del mes)?[^\d$+\-]{0,30}(?:cop\s*)?\$?\s*([+\-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
   if (!ingresos || !gastos || !balance) return null;
-  const normalizado = normalizar(texto);
-  const indiceRecomendacion = normalizado.search(/recomendacion|proximo paso/);
-  const recomendacionCompleta = (() => {
-    if (indiceRecomendacion < 0) return '';
-    const resto = texto.slice(indiceRecomendacion);
-    const dosPuntos = resto.indexOf(':');
-    return (dosPuntos >= 0 ? resto.slice(dosPuntos + 1) : resto).trim();
-  })();
-  const recomendacion = recomendacionCompleta.split(/[;\n]/)[0].trim().slice(0, 130);
   return {
     periodo: encabezado[1]?.trim() ?? '',
     ingresos,
     gastos,
     balance,
     categorias: cifrasDeCategoria(texto),
-    recomendacion,
   };
 };
 
 const formatoCop = (valor: number): string => new Intl.NumberFormat('es-CO', {
   style: 'currency',
   currency: 'COP',
-  notation: 'compact',
-  maximumFractionDigits: 1,
+  maximumFractionDigits: 0,
 }).format(valor);
+
+const crearMiniTips = (resumen: ResumenFinanciero): string[] => {
+  const balance = resumen.balance.valor;
+  const consejoBalance = balance > 0
+    ? 'Tu balance quedó en positivo. Si te queda cómodo, reserva una cantidad pequeña al recibir tu próximo ingreso y deja que crezca a tu ritmo.'
+    : balance === 0
+      ? 'El periodo quedó equilibrado. Una cantidad pequeña y constante para una meta puede avanzar sin apretarte.'
+      : 'El periodo estuvo más ajustado. Primero cuida lo importante; cuando aparezca un margen, empezar con algo simbólico también cuenta.';
+
+  const categoriaPrincipal = resumen.categorias
+    .filter((categoria) => !/transfer|traslado|movimiento entre cuentas/.test(normalizar(categoria.nombre)))
+    .sort((a, b) => b.valor - a.valor)[0];
+  const consejoCategoria = categoriaPrincipal
+    ? `Tu rubro más alto fue ${categoriaPrincipal.nombre}. Tenerlo previsto desde el inicio puede dejar espacio para una meta, sin recortar de golpe.`
+    : 'Ponerle nombre a una meta personal puede hacer más fácil reservar un poquito cuando te quede cómodo.';
+
+  return [consejoBalance, consejoCategoria];
+};
 
 const TarjetaCifra: React.FC<{ etiqueta: string; cifra: CifraResumen; tono: 'ingreso' | 'gasto' | 'balance' }> = ({ etiqueta, cifra, tono }) => {
   const color = tono === 'ingreso'
@@ -118,7 +124,10 @@ const TarjetaCifra: React.FC<{ etiqueta: string; cifra: CifraResumen; tono: 'ing
   return (
     <div className={`min-w-0 rounded-2xl border p-3.5 transition-transform duration-200 hover:-translate-y-0.5 ${color}`}>
       <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/90"><Icono className="h-3.5 w-3.5" />{etiqueta}</div>
-      <p className="mt-1 break-words text-lg font-extrabold leading-tight tabular-nums text-white sm:text-xl">{formatoCop(cifra.valor)}</p>
+      <p className="mt-1 flex flex-wrap items-baseline gap-x-1 text-base font-extrabold leading-tight tabular-nums text-white sm:text-lg">
+        <span className="break-words">{formatoCop(cifra.valor)}</span>
+        <span className="text-[9px] font-bold tracking-wide text-white/80">COP</span>
+      </p>
     </div>
   );
 };
@@ -129,12 +138,13 @@ export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
   if (!resumen) return <TextoMarkdown texto={texto} />;
 
   const mayorCategoria = Math.max(...resumen.categorias.map((categoria) => categoria.valor), 1);
+  const miniTips = crearMiniTips(resumen);
   return (
-    <section className="w-full max-w-full space-y-3 rounded-3xl border border-violet-200/80 bg-gradient-to-br from-white via-violet-50/70 to-fuchsia-50/50 p-3 shadow-sm shadow-violet-900/5 dark:border-violet-400/20 dark:from-slate-950 dark:via-violet-950/30 dark:to-slate-950 sm:p-4" aria-label="Resumen financiero visual">
+    <section className="w-full max-w-full space-y-3 rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-resumen-superficie,#fffdfa)] p-3 shadow-sm shadow-stone-900/5 sm:p-4" aria-label="Resumen financiero visual">
       <header className="flex flex-wrap items-center gap-2">
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-md shadow-violet-500/25"><ChartNoAxesColumnIncreasing className="h-4 w-4" /></span>
         <h3 className="text-sm font-extrabold text-[var(--fin-ink)]">Tu resumen financiero</h3>
-        {resumen.periodo && <span className="rounded-full border border-violet-200 bg-violet-100 px-2.5 py-1 text-[10px] font-bold text-violet-800 dark:border-violet-400/30 dark:bg-violet-500/15 dark:text-violet-200">{resumen.periodo}</span>}
+        {resumen.periodo && <span className="rounded-full border border-[var(--fin-line)] bg-[var(--fin-bg-soft)] px-2.5 py-1 text-[10px] font-bold text-[var(--fin-accent)]">{resumen.periodo}</span>}
       </header>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -151,10 +161,10 @@ export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
               <li key={`${categoria.nombre}-${categoria.valor}`}>
                 <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
                   <span className="truncate font-semibold capitalize text-[var(--fin-ink-soft)]">{categoria.nombre}</span>
-                  <span className="shrink-0 font-bold tabular-nums text-rose-700 dark:text-rose-300">{formatoCop(categoria.valor)}</span>
+                  <span className="shrink-0 font-bold tabular-nums text-[var(--fin-out)]">{formatoCop(categoria.valor)} <span className="text-[9px]">COP</span></span>
                 </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-rose-100 shadow-inner dark:bg-rose-950/70">
-                  <div className="h-full rounded-full bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 shadow-sm shadow-rose-500/30" style={{ width: `${Math.max(6, categoria.valor / mayorCategoria * 100)}%` }} />
+                <div className="h-2.5 overflow-hidden rounded-full bg-[var(--fin-out-bg)] shadow-inner">
+                  <div className="h-full rounded-full bg-[var(--fin-out)] shadow-sm shadow-rose-500/30" style={{ width: `${Math.max(6, categoria.valor / mayorCategoria * 100)}%` }} />
                 </div>
               </li>
             ))}
@@ -162,15 +172,20 @@ export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
         </div>
       )}
 
-      {resumen.recomendacion && (
-        <div className="flex items-start gap-2.5 rounded-2xl border border-amber-400 bg-gradient-to-br from-amber-100 via-yellow-50 to-orange-100 p-3 text-amber-950 shadow-md shadow-amber-500/10 dark:border-amber-500/50 dark:from-amber-950/80 dark:via-yellow-950/60 dark:to-orange-950/80 dark:text-amber-50">
-          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-          <p className="text-xs leading-relaxed"><strong>Un paso para ti</strong><br />{resumen.recomendacion}</p>
+      {miniTips.length > 0 && (
+        <div className="resumen-asesor-tip flex items-start gap-2.5 rounded-2xl p-3">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-700" />
+          <div className="min-w-0">
+            <p className="mb-1 text-xs font-extrabold text-[var(--fin-ink)]">Pequeñas ideas para tu próxima meta</p>
+            <ul className="space-y-1.5 text-xs leading-relaxed text-[var(--fin-ink-soft)]">
+              {miniTips.map((tip) => <li key={tip}>{tip}</li>)}
+            </ul>
+          </div>
         </div>
       )}
 
       <details className="group rounded-xl px-1 py-0.5 text-[11px] text-[var(--fin-ink-soft)]">
-        <summary className="w-fit cursor-pointer list-none font-bold text-violet-700 hover:text-fuchsia-700 dark:text-violet-300 dark:hover:text-fuchsia-300 [&::-webkit-details-marker]:hidden">
+        <summary className="w-fit cursor-pointer list-none font-bold text-[var(--fin-accent)] hover:opacity-80 [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-center gap-1">Ver explicación completa <ChevronDown className="h-3.5 w-3.5 transition-transform group-open:rotate-180" /></span>
         </summary>
         <div className="mt-2 border-t border-[var(--fin-line)] pt-2"><TextoMarkdown texto={texto} /></div>

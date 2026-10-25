@@ -41,6 +41,7 @@
      el hover no hacía nada. Ahora existen. */
   --fin-bg-soft: #f7f5f2;
   --fin-surface: #ffffff;
+  --fin-resumen-superficie: #fffdfa;
   --fin-card-hover: #efece7;
 
   /* Solo para el globo de la guía: flota sobre su propio velo oscuro, no sobre
@@ -195,6 +196,7 @@
     --fin-scrim: rgb(0 0 0 / 0.6);
     --fin-bg-soft: #221f1e;
     --fin-surface: #2d2a28;
+    --fin-resumen-superficie: #292624;
     --fin-card-hover: #3a3734;
     --fin-guia-card: rgb(24 22 21 / 0.94);
 
@@ -269,6 +271,7 @@
   --fin-scrim: rgb(0 0 0 / 0.6);
   --fin-bg-soft: #221f1e;
   --fin-surface: #2d2a28;
+  --fin-resumen-superficie: #292624;
   --fin-card-hover: #3a3734;
   --fin-guia-card: rgb(24 22 21 / 0.94);
 
@@ -305,6 +308,11 @@
   --fin-media-ink: #fdba74;
   --fin-baja-bg: rgb(250 204 21 / 0.12);
   --fin-baja-ink: #fde047;
+}
+
+.resumen-asesor-tip {
+  border: 1px solid color-mix(in srgb, #772aea 20%, var(--fin-line, #ede9e3));
+  background: color-mix(in srgb, #772aea 7%, var(--fin-resumen-superficie, #fffdfa));
 }
 
 /* ------------------------------------------------------------ liquid glass ---
