@@ -254,6 +254,24 @@ export const InicioView: React.FC<InicioViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setMostrarRachaModal(true)}
+            aria-label={infoRacha.rachaActual > 0
+              ? `Racha activa: ${infoRacha.rachaActual} ${infoRacha.rachaActual === 1 ? 'día' : 'días'}`
+              : 'Sin racha activa. Ver tu racha'}
+            title={infoRacha.rachaActual > 0 ? 'Tu racha está activa' : 'Ver tu racha'}
+            className={`flex h-8.5 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold transition-all active:scale-95 ${
+              infoRacha.rachaActual > 0
+                ? 'border border-[var(--fin-warn)]/35 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]'
+                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card)]'
+            }`}
+          >
+            <IconoSimbolo valor="Flame" className={`h-4 w-4 ${infoRacha.rachaActual > 0 ? '' : 'grayscale opacity-70'}`} />
+            <span className="tabular-nums">{infoRacha.rachaActual} {infoRacha.rachaActual === 1 ? 'día' : 'días'}</span>
+            {infoRacha.rachaActual > 0 && <span>Activa</span>}
+          </button>
+
           {onTogglePrivacidad && (
             <button
               type="button"
@@ -650,26 +668,6 @@ export const InicioView: React.FC<InicioViewProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="mt-4 flex justify-center">
-          {/* Botón de Racha */}
-          <button
-            type="button"
-            onClick={() => setMostrarRachaModal(true)}
-            aria-label="Racha de días"
-            className={`flex h-8.5 items-center gap-2 rounded-full px-3 text-[13px] font-bold transition-all active:scale-95 ${
-              infoRacha.anotadoHoy
-                ? 'border border-[var(--fin-warn)]/30 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)] text-[var(--fin-warn-ink)]'
-                : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-faint)]'
-            }`}
-          >
-            <span className={infoRacha.anotadoHoy ? 'drop-shadow-sm' : 'grayscale opacity-70'}>
-              <IconoSimbolo valor="Flame" className="h-4 w-4" />
-            </span>
-            <span className="tabular-nums font-semibold">Racha: {infoRacha.rachaActual} días</span>
-          </button>
-
-      </div>
 
       {/* Modal de racha */}
       {mostrarRachaModal && (
