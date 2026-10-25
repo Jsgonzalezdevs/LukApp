@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.3.4', fecha: '2026-10-25', texto: 'Alineamos la versión de LukApp y su paquete para que las actualizaciones se identifiquen correctamente. ✨' },
   { version: '10.3.3', fecha: '2026-10-25', texto: 'Las instalaciones de LukApp ahora reconocen la nueva versión y actualizan sus archivos para que recibas las mejoras del Asesor. ✨📲' },
   { version: '10.3.2', fecha: '2026-10-24', texto: 'El resumen del Asesor ahora tiene colores más vivos, cifras con mejor contraste y recomendaciones que resaltan sin perder el significado de cada color. ✨💚💗' },
   { version: '10.3.1', fecha: '2026-10-24', texto: 'Los resúmenes del Asesor ahora muestran ingresos, gastos y balance en colores, con barras para comparar tus principales gastos. ✨' },
