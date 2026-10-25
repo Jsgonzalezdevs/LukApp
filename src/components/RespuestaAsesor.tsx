@@ -62,7 +62,13 @@ const cifrasDeCategoria = (texto: string): CategoriaResumen[] => {
   const tramo = texto.slice(inicio, recomendacion >= 0 ? inicio + recomendacion : undefined);
   const dosPuntos = tramo.indexOf(':');
   const lista = dosPuntos >= 0 ? tramo.slice(dosPuntos + 1) : tramo;
-  const entradas = /([\p{L}][\p{L} '\-]{1,34}?)\s*(?::|≈|~)\s*(?:≈|~)?\s*\$?\s*(\d+(?:[.,]\d+)?)\s*(millones?|m|mil|k)?\s*(?:cop)?(?=\s*(?:,|;|\by\b|[.!?]?\s*$))/giu;
+  // Las respuestas pueden escribir los miles con punto, coma o espacios. Si
+  // solo leemos hasta la primera coma, "$5,146,054" termina convertido en 5.
+  const monto = String.raw`(?:\d{1,3}(?:[.,]\d{3})+|\d{1,3}(?:\s\d{3})+|\d+(?:[.,]\d{1,2})?)`;
+  const entradas = new RegExp(
+    String.raw`([\p{L}][\p{L} '\-]{1,34}?)\s*(?::|≈|~)\s*(?:≈|~)?\s*\$?\s*(${monto})\s*(millones?|m|mil|k)?\s*(?:cop)?(?=\s*(?:,|;|\by\b|[.!?]?\s*$))`,
+    'giu',
+  );
   const categorias: CategoriaResumen[] = [];
   for (const coincidencia of lista.matchAll(entradas)) {
     const valor = convertirMonto(coincidencia[2], coincidencia[3]);
