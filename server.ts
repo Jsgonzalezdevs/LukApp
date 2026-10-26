@@ -19,6 +19,7 @@ import {
   hashLlave,
   llaveDeCabecera,
   movimientoDesdeAtajo,
+  normalizarNotificacionNequi,
   pistaDeLlave,
   vistaPreviaDesdeAtajo,
 } from './server_lib/atajos.ts';
@@ -2928,13 +2929,50 @@ app.post('/api/atajo/movimiento', async (req, res) => {
       return res.status(401).json({ error: 'Llave inválida o revocada' });
     }
 
-    if (req.body?.solo_prueba === true) {
-      const previa = vistaPreviaDesdeAtajo(req.body);
-      if ('error' in previa) return res.status(400).json({ error: previa.error });
-      return res.status(200).json({ success: true, solo_prueba: true, movimiento: previa.vista });
+    let cuerpo = req.body ?? {};
+    if (cuerpo.origen === 'nequi') {
+      const normalizacion = normalizarNotificacionNequi(cuerpo);
+      if ('error' in normalizacion) return res.status(400).json({ error: normalizacion.error });
+      cuerpo = { ...normalizacion.cuerpo, solo_prueba: cuerpo.solo_prueba };
+
+      const { data: cuentas, error: errorCuentas } = await cliente
+        .from('cajitas')
+        .select('id, nombre, tipo, clase_cuenta, archived_at')
+        .eq('user_id', fila.user_id)
+        .eq('tipo', 'cuenta')
+        .eq('clase_cuenta', 'billetera')
+        .is('archived_at', null);
+      if (errorCuentas) throw errorCuentas;
+
+      const cuentasNequi = (cuentas ?? []).filter((cuenta: { nombre: string }) =>
+        /nequi/i.test(cuenta.nombre),
+      );
+      const cuentaId = cuerpo.cuentaId;
+      const cuenta = typeof cuentaId === 'string'
+        ? cuentasNequi.find((item: { id: string }) => item.id === cuentaId)
+        : cuentasNequi.length === 1 ? cuentasNequi[0] : null;
+      if (!cuenta) {
+        return res.status(400).json({
+          error: typeof cuentaId === 'string'
+            ? 'La cuenta seleccionada no es una billetera Nequi activa de tu usuario'
+            : 'Crea o selecciona una única cuenta activa tipo billetera cuyo nombre incluya Nequi',
+        });
+      }
+      cuerpo = { ...cuerpo, cuenta_id: cuenta.id };
+      if (cuerpo.solo_prueba === true) cuerpo.cuenta = cuenta.nombre;
     }
 
-    const resultado = movimientoDesdeAtajo(req.body ?? {}, fila.user_id);
+    if (cuerpo.solo_prueba === true) {
+      const previa = vistaPreviaDesdeAtajo(cuerpo);
+      if ('error' in previa) return res.status(400).json({ error: previa.error });
+      return res.status(200).json({
+        success: true,
+        solo_prueba: true,
+        movimiento: { ...previa.vista, ...(typeof cuerpo.cuenta === 'string' ? { cuenta: cuerpo.cuenta } : {}) },
+      });
+    }
+
+    const resultado = movimientoDesdeAtajo(cuerpo, fila.user_id);
     if ('error' in resultado) return res.status(400).json({ error: resultado.error });
 
     const { error: errorInsertar } = await cliente.from('transacciones').insert(resultado.fila);

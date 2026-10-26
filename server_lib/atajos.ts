@@ -161,6 +161,10 @@ const limpiarTexto = (valor: unknown, maximo: number): string =>
   typeof valor === 'string' ? valor.replace(/\s+/g, ' ').trim().slice(0, maximo) : '';
 
 export interface CuerpoAtajo {
+  /** Identifica avisos cuyo tipo debe venir explícito para evitar clasificarlos mal. */
+  origen?: unknown;
+  /** Texto entregado por la automatización de notificaciones de iOS. */
+  notificacion?: unknown;
   monto?: unknown;
   amount?: unknown;
   Amount?: unknown;
@@ -227,11 +231,81 @@ export interface VistaPreviaAtajo {
 
 export type ResultadoVistaPreviaAtajo = { vista: VistaPreviaAtajo } | { error: string };
 
+export type ResultadoNotificacionNequi =
+  | { cuerpo: CuerpoAtajo }
+  | { error: string };
+
 export interface TransferenciaSmsBancolombia {
   monto: number;
   comercio: string;
   fecha: string;
 }
+
+/**
+ * Convierte avisos conocidos de Nequi en los campos del endpoint del Atajo.
+ *
+ * Solo se reconocen confirmaciones redactadas como movimientos completados.
+ * Una transferencia Transfiya pendiente no equivale a dinero recibido, así
+ * que se rechaza mientras no aparezca la confirmación posterior de abono.
+ * El texto original se procesa en memoria y no se guarda en la transacción.
+ */
+export const normalizarNotificacionNequi = (
+  cuerpo: CuerpoAtajo,
+  ahora: Date = new Date(),
+): ResultadoNotificacionNequi => {
+  if (typeof cuerpo.notificacion !== 'string') {
+    return { error: 'Falta el texto de la notificación de Nequi' };
+  }
+
+  const texto = cuerpo.notificacion.replace(/\s+/g, ' ').trim();
+  if (!texto) return { error: 'La notificación de Nequi está vacía' };
+
+  const id = cuerpo.id ?? cuerpo.uuid ?? cuerpo.transaction_id;
+  if (typeof id !== 'string' || !ES_UUID.test(id)) {
+    return { error: 'La notificación debe incluir un UUID estable para evitar duplicados al reintentar' };
+  }
+
+  if (/transfiya/i.test(texto) && /\b(te envi[oó]|pendiente|acepta|rechaza|por recibir)\b/i.test(texto)) {
+    return { error: 'La transferencia Transfiya sigue pendiente; espera la confirmación de que la plata ya llegó' };
+  }
+
+  const montos = [...texto.matchAll(/\$\s*([\d][\d.,'’]*)\s*(COP|pesos?)?|\b([\d][\d.,'’]*)\s*(COP|pesos?)\b/gi)];
+  if (montos.length !== 1) {
+    return { error: montos.length ? 'La notificación tiene varios montos y no se puede identificar cuál registrar' : 'No encontramos un monto en la notificación de Nequi' };
+  }
+  const coincidenciaMonto = montos[0];
+  const monto = montoEnPesos((coincidenciaMonto[1] ?? coincidenciaMonto[3]).replace(/['’]/g, ''));
+  if (monto === null) return { error: 'El monto de la notificación no se entiende' };
+
+  const ingreso = /\b(?:acabas de recibir plata de|recibiste plata de|recibiste un pago de|te lleg[oó] plata de)\b/i.test(texto);
+  const gasto = /\b(?:pagaste|acabas de pagar|enviaste plata a|enviaste dinero a|transferiste plata a)\b/i.test(texto);
+  if (ingreso === gasto) {
+    return { error: 'No pudimos distinguir con seguridad si la notificación es un ingreso o un gasto' };
+  }
+
+  const antesDelMonto = texto.slice(0, coincidenciaMonto.index ?? 0);
+  const comercio = ingreso
+    ? antesDelMonto.match(/(?:acabas de recibir plata de|recibiste plata de|recibiste un pago de|te lleg[oó] plata de)\s+(.+?)\s*$/i)?.[1]
+    : texto.match(/\b(?:pagaste|acabas de pagar)\s+(?:COP\s*)?\$?\s*[\d][\d.,'’]*\s*(?:COP|pesos?)?\s+(?:en|a)\s+(.+?)(?:[.!]|$)/i)?.[1]
+      ?? antesDelMonto.match(/\b(?:enviaste plata a|enviaste dinero a|transferiste plata a)\s+(.+?)\s*$/i)?.[1];
+
+  const descripcion = typeof comercio === 'string'
+    ? comercio.replace(/[.!]+$/, '').trim().slice(0, 120)
+    : '';
+  if (!descripcion) return { error: 'No pudimos reconocer quién envió o recibió la plata' };
+
+  return {
+    cuerpo: {
+      origen: 'nequi',
+      id,
+      monto,
+      comercio: descripcion,
+      fecha: cuerpo.fecha ?? cuerpo.date ?? diaBogotaHoy(ahora),
+      tipo: ingreso ? 'ingreso' : 'gasto',
+      cuentaId: cuerpo.cuentaId ?? cuerpo.cuenta_id ?? cuerpo.account_id,
+    },
+  };
+};
 
 /**
  * Extrae los tres datos necesarios de una transferencia Bre-B saliente.
@@ -324,6 +398,9 @@ export const movimientoDesdeAtajo = (
   if (occurredOn === null) return { error: 'La fecha no se entiende' };
 
   const tipoRaw = cuerpo.tipo ?? cuerpo.type ?? cuerpo.kind;
+  if (cuerpo.origen === 'nequi' && tipoRaw !== 'gasto' && tipoRaw !== 'ingreso') {
+    return { error: 'El aviso de Nequi debe indicar si es gasto o ingreso' };
+  }
   const tipo = tipoRaw === undefined || tipoRaw === null || tipoRaw === '' ? 'gasto' : tipoRaw;
   if (tipo !== 'gasto' && tipo !== 'ingreso') return { error: 'El tipo tiene que ser gasto o ingreso' };
 
@@ -335,6 +412,9 @@ export const movimientoDesdeAtajo = (
   }
 
   const idRaw = cuerpo.id ?? cuerpo.uuid ?? cuerpo.transaction_id;
+  if (cuerpo.origen === 'nequi' && (typeof idRaw !== 'string' || !ES_UUID.test(idRaw))) {
+    return { error: 'El aviso de Nequi debe incluir un id estable para evitar duplicados' };
+  }
   if (idRaw !== undefined && idRaw !== null && idRaw !== '') {
     if (typeof idRaw !== 'string' || !ES_UUID.test(idRaw)) {
       return { error: 'El id no es un UUID válido' };

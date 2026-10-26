@@ -3,9 +3,7 @@ import { Check, Copy, ExternalLink, Info, KeyRound, Plus, ShieldCheck, Smartphon
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
-/** El Atajo ya armado en iCloud: trae el disparador y la petición prellenados,
-    solo falta que cada quien pegue su llave en el encabezado x-api-key.
-    Sin este link, montar el Atajo a mano son ~10 pasos que casi nadie termina. */
+/** El Atajo publicado en iCloud para registrar movimientos manualmente. */
 const URL_ATAJO_ICLOUD = 'https://www.icloud.com/shortcuts/5331c6951e0e411c96a6bf39adaeb95c';
 
 interface LlaveAtajo {
@@ -144,7 +142,7 @@ export const PanelAtajos: React.FC = () => {
           Registro con Atajos
         </h2>
         <p className="mt-1 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-          Conecta tu iPhone una vez. Por ahora, el Atajo te pregunta el monto y a quién transferiste; la lectura automática del SMS sigue en pruebas.
+          La llave permite que una automatización de iPhone envíe a LukApp el texto de una notificación de Nequi y registre su ingreso o gasto.
         </p>
       </div>
 
@@ -267,7 +265,7 @@ export const PanelAtajos: React.FC = () => {
       <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Paso 2 · Instala el Atajo en tu iPhone</p>
         <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Ya viene armado para enviar los datos a LukApp. La lectura del SMS todavía no está activa, así que por ahora completarás dos preguntas al ejecutar el Atajo.
+          El enlace instala el Atajo manual de LukApp. Para los avisos, crea una automatización de notificación de Nequi en Atajos y usa la misma dirección y llave de este panel.
         </p>
         <a
           href={URL_ATAJO_ICLOUD}
@@ -292,6 +290,26 @@ export const PanelAtajos: React.FC = () => {
 
         <details className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[13px] text-[var(--fin-ink-faint)]">
           <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
+            Preparar avisos de Nequi en iPhone
+          </summary>
+          <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
+            <li>En Atajos → Automatización, crea una automatización de <strong>Notificación</strong>, elige <strong>Nequi</strong> y actívala para ejecutarse al llegar el aviso. iOS 26 permite filtrar avisos y usar su contenido como entrada de la automatización.</li>
+            <li>Envía primero esa entrada a <strong>Vista rápida</strong>. Confirma que contiene la frase y el monto del aviso antes de activar el registro.</li>
+            <li>Antes de la petición, genera un UUID para identificar este envío. En <strong>Obtener contenido de URL</strong>, configura POST, conserva la llave en <code>x-api-key</code> y usa este cuerpo JSON insertando la variable de entrada y el UUID generado:</li>
+            <pre className="overflow-x-auto rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-3 text-[12px] leading-relaxed text-[var(--fin-ink)]">{`{
+  "origen": "nequi",
+  "notificacion": "[Entrada del atajo]",
+  "id": "[UUID generado]",
+  "solo_prueba": true
+}`}</pre>
+            <li>No envíes la llave en el cuerpo. Cuando la vista previa sea correcta, cambia <code>solo_prueba</code> a <code>false</code> para guardar movimientos reales.</li>
+            <li>LukApp reconoce confirmaciones como «Acabas de recibir plata de…» y «Pagaste… en…». Rechaza textos ambiguos y avisos de Transfiya pendientes. La fecha usa el día de Bogotá en que se procesa el aviso, salvo que envíes <code>fecha</code>.</li>
+            <li>La vista previa también comprueba que tengas exactamente una billetera activa cuyo nombre incluya <strong>Nequi</strong>. Revisa monto, tipo y cuenta antes de quitar <code>solo_prueba</code> para guardar movimientos reales.</li>
+          </ol>
+        </details>
+
+        <details className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[13px] text-[var(--fin-ink-faint)]">
+          <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
             Probar la conexión sin registrar un movimiento
           </summary>
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
@@ -301,7 +319,7 @@ export const PanelAtajos: React.FC = () => {
             </li>
             <li>
               Después de la petición agrega <strong>Vista rápida</strong> para revisar el monto,
-              destinatario y fecha que LukApp entendió.
+              destinatario, fecha, tipo y cuenta que LukApp entendió.
             </li>
             <li>
               Ejecuta el Atajo con datos ficticios. LukApp devuelve una vista previa y valida la llave, pero no crea ni modifica movimientos.

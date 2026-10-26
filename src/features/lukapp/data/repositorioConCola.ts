@@ -1,6 +1,7 @@
 import { nuevoId } from '../lib/id';
 import type { Transaction } from '../types';
 import type { Cajita, CajitaMovimiento, Meta } from './modelos';
+import { ID_EFECTIVO } from './modelos';
 import type { CategoriaPersonal } from '../categorias';
 import type { Contacto } from '../lib/contactos';
 import type { Presupuesto } from '../lib/presupuestos';
@@ -137,7 +138,10 @@ export class RepositorioConCola implements Repositorio {
   }
 
   obtenerIdEfectivoInicial(): Promise<string> {
-    return this.remoto.obtenerIdEfectivoInicial?.() ?? Promise.resolve(nuevoId());
+    // En modo local, dos pestañas pueden arrancar antes de que ninguna haya
+    // guardado Efectivo. Un ID estable hace que ambas escrituras reemplacen la
+    // misma fila; Supabase sigue aportando el ID derivado por usuario.
+    return this.remoto.obtenerIdEfectivoInicial?.() ?? Promise.resolve(ID_EFECTIVO);
   }
 
   async cargarInicial(): Promise<{ datos: Instantanea; desdeCache: boolean }> {

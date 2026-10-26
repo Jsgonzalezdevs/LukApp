@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.1', fecha: '2026-10-26', texto: 'Corregimos un caso que podía crear dos cuentas de Efectivo al abrir LukApp al mismo tiempo. Ahora ambas cargas usan la misma cuenta. 💵✅' },
+  { version: '10.7.0', fecha: '2026-10-26', texto: 'La conexión con llave puede leer avisos de Nequi en iPhone, distinguir ingresos y gastos y asociarlos a tu billetera Nequi. Primero puedes revisar una vista previa sin guardar. 🔐📲' },
+  { version: '10.6.3', fecha: '2026-10-26', texto: 'La conexión con llave admite preparar avisos de Nequi y exige el tipo y un identificador estable antes de registrarlos, para evitar confundir ingresos con gastos o duplicar reintentos. 🔐📲' },
   { version: '10.6.2', fecha: '2026-10-26', texto: 'La configuración del Atajo ahora explica para qué sirve la llave y te guía para copiarla y pegarla en el iPhone. También aclaramos qué partes del registro automático siguen en pruebas. 🔐📲' },
   { version: '10.6.1', fecha: '2026-10-25', texto: 'En la vista del registro automático, el monto y el destinatario ahora brillan al reconocerse en el ejemplo. La lectura real del SMS sigue en pruebas. ✨📩' },
   { version: '10.6.0', fecha: '2026-10-25', texto: 'Estamos preparando el reconocimiento automático de transferencias Bre-B desde el SMS, tomando solo el monto, el destinatario y la fecha. La conexión al Atajo sigue en pruebas. 📩🧪' },

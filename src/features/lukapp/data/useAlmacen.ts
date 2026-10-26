@@ -419,7 +419,9 @@ export const useAlmacen = (repositorioInyectado?: Repositorio, habilitado = true
           // eligió ocultarlo.
           const hayEfectivo = cargado.cajitas.some((c) => claseDeCuenta(c) === 'efectivo');
           if (!hayEfectivo) {
-            const id = repo.obtenerIdEfectivoInicial ? await repo.obtenerIdEfectivoInicial() : nuevoId('caj');
+            // Sin método remoto estamos en un repositorio local: el ID fijo
+            // vuelve idempotente el sembrado aunque dos montajes lean a la vez.
+            const id = repo.obtenerIdEfectivoInicial ? await repo.obtenerIdEfectivoInicial() : ID_EFECTIVO;
             const efectivoPredeterminado = cuentaEfectivo(new Date().toISOString(), id);
             cargado.cajitas = [...cargado.cajitas, efectivoPredeterminado];
             await repo.guardarCajita(efectivoPredeterminado);
