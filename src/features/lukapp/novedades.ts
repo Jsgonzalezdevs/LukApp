@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.11', fecha: '2026-10-26', texto: 'Alineamos la versión de la app con su instalador para que la conexión de Atajos descargue y actualice la misma versión de LukApp. 🔐✅' },
   { version: '10.7.10', fecha: '2026-10-26', texto: 'Conecta tu iPhone con una sola llave para registrar ingresos y gastos desde Atajos. También aclaramos cómo preparar los avisos de Nequi y qué versión de iOS necesitas. 🔐📲' },
   { version: '10.7.9', fecha: '2026-10-26', texto: 'Los avisos de Nequi usan el mismo identificador al reintentar, y LukApp actualiza sus archivos para aplicar la versión nueva en el iPhone. 🔐📲' },
   { version: '10.7.8', fecha: '2026-10-26', texto: 'El identificador de cada aviso se prepara con una fecha ISO 8601 para conservar la misma clave al reintentar el envío desde Atajos. 🔐📲' },
