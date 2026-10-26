@@ -22,6 +22,9 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.6.2', fecha: '2026-10-26', texto: 'La configuración del Atajo ahora explica para qué sirve la llave y te guía para copiarla y pegarla en el iPhone. También aclaramos qué partes del registro automático siguen en pruebas. 🔐📲' },
+  { version: '10.6.1', fecha: '2026-10-25', texto: 'En la vista del registro automático, el monto y el destinatario ahora brillan al reconocerse en el ejemplo. La lectura real del SMS sigue en pruebas. ✨📩' },
+  { version: '10.6.0', fecha: '2026-10-25', texto: 'Estamos preparando el reconocimiento automático de transferencias Bre-B desde el SMS, tomando solo el monto, el destinatario y la fecha. La conexión al Atajo sigue en pruebas. 📩🧪' },
   { version: '10.5.1', fecha: '2026-10-25', texto: 'La API ya puede validar los datos del Atajo y devolver una vista previa sin guardar el movimiento. Falta conectarla al Atajo del iPhone. 🧪📲' },
   { version: '10.5.0', fecha: '2026-10-25', texto: 'Registro automático ahora muestra una vista luminosa de cómo pasará una transferencia del SMS a LukApp. Es una demostración visual; activaremos la lectura cuando confirmemos el formato del mensaje. ✨📩' },
   { version: '10.4.2', fecha: '2026-10-25', texto: 'Corregimos la lectura de cifras largas del Asesor: ahora conserva todos los miles de tus categorías. 💰' },

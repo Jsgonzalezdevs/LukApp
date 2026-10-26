@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowRight, Check, Copy, ExternalLink, KeyRound, MessageSquareText, Plus, Smartphone, Sparkles, Trash2 } from 'lucide-react';
+import { Check, Copy, ExternalLink, Info, KeyRound, Plus, ShieldCheck, Smartphone, Trash2 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
 /** El Atajo ya armado en iCloud: trae el disparador y la petición prellenados,
-    solo falta que cada quien pegue su llave en el encabezado Authorization.
+    solo falta que cada quien pegue su llave en el encabezado x-api-key.
     Sin este link, montar el Atajo a mano son ~10 pasos que casi nadie termina. */
 const URL_ATAJO_ICLOUD = 'https://www.icloud.com/shortcuts/5331c6951e0e411c96a6bf39adaeb95c';
 
@@ -24,47 +24,47 @@ const fechaCorta = (iso: string): string =>
 /** El botón de copiar de esta pantalla: mismo icono, mismo aviso de "listo". */
 const BotonCopiar: React.FC<{ valor: string; etiqueta: string }> = ({ valor, etiqueta }) => {
   const [copiado, setCopiado] = useState(false);
+  const [fallo, setFallo] = useState(false);
 
   const copiar = async () => {
     try {
       await navigator.clipboard.writeText(valor);
+      setFallo(false);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
-      // Sin permiso de portapapeles no hay mucho más que ofrecer: el valor
-      // sigue seleccionable a mano en el campo de al lado.
+      setCopiado(false);
+      setFallo(true);
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={() => void copiar()}
-      className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)]"
-      aria-label={`Copiar ${etiqueta}`}
-    >
-      {copiado ? (
-        <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-      ) : (
-        <Copy className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-      )}
-      {copiado ? 'Copiado' : 'Copiar'}
-    </button>
+    <span className="flex shrink-0 flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={() => void copiar()}
+        className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)]"
+        aria-label={`Copiar ${etiqueta}`}
+      >
+        {copiado ? (
+          <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+        ) : (
+          <Copy className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+        )}
+        {copiado ? 'Copiado' : 'Copiar'}
+      </button>
+      {fallo ? (
+        <span role="alert" className="max-w-40 text-right text-[11px] text-[var(--fin-out)]">
+          No se pudo copiar. Mantén pulsado el texto para copiarlo.
+        </span>
+      ) : null}
+    </span>
   );
 };
 
 /**
- * Registro automático: que un pago con Apple Pay se anote solo.
- *
- * La pieza que falta para que un Atajo de iOS funcione es una credencial que
- * no dependa de que haya alguien mirando la pantalla para iniciar sesión. Esta
- * pantalla es donde esa credencial se crea, se enseña UNA vez —el servidor
- * solo guarda su hash, así que perder la llave aquí es perderla— y se revoca si
- * el teléfono se pierde.
- *
- * La creación y el listado hablan con `/api/atajos/llave` con la sesión de
- * Supabase de siempre. El propio Atajo, en cambio, nunca ve esa sesión: llama
- * a `/api/atajo/movimiento` con la llave como su única credencial.
+ * Configuración del Atajo de iOS: la llave autentica el teléfono sin exponer
+ * la sesión normal de LukApp. El servidor conserva solo su hash.
  */
 export const PanelAtajos: React.FC = () => {
   const [llaves, setLlaves] = useState<LlaveAtajo[] | null>(null);
@@ -80,7 +80,6 @@ export const PanelAtajos: React.FC = () => {
   }, []);
 
   const cargar = useCallback(() => {
-    setError(null);
     conToken(async (token) => {
       const res = await fetch(apiUrl('/api/atajos/llave'), {
         headers: { Authorization: `Bearer ${token}` },
@@ -142,57 +141,19 @@ export const PanelAtajos: React.FC = () => {
       <div>
         <h2 className="flex items-center gap-2 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
           <Smartphone className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-          Registro automático
+          Registro con Atajos
         </h2>
         <p className="mt-1 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-          El Atajo actual conecta transferencias con LukApp, pero todavía pide el monto y el destinatario. Estamos preparando la lectura del SMS en el iPhone para completar esos datos automáticamente.
+          Conecta tu iPhone una vez. Por ahora, el Atajo te pregunta el monto y a quién transferiste; la lectura automática del SMS sigue en pruebas.
         </p>
       </div>
 
-      <div className="relative isolate overflow-hidden rounded-[var(--fin-r-card)] border border-white/25 bg-gradient-to-br from-fuchsia-600 via-violet-600 to-indigo-700 p-4 text-white shadow-[0_18px_40px_rgba(109,40,217,0.24)]">
-        <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-fuchsia-300/30 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 left-8 h-32 w-32 rounded-full bg-cyan-300/20 blur-3xl" />
-        <div className="relative flex flex-col gap-4">
-          <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-bold tracking-wide text-white/95 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 motion-safe:animate-pulse" aria-hidden="true" />
-              VISTA CONCEPTUAL · SMS
-            </span>
-            <span className="rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-semibold text-white/85">En preparación</span>
-          </div>
-
-          <div>
-            <h3 className="text-[20px] font-bold leading-tight tracking-tight">Un mensaje. El movimiento listo.</h3>
-            <p className="mt-1.5 max-w-[36rem] text-[13px] leading-relaxed text-white/85">
-              Esta es la experiencia que estamos preparando: el iPhone reconoce una transferencia y LukApp extrae el monto y el destinatario.
-            </p>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-            <div className="rounded-[var(--fin-r-control)] border border-white/20 bg-white/10 p-3 backdrop-blur-md">
-              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-white/75">
-                <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />
-                Mensaje de ejemplo
-              </div>
-              <p className="mt-2 text-[14px] font-semibold leading-snug">“Transferiste $38.500 a Juan Pérez”</p>
-            </div>
-
-            <ArrowRight className="mx-auto hidden h-5 w-5 text-white/80 sm:block" aria-hidden="true" />
-
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-[var(--fin-r-control)] border border-white/25 bg-white/20 p-3 backdrop-blur-md">
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-white/75">Monto</span>
-                <strong className="mt-1 block text-[17px] font-bold">$38.500</strong>
-              </div>
-              <div className="rounded-[var(--fin-r-control)] border border-white/25 bg-white/20 p-3 backdrop-blur-md">
-                <span className="block text-[10px] font-bold uppercase tracking-wide text-white/75">Destinatario</span>
-                <strong className="mt-1 block truncate text-[15px] font-bold">Juan Pérez</strong>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-[11px] leading-relaxed text-white/75">
-            Ejemplo ficticio: esta tarjeta no lee SMS ni registra movimientos. Primero confirmaremos el formato real del mensaje.
+      <div className="flex gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--fin-accent)]" aria-hidden="true" />
+        <div>
+          <p className="text-[14px] font-semibold text-[var(--fin-ink)]">¿Por qué necesita una llave?</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+            Atajos funciona fuera de tu sesión de LukApp, por eso usa una llave propia. Solo autoriza al Atajo a enviar movimientos a tu cuenta; no es tu contraseña ni la clave de tu banco. LukApp guarda una huella protegida y puedes revocar la llave desde aquí.
           </p>
         </div>
       </div>
@@ -204,10 +165,16 @@ export const PanelAtajos: React.FC = () => {
       ) : null}
 
       {nueva ? (
-        <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-4">
-          <p className="text-[13px] font-semibold text-[var(--fin-ink)]">
-            Tu llave nueva — cópiala ahora, no se vuelve a enseñar
-          </p>
+        <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)] bg-[var(--fin-soft)] p-4">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--fin-accent)]" aria-hidden="true" />
+            <div>
+              <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Copia esta llave para el Atajo</p>
+              <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+                Solo se muestra ahora. Toca <strong>Copiar</strong> y pégala en <strong>x-api-key</strong>. No agregues “Bearer” ni la compartas.
+              </p>
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[13px] text-[var(--fin-ink)]">
               {nueva.llave}
@@ -219,23 +186,41 @@ export const PanelAtajos: React.FC = () => {
             onClick={() => setNueva(null)}
             className="self-start text-[13px] font-semibold text-[var(--fin-ink-soft)] underline underline-offset-2"
           >
-            Ya la guardé
+            Ya la pegué en Atajos
           </button>
         </div>
       ) : null}
 
       <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         {llaves === null ? (
-          <p className="text-[13px] text-[var(--fin-ink-faint)]">Cargando…</p>
+          <div className="flex flex-col items-center gap-2 py-4 text-center">
+            <p className="text-[13px] text-[var(--fin-ink-faint)]">
+              {error ? 'No pudimos cargar tus llaves.' : 'Cargando tus llaves…'}
+            </p>
+            {error ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  cargar();
+                }}
+                className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
+              >
+                Reintentar
+              </button>
+            ) : null}
+          </div>
         ) : vivas.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-4 text-center">
             <KeyRound className="h-8 w-8 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
-            <p className="text-[15px] font-semibold text-[var(--fin-ink)]">Todavía no tienes ninguna llave.</p>
+            <p className="text-[15px] font-semibold text-[var(--fin-ink)]">Paso 1 · Crea una llave de conexión</p>
             <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-              Crea una arriba para conectar el Atajo de iOS.
+              La llave autoriza al Atajo a enviar movimientos a tu cuenta. LukApp guarda una huella segura, no la llave original.
             </p>
           </div>
         ) : (
+          <>
+            <p className="mb-3 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Llaves activas</p>
           <ul className="flex flex-col gap-3">
             {vivas.map((l) => (
               <li key={l.id} className="flex items-center gap-3">
@@ -265,6 +250,7 @@ export const PanelAtajos: React.FC = () => {
               </li>
             ))}
           </ul>
+          </>
         )}
 
         <button
@@ -274,14 +260,14 @@ export const PanelAtajos: React.FC = () => {
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
         >
           <Plus className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
-          {creando ? 'Creando…' : 'Crear llave nueva'}
+          {creando ? 'Creando…' : vivas.length ? 'Crear otra llave' : 'Crear llave para mi iPhone'}
         </button>
       </div>
 
       <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        <p className="text-[13px] font-semibold text-[var(--fin-ink)]">Instala el Atajo</p>
+        <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Paso 2 · Instala el Atajo en tu iPhone</p>
         <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Ya viene armado para enviar los datos a LukApp, pero hoy te pregunta el monto y el destinatario. La lectura automática desde SMS todavía no está activa.
+          Ya viene armado para enviar los datos a LukApp. La lectura del SMS todavía no está activa, así que por ahora completarás dos preguntas al ejecutar el Atajo.
         </p>
         <a
           href={URL_ATAJO_ICLOUD}
@@ -290,55 +276,46 @@ export const PanelAtajos: React.FC = () => {
           className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
         >
           <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
-          Añadir atajo
+          Añadir Atajo de LukApp
         </a>
         <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          <li>1. Toca &quot;Añadir atajo&quot; arriba — se abre la app Atajos con todo ya listo.</li>
+          <li>Toca el botón y, cuando se abra Atajos, elige <strong>Agregar atajo</strong>.</li>
           <li>
-            2. Toca <strong>&quot;Agregar atajo&quot;</strong> para instalarlo, luego ábrelo para
-            editarlo.
+            En Atajos, abre <strong>Mis atajos</strong> y toca los tres puntos del Atajo de LukApp para editarlo.
           </li>
           <li>
-            3. Busca la acción <strong>&quot;Obtener contenido de URL&quot;</strong> → Encabezados →
-            reemplaza <code>PEGA_TU_LLAVE_AQUI</code> por tu llave de arriba, tal cual (no hace falta
-            escribir &quot;Bearer&quot;).
+            Busca <strong>Obtener contenido de URL</strong> → <strong>Encabezados</strong> →
+            <strong>x-api-key</strong>. Pega la llave que copiaste, tal cual; no agregues “Bearer”.
           </li>
-          <li>4. Guarda. En cada ejecución, completa el monto y el destinatario que te pide el Atajo; LukApp recibirá esos datos. La lectura automática del SMS se activará después de validar el formato real.</li>
+          <li>Guarda. Al ejecutar el Atajo, escribe el monto y el nombre de la persona o comercio.</li>
         </ol>
 
         <details className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[13px] text-[var(--fin-ink-faint)]">
           <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
-            Probar la conexión sin guardar un movimiento
+            Probar la conexión sin registrar un movimiento
           </summary>
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
             <li>
-              1. En <strong>Obtener contenido de URL → Cuerpo de la solicitud → JSON</strong>, agrega
+              En <strong>Obtener contenido de URL → Cuerpo de la solicitud → JSON</strong>, agrega
               <code>solo_prueba</code> con tipo <strong>Booleano</strong> y valor <strong>true</strong>.
             </li>
             <li>
-              2. Después de la petición agrega <strong>Vista rápida</strong> para revisar el monto,
+              Después de la petición agrega <strong>Vista rápida</strong> para revisar el monto,
               destinatario y fecha que LukApp entendió.
             </li>
             <li>
-              3. Ejecuta el Atajo con datos de prueba. La respuesta valida la llave y los campos, pero
-              no crea ni modifica movimientos. Cuando conectemos la lectura del SMS, repetiremos esta
-              prueba antes de activar el registro real.
+              Ejecuta el Atajo con datos ficticios. LukApp devuelve una vista previa y valida la llave, pero no crea ni modifica movimientos.
             </li>
           </ol>
         </details>
 
         <details className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
           <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
-            Prefiero armarlo yo mismo
+            Configuración manual (avanzada)
           </summary>
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
             <li>
-              1. En Atajos → Automatización, crea una automatización personal con el evento{' '}
-              <strong>&quot;Cuando se use Cualquier tarjeta&quot;</strong>.
-            </li>
-            <li>
-              2. Añade <strong>&quot;Obtener contenido de URL&quot;</strong>, método{' '}
-              <strong>POST</strong>, con esta dirección:
+              En <strong>Obtener contenido de URL</strong>, usa método <strong>POST</strong> y esta dirección:
             </li>
           </ol>
           <div className="mt-2 flex items-center gap-2">
@@ -347,14 +324,12 @@ export const PanelAtajos: React.FC = () => {
             </code>
             <BotonCopiar valor={urlEndpoint} etiqueta="la dirección" />
           </div>
-          <ol start={3} className="mt-2 flex flex-col gap-2 leading-relaxed">
+          <ol start={2} className="mt-2 flex flex-col gap-2 leading-relaxed">
             <li>
-              3. En Encabezados, añade <code>Authorization</code> con tu llave.
+              En Encabezados, añade <code>x-api-key</code> y pega tu llave, sin “Bearer”.
             </li>
             <li>
-              4. En Cuerpo de la petición (JSON), agrega <code>monto</code> con la variable{' '}
-              <strong>Cantidad</strong> de la transacción, y <code>comercio</code> con{' '}
-              <strong>Comercio</strong>.
+              En el cuerpo JSON, envía <code>monto</code> y <code>comercio</code> con los datos de la transferencia.
             </li>
           </ol>
         </details>

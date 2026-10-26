@@ -9,6 +9,7 @@ import {
   montoEnPesos,
   movimientoDesdeAtajo,
   pistaDeLlave,
+  transferenciaDesdeSmsBancolombia,
   vistaPreviaDesdeAtajo,
 } from './atajos';
 
@@ -390,5 +391,29 @@ describe('vistaPreviaDesdeAtajo', () => {
     expect(vistaPreviaDesdeAtajo({ monto: '0', comercio: '' })).toEqual({
       error: 'Falta el comercio',
     });
+  });
+});
+
+describe('transferenciaDesdeSmsBancolombia', () => {
+  it('extrae solo monto, destinatario y fecha del SMS de una transferencia Bre-B', () => {
+    const mensaje =
+      'Bancolombia: USUARIO, transferiste $18,000.00 a la llave 1234567890 desde tu cuenta *6674 a Cliente De Prueba el 09/10/26 a las 21:12. Con Bre-b es de una y gratis. Dudas al 018000000000';
+
+    expect(transferenciaDesdeSmsBancolombia(mensaje)).toEqual({
+      monto: 18000,
+      comercio: 'Cliente De Prueba',
+      fecha: '2026-10-09',
+    });
+  });
+
+  it('ignora compras con tarjeta y fechas imposibles', () => {
+    expect(
+      transferenciaDesdeSmsBancolombia('Bancolombia: Compraste COP4.490,00 en TIENDA DE PRUEBA.'),
+    ).toBeNull();
+    expect(
+      transferenciaDesdeSmsBancolombia(
+        'Bancolombia: Usuario, transferiste $18,000.00 a la llave 1234567890 desde tu cuenta *6674 a Cliente De Prueba el 31/02/26 a las 21:12.',
+      ),
+    ).toBeNull();
   });
 });

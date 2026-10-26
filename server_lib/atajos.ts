@@ -227,6 +227,47 @@ export interface VistaPreviaAtajo {
 
 export type ResultadoVistaPreviaAtajo = { vista: VistaPreviaAtajo } | { error: string };
 
+export interface TransferenciaSmsBancolombia {
+  monto: number;
+  comercio: string;
+  fecha: string;
+}
+
+/**
+ * Extrae los tres datos necesarios de una transferencia Bre-B saliente.
+ *
+ * El mensaje completo debe procesarse en el iPhone. Esta función documenta y
+ * prueba localmente el formato; el SMS incluye otros datos privados que no se
+ * necesitan para registrar el movimiento y no deben viajar a la API.
+ */
+export const transferenciaDesdeSmsBancolombia = (
+  mensaje: string,
+): TransferenciaSmsBancolombia | null => {
+  const coincidencia = mensaje.match(
+    /transferiste\s+\$?([\d.,]+)\s+a\s+la llave\s+\d+\s+desde tu cuenta\s+\*?\d+\s+a\s+(.+?)\s+el\s+(\d{2})\/(\d{2})\/(\d{2})\s+a\s+las\s+\d{1,2}:\d{2}/i,
+  );
+  if (!coincidencia) return null;
+
+  const monto = montoEnPesos(coincidencia[1]);
+  const comercio = limpiarTexto(coincidencia[2], 120);
+  const dia = Number(coincidencia[3]);
+  const mes = Number(coincidencia[4]);
+  const anio = 2000 + Number(coincidencia[5]);
+  const fecha = `${anio.toString().padStart(4, '0')}-${mes.toString().padStart(2, '0')}-${dia.toString().padStart(2, '0')}`;
+  const validacionFecha = new Date(`${fecha}T12:00:00Z`);
+
+  if (
+    monto === null ||
+    !comercio ||
+    Number.isNaN(validacionFecha.getTime()) ||
+    validacionFecha.toISOString().slice(0, 10) !== fecha
+  ) {
+    return null;
+  }
+
+  return { monto, comercio, fecha };
+};
+
 /**
  * De lo que mandó el Atajo a la fila que se guarda.
  *
