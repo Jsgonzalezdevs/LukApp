@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.9', fecha: '2026-10-26', texto: 'Los avisos de Nequi usan el mismo identificador al reintentar, y LukApp actualiza sus archivos para aplicar la versión nueva en el iPhone. 🔐📲' },
   { version: '10.7.8', fecha: '2026-10-26', texto: 'El identificador de cada aviso se prepara con una fecha ISO 8601 para conservar la misma clave al reintentar el envío desde Atajos. 🔐📲' },
   { version: '10.7.7', fecha: '2026-10-26', texto: 'Atajos puede enviar una clave estable por aviso y LukApp la convierte en un identificador para evitar duplicar el mismo reintento. 🔐📲' },
   { version: '10.7.6', fecha: '2026-10-26', texto: 'Antes de registrar un aviso de Nequi, LukApp verifica el UUID del envío para que un reintento no guarde el mismo movimiento dos veces. 🔐📲' },
