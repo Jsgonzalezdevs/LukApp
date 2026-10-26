@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.5.1', fecha: '2026-10-25', texto: 'La API ya puede validar los datos del Atajo y devolver una vista previa sin guardar el movimiento. Falta conectarla al Atajo del iPhone. 🧪📲' },
+  { version: '10.5.0', fecha: '2026-10-25', texto: 'Registro automático ahora muestra una vista luminosa de cómo pasará una transferencia del SMS a LukApp. Es una demostración visual; activaremos la lectura cuando confirmemos el formato del mensaje. ✨📩' },
   { version: '10.4.2', fecha: '2026-10-25', texto: 'Corregimos la lectura de cifras largas del Asesor: ahora conserva todos los miles de tus categorías. 💰' },
   { version: '10.4.1', fecha: '2026-10-25', texto: 'Tu racha volvió a Inicio: ahora la ves junto a los accesos rápidos y sabrás de inmediato si sigue activa. 🔥' },
   { version: '10.4.0', fecha: '2026-10-25', texto: 'El resumen del Asesor ahora muestra tus cifras completas y comparte pequeñas ideas para acercarte a tus metas, a tu ritmo. ✨' },

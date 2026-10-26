@@ -9,6 +9,7 @@ import {
   montoEnPesos,
   movimientoDesdeAtajo,
   pistaDeLlave,
+  vistaPreviaDesdeAtajo,
 } from './atajos';
 
 describe('generarLlave', () => {
@@ -366,5 +367,28 @@ describe('movimientoDesdeAtajo', () => {
     expect(r.fila.description).toBe('Farmatodo Calle 100');
     expect(r.fila.amount_cop).toBe(45000);
     expect(r.fila.occurred_on).toBe('2026-08-25');
+  });
+});
+
+describe('vistaPreviaDesdeAtajo', () => {
+  it('normaliza los campos para mostrar la vista previa sin crear una transacción', () => {
+    const r = vistaPreviaDesdeAtajo(
+      { monto: '$38.500', comercio: 'Juan Pérez', fecha: '2026-10-25' },
+      new Date('2026-10-25T15:00:00Z'),
+    );
+    if (!('vista' in r)) throw new Error('esperaba vista previa');
+    expect(r.vista).toEqual({
+      monto: 38500,
+      comercio: 'Juan Pérez',
+      fecha: '2026-10-25',
+      tipo: 'gasto',
+      categoria: expect.any(String),
+    });
+  });
+
+  it('rechaza datos incompletos sin devolver una vista', () => {
+    expect(vistaPreviaDesdeAtajo({ monto: '0', comercio: '' })).toEqual({
+      error: 'Falta el comercio',
+    });
   });
 });

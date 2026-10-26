@@ -20,6 +20,7 @@ import {
   llaveDeCabecera,
   movimientoDesdeAtajo,
   pistaDeLlave,
+  vistaPreviaDesdeAtajo,
 } from './server_lib/atajos.ts';
 import {
   CABECERAS_API_SEGURAS,
@@ -2925,6 +2926,12 @@ app.post('/api/atajo/movimiento', async (req, res) => {
     // llave, la que sí probó, existe de verdad.
     if (errorLlave || !fila || fila.revocada_en) {
       return res.status(401).json({ error: 'Llave inválida o revocada' });
+    }
+
+    if (req.body?.solo_prueba === true) {
+      const previa = vistaPreviaDesdeAtajo(req.body);
+      if ('error' in previa) return res.status(400).json({ error: previa.error });
+      return res.status(200).json({ success: true, solo_prueba: true, movimiento: previa.vista });
     }
 
     const resultado = movimientoDesdeAtajo(req.body ?? {}, fila.user_id);

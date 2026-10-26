@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, ExternalLink, KeyRound, Plus, Smartphone, Trash2 } from 'lucide-react';
+import { ArrowRight, Check, Copy, ExternalLink, KeyRound, MessageSquareText, Plus, Smartphone, Sparkles, Trash2 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
@@ -145,9 +145,56 @@ export const PanelAtajos: React.FC = () => {
           Registro automático
         </h2>
         <p className="mt-1 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-          Un Atajo de iOS puede anotar cada pago con Apple Pay sin que abras la app. Crea una llave
-          aquí y pégala en el Atajo.
+          El Atajo actual conecta transferencias con LukApp, pero todavía pide el monto y el destinatario. Estamos preparando la lectura del SMS en el iPhone para completar esos datos automáticamente.
         </p>
+      </div>
+
+      <div className="relative isolate overflow-hidden rounded-[var(--fin-r-card)] border border-white/25 bg-gradient-to-br from-fuchsia-600 via-violet-600 to-indigo-700 p-4 text-white shadow-[0_18px_40px_rgba(109,40,217,0.24)]">
+        <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-fuchsia-300/30 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 left-8 h-32 w-32 rounded-full bg-cyan-300/20 blur-3xl" />
+        <div className="relative flex flex-col gap-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[11px] font-bold tracking-wide text-white/95 backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5 motion-safe:animate-pulse" aria-hidden="true" />
+              VISTA CONCEPTUAL · SMS
+            </span>
+            <span className="rounded-full bg-black/15 px-2.5 py-1 text-[11px] font-semibold text-white/85">En preparación</span>
+          </div>
+
+          <div>
+            <h3 className="text-[20px] font-bold leading-tight tracking-tight">Un mensaje. El movimiento listo.</h3>
+            <p className="mt-1.5 max-w-[36rem] text-[13px] leading-relaxed text-white/85">
+              Esta es la experiencia que estamos preparando: el iPhone reconoce una transferencia y LukApp extrae el monto y el destinatario.
+            </p>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+            <div className="rounded-[var(--fin-r-control)] border border-white/20 bg-white/10 p-3 backdrop-blur-md">
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-white/75">
+                <MessageSquareText className="h-3.5 w-3.5" aria-hidden="true" />
+                Mensaje de ejemplo
+              </div>
+              <p className="mt-2 text-[14px] font-semibold leading-snug">“Transferiste $38.500 a Juan Pérez”</p>
+            </div>
+
+            <ArrowRight className="mx-auto hidden h-5 w-5 text-white/80 sm:block" aria-hidden="true" />
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-[var(--fin-r-control)] border border-white/25 bg-white/20 p-3 backdrop-blur-md">
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-white/75">Monto</span>
+                <strong className="mt-1 block text-[17px] font-bold">$38.500</strong>
+              </div>
+              <div className="rounded-[var(--fin-r-control)] border border-white/25 bg-white/20 p-3 backdrop-blur-md">
+                <span className="block text-[10px] font-bold uppercase tracking-wide text-white/75">Destinatario</span>
+                <strong className="mt-1 block truncate text-[15px] font-bold">Juan Pérez</strong>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-[11px] leading-relaxed text-white/75">
+            Ejemplo ficticio: esta tarjeta no lee SMS ni registra movimientos. Primero confirmaremos el formato real del mensaje.
+          </p>
+        </div>
       </div>
 
       {error ? (
@@ -234,8 +281,7 @@ export const PanelAtajos: React.FC = () => {
       <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <p className="text-[13px] font-semibold text-[var(--fin-ink)]">Instala el Atajo</p>
         <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Ya viene armado — el disparador y la petición al servidor ya están puestos. Solo te falta
-          pegar tu llave.
+          Ya viene armado para enviar los datos a LukApp, pero hoy te pregunta el monto y el destinatario. La lectura automática desde SMS todavía no está activa.
         </p>
         <a
           href={URL_ATAJO_ICLOUD}
@@ -257,8 +303,29 @@ export const PanelAtajos: React.FC = () => {
             reemplaza <code>PEGA_TU_LLAVE_AQUI</code> por tu llave de arriba, tal cual (no hace falta
             escribir &quot;Bearer&quot;).
           </li>
-          <li>4. Guarda. Cada pago con tarjeta va a anotarse solo, ya categorizado y con la fecha correcta.</li>
+          <li>4. Guarda. En cada ejecución, completa el monto y el destinatario que te pide el Atajo; LukApp recibirá esos datos. La lectura automática del SMS se activará después de validar el formato real.</li>
         </ol>
+
+        <details className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[13px] text-[var(--fin-ink-faint)]">
+          <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
+            Probar la conexión sin guardar un movimiento
+          </summary>
+          <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
+            <li>
+              1. En <strong>Obtener contenido de URL → Cuerpo de la solicitud → JSON</strong>, agrega
+              <code>solo_prueba</code> con tipo <strong>Booleano</strong> y valor <strong>true</strong>.
+            </li>
+            <li>
+              2. Después de la petición agrega <strong>Vista rápida</strong> para revisar el monto,
+              destinatario y fecha que LukApp entendió.
+            </li>
+            <li>
+              3. Ejecuta el Atajo con datos de prueba. La respuesta valida la llave y los campos, pero
+              no crea ni modifica movimientos. Cuando conectemos la lectura del SMS, repetiremos esta
+              prueba antes de activar el registro real.
+            </li>
+          </ol>
+        </details>
 
         <details className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
           <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">

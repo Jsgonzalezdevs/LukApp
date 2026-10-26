@@ -217,6 +217,16 @@ export interface FilaMovimiento {
 
 export type ResultadoAtajo = { fila: FilaMovimiento } | { error: string };
 
+export interface VistaPreviaAtajo {
+  monto: number;
+  comercio: string;
+  fecha: string;
+  tipo: 'gasto' | 'ingreso';
+  categoria: string;
+}
+
+export type ResultadoVistaPreviaAtajo = { vista: VistaPreviaAtajo } | { error: string };
+
 /**
  * De lo que mandó el Atajo a la fila que se guarda.
  *
@@ -309,6 +319,25 @@ export const movimientoDesdeAtajo = (
       occurred_on: occurredOn,
       raw_transcript: comercio,
       cuenta_id: cuentaId,
+    },
+  };
+};
+
+/** Valida los campos del Atajo sin crear una fila ni conservar el mensaje original. */
+export const vistaPreviaDesdeAtajo = (
+  cuerpo: CuerpoAtajo,
+  ahora: Date = new Date(),
+): ResultadoVistaPreviaAtajo => {
+  const resultado = movimientoDesdeAtajo(cuerpo, 'vista-previa', ahora);
+  if ('error' in resultado) return resultado;
+
+  return {
+    vista: {
+      monto: resultado.fila.amount_cop,
+      comercio: resultado.fila.description,
+      fecha: resultado.fila.occurred_on,
+      tipo: resultado.fila.kind,
+      categoria: resultado.fila.category,
     },
   };
 };
