@@ -17,6 +17,7 @@ import { CATEGORIES, type Category, type TxKind } from './src/features/lukapp/ty
 import {
   generarLlave,
   hashLlave,
+  idDesdeClaveIdempotencia,
   llaveDeCabecera,
   movimientoDesdeAtajo,
   normalizarNotificacionNequi,
@@ -2931,9 +2932,32 @@ app.post('/api/atajo/movimiento', async (req, res) => {
 
     let cuerpo = req.body ?? {};
     if (cuerpo.origen === 'nequi') {
-      const normalizacion = normalizarNotificacionNequi(cuerpo);
+      const idCliente = cuerpo.id ?? cuerpo.uuid ?? cuerpo.transaction_id;
+      const idEstable = typeof idCliente === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idCliente);
+      const claveIdempotencia = cuerpo.idempotency_key;
+      if (claveIdempotencia !== undefined && (
+        typeof claveIdempotencia !== 'string'
+        || !claveIdempotencia.trim()
+        || claveIdempotencia.length > 256
+      )) {
+        return res.status(400).json({ error: 'La clave de idempotencia debe ser texto de hasta 256 caracteres' });
+      }
+      const idConClave = !idCliente && typeof claveIdempotencia === 'string'
+        && typeof cuerpo.notificacion === 'string'
+        ? idDesdeClaveIdempotencia(fila.user_id, claveIdempotencia, cuerpo.notificacion)
+        : null;
+      const idempotente = idEstable || idConClave !== null;
+      if (cuerpo.solo_prueba !== true && !idempotente) {
+        return res.status(400).json({
+          error: 'Antes de guardar, el Atajo debe enviar «id» o una «idempotency_key» estable y reutilizarla si reintenta el mismo aviso',
+        });
+      }
+
+      const normalizacion = normalizarNotificacionNequi(
+        idConClave ? { ...cuerpo, id: idConClave } : cuerpo,
+      );
       if ('error' in normalizacion) return res.status(400).json({ error: normalizacion.error });
-      cuerpo = { ...normalizacion.cuerpo, solo_prueba: cuerpo.solo_prueba };
+      cuerpo = { ...normalizacion.cuerpo, solo_prueba: cuerpo.solo_prueba, id_estable: idempotente };
 
       const { data: cuentas, error: errorCuentas } = await cliente
         .from('cajitas')
@@ -2968,6 +2992,7 @@ app.post('/api/atajo/movimiento', async (req, res) => {
       return res.status(200).json({
         success: true,
         solo_prueba: true,
+        idempotencia: cuerpo.id_estable === true,
         movimiento: { ...previa.vista, ...(typeof cuerpo.cuenta === 'string' ? { cuenta: cuerpo.cuenta } : {}) },
       });
     }

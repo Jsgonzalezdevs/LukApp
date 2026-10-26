@@ -37,6 +37,19 @@ export const generarLlave = (): string => PREFIJO_LLAVE + randomBytes(32).toStri
 export const hashLlave = (llave: string): string =>
   createHash('sha256').update(llave.trim(), 'utf8').digest('hex');
 
+/** Deriva el UUID del movimiento desde una clave estable que el Atajo conserva. */
+export const idDesdeClaveIdempotencia = (usuario: string, clave: string, evento: string): string => {
+  const huellaEvento = createHash('sha256').update(evento.slice(0, 2000), 'utf8').digest('hex');
+  const bytes = createHash('sha256')
+    .update(`lukapp:atajo-nequi:${usuario}:${clave.trim()}:${huellaEvento}`, 'utf8')
+    .digest()
+    .subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x80;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+};
+
 /** Los últimos cuatro caracteres: lo justo para reconocerla en una lista. */
 export const pistaDeLlave = (llave: string): string => llave.trim().slice(-4);
 
@@ -201,6 +214,7 @@ export interface CuerpoAtajo {
   account_id?: unknown;
   card?: unknown;
   id?: unknown;
+  idempotency_key?: unknown;
   uuid?: unknown;
   transaction_id?: unknown;
   [key: string]: unknown;
@@ -260,10 +274,14 @@ export const normalizarNotificacionNequi = (
   const texto = cuerpo.notificacion.replace(/\s+/g, ' ').trim();
   if (!texto) return { error: 'La notificación de Nequi está vacía' };
 
-  const id = cuerpo.id ?? cuerpo.uuid ?? cuerpo.transaction_id;
-  if (typeof id !== 'string' || !ES_UUID.test(id)) {
-    return { error: 'La notificación debe incluir un UUID estable para evitar duplicados al reintentar' };
+  const idRecibido = cuerpo.id ?? cuerpo.uuid ?? cuerpo.transaction_id;
+  if (idRecibido !== undefined && (typeof idRecibido !== 'string' || !ES_UUID.test(idRecibido))) {
+    return { error: 'El identificador de la notificación debe ser un UUID válido' };
   }
+  // La vista previa admite que falte un UUID. El endpoint exige uno para guardar
+  // movimientos reales, de modo que un reintento de la misma ejecución conserve
+  // el identificador y no cree una segunda fila.
+  const id = typeof idRecibido === 'string' ? idRecibido.toLowerCase() : randomUUID();
 
   if (/transfiya/i.test(texto) && /\b(te envi[oó]|pendiente|acepta|rechaza|por recibir)\b/i.test(texto)) {
     return { error: 'La transferencia Transfiya sigue pendiente; espera la confirmación de que la plata ya llegó' };

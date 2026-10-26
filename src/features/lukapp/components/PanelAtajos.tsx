@@ -151,7 +151,7 @@ export const PanelAtajos: React.FC = () => {
         <div>
           <p className="text-[14px] font-semibold text-[var(--fin-ink)]">¿Por qué necesita una llave?</p>
           <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            Atajos funciona fuera de tu sesión de LukApp, por eso usa una llave propia. Solo autoriza al Atajo a enviar movimientos a tu cuenta; no es tu contraseña ni la clave de tu banco. LukApp guarda una huella protegida y puedes revocar la llave desde aquí.
+            Atajos funciona fuera de tu sesión de LukApp, por eso usa una llave propia. Puede registrar movimientos en tu cuenta; no es tu contraseña ni la clave de Nequi. LukApp guarda una huella protegida y puedes revocarla desde aquí. No compartas el Atajo si contiene esta llave.
           </p>
         </div>
       </div>
@@ -293,18 +293,18 @@ export const PanelAtajos: React.FC = () => {
             Preparar avisos de Nequi en iPhone
           </summary>
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
-            <li>En Atajos → Automatización, crea una automatización de <strong>Notificación</strong>, elige <strong>Nequi</strong> y actívala para ejecutarse al llegar el aviso. iOS 26 permite filtrar avisos y usar su contenido como entrada de la automatización.</li>
-            <li>Envía primero esa entrada a <strong>Vista rápida</strong>. Confirma que contiene la frase y el monto del aviso antes de activar el registro.</li>
-            <li>Antes de la petición, genera un UUID para identificar este envío. En <strong>Obtener contenido de URL</strong>, configura POST, conserva la llave en <code>x-api-key</code> y usa este cuerpo JSON insertando la variable de entrada y el UUID generado:</li>
+            <li>En un iPhone con iOS 26 o posterior, abre Atajos → Automatización y crea un disparador de tipo <strong>Notificación</strong> para la app <strong>Nequi</strong>. Filtra el campo <strong>Mensaje</strong> por <code>COP</code> para capturar avisos de ingresos y pagos que incluyen el monto en pesos. Agrega <strong>Vista rápida</strong> solo para revisar una notificación de prueba y quítala al terminar de validar.</li>
+            <li>Después de confirmar que la entrada trae la frase y el monto, agrega <strong>Obtener contenido de URL</strong>: elige POST, usa la dirección de LukApp que aparece en «Configuración manual» y añade el encabezado <code>x-api-key</code> con la llave creada arriba.</li>
+            <li>Antes de la petición, agrega <strong>Fecha actual</strong>, conviértela a texto con <strong>Formatear fecha</strong> en formato <strong>ISO 8601</strong> y usa esa salida como <code>idempotency_key</code>. En el cuerpo JSON inserta también la variable mágica del aviso en <code>notificacion</code>. LukApp combina fecha y aviso para formar el ID; si reintentas la misma ejecución, reutiliza esa salida. La vista previa funciona sin esta clave; el registro real la exige.</li>
             <pre className="overflow-x-auto rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-3 text-[12px] leading-relaxed text-[var(--fin-ink)]">{`{
   "origen": "nequi",
   "notificacion": "[Entrada del atajo]",
-  "id": "[UUID generado]",
+  "idempotency_key": "[Salida de Fecha actual]",
   "solo_prueba": true
 }`}</pre>
-            <li>No envíes la llave en el cuerpo. Cuando la vista previa sea correcta, cambia <code>solo_prueba</code> a <code>false</code> para guardar movimientos reales.</li>
+            <li>Mantén <code>solo_prueba</code> como Booleano <code>true</code> hasta revisar monto, tipo, cuenta e idempotencia en la vista previa. Luego cambia a Booleano <code>false</code> para guardar avisos reconocidos; el servidor rechazará el registro real si falta el UUID o la clave estable.</li>
             <li>LukApp reconoce confirmaciones como «Acabas de recibir plata de…» y «Pagaste… en…». Rechaza textos ambiguos y avisos de Transfiya pendientes. La fecha usa el día de Bogotá en que se procesa el aviso, salvo que envíes <code>fecha</code>.</li>
-            <li>La vista previa también comprueba que tengas exactamente una billetera activa cuyo nombre incluya <strong>Nequi</strong>. Revisa monto, tipo y cuenta antes de quitar <code>solo_prueba</code> para guardar movimientos reales.</li>
+            <li>No incluyas la llave en el cuerpo ni en la URL: viaja solo en el encabezado. La vista previa requiere una cuenta activa tipo billetera cuyo nombre incluya <strong>Nequi</strong>; si tienes varias, configura cuál usar antes de guardar.</li>
           </ol>
         </details>
 

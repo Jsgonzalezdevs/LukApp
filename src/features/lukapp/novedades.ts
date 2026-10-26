@@ -22,6 +22,13 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.8', fecha: '2026-10-26', texto: 'El identificador de cada aviso se prepara con una fecha ISO 8601 para conservar la misma clave al reintentar el envío desde Atajos. 🔐📲' },
+  { version: '10.7.7', fecha: '2026-10-26', texto: 'Atajos puede enviar una clave estable por aviso y LukApp la convierte en un identificador para evitar duplicar el mismo reintento. 🔐📲' },
+  { version: '10.7.6', fecha: '2026-10-26', texto: 'Antes de registrar un aviso de Nequi, LukApp verifica el UUID del envío para que un reintento no guarde el mismo movimiento dos veces. 🔐📲' },
+  { version: '10.7.5', fecha: '2026-10-26', texto: 'LukApp genera el identificador de cada aviso de Nequi para simplificar la automatización desde Atajos. 🔐📲' },
+  { version: '10.7.4', fecha: '2026-10-26', texto: 'Las instrucciones de Nequi ahora usan un filtro común para avisos de pagos e ingresos con monto en pesos. 🔐📲' },
+  { version: '10.7.3', fecha: '2026-10-26', texto: 'La llave del Atajo puede registrar movimientos en LukApp: ahora explicamos cómo protegerla y revocarla si dejas de usarla. 🔐' },
+  { version: '10.7.2', fecha: '2026-10-26', texto: 'El panel ahora guía paso a paso cómo pasar una notificación de Nequi a LukApp con tu llave, revisar una vista previa y habilitar el registro automático. 🔐📲' },
   { version: '10.7.1', fecha: '2026-10-26', texto: 'Corregimos un caso que podía crear dos cuentas de Efectivo al abrir LukApp al mismo tiempo. Ahora ambas cargas usan la misma cuenta. 💵✅' },
   { version: '10.7.0', fecha: '2026-10-26', texto: 'La conexión con llave puede leer avisos de Nequi en iPhone, distinguir ingresos y gastos y asociarlos a tu billetera Nequi. Primero puedes revisar una vista previa sin guardar. 🔐📲' },
   { version: '10.6.3', fecha: '2026-10-26', texto: 'La conexión con llave admite preparar avisos de Nequi y exige el tipo y un identificador estable antes de registrarlos, para evitar confundir ingresos con gastos o duplicar reintentos. 🔐📲' },
