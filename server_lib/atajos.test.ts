@@ -8,6 +8,7 @@ import {
   llaveDeCabecera,
   montoEnPesos,
   movimientoDesdeAtajo,
+  normalizarNotificacionNequi,
   pistaDeLlave,
   transferenciaDesdeSmsBancolombia,
   vistaPreviaDesdeAtajo,
@@ -390,6 +391,53 @@ describe('vistaPreviaDesdeAtajo', () => {
   it('rechaza datos incompletos sin devolver una vista', () => {
     expect(vistaPreviaDesdeAtajo({ monto: '0', comercio: '' })).toEqual({
       error: 'Falta el comercio',
+    });
+  });
+});
+
+describe('normalizarNotificacionNequi', () => {
+  const ahora = new Date('2026-10-25T15:00:00Z');
+
+  it('identifica un ingreso y limpia el conector previo al monto', () => {
+    const resultado = normalizarNotificacionNequi(
+      { origen: 'nequi', notificacion: 'Acabas de recibir plata de María por $25.000 COP' },
+      ahora,
+    );
+
+    expect(resultado).toMatchObject({
+      cuerpo: {
+        origen: 'nequi',
+        monto: 25000,
+        comercio: 'María',
+        fecha: '2026-10-25',
+        tipo: 'ingreso',
+      },
+    });
+  });
+
+  it('identifica un gasto confirmado y conserva el comercio', () => {
+    const resultado = normalizarNotificacionNequi(
+      { origen: 'nequi', notificacion: 'Pagaste $18.500 COP en Café Central.' },
+      ahora,
+    );
+
+    expect(resultado).toMatchObject({
+      cuerpo: {
+        monto: 18500,
+        comercio: 'Café Central',
+        tipo: 'gasto',
+      },
+    });
+  });
+
+  it('rechaza transferencias Transfiya pendientes', () => {
+    expect(
+      normalizarNotificacionNequi(
+        { origen: 'nequi', notificacion: 'Te enviaron plata por Transfiya. Acepta para recibir $40.000' },
+        ahora,
+      ),
+    ).toEqual({
+      error: 'La transferencia Transfiya sigue pendiente; espera la confirmación de que la plata ya llegó',
     });
   });
 });
