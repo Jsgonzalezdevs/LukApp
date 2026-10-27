@@ -308,7 +308,7 @@ export const normalizarNotificacionNequi = (
       ?? antesDelMonto.match(/\b(?:enviaste plata a|enviaste dinero a|transferiste plata a)\s+(.+?)\s*$/i)?.[1];
 
   const descripcion = typeof comercio === 'string'
-    ? comercio.replace(/[.!]+$/, '').trim().slice(0, 120)
+    ? comercio.replace(/[.!]+$/, '').replace(/\s+(?:por|por valor de|en total)\s*$/i, '').trim().slice(0, 120)
     : '';
   if (!descripcion) return { error: 'No pudimos reconocer quién envió o recibió la plata' };
 
