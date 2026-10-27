@@ -22,6 +22,7 @@ import {
   movimientoDesdeAtajo,
   normalizarNotificacionNequi,
   pistaDeLlave,
+  seleccionarCuentaNequi,
   vistaPreviaDesdeAtajo,
 } from './server_lib/atajos.ts';
 import {
@@ -2964,17 +2965,11 @@ app.post('/api/atajo/movimiento', async (req, res) => {
         .select('id, nombre, tipo, clase_cuenta, archived_at')
         .eq('user_id', fila.user_id)
         .eq('tipo', 'cuenta')
-        .eq('clase_cuenta', 'billetera')
         .is('archived_at', null);
       if (errorCuentas) throw errorCuentas;
 
-      const cuentasNequi = (cuentas ?? []).filter((cuenta: { nombre: string }) =>
-        /nequi/i.test(cuenta.nombre),
-      );
       const cuentaId = cuerpo.cuentaId;
-      const cuenta = typeof cuentaId === 'string'
-        ? cuentasNequi.find((item: { id: string }) => item.id === cuentaId)
-        : cuentasNequi.length === 1 ? cuentasNequi[0] : null;
+      const cuenta = seleccionarCuentaNequi(cuentas ?? [], cuentaId);
       if (!cuenta) {
         return res.status(400).json({
           error: typeof cuentaId === 'string'

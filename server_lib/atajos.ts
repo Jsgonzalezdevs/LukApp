@@ -37,6 +37,30 @@ export const generarLlave = (): string => PREFIJO_LLAVE + randomBytes(32).toStri
 export const hashLlave = (llave: string): string =>
   createHash('sha256').update(llave.trim(), 'utf8').digest('hex');
 
+interface CuentaParaAtajo {
+  id: string;
+  nombre: string;
+  tipo: string;
+  clase_cuenta: string | null;
+  archived_at: string | null;
+}
+
+/** Las cuentas antiguas de Nequi pueden no tener clase, aunque la app las reconozca como billeteras. */
+export const seleccionarCuentaNequi = (
+  cuentas: readonly CuentaParaAtajo[],
+  cuentaId?: unknown,
+): CuentaParaAtajo | null => {
+  const candidatas = cuentas.filter((cuenta) =>
+    cuenta.tipo === 'cuenta'
+    && cuenta.archived_at === null
+    && /nequi/i.test(cuenta.nombre)
+    && (cuenta.clase_cuenta === 'billetera' || cuenta.clase_cuenta === null),
+  );
+  return typeof cuentaId === 'string'
+    ? candidatas.find((cuenta) => cuenta.id === cuentaId) ?? null
+    : candidatas.length === 1 ? candidatas[0] : null;
+};
+
 /** Deriva el UUID del movimiento desde una clave estable que el Atajo conserva. */
 export const idDesdeClaveIdempotencia = (usuario: string, clave: string, evento: string): string => {
   const huellaEvento = createHash('sha256').update(evento.slice(0, 2000), 'utf8').digest('hex');
