@@ -302,7 +302,7 @@ export const PanelAtajos: React.FC = () => {
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
             <li>En un iPhone con iOS 27 o posterior, abre Atajos → Automatización → <strong>Notificación</strong> y elige <strong>Nequi</strong>. Filtra el campo <strong>Mensaje</strong> por <code>COP</code>. Agrega <strong>Vista rápida</strong> para revisar la primera notificación y quítala al terminar de validar. En iOS 26 no existe este disparador de notificación.</li>
             <li>Después de confirmar que la entrada trae la frase y el monto, agrega <strong>Obtener contenido de URL</strong>: elige POST, usa la dirección de LukApp que aparece en «Configuración manual» y añade el encabezado <code>x-api-key</code> con la llave creada arriba.</li>
-            <li>Antes de la petición, agrega <strong>Fecha actual</strong>, conviértela a texto con <strong>Formatear fecha</strong> en formato <strong>ISO 8601</strong> y usa esa salida como <code>idempotency_key</code>. En el cuerpo JSON inserta también la variable mágica del aviso en <code>notificacion</code>. LukApp combina fecha y aviso para formar el ID; si reintentas la misma ejecución, reutiliza esa salida. La vista previa funciona sin esta clave; el registro real la exige.</li>
+            <li>Antes de la petición, agrega <strong>Fecha actual</strong>, conviértela a texto con <strong>Formatear fecha</strong> en formato <strong>ISO 8601</strong> y usa esa salida como <code>idempotency_key</code>. En el cuerpo JSON inserta también la variable mágica del aviso en <code>notificacion</code>. LukApp combina fecha y aviso para formar el ID; si reintentas la misma ejecución, reutiliza esa salida. La vista previa también exige una llave válida, pero no guarda el movimiento.</li>
             <pre className="overflow-x-auto rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-3 text-[12px] leading-relaxed text-[var(--fin-ink)]">{`{
   "origen": "nequi",
   "notificacion": "[Entrada del atajo]",
@@ -329,7 +329,7 @@ export const PanelAtajos: React.FC = () => {
               destinatario, fecha, tipo y cuenta que LukApp entendió.
             </li>
             <li>
-              Ejecuta el Atajo con datos ficticios. LukApp devuelve una vista previa y valida la llave, pero no crea ni modifica movimientos.
+              Ejecuta el Atajo con datos ficticios. LukApp exige una llave válida y devuelve una vista previa, pero no crea ni modifica movimientos.
             </li>
           </ol>
         </details>
