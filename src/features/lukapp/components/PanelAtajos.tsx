@@ -142,7 +142,7 @@ export const PanelAtajos: React.FC = () => {
           Registro con Atajos
         </h2>
         <p className="mt-1 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-          La llave permite que una automatización de iPhone envíe a LukApp el texto de una notificación de Nequi y registre su ingreso o gasto.
+          Conecta tu iPhone una sola vez. La misma llave sirve para registrar ingresos y gastos desde Atajos, incluidos los avisos de Nequi; no necesitas una llave por movimiento.
         </p>
       </div>
 
@@ -151,7 +151,7 @@ export const PanelAtajos: React.FC = () => {
         <div>
           <p className="text-[14px] font-semibold text-[var(--fin-ink)]">¿Por qué necesita una llave?</p>
           <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            Atajos funciona fuera de tu sesión de LukApp, por eso usa una llave propia. Solo autoriza al Atajo a enviar movimientos a tu cuenta; no es tu contraseña ni la clave de tu banco. LukApp guarda una huella protegida y puedes revocar la llave desde aquí.
+            Atajos funciona fuera de tu sesión de LukApp, por eso usa una llave propia. Esta llave puede registrar movimientos en tu cuenta, pero no es tu contraseña ni la clave de Nequi. LukApp guarda una huella protegida y puedes revocarla desde aquí. Pégala una vez en el Atajo y reutilízala en sus automatizaciones; no la incluyas en enlaces ni en el cuerpo de la solicitud.
           </p>
         </div>
       </div>
@@ -218,7 +218,14 @@ export const PanelAtajos: React.FC = () => {
           </div>
         ) : (
           <>
-            <p className="mb-3 text-[13px] font-semibold text-[var(--fin-ink-soft)]">Llaves activas</p>
+            <p className="mb-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
+              {vivas.length === 1 ? 'Una llave activa para tus movimientos de Atajos' : 'Llaves activas'}
+            </p>
+            {vivas.length === 1 ? (
+              <p className="mb-3 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">
+                Reutiliza esta misma conexión para el registro manual y los avisos de Nequi. No crees otra.
+              </p>
+            ) : null}
           <ul className="flex flex-col gap-3">
             {vivas.map((l) => (
               <li key={l.id} className="flex items-center gap-3">
@@ -258,14 +265,14 @@ export const PanelAtajos: React.FC = () => {
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
         >
           <Plus className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
-          {creando ? 'Creando…' : vivas.length ? 'Crear otra llave' : 'Crear llave para mi iPhone'}
+          {creando ? 'Creando…' : vivas.length ? 'Crear otra llave (opcional)' : 'Conectar mi iPhone · crear llave'}
         </button>
       </div>
 
       <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Paso 2 · Instala el Atajo en tu iPhone</p>
+        <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Elige cómo conectar Atajos</p>
         <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          El enlace instala el Atajo manual de LukApp. Para los avisos, crea una automatización de notificación de Nequi en Atajos y usa la misma dirección y llave de este panel.
+          Una sola llave sirve para todos tus movimientos enviados desde Atajos. Si solo quieres automatizar Nequi, no necesitas instalar el Atajo manual: configura la automatización de avisos abajo y pega la llave una vez en <strong>x-api-key</strong>.
         </p>
         <a
           href={URL_ATAJO_ICLOUD}
@@ -274,7 +281,7 @@ export const PanelAtajos: React.FC = () => {
           className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
         >
           <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
-          Añadir Atajo de LukApp
+          Añadir Atajo manual de LukApp
         </a>
         <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
           <li>Toca el botón y, cuando se abra Atajos, elige <strong>Agregar atajo</strong>.</li>
@@ -293,18 +300,18 @@ export const PanelAtajos: React.FC = () => {
             Preparar avisos de Nequi en iPhone
           </summary>
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
-            <li>En Atajos → Automatización, crea una automatización de <strong>Notificación</strong>, elige <strong>Nequi</strong> y actívala para ejecutarse al llegar el aviso. iOS 26 permite filtrar avisos y usar su contenido como entrada de la automatización.</li>
-            <li>Envía primero esa entrada a <strong>Vista rápida</strong>. Confirma que contiene la frase y el monto del aviso antes de activar el registro.</li>
-            <li>Antes de la petición, genera un UUID para identificar este envío. En <strong>Obtener contenido de URL</strong>, configura POST, conserva la llave en <code>x-api-key</code> y usa este cuerpo JSON insertando la variable de entrada y el UUID generado:</li>
+            <li>En un iPhone con iOS 27 o posterior, abre Atajos → Automatización → <strong>Notificación</strong> y elige <strong>Nequi</strong>. Filtra el campo <strong>Mensaje</strong> por <code>COP</code>. Agrega <strong>Vista rápida</strong> para revisar la primera notificación y quítala al terminar de validar. En iOS 26 no existe este disparador de notificación.</li>
+            <li>Después de confirmar que la entrada trae la frase y el monto, agrega <strong>Obtener contenido de URL</strong>: elige POST, usa la dirección de LukApp que aparece en «Configuración manual» y añade el encabezado <code>x-api-key</code> con la llave creada arriba.</li>
+            <li>Antes de la petición, agrega <strong>Fecha actual</strong>, conviértela a texto con <strong>Formatear fecha</strong> en formato <strong>ISO 8601</strong> y usa esa salida como <code>idempotency_key</code>. En el cuerpo JSON inserta también la variable mágica del aviso en <code>notificacion</code>. LukApp combina fecha y aviso para formar el ID; si reintentas la misma ejecución, reutiliza esa salida. La vista previa funciona sin esta clave; el registro real la exige.</li>
             <pre className="overflow-x-auto rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-3 text-[12px] leading-relaxed text-[var(--fin-ink)]">{`{
   "origen": "nequi",
   "notificacion": "[Entrada del atajo]",
-  "id": "[UUID generado]",
+  "idempotency_key": "[Salida de Fecha actual]",
   "solo_prueba": true
 }`}</pre>
-            <li>No envíes la llave en el cuerpo. Cuando la vista previa sea correcta, cambia <code>solo_prueba</code> a <code>false</code> para guardar movimientos reales.</li>
+            <li>Mantén <code>solo_prueba</code> como Booleano <code>true</code> hasta revisar monto, tipo, cuenta e idempotencia en la vista previa. Luego cambia a Booleano <code>false</code> para guardar avisos reconocidos; el servidor rechazará el registro real si falta el UUID o la clave estable.</li>
             <li>LukApp reconoce confirmaciones como «Acabas de recibir plata de…» y «Pagaste… en…». Rechaza textos ambiguos y avisos de Transfiya pendientes. La fecha usa el día de Bogotá en que se procesa el aviso, salvo que envíes <code>fecha</code>.</li>
-            <li>La vista previa también comprueba que tengas exactamente una billetera activa cuyo nombre incluya <strong>Nequi</strong>. Revisa monto, tipo y cuenta antes de quitar <code>solo_prueba</code> para guardar movimientos reales.</li>
+            <li>No incluyas la llave en el cuerpo ni en la URL: viaja solo en el encabezado. La vista previa requiere una cuenta activa tipo billetera cuyo nombre incluya <strong>Nequi</strong>; si tienes varias, configura cuál usar antes de guardar.</li>
           </ol>
         </details>
 
