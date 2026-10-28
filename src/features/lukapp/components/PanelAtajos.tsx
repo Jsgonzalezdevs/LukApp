@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, ExternalLink, Info, KeyRound, Plus, ShieldCheck, Smartphone, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, Copy, ExternalLink, Info, KeyRound, Plus, ShieldCheck, Smartphone, Trash2 } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 
@@ -70,6 +70,7 @@ export const PanelAtajos: React.FC = () => {
   const [llaves, setLlaves] = useState<LlaveAtajo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creando, setCreando] = useState(false);
+  const [tipoAtajo, setTipoAtajo] = useState<'nequi' | 'manual'>('nequi');
   const [nueva, setNueva] = useState<{ llave: string; pista: string } | null>(null);
 
   const conToken = useCallback(async <T,>(hacer: (token: string) => Promise<T>): Promise<T> => {
@@ -137,181 +138,107 @@ export const PanelAtajos: React.FC = () => {
   const urlEndpoint = apiUrl('/api/atajo/movimiento');
 
   return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h2 className="flex items-center gap-2 px-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
-          <Smartphone className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-          Registro con Atajos
-        </h2>
-        <p className="mt-1 px-1 text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-          Conecta tu iPhone una sola vez. La misma llave sirve para registrar ingresos y gastos desde Atajos, incluidos los avisos de Nequi; no necesitas una llave por movimiento.
-        </p>
-      </div>
-
-      <div className="flex gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--fin-accent)]" aria-hidden="true" />
-        <div>
-          <p className="text-[14px] font-semibold text-[var(--fin-ink)]">¿Por qué necesita una llave?</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-            Atajos funciona fuera de tu sesión de LukApp, por eso usa una llave propia. Esta llave puede registrar movimientos en tu cuenta, pero no es tu contraseña ni la clave de Nequi. LukApp guarda una huella protegida y puedes revocarla desde aquí. Pégala una vez en el Atajo y reutilízala en sus automatizaciones; no la incluyas en enlaces ni en el cuerpo de la solicitud.
-          </p>
-        </div>
+    <section className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+      <div className="px-1">
+        <h2 className="text-[20px] font-semibold tracking-tight text-[var(--fin-ink)]">Conecta tu iPhone</h2>
+        <p className="mt-1 text-[14px] text-[var(--fin-ink-soft)]">Una llave para tus ingresos y gastos. Se configura una sola vez.</p>
       </div>
 
       {error ? (
-        <p className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-[13px] leading-relaxed text-[var(--fin-out-ink)]">
-          {error}
-        </p>
+        <p role="alert" className="rounded-[var(--fin-r-card)] bg-[var(--fin-out-bg)] px-4 py-3 text-[13px] text-[var(--fin-out-ink)]">{error}</p>
       ) : null}
 
-      {nueva ? (
-        <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-accent)] bg-[var(--fin-soft)] p-4">
-          <div className="flex items-start gap-2">
-            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--fin-accent)]" aria-hidden="true" />
-            <div>
-              <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Copia esta llave para el Atajo</p>
-              <p className="mt-1 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-                Solo se muestra ahora. Toca <strong>Copiar</strong> y pégala en <strong>x-api-key</strong>. No agregues “Bearer” ni la compartas.
-              </p>
+      <div className="flex gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 sm:gap-4 sm:p-5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[14px] font-bold text-[var(--fin-accent)]">1</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-center gap-2 text-[16px] font-semibold text-[var(--fin-ink)]"><KeyRound className="h-4 w-4" aria-hidden="true" /> Tu llave de conexión</h3>
+          {llaves === null ? (
+            <div className="mt-3 text-[13px] text-[var(--fin-ink-soft)]">
+              <p>{error ? 'No pudimos cargar tus llaves.' : 'Cargando…'}</p>
+              {error ? <button type="button" onClick={() => { setError(null); cargar(); }} className="mt-2 font-semibold text-[var(--fin-accent)]">Reintentar</button> : null}
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[13px] text-[var(--fin-ink)]">
-              {nueva.llave}
-            </code>
-            <BotonCopiar valor={nueva.llave} etiqueta="la llave" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setNueva(null)}
-            className="self-start text-[13px] font-semibold text-[var(--fin-ink-soft)] underline underline-offset-2"
-          >
-            Ya la pegué en Atajos
-          </button>
-        </div>
-      ) : null}
-
-      <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        {llaves === null ? (
-          <div className="flex flex-col items-center gap-2 py-4 text-center">
-            <p className="text-[13px] text-[var(--fin-ink-faint)]">
-              {error ? 'No pudimos cargar tus llaves.' : 'Cargando tus llaves…'}
-            </p>
-            {error ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  cargar();
-                }}
-                className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)]"
-              >
-                Reintentar
+          ) : nueva ? (
+            <div className="mt-3 flex flex-col gap-3">
+              <p className="text-[13px] text-[var(--fin-ink-soft)]">Cópiala ahora. Al instalar el atajo te la pedirá.</p>
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <code className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-3 text-[12px] text-[var(--fin-ink)]">{nueva.llave}</code>
+                <BotonCopiar valor={nueva.llave} etiqueta="la llave" />
+              </div>
+              <p className="flex items-center gap-1.5 text-[12px] text-[var(--fin-ink-faint)]"><ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Solo se muestra esta vez. Guárdala en tu atajo.</p>
+              <button type="button" onClick={() => setNueva(null)} className="self-start text-[13px] font-semibold text-[var(--fin-accent)]">Ya la pegué en Atajos</button>
+            </div>
+          ) : vivas.length ? (
+            <div className="mt-3 flex items-start gap-2 text-[13px] text-[var(--fin-ink-soft)]">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-accent)]" aria-hidden="true" />
+              <p>Ya tienes {vivas.length === 1 ? 'una llave creada' : `${vivas.length} llaves creadas`}. Reutiliza la que guardaste en Atajos.</p>
+            </div>
+          ) : (
+            <>
+              <p className="mt-2 text-[13px] text-[var(--fin-ink-soft)]">Permite que Atajos registre movimientos en tu cuenta.</p>
+              <button type="button" onClick={() => void crear()} disabled={creando} className="mt-3 inline-flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[14px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60">
+                <Plus className="h-4 w-4" aria-hidden="true" />{creando ? 'Creando…' : 'Crear mi llave'}
               </button>
-            ) : null}
-          </div>
-        ) : vivas.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-4 text-center">
-            <KeyRound className="h-8 w-8 text-[var(--fin-ink-ghost)]" strokeWidth={1.5} aria-hidden="true" />
-            <p className="text-[15px] font-semibold text-[var(--fin-ink)]">Paso 1 · Crea una llave de conexión</p>
-            <p className="text-[13px] leading-relaxed text-[var(--fin-ink-faint)]">
-              La llave autoriza al Atajo a enviar movimientos a tu cuenta. LukApp guarda una huella segura, no la llave original.
-            </p>
-          </div>
-        ) : (
-          <>
-            <p className="mb-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">
-              {vivas.length === 1 ? 'Una llave activa para tus movimientos de Atajos' : 'Llaves activas'}
-            </p>
-            {vivas.length === 1 ? (
-              <p className="mb-3 text-[12px] leading-relaxed text-[var(--fin-ink-faint)]">
-                Reutiliza esta misma conexión para el registro manual y los avisos de Nequi. No crees otra.
-              </p>
-            ) : null}
-          <ul className="flex flex-col gap-3">
-            {vivas.map((l) => (
-              <li key={l.id} className="flex items-center gap-3">
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]"
-                  aria-hidden="true"
-                >
-                  <KeyRound className="h-[18px] w-[18px] text-[var(--fin-ink-soft)]" strokeWidth={2} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-[var(--fin-ink)]">
-                    {l.etiqueta} · ···{l.pista}
-                  </span>
-                  <span className="mt-1 block text-[13px] text-[var(--fin-ink-faint)]">
-                    Creada el {fechaCorta(l.creada_en)}
-                    {l.usada_en ? ` · usada por última vez el ${fechaCorta(l.usada_en)}` : ' · nunca usada'}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void revocar(l.id)}
-                  className="flex shrink-0 items-center gap-2 rounded-[var(--fin-r-control)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-out)] transition-colors hover:bg-[var(--fin-out-bg)]"
-                >
-                  <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-                  Revocar
-                </button>
-              </li>
-            ))}
-          </ul>
-          </>
-        )}
-
-        <button
-          type="button"
-          onClick={() => void crear()}
-          disabled={creando}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
-        >
-          <Plus className="h-4 w-4" strokeWidth={3} aria-hidden="true" />
-          {creando ? 'Creando…' : vivas.length ? 'Crear otra llave (opcional)' : 'Conectar mi iPhone · crear llave'}
-        </button>
+            </>
+          )}
+          {vivas.length > 0 ? (
+            <details className="mt-3 text-[12px] text-[var(--fin-ink-faint)]">
+              <summary className="cursor-pointer py-1 font-medium">Administrar llaves</summary>
+              <ul className="mt-2 flex flex-col divide-y divide-[var(--fin-line)]">
+                {vivas.map((l) => (
+                  <li key={l.id} className="flex flex-wrap items-center gap-2 py-3">
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold text-[var(--fin-ink)]">{l.etiqueta} · ···{l.pista}</span>
+                      <span className="mt-1 block">{l.usada_en ? `Último uso: ${fechaCorta(l.usada_en)}` : `Creada: ${fechaCorta(l.creada_en)} · Sin uso`}</span>
+                    </span>
+                    <button type="button" onClick={() => void revocar(l.id)} className="inline-flex items-center gap-1.5 rounded-[var(--fin-r-control)] px-2 py-2 text-[12px] font-semibold text-[var(--fin-out)] hover:bg-[var(--fin-out-bg)]"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" />Revocar</button>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 leading-relaxed">La llave completa no se puede volver a mostrar. Si la perdiste, crea otra y actualiza tu atajo.</p>
+              <button type="button" onClick={() => void crear()} disabled={creando} className="mt-2 inline-flex items-center gap-1.5 py-2 font-semibold text-[var(--fin-accent)] disabled:opacity-60"><Plus className="h-3.5 w-3.5" aria-hidden="true" />{creando ? 'Creando…' : 'Crear otra llave'}</button>
+            </details>
+          ) : null}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-        <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Elige cómo conectar Atajos</p>
-        <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Una sola llave sirve para tus ingresos y gastos desde Atajos. Para Nequi, instala la plantilla preparada y pégala una vez cuando te la pida; el atajo la reutiliza para cada aviso.
-        </p>
-        <a
-          href={URL_ATAJO_NEQUI}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
-        >
-          <Smartphone className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
-          Añadir Atajo de Nequi Colombia
-        </a>
-        <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          <li>En esta pantalla, crea o copia tu llave de Atajos. Es la misma que sirve para cualquier movimiento enviado por Atajos.</li>
-          <li>Abre el enlace en tu iPhone y toca <strong>Agregar atajo</strong>. Cuando aparezca la pregunta, pega la llave de LukApp una sola vez. No es la clave de Nequi.</li>
-          <li>Ejecuta primero el atajo con un aviso de ejemplo y revisa la vista previa. Cuando confirmes que monto y tipo son correctos, edita el atajo y cambia <code>solo_prueba</code> de Booleano <code>true</code> a <code>false</code>.</li>
-          <li>En Atajos → <strong>Automatización</strong>, revisa que la notificación de <strong>Nequi Colombia</strong> ejecute “LukApp - Nequi Colombia”. Permite la conexión con LukApp; desde entonces los avisos reconocidos se guardan como movimientos.</li>
-        </ol>
-        <a
-          href={URL_ATAJO_ICLOUD}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
-        >
-          <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
-          Añadir Atajo manual para otros movimientos
-        </a>
-        <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          <li>Toca el botón y, cuando se abra Atajos, elige <strong>Agregar atajo</strong>.</li>
-          <li>
-            En Atajos, abre <strong>Mis atajos</strong> y toca los tres puntos del Atajo de LukApp para editarlo.
-          </li>
-          <li>
-            Busca <strong>Obtener contenido de URL</strong> → <strong>Encabezados</strong> →
-            <strong>x-api-key</strong>. Pega la llave que copiaste, tal cual; no agregues “Bearer”.
-          </li>
-          <li>Guarda. Al ejecutar el Atajo, escribe el monto y el nombre de la persona o comercio.</li>
-        </ol>
+      <div className="flex gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 sm:gap-4 sm:p-5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[14px] font-bold text-[var(--fin-accent)]">2</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-center gap-2 text-[16px] font-semibold text-[var(--fin-ink)]"><Smartphone className="h-4 w-4" aria-hidden="true" /> Añade tu atajo</h3>
+          <div role="group" aria-label="Tipo de atajo" className="mt-3 flex gap-1 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] p-1">
+            {([['nequi', 'Nequi Colombia'], ['manual', 'Otros movimientos']] as const).map(([tipo, titulo]) => (
+              <button key={tipo} type="button" aria-pressed={tipoAtajo === tipo} onClick={() => setTipoAtajo(tipo)} className={`flex-1 rounded-[var(--fin-r-control)] px-2 py-2.5 text-[12px] font-semibold transition-colors ${tipoAtajo === tipo ? 'bg-[var(--fin-card)] text-[var(--fin-ink)] shadow-sm' : 'text-[var(--fin-ink-faint)]'}`}>{titulo}</button>
+            ))}
+          </div>
+          <p className="mt-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">{tipoAtajo === 'nequi' ? 'Convierte los avisos de Nequi en ingresos y gastos.' : 'Registra un monto y una persona o comercio desde Atajos.'}</p>
+          <a href={tipoAtajo === 'nequi' ? URL_ATAJO_NEQUI : URL_ATAJO_ICLOUD} target="_blank" rel="noopener noreferrer" className="mt-3 flex items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[14px] font-semibold text-[var(--fin-on-accent)]">
+            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />{tipoAtajo === 'nequi' ? 'Añadir atajo de Nequi' : 'Añadir atajo manual'}
+          </a>
+          <p className="mt-2 text-[12px] text-[var(--fin-ink-faint)]">{tipoAtajo === 'nequi' ? 'iPhone · iOS 27 o posterior' : 'Se abre en Atajos de tu iPhone'}</p>
+          <p className="mt-3 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">{tipoAtajo === 'nequi' ? 'Toca «Agregar atajo» y pega tu llave cuando te la pida.' : <>Abre el editor y pega tu llave en <strong>Encabezados → x-api-key</strong>.</>}</p>
+        </div>
+      </div>
 
+      <div className="flex gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-4 sm:gap-4 sm:p-5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[14px] font-bold text-[var(--fin-accent)]">3</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="flex items-center gap-2 text-[16px] font-semibold text-[var(--fin-ink)]"><ShieldCheck className="h-4 w-4" aria-hidden="true" /> Revisa y activa</h3>
+          <p className="mt-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">{tipoAtajo === 'nequi' ? 'Revisa la vista previa antes de activar el registro de avisos.' : 'Prueba la conexión antes de guardar tu primer movimiento.'}</p>
+          <details className="mt-3 rounded-[var(--fin-r-control)] bg-[var(--fin-bg)] px-3 py-1 text-[13px] text-[var(--fin-ink-soft)]">
+            <summary className="cursor-pointer py-2 font-semibold">Ver cómo activarlo</summary>
+            <ol className="mb-2 flex list-decimal flex-col gap-3 pl-4 leading-relaxed">
+              <li>En el editor del atajo, usa <code>solo_prueba: true</code> y añade <strong>Mostrar contenido</strong> después del envío para ver el resultado.</li>
+              <li>Comprueba monto, tipo y cuenta. Luego cambia <code>solo_prueba</code> a Booleano <code>false</code> para guardar movimientos.</li>
+              {tipoAtajo === 'nequi' ? <li>Revisa <strong>Automatización → Notificación → Nequi Colombia</strong> y permite la conexión con LukApp.</li> : <li>Ejecuta el atajo e indica el monto y la persona o comercio.</li>}
+            </ol>
+          </details>
+        </div>
+      </div>
+
+      <details className="group rounded-[var(--fin-r-card)] border border-[var(--fin-line)] px-4 py-1 text-[13px] text-[var(--fin-ink-faint)]">
+        <summary className="flex cursor-pointer list-none items-center gap-2 py-3 font-medium"><Info className="h-4 w-4 shrink-0" aria-hidden="true" /> Ayuda y configuración avanzada<ChevronDown className="ml-auto h-4 w-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" /></summary>
+        <div className="flex flex-col gap-3 pb-3">
+          <p className="leading-relaxed">Tu llave permite registrar movimientos en LukApp. No es la clave de Nequi. Guárdala en el atajo y revócala desde aquí si dejas de usarla. Nunca la incluyas en un enlace.</p>
         <details className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-2 text-[13px] text-[var(--fin-ink-faint)]">
           <summary className="cursor-pointer font-semibold text-[var(--fin-ink-soft)]">
             Preparar avisos de Nequi en iPhone
@@ -375,7 +302,8 @@ export const PanelAtajos: React.FC = () => {
             </li>
           </ol>
         </details>
-      </div>
+        </div>
+      </details>
     </section>
   );
 };
