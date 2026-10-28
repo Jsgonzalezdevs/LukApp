@@ -11,6 +11,7 @@ import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 import { apiUrl } from '../lib/api';
 import { PWAInstall } from '../features/lukapp/components/landing/PWAInstall';
 import { EVENTO_MOSTRAR_INSTALACION_PWA } from '../features/lukapp/dev/consolaVistas';
+import { esDominioAppPrincipal } from '../features/lukapp/lib/dominios';
 
 const LegalLukApp = lazy(() => import('../features/lukapp/components/LegalLukApp').then(({ LegalLukApp }) => ({ default: LegalLukApp })));
 
@@ -138,6 +139,7 @@ export const AppsRoot: React.FC = () => {
   const { ruta, ir } = useRuta();
   const esConfirmacionPago = esRutaConfirmacionPago(ruta, window.location.search);
   const enPortada =
+    !esDominioAppPrincipal() &&
     !esPwaInstalada() &&
     activeApp === 'finanzas' &&
     (segmentosDe(ruta).length === 0 || ruta === '/' || ruta === '/finanzas');

@@ -1,0 +1,29 @@
+{
+  "id": "/",
+  "name": "LukApp — Finanzas Personales",
+  "short_name": "LukApp",
+  "description": "Tus finanzas personales inteligentes: cuentas, ahorro, presupuestos y control por voz.",
+  "lang": "es-CO",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "categories": ["finance", "productivity"],
+  "background_color": "#fbf9f6",
+  "theme_color": "#fbf9f6",
+  "icons": [
+    { "src": "/lukapp-icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
+    { "src": "/lukapp-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/lukapp-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/lukapp-icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Inicio", "url": "/app", "short_name": "Inicio" },
+    { "name": "Dinero", "url": "/dinero", "short_name": "Dinero" },
+    { "name": "Asesor", "url": "/asesor", "short_name": "Asesor" }
+  ],
+  "file_handlers": [
+    { "action": "/ajustes/extractos", "accept": { "application/pdf": [".pdf"] } }
+  ]
+}

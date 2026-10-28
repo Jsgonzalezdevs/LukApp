@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.20', fecha: '2026-10-28', texto: 'Entra directamente a LukApp desde mi.lukapp.app; la portada pública conserva su propio espacio. 📲✨' },
   { version: '10.7.19', fecha: '2026-10-28', texto: 'La instalación de LukApp ahora descarga un paquete más ligero, sin archivos temporales de diseño ni pruebas sueltas. 📲✨' },
   { version: '10.7.18', fecha: '2026-10-28', texto: 'Configurar Atajos ahora es más fácil de seguir: tres pasos visuales, menos texto y ayuda avanzada solo cuando la necesitas. 📲✨' },
   { version: '10.7.17', fecha: '2026-10-28', texto: 'Instala el Atajo de Nequi desde LukApp y conecta tu llave una sola vez para ingresos y gastos. 📲🔐' },

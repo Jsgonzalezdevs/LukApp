@@ -7,8 +7,10 @@ const raiz = process.cwd();
 const leer = (ruta: string) => readFileSync(resolve(raiz, ruta), 'utf8');
 
 const manifest = JSON.parse(leer('public/ecosistema.webmanifest'));
+const manifestApp = JSON.parse(leer('public/app.webmanifest'));
 const sw = leer('public/sw.js');
 const html = leer('index.html');
+const vercel = JSON.parse(leer('vercel.json'));
 const registradorSw = leer('src/features/lukapp/data/registrarSW.ts');
 const version = leer('src/version.ts').match(/VERSION = '([^']+)'/)?.[1];
 
@@ -55,6 +57,37 @@ describe('manifest', () => {
     for (const ruta of rutas) {
       expect(existsSync(resolve(raiz, 'public', ruta.slice(1)))).toBe(true);
     }
+  });
+});
+
+describe('manifesto del dominio de acceso directo', () => {
+  it('inicia la PWA en la raíz, sin alterar el inicio de la portada pública', () => {
+    expect(manifestApp.start_url).toBe('/');
+    expect(manifestApp.scope).toBe('/');
+    expect(manifest.start_url).toBe('/app');
+  });
+
+  it('usa los mismos iconos existentes que el manifiesto público', () => {
+    expect(manifestApp.icons).toEqual(manifest.icons);
+    for (const icono of manifestApp.icons) {
+      expect(existsSync(resolve(raiz, 'public', icono.src.slice(1)))).toBe(true);
+    }
+  });
+
+  it('sirve su manifiesto en mi.lukapp.app y evita indexar la entrada privada', () => {
+    expect(vercel.redirects).toContainEqual(expect.objectContaining({
+      source: '/ecosistema.webmanifest',
+      has: [{ type: 'host', value: 'mi.lukapp.app' }],
+      destination: '/app.webmanifest',
+      permanent: true,
+    }));
+    expect(vercel.headers).toContainEqual(expect.objectContaining({
+      source: '/',
+      has: [{ type: 'host', value: 'mi.lukapp.app' }],
+      headers: expect.arrayContaining([
+        { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+      ]),
+    }));
   });
 });
 
