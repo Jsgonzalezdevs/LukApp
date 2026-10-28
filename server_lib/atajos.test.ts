@@ -10,9 +10,35 @@ import {
   movimientoDesdeAtajo,
   normalizarNotificacionNequi,
   pistaDeLlave,
+  seleccionarCuentaNequi,
   transferenciaDesdeSmsBancolombia,
   vistaPreviaDesdeAtajo,
 } from './atajos';
+
+describe('seleccionarCuentaNequi', () => {
+  const nequiAntigua = { id: 'nequi-antigua', nombre: 'Nequi', tipo: 'cuenta', clase_cuenta: null, archived_at: null };
+  const nequi = { ...nequiAntigua, id: 'nequi-personal', nombre: 'Nequi personal', clase_cuenta: 'billetera' };
+
+  it('reconoce una cuenta Nequi antigua sin clase guardada', () => {
+    expect(seleccionarCuentaNequi([nequiAntigua])).toEqual(nequiAntigua);
+  });
+
+  it('exige seleccionar una cuenta cuando hay varias Nequi activas', () => {
+    expect(seleccionarCuentaNequi([nequiAntigua, nequi])).toBeNull();
+    expect(seleccionarCuentaNequi([nequiAntigua, nequi], nequi.id)).toEqual(nequi);
+  });
+
+  it('rechaza una selección que no corresponde a una cuenta Nequi válida', () => {
+    expect(seleccionarCuentaNequi([nequi], 'otra-cuenta')).toBeNull();
+    expect(seleccionarCuentaNequi([{ ...nequi, nombre: 'Bancolombia' }])).toBeNull();
+  });
+
+  it('respeta la clase explícita, el tipo y el archivo de la cuenta', () => {
+    expect(seleccionarCuentaNequi([{ ...nequi, clase_cuenta: 'efectivo' }])).toBeNull();
+    expect(seleccionarCuentaNequi([{ ...nequi, tipo: 'ahorro' }])).toBeNull();
+    expect(seleccionarCuentaNequi([{ ...nequi, archived_at: '2026-10-27' }])).toBeNull();
+  });
+});
 
 describe('generarLlave', () => {
   it('lleva el prefijo de la app', () => {
