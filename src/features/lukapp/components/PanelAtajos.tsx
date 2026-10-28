@@ -5,6 +5,8 @@ import { obtenerSupabase } from '../data/supabase';
 
 /** El Atajo publicado en iCloud para registrar movimientos manualmente. */
 const URL_ATAJO_ICLOUD = 'https://www.icloud.com/shortcuts/5331c6951e0e411c96a6bf39adaeb95c';
+/** Plantilla de Nequi con el disparador y la pregunta de llave ya enlazados. */
+const URL_ATAJO_NEQUI = 'https://www.icloud.com/shortcuts/6bbf9bd68868420da3c493554bbf83da';
 
 interface LlaveAtajo {
   id: string;
@@ -272,8 +274,23 @@ export const PanelAtajos: React.FC = () => {
       <div className="flex flex-col gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <p className="text-[14px] font-semibold text-[var(--fin-ink)]">Elige cómo conectar Atajos</p>
         <p className="text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
-          Una sola llave sirve para todos tus movimientos enviados desde Atajos. Si solo quieres automatizar Nequi, no necesitas instalar el Atajo manual: configura la automatización de avisos abajo y pega la llave una vez en <strong>x-api-key</strong>.
+          Una sola llave sirve para tus ingresos y gastos desde Atajos. Para Nequi, instala la plantilla preparada y pégala una vez cuando te la pida; el atajo la reutiliza para cada aviso.
         </p>
+        <a
+          href={URL_ATAJO_NEQUI}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
+        >
+          <Smartphone className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+          Añadir Atajo de Nequi Colombia
+        </a>
+        <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
+          <li>En esta pantalla, crea o copia tu llave de Atajos. Es la misma que sirve para cualquier movimiento enviado por Atajos.</li>
+          <li>Abre el enlace en tu iPhone y toca <strong>Agregar atajo</strong>. Cuando aparezca la pregunta, pega la llave de LukApp una sola vez. No es la clave de Nequi.</li>
+          <li>Ejecuta primero el atajo con un aviso de ejemplo y revisa la vista previa. Cuando confirmes que monto y tipo son correctos, edita el atajo y cambia <code>solo_prueba</code> de Booleano <code>true</code> a <code>false</code>.</li>
+          <li>En Atajos → <strong>Automatización</strong>, revisa que la notificación de <strong>Nequi Colombia</strong> ejecute “LukApp - Nequi Colombia”. Permite la conexión con LukApp; desde entonces los avisos reconocidos se guardan como movimientos.</li>
+        </ol>
         <a
           href={URL_ATAJO_ICLOUD}
           target="_blank"
@@ -281,7 +298,7 @@ export const PanelAtajos: React.FC = () => {
           className="flex w-full items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-4 py-3 text-[17px] font-semibold text-[var(--fin-on-accent)]"
         >
           <ExternalLink className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
-          Añadir Atajo manual de LukApp
+          Añadir Atajo manual para otros movimientos
         </a>
         <ol className="flex flex-col gap-2 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">
           <li>Toca el botón y, cuando se abra Atajos, elige <strong>Agregar atajo</strong>.</li>
