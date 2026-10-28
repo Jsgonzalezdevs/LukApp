@@ -3,6 +3,7 @@ import { MotionConfig } from 'framer-motion'
 import { BarreraErrores } from './components/BarreraErrores'
 import { LandingLukApp } from './features/lukapp/components/LandingLukApp'
 import { useMovimientoReducido } from './features/lukapp/lib/useMovimientoReducido'
+import { esDominioAppPrincipal, urlAppPrincipal } from './features/lukapp/lib/dominios'
 
 const SeoContenido = lazy(() => import('./features/lukapp/components/SeoContenido'))
 
@@ -16,8 +17,8 @@ const esPwaInstalada = (): boolean =>
   window.matchMedia?.('(display-mode: standalone)').matches === true ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true
 
-const abrirRegistro = () => window.location.assign('/registro')
-const abrirAcceso = () => window.location.assign('/entrar')
+const abrirRegistro = () => window.location.assign(urlAppPrincipal('/registro'))
+const abrirAcceso = () => window.location.assign(urlAppPrincipal('/entrar'))
 
 /* La portada es la primera impresión. Si una dependencia visual falla en un
    navegador concreto, esta salida no usa animaciones ni APIs opcionales y aún
@@ -68,6 +69,7 @@ const ContenidoAplicacion = () => {
   }
 
   const esPortadaPublica =
+    !esDominioAppPrincipal() &&
     !esPwaInstalada() &&
     (window.location.pathname === '/' || window.location.pathname === '/finanzas')
 

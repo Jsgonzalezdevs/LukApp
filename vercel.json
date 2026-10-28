@@ -6,6 +6,12 @@
   "outputDirectory": "dist",
   "trailingSlash": false,
   "redirects": [
+    {
+      "source": "/ecosistema.webmanifest",
+      "has": [{ "type": "host", "value": "mi.lukapp.app" }],
+      "destination": "/app.webmanifest",
+      "permanent": true
+    },
     { "source": "/index", "destination": "/", "permanent": true },
     { "source": "/index.html", "destination": "/", "permanent": true },
     { "source": "/finanzas", "destination": "/", "permanent": true }
@@ -23,6 +29,15 @@
   "headers": [
     {
       "source": "/",
+      "has": [{ "type": "host", "value": "mi.lukapp.app" }],
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
+        { "key": "Cache-Control", "value": "private, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "lukapp.app" }],
       "headers": [
         { "key": "X-Robots-Tag", "value": "index, follow" },
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
