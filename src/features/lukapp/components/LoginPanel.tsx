@@ -23,6 +23,7 @@ import { BrandMark } from './BrandMark';
 import { TemaToggle } from './TemaToggle';
 import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
 import { useMovimientoReducido } from '../lib/useMovimientoReducido';
+import { esDominioAppPrincipal } from '../lib/dominios';
 
 interface LoginPanelProps {
   sesion: Sesion;
@@ -47,6 +48,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   onVolverInicio,
 }) => {
   const movimientoReducido = useMovimientoReducido();
+  const ocultarRegresoPortada = esDominioAppPrincipal();
   const [modo, setModo] = useState<Modo>(() => modoInicial ?? (sesion.enRecuperacion ? 'actualizar' : 'entrar'));
   const [recordarme, setRecordarme] = useState(() => {
     try {
@@ -159,6 +161,23 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   const campo =
     'w-full rounded-[var(--fin-r-card)] border border-[var(--fin-line)]/60 bg-[var(--fin-bg)]/80 pl-10 pr-4 py-4 text-[17px] font-normal text-[var(--fin-ink)] placeholder:text-[var(--fin-ink-ghost)] transition-all duration-200 focus:border-[var(--fin-accent)] focus:bg-[var(--fin-card)] focus:outline-none focus:ring-2 focus:ring-[var(--fin-accent)]/25';
 
+  const marca = (
+    <>
+      <span className="absolute -inset-2.5 rounded-[var(--fin-r-card)] bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
+      <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
+        <span
+          className="absolute inset-0 rounded-[1.4rem] opacity-80"
+          style={{
+            background:
+              'radial-gradient(120% 120% at 15% 15%, #7c3aed35, transparent 55%), radial-gradient(120% 120% at 85% 30%, #a3e63535, transparent 55%), radial-gradient(120% 120% at 50% 100%, #6d28d935, transparent 55%)',
+          }}
+          aria-hidden
+        />
+        <BrandMark className="relative h-8 w-8" />
+      </span>
+    </>
+  );
+
   const exito = modo === 'registrarse' && enviado && !sesion.error && !sesion.ocupado;
 
   return (
@@ -193,22 +212,23 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         aria-hidden="true"
       />
 
-      {/* Botón Volver al inicio / Landing */}
-      <div className="absolute left-5 top-5 z-20">
-        <button
-          type="button"
-          onClick={() => {
-            if (onVolverInicio) onVolverInicio();
-            else window.location.href = '/';
-          }}
-          className="group flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
-          title="Volver a la página principal"
-          aria-label="Volver al inicio"
-        >
-          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.25} />
-          <span>Volver al inicio</span>
-        </button>
-      </div>
+      {!ocultarRegresoPortada && (
+        <div className="absolute left-5 top-5 z-20">
+          <button
+            type="button"
+            onClick={() => {
+              if (onVolverInicio) onVolverInicio();
+              else window.location.href = '/';
+            }}
+            className="group flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
+            title="Volver a la página principal"
+            aria-label="Volver al inicio"
+          >
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.25} />
+            <span>Volver al inicio</span>
+          </button>
+        </div>
+      )}
 
       <div className="absolute right-5 top-5 z-20">
         <TemaToggle tema={tema} onCambiar={onCambiarTema} />
@@ -222,28 +242,23 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
       >
         {/* Brand Header */}
         <div className="mb-7 flex flex-col items-center text-center">
-          <button
-            type="button"
-            onClick={() => {
-              if (onVolverInicio) onVolverInicio();
-              else window.location.href = '/';
-            }}
-            className="group relative mb-4 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-            title="Volver al inicio"
-          >
-            <span className="absolute -inset-2.5 rounded-[var(--fin-r-card)] bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
-            <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
-              <span
-                className="absolute inset-0 rounded-[1.4rem] opacity-80"
-                style={{
-                  background:
-                    'radial-gradient(120% 120% at 15% 15%, #7c3aed35, transparent 55%), radial-gradient(120% 120% at 85% 30%, #a3e63535, transparent 55%), radial-gradient(120% 120% at 50% 100%, #6d28d935, transparent 55%)',
-                }}
-                aria-hidden
-              />
-              <BrandMark className="relative h-8 w-8" />
-            </span>
-          </button>
+          {ocultarRegresoPortada ? (
+            <div className="relative mb-4 flex items-center justify-center" aria-hidden="true">
+              {marca}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (onVolverInicio) onVolverInicio();
+                else window.location.href = '/';
+              }}
+              className="group relative mb-4 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+              title="Volver al inicio"
+            >
+              {marca}
+            </button>
+          )}
 
           <h1 className="text-[28px] font-bold tracking-tight text-[var(--fin-ink)]">
             LukApp
