@@ -89,8 +89,9 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="mb-2 -ml-2 flex h-9 w-9 items-center justify-center rounded-[var(--fin-r-pill)] text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
-          aria-label="Volver al inicio"
+          className="mb-2 -ml-2 flex min-h-9 items-center justify-center gap-2 rounded-[var(--fin-r-pill)] px-3 text-[var(--fin-ink-soft)] transition-colors hover:bg-[var(--fin-soft)] hover:text-[var(--fin-ink)]"
+          aria-label="Cambiar de aplicación"
+          title="Cambiar de aplicación"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -106,6 +107,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
           >
             <path d="m15 18-6-6 6-6" />
           </svg>
+          <span className="text-xs font-semibold">Cambiar de app</span>
         </button>
       ) : null}
       {children}

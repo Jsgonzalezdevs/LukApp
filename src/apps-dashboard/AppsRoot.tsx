@@ -132,6 +132,7 @@ export const AppsRoot: React.FC = () => {
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
+  const [errorCargaRol, setErrorCargaRol] = useState(false);
   const [mostrarInstalacionPwa, setMostrarInstalacionPwa] = useState(false);
   const [vistaPreviaInstalacionPwa, setVistaPreviaInstalacionPwa] = useState(false);
   const ultimoAccesoRegistrado = useRef<string | null>(null);
@@ -259,47 +260,50 @@ export const AppsRoot: React.FC = () => {
   useEffect(() => {
     let cancelado = false;
     let timeoutId: NodeJS.Timeout | undefined;
+    setLoadingRol(true);
+    setErrorCargaRol(false);
 
     const cargarRol = async (intentos = 0) => {
       if (sesion.estado.modo !== 'autenticado') {
         setRol('usuario');
         setPermisos([]);
+        setErrorCargaRol(false);
         setLoadingRol(false);
         return;
       }
 
       try {
         const cliente = obtenerSupabase();
+        if (!cliente) throw new Error('No hay una sesión de Supabase configurada.');
 
         let rolBD: 'admin' | 'usuario' = 'usuario';
         let permisosAsignados: string[] = [];
 
-        if (cliente) {
-          const {
-            data: { session },
-          } = await cliente.auth.getSession();
+        const {
+          data: { session },
+        } = await cliente.auth.getSession();
 
-          // El rol y los permisos se piden a /api/mis-permisos, no directo a
-          // Supabase: la tabla `roles` (permisos_por_rol incluida) es de
-          // lectura admin-only por RLS a propósito (ver migración 0015), así
-          // que un usuario con rol personalizado no podría leer sus propios
-          // permisos con el cliente público aunque el nombre de columna fuera
-          // correcto. Este endpoint corre con la llave de servicio y evita
-          // abrir esa tabla a cualquiera con sesión.
-          if (session?.access_token) {
-            const res = await fetch(apiUrl('/api/mis-permisos'), {
-              headers: { Authorization: `Bearer ${session.access_token}` },
-            });
-            if (!res.ok) throw new Error(`/api/mis-permisos respondió ${res.status}`);
-            const data = await res.json();
-            rolBD = data.rol === 'admin' ? 'admin' : 'usuario';
-            permisosAsignados = Array.isArray(data.permisos) ? data.permisos : [];
-          }
-        }
+        // El rol y los permisos se piden a /api/mis-permisos, no directo a
+        // Supabase: la tabla `roles` (permisos_por_rol incluida) es de
+        // lectura admin-only a propósito (ver migración 0015), así que un
+        // usuario con rol personalizado no podría leer sus propios permisos
+        // con el cliente público aunque el nombre de columna fuera correcto.
+        // Este endpoint corre con la llave de servicio y evita abrir esa
+        // tabla a cualquiera con sesión.
+        if (!session?.access_token) throw new Error('No hay una sesión activa.');
+        const res = await fetch(apiUrl('/api/mis-permisos'), {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (!res.ok) throw new Error(`/api/mis-permisos respondió ${res.status}`);
+        const data = await res.json();
+        rolBD = data.rol === 'admin' ? 'admin' : 'usuario';
+        permisosAsignados = Array.isArray(data.permisos) ? data.permisos : [];
 
         if (cancelado) return;
         setRol(rolBD);
         setPermisos(permisosAsignados);
+        setErrorCargaRol(false);
+        setLoadingRol(false);
       } catch (error) {
         if (cancelado) return;
 
@@ -315,8 +319,8 @@ export const AppsRoot: React.FC = () => {
         console.error('Failed to load user role after retries:', error);
         setRol('usuario');
         setPermisos([]);
-      } finally {
-        if (!cancelado && intentos === 0) setLoadingRol(false);
+        setErrorCargaRol(true);
+        setLoadingRol(false);
       }
     };
 
@@ -461,11 +465,47 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
+  if (activeApp === 'superadmin' && !esAdminOStaff) {
+    return (
+      <VistaConCarga>
+        <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)] p-6 text-[var(--fin-ink)]">
+          <section className="max-w-md rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center shadow-sm" role="alert">
+            <ShieldAlert className="mx-auto h-8 w-8 text-amber-500" aria-hidden="true" />
+            <h1 className="mt-4 text-xl font-bold">
+              {errorCargaRol ? 'No pudimos comprobar tus permisos' : 'Esta cuenta no tiene acceso a Superadmin'}
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--fin-ink-soft)]">
+              {errorCargaRol
+                ? 'Finanzas sigue disponible, pero no pudimos verificar el acceso administrativo. Vuelve a intentarlo.'
+                : 'Para entrar necesitas una cuenta administradora o un rol con permisos. Si esperabas tener acceso, revisa que hayas iniciado sesión con la cuenta correcta.'}
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {errorCargaRol && (
+                <button type="button" onClick={() => window.location.reload()} className="rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-700">
+                  Volver a intentar
+                </button>
+              )}
+              <button type="button" onClick={() => setActiveApp('finanzas')} className="rounded-xl border border-[var(--fin-line)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fin-soft)]">
+                Ir a Finanzas
+              </button>
+            </div>
+          </section>
+        </main>
+      </VistaConCarga>
+    );
+  }
+
   if (!esAdminOStaff) {
     return (
       <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
+        {errorCargaRol && (
+          <div className="mx-auto mt-3 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-[var(--fin-ink)]" role="status">
+            <span>No pudimos comprobar si esta cuenta tiene accesos administrativos.</span>
+            <button type="button" onClick={() => window.location.reload()} className="font-semibold text-[var(--fin-accent)] underline">Volver a intentar</button>
+          </div>
+        )}
         <LukAppMain esAdmin={false} />
         {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} forzarVistaPrevia={vistaPreviaInstalacionPwa} />}
       </div>

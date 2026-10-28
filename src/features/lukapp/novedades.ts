@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.22', fecha: '2026-10-28', texto: 'Ahora es más fácil encontrar tu plan Premium y abrir el selector para cambiar entre Finanzas y Superadmin. Si no se pueden comprobar los permisos, LukApp te lo explica. ✨' },
   { version: '10.7.21', fecha: '2026-10-28', texto: 'Al entrar desde mi.lukapp.app, quitamos el acceso que te devolvía a la portada pública para mantenerte dentro de LukApp. 📲' },
   { version: '10.7.20', fecha: '2026-10-28', texto: 'Entra directamente a LukApp desde mi.lukapp.app; la portada pública conserva su propio espacio. 📲✨' },
   { version: '10.7.19', fecha: '2026-10-28', texto: 'La instalación de LukApp ahora descarga un paquete más ligero, sin archivos temporales de diseño ni pruebas sueltas. 📲✨' },

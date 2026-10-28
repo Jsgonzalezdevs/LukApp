@@ -382,7 +382,7 @@ export const AjustesView: React.FC<AjustesViewProps> = ({
               <IconoSimbolo valor="Cloud" />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Cuenta</span>
+              <span className="block text-[17px] font-semibold text-[var(--fin-ink)]">Cuenta y Premium</span>
               <span className="mt-1 block truncate text-[15px] text-[var(--fin-ink-soft)]">
                 {cuenta.email}
               </span>
