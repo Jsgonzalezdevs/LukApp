@@ -300,18 +300,18 @@ export const PanelAtajos: React.FC = () => {
             Preparar avisos de Nequi en iPhone
           </summary>
           <ol className="mt-2 flex flex-col gap-2 leading-relaxed">
-            <li>En un iPhone con iOS 27 o posterior, abre Atajos → Automatización → <strong>Notificación</strong> y elige <strong>Nequi</strong>. Filtra el campo <strong>Mensaje</strong> por <code>COP</code>. Agrega <strong>Vista rápida</strong> para revisar la primera notificación y quítala al terminar de validar. En iOS 26 no existe este disparador de notificación.</li>
-            <li>Después de confirmar que la entrada trae la frase y el monto, agrega <strong>Obtener contenido de URL</strong>: elige POST, usa la dirección de LukApp que aparece en «Configuración manual» y añade el encabezado <code>x-api-key</code> con la llave creada arriba.</li>
-            <li>Antes de la petición, agrega <strong>Fecha actual</strong>, conviértela a texto con <strong>Formatear fecha</strong> en formato <strong>ISO 8601</strong> y usa esa salida como <code>idempotency_key</code>. En el cuerpo JSON inserta también la variable mágica del aviso en <code>notificacion</code>. LukApp combina fecha y aviso para formar el ID; si reintentas la misma ejecución, reutiliza esa salida. La vista previa también exige una llave válida, pero no guarda el movimiento.</li>
+            <li>En un iPhone con iOS 27 o posterior, abre el editor del atajo y busca <strong>Automatización → Notificación</strong>. Elige <strong>Nequi Colombia</strong>. No hace falta filtrar por “COP”: LukApp revisa el texto y rechaza los avisos que no confirman un movimiento. En iOS 26 no existe este disparador de notificación.</li>
+            <li>Agrega <strong>Obtener texto de</strong>, selecciona la variable <strong>Notificación</strong> y su propiedad <strong>Cuerpo</strong>. Ese texto debe incluir la frase y el monto. Luego agrega <strong>Obtener contenido de URL</strong>: elige POST, usa la dirección de LukApp que aparece en «Configuración manual» y añade el encabezado <code>x-api-key</code> con la llave creada arriba.</li>
+            <li>Antes de la petición, agrega <strong>Fecha actual</strong>, conviértela a texto con <strong>Formatear fecha</strong> en formato <strong>ISO 8601</strong> y usa esa salida como <code>idempotency_key</code>. En el cuerpo JSON inserta la salida de <strong>Obtener texto de Cuerpo</strong> en <code>notificacion</code>; no dejes “Entrada” vacía ni escribas el nombre de la variable como texto. LukApp combina fecha y aviso para formar el ID; si reintentas la misma ejecución, reutiliza esa salida. La vista previa también exige una llave válida, pero no guarda el movimiento.</li>
             <pre className="overflow-x-auto rounded-[var(--fin-r-control)] bg-[var(--fin-card)] p-3 text-[12px] leading-relaxed text-[var(--fin-ink)]">{`{
   "origen": "nequi",
-  "notificacion": "[Entrada del atajo]",
+  "notificacion": "[Texto del cuerpo de la notificación]",
   "idempotency_key": "[Salida de Fecha actual]",
   "solo_prueba": true
 }`}</pre>
             <li>Mantén <code>solo_prueba</code> como Booleano <code>true</code> hasta revisar monto, tipo, cuenta e idempotencia en la vista previa. Luego cambia a Booleano <code>false</code> para guardar avisos reconocidos; el servidor rechazará el registro real si falta el UUID o la clave estable.</li>
             <li>LukApp reconoce confirmaciones como «Acabas de recibir plata de…» y «Pagaste… en…». Rechaza textos ambiguos y avisos de Transfiya pendientes. La fecha usa el día de Bogotá en que se procesa el aviso, salvo que envíes <code>fecha</code>.</li>
-            <li>No incluyas la llave en el cuerpo ni en la URL: viaja solo en el encabezado. La vista previa requiere una cuenta activa tipo billetera cuyo nombre incluya <strong>Nequi</strong>; si tienes varias, configura cuál usar antes de guardar.</li>
+            <li>No incluyas la llave en el cuerpo ni en la URL: viaja solo en el encabezado. La vista previa requiere una cuenta activa cuyo nombre incluya <strong>Nequi</strong> y cuya clase sea billetera, o una cuenta antigua que todavía no tenga clase. Si tienes varias, configura cuál usar antes de guardar.</li>
           </ol>
         </details>
 

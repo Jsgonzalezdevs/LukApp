@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.7.16', fecha: '2026-10-27', texto: 'La guía de Nequi explica cómo conectar el cuerpo del aviso a LukApp y evita filtros que podían dejar movimientos por fuera. 🔐📲' },
   { version: '10.7.15', fecha: '2026-10-27', texto: 'La conexión de Atajos también reconoce las cuentas Nequi antiguas que aún no tenían guardada su clase de billetera. 🔐📲' },
   { version: '10.7.14', fecha: '2026-10-27', texto: 'Afinamos la lectura de avisos de ingreso de Nequi para quitar palabras sobrantes en el nombre del remitente. 🔐✅' },
   { version: '10.7.13', fecha: '2026-10-27', texto: 'Actualizamos dependencias del servidor y de desarrollo para corregir vulnerabilidades detectadas en la instalación. 🔐🛡️' },
