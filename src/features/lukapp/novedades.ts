@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.10', fecha: '2026-10-29', texto: 'Las vistas de prueba permiten abrir directamente las pantallas de LukApp para revisar cada cambio. 📲' },
   { version: '10.10.9', fecha: '2026-10-29', texto: 'Completamos la integración del tema claro y oscuro con el sistema de Android. 🎨📲' },
   { version: '10.10.8', fecha: '2026-10-29', texto: 'Android respeta el tema del sistema y mantiene el fondo elegido mientras carga LukApp. 🎨📲' },
   { version: '10.10.7', fecha: '2026-10-29', texto: 'El fondo de los bordes de Android acompaña el tema que eliges en LukApp. 🎨' },

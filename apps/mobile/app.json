@@ -4,14 +4,14 @@
     "slug": "julian-gonzalez",
     "owner": "lukapp",
     "scheme": "lukapp",
-    "version": "10.10.9",
+    "version": "10.10.10",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets-app-icon.png",
     "android": {
       "package": "lukApp.App",
-      "versionCode": 1010009,
+      "versionCode": 1010010,
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO"
