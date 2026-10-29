@@ -350,27 +350,30 @@
 /* La navegación inferior no debe ser translúcida: al quedar sobre una fila
    de movimientos, su fondo semitransparente todavía daba la sensación de
    desenfoque aunque el filtro ya estuviera apagado. */
-.fin-page nav[aria-label="Secciones"] {
+nav[aria-label="Secciones"] {
   background-color: var(--fin-bg) !important;
 }
 
 /* La navegación no es una tarjeta: un borde continuo la hacía parecer una
    barra antigua pegada sobre el contenido. La transición se desvanece antes de
    llegar a la superficie para conservar separación sin dibujar una línea. */
-.fin-page .fin-navigation {
-  position: fixed;
-  /* `inset-x-0` sigue el ancho de maquetación y puede dejar visible la
-     franja de la barra de desplazamiento al consultar documentos largos. */
+.fin-navigation {
+  /* La barra vive en un portal directo a body para escapar de ancestros que
+     cambian el containing block de `fixed`. Este selector debe seguir siendo
+     global: `.fin-page` ya no es ancestro después de crear el portal. */
+  position: fixed !important;
+  bottom: 0 !important;
   left: 0;
-  right: auto;
-  width: 100vw;
+  right: 0;
+  width: 100%;
   max-width: none;
+  z-index: 20;
   isolation: isolate;
   border: 0;
   box-shadow: none;
 }
 
-.fin-page .fin-navigation::before {
+.fin-navigation::before {
   content: '';
   position: absolute;
   z-index: -1;
