@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.12', fecha: '2026-10-29', texto: 'Renovamos la caché instalada para que recibas la versión actual de LukApp. 📲' },
   { version: '10.10.11', fecha: '2026-10-29', texto: 'Actualizamos la base de Android para mantenerla compatible con Expo. 📲' },
   { version: '10.10.10', fecha: '2026-10-29', texto: 'Las vistas de prueba permiten abrir directamente las pantallas de LukApp para revisar cada cambio. 📲' },
   { version: '10.10.9', fecha: '2026-10-29', texto: 'Completamos la integración del tema claro y oscuro con el sistema de Android. 🎨📲' },
