@@ -32,6 +32,14 @@ describe('LukAppShell', () => {
     expect(within(nav).getByRole('button', { name: 'Mes' })).toHaveAttribute('aria-current', 'page');
   });
 
+  it('mantiene la acción flotante fuera de las pantallas que se transforman', () => {
+    render(<div style={{ transform: 'translateX(0)' }}>
+      <LukAppShell {...props} accion={<button type="button">Anotar gasto</button>} />
+    </div>);
+    const accion = screen.getByRole('button', { name: 'Anotar gasto' });
+    expect(accion.closest('.fin-root')?.parentElement).toBe(document.body);
+  });
+
   it('muestra los cuatro destinos', () => {
     render(<LukAppShell {...props} />);
     const nav = screen.getByRole('navigation', { name: 'Secciones' });

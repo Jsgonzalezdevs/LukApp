@@ -116,7 +116,11 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
     <p className="sr-only" aria-live="polite">Sección actual: {SECTIONS.find((item) => item.id === section)?.label ?? section}</p>
     </div>
 
-    {accion}
+    {/* Las acciones fijas salen del árbol visual de la app: algunas vistas
+        animadas transforman sus ancestros y desplazan los controles flotantes. */}
+    {accion && typeof document !== 'undefined'
+      ? createPortal(<div className="fin-root" style={{ display: 'contents' }}>{accion}</div>, document.body)
+      : null}
 
     {/* La barra de navegación. Pegada al fondo, con su propia altura fija —
  antes tenía un hueco vacío abajo (`pb-[4.75rem]`) donde se metía el botón

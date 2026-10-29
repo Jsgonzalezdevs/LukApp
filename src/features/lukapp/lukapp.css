@@ -113,6 +113,20 @@
   background-color: var(--fin-bg);
 }
 
+/* En Android, un hijo ancho no debe ensanchar el documento ni cambiar la
+   referencia de posición de la navegación y las acciones fijas. `clip` evita
+   crear un contenedor de desplazamiento y conserva el scroll vertical normal. */
+html.fin-html,
+body.fin-page,
+body.fin-page > #root,
+.fin-root {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
 /* ------------------------------------------------------ escala tipográfica ---
    Antes había 13 tamaños de letra sueltos (10, 11, 12, 13, 14, 15, 16, 18, 20,
    24, 30, 36 y 44 px) y nadie sabía cuál usar: `text-[11px]` y `text-xs` se
