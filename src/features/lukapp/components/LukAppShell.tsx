@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { SECTIONS } from '../sections';
 import type { SectionId } from '../sections';
 import { useHapticFeedback } from '../hooks/useHapticFeedback';
@@ -79,7 +80,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
     />
     <main
       aria-label="Contenido principal de LukApp"
-      className="mx-auto w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
+      className="mx-auto min-w-0 w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
       style={{
         transform: pull.desplazamiento > 0 ? `translateY(${pull.desplazamiento}px)` : undefined,
         transition: pull.refrescando ? 'transform 0.2s ease-out' : undefined,
@@ -123,7 +124,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
  abajo, más cerca del borde. `BotonAnotar` ahora se posiciona por su
  cuenta justo encima de esta barra, usando su altura (`--fin-nav-h`) para
  no superponerse. */}
-    <nav
+    {createPortal(<nav
       className="fin-glass fin-navigation fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
       aria-label="Secciones"
     >
@@ -164,7 +165,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
           );
         })}
       </div>
-    </nav>
+    </nav>, document.body)}
   </div>
   );
 };

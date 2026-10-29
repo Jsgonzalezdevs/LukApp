@@ -98,12 +98,12 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
     // contenido en vez de llenar hasta el max-w -- por eso max-w-7xl solo no
     // alcanzaba. Con `w-full` primero llena, LUEGO max-w recorta y mx-auto
     // centra, igual que en flujo de bloque normal.
-    <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-start gap-5 lg:grid-cols-2">
+    <div className="mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 items-start gap-5 lg:grid-cols-2">
       {/* La gráfica. Antes eran barras horizontales, una fila por mes: contestaban
  "cuánto fue en marzo" pero para ver hacia dónde iba la cosa había que
  leerlas todas. La línea contesta eso de un vistazo, y tocando un mes se
  sigue viendo su cifra exacta -- sin dibujar el mismo dato dos veces. */}
-      <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+      <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <TrendingUp className="mr-2 inline h-4 w-4 mb-1" aria-hidden="true" />
@@ -245,13 +245,13 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
  que no queden cada una sola estirada a lo ancho de media pantalla. */}
       <div className="flex flex-col gap-5">
         {/* Averages */}
-        <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+        <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
           <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
             <Scale className="mr-2 inline h-4 w-4 mb-1" aria-hidden="true" />
             {COPY.tendencias.promedio}
           </h2>
 
-          <div className="mt-3 grid grid-cols-3 gap-3">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
               { label: COPY.balance.ingresos, valor: promedio.ingresos, color: 'var(--fin-in)' },
               { label: COPY.balance.gastos, valor: promedio.gastos, color: 'var(--fin-out)' },
@@ -279,7 +279,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
 
         {/* Month-over-month by category */}
         {cambios.length > 0 ? (
-          <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+          <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
             <h2 className="text-[15px] font-semibold text-[var(--fin-ink-soft)]">
               <Search className="mr-2 inline h-4 w-4 mb-1" aria-hidden="true" />
               {COPY.tendencias.comparativo}

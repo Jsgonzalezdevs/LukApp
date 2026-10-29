@@ -44,7 +44,7 @@ const Contrapartes: React.FC<{ delMes: readonly Transaction[]; kind: TxKind }> =
   const gasto = kind === 'gasto';
 
   return (
-    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+    <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <Users className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         {gasto ? 'A quién le mandaste' : 'Quién te mandó'}
@@ -91,7 +91,7 @@ const Mayores: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
   if (gastos.length === 0) return null;
 
   return (
-    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+    <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         Tus gastos más grandes
@@ -147,7 +147,7 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string; onA
   const techo = Math.max(...dias.map((d) => d.gastoCop), 1);
 
   return (
-    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+    <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <CalendarDays className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         En qué días se fue
@@ -210,7 +210,7 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string; onA
         <span>{dias.length}</span>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-[var(--fin-soft)] pt-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 border-t border-[var(--fin-soft)] pt-3">
         <div>
           <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">Días con gasto</p>
           <p className="text-[17px] font-semibold tabular-nums text-[var(--fin-ink)]">
@@ -261,7 +261,7 @@ const Entradas: React.FC<{ delMes: readonly Transaction[] }> = ({ delMes }) => {
   if (ingresos.length === 0) return null;
 
   return (
-    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
+    <section className="min-w-0 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">
       <h2 className="flex items-center gap-2 text-[15px] font-semibold text-[var(--fin-ink-soft)]">
         <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         Tus mayores entradas

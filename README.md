@@ -4,7 +4,7 @@ Aplicación de finanzas personales para Colombia. Permite registrar movimientos
 por texto, voz, imagen y extractos bancarios; organizar cuentas, presupuestos,
 metas, deudas y tarjetas; y analizar el historial financiero.
 
-Versión actual: `v10.10.13`. La fuente de versión es [`src/version.ts`](src/version.ts)
+Versión actual: `v10.10.14`. La fuente de versión es [`src/version.ts`](src/version.ts)
 y debe coincidir con `package.json` y `src/features/lukapp/novedades.ts`.
 
 ## Funciones

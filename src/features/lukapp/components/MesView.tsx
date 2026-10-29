@@ -100,10 +100,10 @@ export const MesView: React.FC<MesViewProps> = ({
   );
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="fin-mes min-w-0 w-full flex flex-col gap-8">
       {/* El selector de mes, que aquí sí merece su fila: es el control principal
  de la pantalla, porque todo lo de abajo depende de él. */}
-      <div className="flex items-center justify-between">
+      <div className="flex min-w-0 items-center justify-between gap-2">
         <button
           type="button"
           onClick={() => onCambiarPeriodo(anterior)}
@@ -113,9 +113,9 @@ export const MesView: React.FC<MesViewProps> = ({
         >
           <ChevronLeft className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center justify-center gap-2">
           <h1
-            className="capitalize text-[var(--fin-ink)]"
+            className="min-w-0 break-words text-center capitalize text-[var(--fin-ink)]"
             style={{ font: 'var(--fin-t-titulo)', letterSpacing: 'var(--fin-track-titulo)' }}
           >
             {etiquetaPeriodo}
@@ -188,6 +188,8 @@ export const MesView: React.FC<MesViewProps> = ({
           className="mt-1 text-center tabular-nums"
           style={{
             font: 'var(--fin-t-cifra)',
+            fontSize: 'clamp(1.5rem, 8vw, 3.5rem)',
+            overflowWrap: 'anywhere',
             letterSpacing: 'var(--fin-track-cifra)',
             color: positivo ? 'var(--fin-in)' : 'var(--fin-out)',
           }}

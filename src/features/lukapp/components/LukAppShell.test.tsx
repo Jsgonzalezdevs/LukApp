@@ -23,6 +23,15 @@ describe('LukAppShell', () => {
     expect(screen.getAllByRole('navigation', { name: 'Secciones' })).toHaveLength(1);
   });
 
+  it('mantiene la navegación fuera del contenido largo de Mes', () => {
+    render(<div style={{ transform: 'translateX(0)' }}>
+      <LukAppShell {...props} section="mes"><div style={{ height: 3000 }}>Mes largo</div></LukAppShell>
+    </div>);
+    const nav = screen.getByRole('navigation', { name: 'Secciones' });
+    expect(nav.parentElement).toBe(document.body);
+    expect(within(nav).getByRole('button', { name: 'Mes' })).toHaveAttribute('aria-current', 'page');
+  });
+
   it('muestra los cuatro destinos', () => {
     render(<LukAppShell {...props} />);
     const nav = screen.getByRole('navigation', { name: 'Secciones' });
