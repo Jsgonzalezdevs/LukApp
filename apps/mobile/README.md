@@ -61,7 +61,7 @@ El primer build puede pedir crear/guardar la credencial de firma Android. Debe
 ser la misma clave de carga asociada a la app `lukApp.App` en Play Console. Si
 Play ya tiene una clave de carga activa o un restablecimiento pendiente, no
 subas el AAB hasta confirmar cuál credencial acepta Play. El `versionCode`
-actual de desarrollo es `1010010`; debe ser superior al último código que Play
+actual de desarrollo es `1010011`; debe ser superior al último código que Play
 acepte para ese paquete. El export de Expo para Metro no es un APK ni un AAB.
 
 ## Plan para que web y Android evolucionen juntos
