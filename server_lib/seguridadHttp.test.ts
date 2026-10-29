@@ -11,6 +11,7 @@ describe('seguridad HTTP', () => {
 
     expect(esOrigenCorsPermitido('https://lukapp.app', permitidos)).toBe(true);
     expect(esOrigenCorsPermitido('https://www.lukapp.app', permitidos)).toBe(true);
+    expect(esOrigenCorsPermitido('https://mi.lukapp.app', permitidos)).toBe(true);
     expect(esOrigenCorsPermitido('https://sitio-malicioso.example', permitidos)).toBe(false);
     expect(esOrigenCorsPermitido('http://localhost:5173', permitidos)).toBe(false);
   });
@@ -21,7 +22,13 @@ describe('seguridad HTTP', () => {
       CORS_ORIGINS: 'https://preview.lukapp.app/, http://inseguro.example, https://lukapp.app',
     });
 
-    expect([...permitidos]).toEqual(['https://preview.lukapp.app', 'https://lukapp.app']);
+    expect([...permitidos]).toEqual([
+      'https://lukapp.app',
+      'https://www.lukapp.app',
+      'https://mi.lukapp.app',
+      'https://preview.lukapp.app',
+    ]);
+    expect(esOrigenCorsPermitido('https://mi.lukapp.app', permitidos)).toBe(true);
     expect(esOrigenCorsPermitido('https://preview.lukapp.app', permitidos)).toBe(true);
     expect(esOrigenCorsPermitido('http://inseguro.example', permitidos)).toBe(false);
   });

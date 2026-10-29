@@ -22,6 +22,21 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.11', fecha: '2026-10-29', texto: 'Actualizamos la base de Android para mantenerla compatible con Expo. 📲' },
+  { version: '10.10.10', fecha: '2026-10-29', texto: 'Las vistas de prueba permiten abrir directamente las pantallas de LukApp para revisar cada cambio. 📲' },
+  { version: '10.10.9', fecha: '2026-10-29', texto: 'Completamos la integración del tema claro y oscuro con el sistema de Android. 🎨📲' },
+  { version: '10.10.8', fecha: '2026-10-29', texto: 'Android respeta el tema del sistema y mantiene el fondo elegido mientras carga LukApp. 🎨📲' },
+  { version: '10.10.7', fecha: '2026-10-29', texto: 'El fondo de los bordes de Android acompaña el tema que eliges en LukApp. 🎨' },
+  { version: '10.10.6', fecha: '2026-10-29', texto: 'Comparte invitaciones, resúmenes y mensajes del asesor con el menú de tu teléfono desde LukApp Android. 📲' },
+  { version: '10.10.5', fecha: '2026-10-29', texto: 'LukApp Android abre las mismas pantallas y herramientas de la web, conserva su tema y permite compartir los archivos que exportas. ✨📲' },
+  { version: '10.10.4', fecha: '2026-10-29', texto: 'Ajustamos el guardado seguro de la sesión en Android para que puedas entrar y mantener tu cuenta activa. 🔐📲' },
+  { version: '10.10.3', fecha: '2026-10-29', texto: 'Corregimos el acceso en Android: ahora la sesión y el bloqueo biométrico se guardan con claves seguras válidas. 🔐📲' },
+  { version: '10.10.2', fecha: '2026-10-29', texto: 'LukApp móvil ya está conectada a Expo para preparar las primeras instalaciones de prueba en Android. 📲' },
+  { version: '10.10.1', fecha: '2026-10-29', texto: 'Asesor, Premium y Superadmin vuelven a comunicarse correctamente al entrar desde mi.lukapp.app. ✨' },
+  { version: '10.10.0', fecha: '2026-10-28', texto: 'Consulta en una sola vista nativa tus cuentas, ahorros, deudas y tarjetas, con los mismos saldos que en LukApp web. 💰📲' },
+  { version: '10.9.1', fecha: '2026-10-28', texto: 'Estamos preparando una instalación de prueba para Android con acceso, movimientos y seguridad del teléfono en una app nativa. 📲🔐' },
+  { version: '10.9.0', fecha: '2026-10-28', texto: 'Android ya tiene Inicio, movimientos recientes y un formulario nativo para registrar ingresos y gastos en tu misma cuenta de LukApp. 📲✨' },
+  { version: '10.8.0', fecha: '2026-10-28', texto: 'Estamos preparando una LukApp nativa para Android, con pantallas y controles diseñados para el teléfono y tus datos conectados a la misma cuenta. 📲✨' },
   { version: '10.7.22', fecha: '2026-10-28', texto: 'Ahora es más fácil encontrar tu plan Premium y abrir el selector para cambiar entre Finanzas y Superadmin. Si no se pueden comprobar los permisos, LukApp te lo explica. ✨' },
   { version: '10.7.21', fecha: '2026-10-28', texto: 'Al entrar desde mi.lukapp.app, quitamos el acceso que te devolvía a la portada pública para mantenerte dentro de LukApp. 📲' },
   { version: '10.7.20', fecha: '2026-10-28', texto: 'Entra directamente a LukApp desde mi.lukapp.app; la portada pública conserva su propio espacio. 📲✨' },

@@ -15,6 +15,7 @@ export interface EntornoHttp {
 const ORIGENES_PUBLICOS = [
   'https://lukapp.app',
   'https://www.lukapp.app',
+  'https://mi.lukapp.app',
 ] as const;
 
 const ORIGENES_LOCALES = [
@@ -41,7 +42,9 @@ export const origenesCorsPermitidos = (entorno: EntornoHttp): ReadonlySet<string
     .map(normalizarOrigen)
     .filter((origen): origen is string => Boolean(origen));
 
-  if (configurados?.length) return new Set(configurados);
+  // Los orígenes propios son obligatorios aunque Render tenga una lista
+  // explícita antigua; `CORS_ORIGINS` agrega previews o clientes autorizados.
+  if (configurados?.length) return new Set([...ORIGENES_PUBLICOS, ...configurados]);
 
   const enDesarrollo = entorno.NODE_ENV !== 'production' && !entorno.RENDER;
   return new Set(enDesarrollo ? [...ORIGENES_PUBLICOS, ...ORIGENES_LOCALES] : ORIGENES_PUBLICOS);

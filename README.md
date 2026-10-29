@@ -4,7 +4,7 @@ Aplicación de finanzas personales para Colombia. Permite registrar movimientos
 por texto, voz, imagen y extractos bancarios; organizar cuentas, presupuestos,
 metas, deudas y tarjetas; y analizar el historial financiero.
 
-Versión actual: `V3.3.4`. La fuente de versión es [`src/version.ts`](src/version.ts)
+Versión actual: `v10.10.11`. La fuente de versión es [`src/version.ts`](src/version.ts)
 y debe coincidir con `package.json` y `src/features/lukapp/novedades.ts`.
 
 ## Funciones
@@ -51,6 +51,7 @@ server.ts                 API Express para analista y administración
 server_lib/               Auth, permisos y plantillas bancarias
 supabase/migrations/      Esquema, RLS y cambios de base de datos
 public/                   PWA, marca, sitemap, robots y service worker
+apps/mobile/              Cliente nativo Android en React Native y Expo
 ```
 
 La navegación principal tiene cinco destinos: Inicio, Dinero, Mes, Asesor y
@@ -72,6 +73,13 @@ npm run lint      # Oxlint
 npm run build     # TypeScript + Vite producción
 npm run preview   # Preview del build
 ```
+
+## Aplicación móvil nativa
+
+El cliente Android está en [`apps/mobile`](apps/mobile) y presenta la misma
+aplicación web de `mi.lukapp.app` en una vista WebView de Expo. Así comparte sus
+pantallas, colores, autenticación y funciones con la PWA sin mantener una copia
+incompleta de la interfaz. Consulta la [guía para builds de prueba](apps/mobile/README.md).
 
 Para cobertura específica del audio: `npm run test:audio-cobertura`.
 

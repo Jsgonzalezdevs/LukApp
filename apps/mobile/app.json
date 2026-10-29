@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "LukApp",
+    "slug": "julian-gonzalez",
+    "owner": "lukapp",
+    "scheme": "lukapp",
+    "version": "10.10.11",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets-app-icon.png",
+    "android": {
+      "package": "lukApp.App",
+      "versionCode": 1010011,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets-app-icon.png",
+        "backgroundColor": "#171220"
+      },
+      "predictiveBackGestureEnabled": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4e5d8a1a-2812-4fe9-a404-6854ffa3a522"
+      }
+    },
+    "plugins": [
+      "expo-status-bar",
+      "expo-web-browser",
+      "expo-sharing"
+    ]
+  }
+}

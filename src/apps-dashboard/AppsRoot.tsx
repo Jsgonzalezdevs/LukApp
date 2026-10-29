@@ -106,6 +106,7 @@ function detectActiveAppFromPath(pathname: string): AppId {
 
 /** Una PWA ya instalada puede conservar la URL raíz de un manifiesto antiguo. */
 const esPwaInstalada = (): boolean =>
+  (window as Window & { __LUKAPP_NATIVE__?: boolean }).__LUKAPP_NATIVE__ === true ||
   window.matchMedia?.('(display-mode: standalone)').matches === true ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
