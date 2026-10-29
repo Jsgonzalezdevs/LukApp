@@ -37,13 +37,13 @@ export const TemaToggle: React.FC<TemaToggleProps> = ({ tema, onCambiar, classNa
           aria-checked={activo}
           onClick={() => onCambiar(opcion.id)}
           title={opcion.label}
-          className={`flex h-7 w-7 items-center justify-center rounded-[var(--fin-r-pill)] text-[13px] transition-colors ${
+          className={`flex h-6 w-6 items-center justify-center rounded-[var(--fin-r-pill)] text-[12px] transition-colors ${
             activo ? 'bg-[var(--fin-accent)] text-[var(--fin-on-accent)]' : 'text-[var(--fin-ink-soft)] hover:bg-[var(--fin-soft)]'
           }`}
         >
           {(() => {
             const Icono = ICONO[opcion.id];
-            return <Icono className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />;
+            return <Icono className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />;
           })()}
           <span className="sr-only">{opcion.label}</span>
         </button>

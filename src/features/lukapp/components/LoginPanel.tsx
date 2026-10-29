@@ -31,7 +31,6 @@ interface LoginPanelProps {
   onCambiarTema: (tema: Tema) => void;
   permitirRegistro?: boolean;
   modoInicial?: Modo;
-  onVolverInicio?: () => void;
 }
 
 type Modo = 'entrar' | 'registrarse' | 'recuperar' | 'actualizar';
@@ -45,7 +44,6 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   onCambiarTema,
   permitirRegistro = true,
   modoInicial,
-  onVolverInicio,
 }) => {
   const movimientoReducido = useMovimientoReducido();
   const ocultarRegresoPortada = esDominioAppPrincipal();
@@ -212,24 +210,6 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         aria-hidden="true"
       />
 
-      {!ocultarRegresoPortada && (
-        <div className="absolute left-5 top-5 z-20">
-          <button
-            type="button"
-            onClick={() => {
-              if (onVolverInicio) onVolverInicio();
-              else window.location.href = '/';
-            }}
-            className="group flex items-center gap-2 rounded-[var(--fin-r-pill)] border border-[var(--fin-line)]/80 bg-[var(--fin-card)]/80 px-4 py-2 text-[13px] font-semibold text-[var(--fin-ink-soft)] shadow-sm backdrop-blur-md transition-all hover:border-[var(--fin-line)] hover:bg-[var(--fin-card)] hover:text-[var(--fin-ink)] hover:shadow-md active:scale-95"
-            title="Volver a la página principal"
-            aria-label="Volver al inicio"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.25} />
-            <span>Volver al inicio</span>
-          </button>
-        </div>
-      )}
-
       <div className="absolute right-5 top-5 z-20">
         <TemaToggle tema={tema} onCambiar={onCambiarTema} />
       </div>
@@ -247,17 +227,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               {marca}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => {
-                if (onVolverInicio) onVolverInicio();
-                else window.location.href = '/';
-              }}
-              className="group relative mb-4 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-              title="Volver al inicio"
-            >
-              {marca}
-            </button>
+            <div className="relative mb-4 flex items-center justify-center">{marca}</div>
           )}
 
           <h1 className="text-[28px] font-bold tracking-tight text-[var(--fin-ink)]">

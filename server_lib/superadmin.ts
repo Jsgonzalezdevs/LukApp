@@ -25,6 +25,8 @@ export interface CambiosUsuario {
   rolPersonalizadoId?: string | null;
 }
 
+export const LIMITE_ADMINISTRADORES = 2;
+
 export interface ContextoEdicion {
   /** Quién está pulsando los botones. */
   editorId: string;
@@ -51,6 +53,11 @@ export const motivoParaRechazar = (
 ): string | null => {
   const esSuPropiaCuenta = ctx.editorId === ctx.objetivoId;
   const quitaAdmin = ctx.objetivoRol === 'admin' && cambios.rol === 'usuario';
+  const agregaAdmin = ctx.objetivoRol !== 'admin' && cambios.rol === 'admin';
+
+  if (agregaAdmin && ctx.totalAdmins >= LIMITE_ADMINISTRADORES) {
+    return 'LukApp ya tiene sus dos cuentas administradoras.';
+  }
 
   // Quitarte a ti mismo el rol te saca del panel en el mismo clic. Aunque
   // hubiera otro admin, es casi siempre un accidente, así que se bloquea.

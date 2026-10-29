@@ -133,7 +133,6 @@ export const AppsRoot: React.FC = () => {
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
-  const [errorCargaRol, setErrorCargaRol] = useState(false);
   const [mostrarInstalacionPwa, setMostrarInstalacionPwa] = useState(false);
   const [vistaPreviaInstalacionPwa, setVistaPreviaInstalacionPwa] = useState(false);
   const ultimoAccesoRegistrado = useRef<string | null>(null);
@@ -262,13 +261,11 @@ export const AppsRoot: React.FC = () => {
     let cancelado = false;
     let timeoutId: NodeJS.Timeout | undefined;
     setLoadingRol(true);
-    setErrorCargaRol(false);
 
     const cargarRol = async (intentos = 0) => {
       if (sesion.estado.modo !== 'autenticado') {
         setRol('usuario');
         setPermisos([]);
-        setErrorCargaRol(false);
         setLoadingRol(false);
         return;
       }
@@ -303,7 +300,6 @@ export const AppsRoot: React.FC = () => {
         if (cancelado) return;
         setRol(rolBD);
         setPermisos(permisosAsignados);
-        setErrorCargaRol(false);
         setLoadingRol(false);
       } catch (error) {
         if (cancelado) return;
@@ -312,15 +308,12 @@ export const AppsRoot: React.FC = () => {
         const esperaExponencial = Math.min(1000 * Math.pow(2, intentos), 10000);
 
         if (intentos < maxIntentosReintento) {
-          console.warn(`Error loading user role, retrying (attempt ${intentos + 1}/${maxIntentosReintento}):`, error);
           timeoutId = setTimeout(() => cargarRol(intentos + 1), esperaExponencial);
           return;
         }
 
-        console.error('Failed to load user role after retries:', error);
         setRol('usuario');
         setPermisos([]);
-        setErrorCargaRol(true);
         setLoadingRol(false);
       }
     };
@@ -362,6 +355,18 @@ export const AppsRoot: React.FC = () => {
   // than during the previous render", disparado cada vez que `activeApp`
   // cambiaba entre 'finanzas'/'superadmin'/'estadisticas' y el lanzador).
   const esAdminOStaff = useMemo(() => rol === 'admin' || permisos.length > 0, [rol, permisos]);
+
+  useEffect(() => {
+    if (
+      activeApp === 'superadmin' &&
+      sesion.estado.modo !== 'cargando' &&
+      !loadingRol &&
+      !esAdminOStaff
+    ) {
+      setActiveApp('finanzas');
+      ir('/app');
+    }
+  }, [activeApp, esAdminOStaff, ir, loadingRol, sesion.estado.modo]);
 
   const handleSalir = useCallback(async () => {
     try {
@@ -416,7 +421,6 @@ export const AppsRoot: React.FC = () => {
         tema={tema}
         onCambiarTema={setTema}
         modoInicial="actualizar"
-        onVolverInicio={() => ir('/')}
       />
       </VistaConCarga>
     );
@@ -441,7 +445,6 @@ export const AppsRoot: React.FC = () => {
         tema={tema}
         onCambiarTema={setTema}
         modoInicial={enRegistro ? 'registrarse' : 'entrar'}
-        onVolverInicio={() => ir('/')}
       />
       </VistaConCarga>
     );
@@ -467,33 +470,7 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (activeApp === 'superadmin' && !esAdminOStaff) {
-    return (
-      <VistaConCarga>
-        <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)] p-6 text-[var(--fin-ink)]">
-          <section className="max-w-md rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center shadow-sm" role="alert">
-            <ShieldAlert className="mx-auto h-8 w-8 text-amber-500" aria-hidden="true" />
-            <h1 className="mt-4 text-xl font-bold">
-              {errorCargaRol ? 'No pudimos comprobar tus permisos' : 'Esta cuenta no tiene acceso a Superadmin'}
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--fin-ink-soft)]">
-              {errorCargaRol
-                ? 'Finanzas sigue disponible, pero no pudimos verificar el acceso administrativo. Vuelve a intentarlo.'
-                : 'Para entrar necesitas una cuenta administradora o un rol con permisos. Si esperabas tener acceso, revisa que hayas iniciado sesión con la cuenta correcta.'}
-            </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-2">
-              {errorCargaRol && (
-                <button type="button" onClick={() => window.location.reload()} className="rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-700">
-                  Volver a intentar
-                </button>
-              )}
-              <button type="button" onClick={() => setActiveApp('finanzas')} className="rounded-xl border border-[var(--fin-line)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fin-soft)]">
-                Ir a Finanzas
-              </button>
-            </div>
-          </section>
-        </main>
-      </VistaConCarga>
-    );
+    return <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]"><Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" /></div>;
   }
 
   if (!esAdminOStaff) {
@@ -501,12 +478,6 @@ export const AppsRoot: React.FC = () => {
       <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
-        {errorCargaRol && (
-          <div className="mx-auto mt-3 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-[var(--fin-ink)]" role="status">
-            <span>No pudimos comprobar si esta cuenta tiene accesos administrativos.</span>
-            <button type="button" onClick={() => window.location.reload()} className="font-semibold text-[var(--fin-accent)] underline">Volver a intentar</button>
-          </div>
-        )}
         <LukAppMain esAdmin={false} />
         {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} forzarVistaPrevia={vistaPreviaInstalacionPwa} />}
       </div>

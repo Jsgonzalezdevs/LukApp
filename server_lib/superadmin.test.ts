@@ -98,6 +98,16 @@ describe('motivoParaNoBorrar', () => {
       motivoParaNoBorrar(ctx({ objetivoId: 'admin-9', objetivoRol: 'admin', totalAdmins: 2 })),
     ).toBeNull();
   });
+
+  it('no permite conceder un tercer acceso de administrador', () => {
+    expect(motivoParaRechazar({ rol: 'admin' }, ctx({ objetivoRol: 'usuario', totalAdmins: 2 })))
+      .toMatch(/dos cuentas administradoras/i);
+  });
+
+  it('permite ocupar un cupo cuando hay menos de dos administradores', () => {
+    expect(motivoParaRechazar({ rol: 'admin' }, ctx({ objetivoRol: 'usuario', totalAdmins: 1 })))
+      .toBeNull();
+  });
 });
 
 describe('esUltimoAdmin', () => {

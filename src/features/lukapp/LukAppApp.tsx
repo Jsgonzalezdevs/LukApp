@@ -27,7 +27,6 @@ import { migrarLibroLocal, RepositorioIndexedDB, soportaIndexedDB } from './data
 import { RepositorioConCola } from './data/repositorioConCola';
 import { crearRepositorio } from './data/crearRepositorio';
 import { ColaCambios } from './data/colaCambios';
-import { LoginPanel } from './components/LoginPanel';
 import { SkeletonInicio } from './components/Skeleton';
 import { ES_PASIVO, claseDeCuenta, etiquetaTipoCajita } from './data/modelos';
 import { idsPasivos, saldosPorCajita } from './lib/cajitas';
@@ -80,7 +79,8 @@ import { InicioView } from './components/InicioView';
 import { ForecastResumen } from './components/ForecastResumen';
 import { useAiInsights } from './hooks/useAiInsights';
 import type { Insight } from './lib/insights';
-import { DineroView } from './components/DineroView';
+const LoginPanel = lazy(() => import('./components/LoginPanel').then(({ LoginPanel }) => ({ default: LoginPanel })));
+const DineroView = lazy(() => import('./components/DineroView').then(({ DineroView }) => ({ default: DineroView })));
 
 
 

@@ -2168,7 +2168,9 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   className="mt-1.5 block w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3.5 py-2.5 text-base sm:text-sm text-[var(--fin-ink)] focus:border-purple-500 focus:outline-none"
                 >
                   <option value="usuario">Usuario Normal</option>
-                  <option value="admin">Superadmin</option>
+                  {(editando?.rol === 'admin' || usuarios.filter((usuario) => usuario.rol === 'admin').length < 2) && (
+                    <option value="admin">Superadmin</option>
+                  )}
                 </SelectorApp>
                 {nuevoRol === 'admin' && (
                   <p className="mt-1.5 text-[11px] font-medium text-amber-600 dark:text-amber-400">
