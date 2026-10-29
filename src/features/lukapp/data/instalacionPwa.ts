@@ -25,6 +25,7 @@ let eventoDiferido: EventoAntesDeInstalar | null = null;
 const suscriptores = new Set<() => void>();
 
 const esPwaInstalada = (): boolean =>
+  (window as Window & { __LUKAPP_NATIVE__?: boolean }).__LUKAPP_NATIVE__ === true ||
   window.matchMedia?.('(display-mode: standalone)').matches === true ||
   (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
