@@ -20,7 +20,20 @@ import * as Sharing from 'expo-sharing';
 const URL_LUKAPP = process.env.EXPO_PUBLIC_LUKAPP_WEB_URL || 'https://mi.lukapp.app/';
 const HOST_LUKAPP = new URL(URL_LUKAPP).hostname;
 const FONDO = '#1a1817';
-const MARCA_WEBVIEW = "window.__LUKAPP_NATIVE__ = true; true;";
+const MARCA_WEBVIEW = `
+  window.__LUKAPP_NATIVE__ = true;
+  (function () {
+    var enviado = false;
+    var observador = new MutationObserver(function () {
+      if (enviado || !document.querySelector('#root button, #root input, #root nav')) return;
+      enviado = true;
+      observador.disconnect();
+      window.ReactNativeWebView.postMessage('lukapp:lista');
+    });
+    observador.observe(document, { childList: true, subtree: true });
+  })();
+  true;
+`;
 const SINCRONIZAR_TEMA = `
   (function () {
     var raiz = document.documentElement;
@@ -107,6 +120,15 @@ export default function App() {
     return () => suscripcion.remove();
   }, []);
 
+  useEffect(() => {
+    if (!cargando) return;
+    const limite = setTimeout(() => {
+      setCargando(false);
+      setFalloConexion(true);
+    }, 25_000);
+    return () => clearTimeout(limite);
+  }, [cargando, recarga]);
+
   const alCambiarNavegacion = (estado: WebViewNavigation) => {
     puedeVolver.current = estado.canGoBack;
   };
@@ -115,6 +137,11 @@ export default function App() {
     try {
       if (new URL(origen).hostname !== HOST_LUKAPP) return;
     } catch {
+      return;
+    }
+    if (mensaje === 'lukapp:lista') {
+      setCargando(false);
+      setFalloConexion(false);
       return;
     }
     if (mensaje === 'lukapp:barra:clara') {
@@ -216,7 +243,17 @@ export default function App() {
         onShouldStartLoadWithRequest={permitirNavegacion}
         onNavigationStateChange={alCambiarNavegacion}
         onLoadStart={() => { setCargando(true); setFalloConexion(false); }}
+        onLoadProgress={({ nativeEvent }) => {
+          if (nativeEvent.progress >= 0.9) setCargando(false);
+        }}
         onLoadEnd={() => setCargando(false)}
+        onHttpError={({ nativeEvent }) => {
+          if (nativeEvent.url === URL_LUKAPP && nativeEvent.statusCode >= 400) {
+            setCargando(false);
+            setFalloConexion(true);
+          }
+        }}
+        onRenderProcessGone={() => { setCargando(false); setFalloConexion(true); }}
         onError={() => { setCargando(false); setFalloConexion(true); }}
       />
 

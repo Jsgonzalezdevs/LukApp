@@ -5,7 +5,9 @@
     "noEmit": true
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx"
+    "index.tsx",
+    "src/App.tsx",
+    "src/AppNativa.tsx",
+    "src/lib/**/*.ts"
   ]
 }
