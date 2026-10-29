@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.18', fecha: '2026-10-29', texto: 'La app Android abre directamente LukApp, sin pasar por la portada pública. 📲' },
   { version: '10.10.17', fecha: '2026-10-29', texto: 'La barra inferior queda fija al recorrer Mes y el resto de tus pantallas. 📲' },
   { version: '10.10.16', fecha: '2026-10-29', texto: 'La barra de navegación permanece fija y visible abajo mientras recorres la pantalla. 📲' },
   { version: '10.10.15', fecha: '2026-10-29', texto: 'Cerrar el resumen mensual devuelve la pantalla a su posición y conserva la navegación y el ancho móvil. 📅📲' },
