@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.15', fecha: '2026-10-29', texto: 'Cerrar el resumen mensual devuelve la pantalla a su posición y conserva la navegación y el ancho móvil. 📅📲' },
   { version: '10.10.14', fecha: '2026-10-29', texto: 'Mes adapta sus cifras y tarjetas al celular y mantiene la navegación inferior disponible. 📅📲' },
   { version: '10.10.13', fecha: '2026-10-29', texto: 'Android deja de ocultar LukApp tras una carga interminable y permite reintentar si la conexión falla. 📲' },
   { version: '10.10.12', fecha: '2026-10-29', texto: 'Renovamos la caché instalada para que recibas la versión actual de LukApp. 📲' },

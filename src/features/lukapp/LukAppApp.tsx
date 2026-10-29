@@ -1031,8 +1031,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         <AnimatePresence initial={false}>
         <motion.div
           key={section}
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           /* No hay animación de salida: mantener la vista anterior durante
              esos milisegundos hacía que el dashboard destellara al navegar. */
           transition={{ duration: 0.18, ease: 'easeOut' }}

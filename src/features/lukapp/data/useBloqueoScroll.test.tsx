@@ -49,6 +49,20 @@ describe('useBloqueoScroll', () => {
     expect(bloqueado()).toBe(false);
   });
 
+  it('restaura ancho y estilos previos tras cierres repetidos y modales apilados', () => {
+    document.body.style.setProperty('width', '95%', 'important');
+    document.body.style.overflow = 'clip';
+    const antes = document.body.style.cssText;
+    for (let i = 0; i < 3; i++) {
+      const fondo = render(<Hoja />);
+      const encima = render(<Hoja />);
+      fondo.unmount();
+      expect(bloqueado()).toBe(true);
+      encima.unmount();
+      expect(document.body.style.cssText).toBe(antes);
+    }
+  });
+
   it('no toca nada mientras la hoja está cerrada', () => {
     render(<Hoja activo={false} />);
     expect(bloqueado()).toBe(false);

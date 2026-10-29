@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { IconoSimbolo } from './IconoSimbolo';
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -44,7 +45,7 @@ const Marco: React.FC<{
   detalle?: React.ReactNode;
   color?: string;
 }> = ({ icono, etiqueta, children, detalle, color = '#f5f3f0' }) => (
-  <div className="flex h-full flex-col items-center justify-center gap-5 px-8 text-center">
+  <div className="flex h-full min-w-0 flex-col items-center justify-center gap-5 px-8 text-center">
     <span
       className="flex h-16 w-16 items-center justify-center rounded-[var(--fin-r-pill)]"
       style={{ backgroundColor: tint(color, 0.16), color }}
@@ -64,7 +65,7 @@ const Cifra: React.FC<{ children: React.ReactNode; color?: string }> = ({
 }) => (
   <p
     className="tabular-nums"
-    style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)', color }}
+    style={{ font: 'var(--fin-t-cifra)', fontSize: 'clamp(1.5rem, 8vw, 3.5rem)', overflowWrap: 'anywhere', letterSpacing: 'var(--fin-track-cifra)', color }}
   >
     {children}
   </p>
@@ -260,7 +261,7 @@ const TarjetaVista: React.FC<{
 export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerrar }) => {
   const [indice, setIndice] = useState(0);
   const [compartido, setCompartido] = useState(false);
-  useBloqueoScroll(true);
+  useBloqueoScroll(tarjetas.length > 0);
   const catalogo = useCatalogo();
   const raiz = useRef<HTMLDivElement>(null);
 
@@ -302,7 +303,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
     }
   };
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -347,7 +348,7 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -24 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
-            className="absolute inset-0"
+            className="absolute inset-0 overflow-y-auto overflow-x-hidden"
           >
             <TarjetaVista
               tarjeta={actual}
@@ -388,6 +389,6 @@ export const ResumenWrapped: React.FC<ResumenWrappedProps> = ({ tarjetas, onCerr
           </button>
         </div>
       ) : null}
-    </motion.div>
+    </motion.div>, document.body
   );
 };
