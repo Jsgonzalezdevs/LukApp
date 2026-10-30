@@ -109,29 +109,58 @@ const SkeletonPanel: React.FC<{ panel: PanelAjustes }> = ({ panel }) => {
     <div key={i} className="flex flex-col gap-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-12 w-full rounded-2xl" /></div>
   ));
   const lista = (cantidad = 3, detalle = true) => Array.from({ length: cantidad }, (_, i) => <Fila key={i} detalle={detalle} />);
+  const tarjetas = (cantidad: number, tipo: 'progreso' | 'opcion' | 'idea' = 'opcion') => Array.from({ length: cantidad }, (_, i) => (
+    <section key={i} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+      <div className="flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-2xl" /><Skeleton className="h-4 w-2/3" /></div>
+      {tipo === 'progreso' ? <><Skeleton className="mt-4 h-3 w-1/3" /><Skeleton className="mt-3 h-2 w-full rounded-full" /><Skeleton className="mt-3 h-3 w-1/2" /></> : null}
+      {tipo === 'idea' ? <><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /><Skeleton className="mt-4 h-9 w-24 rounded-full" /></> : null}
+      {tipo === 'opcion' ? <Skeleton className="mt-3 h-3 w-1/2" /> : null}
+    </section>
+  ));
   let contenido: React.ReactNode;
 
-  if (panel === 'forecast' || panel === 'gmf') {
+  if (panel === 'forecast') {
     contenido = <><div className="grid grid-cols-2 gap-3"><div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-24" /><Skeleton className="mt-3 h-7 w-28" /></div><div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-20" /><Skeleton className="mt-3 h-7 w-24" /></div></div><section className="flex h-44 items-end gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">{[42, 66, 53, 82, 61, 92].map((alto, i) => <Skeleton key={i} className="flex-1 rounded-t-lg" style={{ height: `${alto}%` }} />)}</section>{lista(2)}</>;
-  } else if (panel === 'categorias' || panel === 'topes' || panel === 'periodo' || panel === 'metas' || panel === 'contraseña') {
-    contenido = <><section className="flex flex-col gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">{campos(panel === 'metas' ? 3 : panel === 'contraseña' ? 3 : 2)}<Skeleton className="h-12 w-full rounded-full" /></section>{panel === 'categorias' || panel === 'topes' ? lista(3, false) : null}</>;
+  } else if (panel === 'categorias') {
+    contenido = <><Skeleton className="h-12 w-full rounded-full" /><div className="grid grid-cols-2 gap-3">{tarjetas(6)}</div></>;
+  } else if (panel === 'topes') {
+    contenido = <><div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-3 w-28" /><Skeleton className="mt-3 h-7 w-36" /><Skeleton className="mt-4 h-2 w-full rounded-full" /></div>{tarjetas(4, 'progreso')}</>;
+  } else if (panel === 'periodo') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-4 w-3/4" /><div className="mt-5 grid grid-cols-2 gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-12 rounded-2xl" />)}</div><Skeleton className="mt-5 h-3 w-full" /></section><Skeleton className="h-12 w-full rounded-full" /></>;
+  } else if (panel === 'metas') {
+    contenido = <><Skeleton className="h-12 w-full rounded-full" />{tarjetas(3, 'progreso')}</>;
   } else if (panel === 'recurrentes') {
     contenido = <><div className="grid grid-cols-7 gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">{Array.from({ length: 28 }, (_, i) => <Skeleton key={i} className="mx-auto h-7 w-7 rounded-full" />)}</div><Skeleton className="h-12 w-full rounded-full" />{lista(3)}</>;
-  } else if (panel === 'compartido' || panel === 'dividir-cuenta' || panel === 'vaquitas') {
-    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><div className="flex -space-x-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-11 w-11 rounded-full border-2 border-[var(--fin-card)]" />)}</div><Skeleton className="mt-5 h-5 w-2/3" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /></section>{campos(1)}{lista(2)}</>;
-  } else if (panel === 'extractos' || panel === 'respaldo') {
-    contenido = <><section className="flex h-44 flex-col items-center justify-center gap-3 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)]"><Skeleton className="h-12 w-12 rounded-2xl" /><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-52 max-w-full" /></section><Skeleton className="h-12 w-full rounded-full" />{panel === 'respaldo' ? lista(2) : null}</>;
+  } else if (panel === 'compartido') {
+    contenido = <><Skeleton className="h-12 w-full rounded-full" />{tarjetas(3, 'opcion')}</>;
+  } else if (panel === 'dividir-cuenta') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><div className="grid grid-cols-2 gap-3">{campos(2)}</div><Skeleton className="mt-5 h-12 w-full rounded-full" /></section><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-3 w-28" /><Skeleton className="mt-3 h-8 w-36" />{campos(1)}</section></>;
+  } else if (panel === 'vaquitas') {
+    contenido = <><div className="flex items-center justify-between"><Skeleton className="h-5 w-32" /><Skeleton className="h-10 w-10 rounded-full" /></div>{tarjetas(3, 'progreso')}</>;
+  } else if (panel === 'extractos') {
+    contenido = <><section className="flex h-44 flex-col items-center justify-center gap-3 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)]"><Skeleton className="h-12 w-12 rounded-2xl" /><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-52 max-w-full" /></section><Skeleton className="h-12 w-full rounded-full" /></>;
   } else if (panel === 'atajos') {
     contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-4 w-40" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /></section>{[0, 1, 2].map((i) => <div key={i} className="flex items-center gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-11 w-11 rounded-2xl" /><div className="flex-1"><Skeleton className="h-4 w-2/3" /><Skeleton className="mt-2 h-3 w-1/2" /></div><Skeleton className="h-7 w-12 rounded-full" /></div>)}</>;
-  } else if (panel === 'revisiones' || panel === 'nombres') {
+  } else if (panel === 'revisiones') {
     contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-11 w-full rounded-full" /></section>{lista(4)}</>;
+  } else if (panel === 'gmf') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-3 w-32" /><Skeleton className="mt-3 h-8 w-40" /><Skeleton className="mt-2 h-3 w-2/3" /></section><div className="grid grid-cols-2 gap-3">{tarjetas(2, 'opcion')}</div>{campos(2)}</>;
+  } else if (panel === 'nombres') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-11 w-full rounded-full" /></section>{tarjetas(3, 'opcion')}</>;
+  } else if (panel === 'contraseña') {
+    contenido = <section className="flex flex-col gap-5 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">{campos(3)}<Skeleton className="h-12 w-full rounded-full" /></section>;
+  } else if (panel === 'respaldo') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-5 w-40" /><Skeleton className="mt-3 h-3 w-full" /><div className="mt-5 flex gap-3"><Skeleton className="h-11 flex-1 rounded-full" /><Skeleton className="h-11 flex-1 rounded-full" /></div></section>{tarjetas(2, 'opcion')}</>;
   } else if (panel === 'funciones-solicitadas') {
-    contenido = <><Skeleton className="h-12 w-full rounded-full" />{[0, 1, 2].map((i) => <section key={i} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-4 w-3/4" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-2/3" /><Skeleton className="mt-4 h-9 w-24 rounded-full" /></section>)}</>;
+    contenido = <><Skeleton className="h-12 w-full rounded-full" />{tarjetas(3, 'idea')}</>;
+  } else if (panel === 'cuenta') {
+    contenido = <><section className="flex items-center gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-14 w-14 rounded-full" /><div className="flex-1"><Skeleton className="h-4 w-2/3" /><Skeleton className="mt-2 h-3 w-1/2" /></div></section>{lista(4, false)}</>;
   } else {
-    contenido = <><section className="flex items-center gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-14 w-14 rounded-full" /><div className="flex-1"><Skeleton className="h-4 w-2/3" /><Skeleton className="mt-2 h-3 w-1/2" /></div></section>{lista(4)}</>;
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">{campos(2)}<Skeleton className="mt-5 h-12 w-full rounded-full" /></section>{lista(2)}</>;
   }
 
-  return <Contenedor pantalla={`panel-${panel}`} etiqueta={etiqueta}><Titulo ancho="w-44" />{contenido}</Contenedor>;
+  const anchoTitulo = etiqueta.length > 24 ? 'w-52' : etiqueta.length > 15 ? 'w-44' : 'w-32';
+  return <Contenedor pantalla={`panel-${panel}`} etiqueta={etiqueta}><Titulo ancho={anchoTitulo} />{contenido}</Contenedor>;
 };
 
 export const SkeletonDeSeccion: React.FC<{ seccion: SectionId; panel?: PanelAjustes | null }> = ({ seccion, panel = null }) => {

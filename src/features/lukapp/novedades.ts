@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.38', fecha: '2026-10-30', texto: 'Los esqueletos de cada herramienta ahora anticipan su contenido: metas, topes, categorías, 4x1000, respaldos y más. ✨' },
   { version: '10.10.37', fecha: '2026-10-30', texto: 'Cada herramienta que abres en “Más” muestra un esqueleto propio mientras carga, también al iniciar LukApp en Android. ✨📲' },
   { version: '10.10.36', fecha: '2026-10-30', texto: 'Cada pantalla muestra su propio esqueleto mientras carga, también en Android; el arranque nativo conserva el fondo oscuro de LukApp. 📲✨' },
   { version: '10.10.35', fecha: '2026-10-30', texto: 'El skeleton de inicio también aparece al abrir LukApp desde su app Android, sin quedarse en una pantalla vacía mientras llegan tus datos. 📲' },
