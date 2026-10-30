@@ -5,7 +5,7 @@
 // Debe avanzar junto con la versión de la app. Al hacerlo, activate elimina
 // recursos de lanzamientos anteriores en vez de dejar una PWA instalada con
 // cachés viejos acumulados.
-const VERSION = 'v10.10.24';
+const VERSION = 'v10.10.25';
 const SHELL = `lukapp-shell-${VERSION}`;
 const ASSETS = `lukapp-assets-${VERSION}`;
 
@@ -44,10 +44,6 @@ self.addEventListener('install', (evento) => {
       .catch(() => undefined)
       .then(() => undefined),
   );
-});
-
-self.addEventListener('message', (evento) => {
-  if (evento.data?.tipo === 'activar-actualizacion') self.skipWaiting();
 });
 
 self.addEventListener('push', (evento) => {

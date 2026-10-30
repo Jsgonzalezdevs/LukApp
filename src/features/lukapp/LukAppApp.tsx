@@ -4,7 +4,6 @@ import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useStat
 import './styles/premium-effects.css';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, CloudOff, X } from 'lucide-react';
-import { ActualizacionPwa } from './components/ActualizacionPwa';
 import type { Transaction } from './types';
 import { COPY } from './copy';
 import { byCategory, forPeriod, monthTotals } from './lib/aggregate';
@@ -962,7 +961,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         }
       >
         <Suspense fallback={<SkeletonInicio />}>
-        <ActualizacionPwa />
         {!enLinea ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] px-4 py-3" role="status">
             <CloudOff className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]" strokeWidth={2.5} />

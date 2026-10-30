@@ -14,18 +14,11 @@ export const registrarServiceWorker = (): void => {
   if (import.meta.env.DEV) return;
 
   const registrar = () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' }).then((registro) => {
-      const avisarActualizacion = () => window.dispatchEvent(new Event('lukapp:actualizacion-pwa'));
-      if (registro.waiting) avisarActualizacion();
-      registro.addEventListener('updatefound', () => {
-        const trabajador = registro.installing;
-        trabajador?.addEventListener('statechange', () => {
-          if (trabajador.state === 'installed' && navigator.serviceWorker.controller) {
-            avisarActualizacion();
-          }
-        });
-      });
-    }).catch(() => undefined);
+    // Una versión nueva se descarga en segundo plano, pero el navegador la deja
+    // esperando hasta que se cierren todas las ventanas que usan la actual.
+    // Así la siguiente apertura recibe la versión nueva sin recargar ni perder
+    // lo que la persona esté haciendo.
+    void navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => undefined);
   };
 
   // `main.tsx` importa este módulo después de que pueda haberse disparado
