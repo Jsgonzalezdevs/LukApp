@@ -204,9 +204,10 @@ const LukAppContenido: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirC
     : SECTIONS.some((item) => item.id === segmentosIniciales[0])
       ? segmentosIniciales[0] as SectionId
       : 'inicio';
+  const panelInicial = panelDeSegmentos(segmentosIniciales);
 
   if (sesion.estado.modo === 'cargando') {
-    return <SkeletonDeSeccion seccion={seccionInicial} />;
+    return <SkeletonDeSeccion seccion={seccionInicial} panel={panelInicial} />;
   }
 
   if (sesion.estado.modo === 'anonimo') {

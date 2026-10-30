@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import type { PanelAjustes, SectionId } from '../sections';
+import { PANELES_AJUSTES, type PanelAjustes, type SectionId } from '../sections';
 
 interface SkeletonProps {
   className?: string;
@@ -103,11 +103,43 @@ const SkeletonCalendario: React.FC = () => (
   </>
 );
 
+const SkeletonPanel: React.FC<{ panel: PanelAjustes }> = ({ panel }) => {
+  const etiqueta = PANELES_AJUSTES.find((item) => item.id === panel)?.label ?? 'esta herramienta';
+  const campos = (cantidad = 2) => Array.from({ length: cantidad }, (_, i) => (
+    <div key={i} className="flex flex-col gap-2"><Skeleton className="h-3 w-24" /><Skeleton className="h-12 w-full rounded-2xl" /></div>
+  ));
+  const lista = (cantidad = 3, detalle = true) => Array.from({ length: cantidad }, (_, i) => <Fila key={i} detalle={detalle} />);
+  let contenido: React.ReactNode;
+
+  if (panel === 'forecast' || panel === 'gmf') {
+    contenido = <><div className="grid grid-cols-2 gap-3"><div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-24" /><Skeleton className="mt-3 h-7 w-28" /></div><div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-20" /><Skeleton className="mt-3 h-7 w-24" /></div></div><section className="flex h-44 items-end gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">{[42, 66, 53, 82, 61, 92].map((alto, i) => <Skeleton key={i} className="flex-1 rounded-t-lg" style={{ height: `${alto}%` }} />)}</section>{lista(2)}</>;
+  } else if (panel === 'categorias' || panel === 'topes' || panel === 'periodo' || panel === 'metas' || panel === 'contraseña') {
+    contenido = <><section className="flex flex-col gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5">{campos(panel === 'metas' ? 3 : panel === 'contraseña' ? 3 : 2)}<Skeleton className="h-12 w-full rounded-full" /></section>{panel === 'categorias' || panel === 'topes' ? lista(3, false) : null}</>;
+  } else if (panel === 'recurrentes') {
+    contenido = <><div className="grid grid-cols-7 gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">{Array.from({ length: 28 }, (_, i) => <Skeleton key={i} className="mx-auto h-7 w-7 rounded-full" />)}</div><Skeleton className="h-12 w-full rounded-full" />{lista(3)}</>;
+  } else if (panel === 'compartido' || panel === 'dividir-cuenta' || panel === 'vaquitas') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><div className="flex -space-x-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-11 w-11 rounded-full border-2 border-[var(--fin-card)]" />)}</div><Skeleton className="mt-5 h-5 w-2/3" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /></section>{campos(1)}{lista(2)}</>;
+  } else if (panel === 'extractos' || panel === 'respaldo') {
+    contenido = <><section className="flex h-44 flex-col items-center justify-center gap-3 rounded-[var(--fin-r-card)] border-2 border-dashed border-[var(--fin-line)] bg-[var(--fin-card)]"><Skeleton className="h-12 w-12 rounded-2xl" /><Skeleton className="h-4 w-40" /><Skeleton className="h-3 w-52 max-w-full" /></section><Skeleton className="h-12 w-full rounded-full" />{panel === 'respaldo' ? lista(2) : null}</>;
+  } else if (panel === 'atajos') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-4 w-40" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /></section>{[0, 1, 2].map((i) => <div key={i} className="flex items-center gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-11 w-11 rounded-2xl" /><div className="flex-1"><Skeleton className="h-4 w-2/3" /><Skeleton className="mt-2 h-3 w-1/2" /></div><Skeleton className="h-7 w-12 rounded-full" /></div>)}</>;
+  } else if (panel === 'revisiones' || panel === 'nombres') {
+    contenido = <><section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-11 w-full rounded-full" /></section>{lista(4)}</>;
+  } else if (panel === 'funciones-solicitadas') {
+    contenido = <><Skeleton className="h-12 w-full rounded-full" />{[0, 1, 2].map((i) => <section key={i} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-4 w-3/4" /><Skeleton className="mt-3 h-3 w-full" /><Skeleton className="mt-2 h-3 w-2/3" /><Skeleton className="mt-4 h-9 w-24 rounded-full" /></section>)}</>;
+  } else {
+    contenido = <><section className="flex items-center gap-4 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-14 w-14 rounded-full" /><div className="flex-1"><Skeleton className="h-4 w-2/3" /><Skeleton className="mt-2 h-3 w-1/2" /></div></section>{lista(4)}</>;
+  }
+
+  return <Contenedor pantalla={`panel-${panel}`} etiqueta={etiqueta}><Titulo ancho="w-44" />{contenido}</Contenedor>;
+};
+
 export const SkeletonDeSeccion: React.FC<{ seccion: SectionId; panel?: PanelAjustes | null }> = ({ seccion, panel = null }) => {
+  if (panel) return <SkeletonPanel panel={panel} />;
   if (seccion === 'dinero') return <Contenedor pantalla="dinero" etiqueta="Dinero"><SkeletonDinero /></Contenedor>;
   if (seccion === 'mes') return <Contenedor pantalla="mes" etiqueta="Mes"><SkeletonMes /></Contenedor>;
   if (seccion === 'asesor') return <Contenedor pantalla="asesor" etiqueta="Asesor"><SkeletonAsesor /></Contenedor>;
-  if (seccion === 'ajustes') return <Contenedor pantalla={panel ? 'ajustes-detalle' : 'ajustes'} etiqueta={panel ? 'este ajuste' : 'Más'}><SkeletonAjustes panel={panel} /></Contenedor>;
+  if (seccion === 'ajustes') return <Contenedor pantalla="ajustes" etiqueta="Más"><SkeletonAjustes /></Contenedor>;
   if (seccion === 'calendario') return <Contenedor pantalla="calendario" etiqueta="Calendario"><SkeletonCalendario /></Contenedor>;
   return <SkeletonInicio />;
 };

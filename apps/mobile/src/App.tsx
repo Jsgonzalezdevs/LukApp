@@ -26,11 +26,11 @@ const URL_LUKAPP = process.env.EXPO_PUBLIC_LUKAPP_WEB_URL || 'https://mi.lukapp.
 const HOST_LUKAPP = new URL(URL_LUKAPP).hostname;
 const FONDO = '#1a1817';
 const PANTALLA_INICIAL = (() => {
-  const ruta = new URL(URL_LUKAPP).pathname.replace(/\/$/, '');
-  const segmento = ruta.split('/').filter(Boolean).at(-1);
-  return ['inicio', 'dinero', 'mes', 'asesor', 'ajustes', 'calendario'].includes(segmento || '')
-    ? segmento || 'inicio'
-    : 'inicio';
+  const segmentos = new URL(URL_LUKAPP).pathname.replace(/\/$/, '').split('/').filter(Boolean);
+  const seccion = segmentos.at(-1);
+  if (['inicio', 'dinero', 'mes', 'asesor', 'ajustes', 'calendario'].includes(seccion || '')) return seccion || 'inicio';
+  if (segmentos.length > 1 && ['dinero', 'mes', 'ajustes', 'calendario'].includes(segmentos[0])) return `panel-${segmentos[1]}`;
+  return 'inicio';
 })();
 const MARCA_WEBVIEW = `
   window.__LUKAPP_NATIVE__ = true;
@@ -226,6 +226,40 @@ function EsqueletoNativo({ pantalla, claro }: { pantalla: string; claro: boolean
           <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /></View>{filas(2)}
         </>
       ) : null}
+      {pantalla.startsWith('panel-') ? (() => {
+        const panel = pantalla.slice('panel-'.length);
+        const formulario = ['categorias', 'topes', 'periodo', 'metas', 'contraseña'].includes(panel);
+        const archivo = panel === 'extractos' || panel === 'respaldo';
+        const compartido = ['compartido', 'dividir-cuenta', 'vaquitas'].includes(panel);
+        const grafica = panel === 'forecast' || panel === 'gmf';
+        return <>
+          {grafica ? <>
+            <View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View>
+            <View style={[estilos.esqueletoTarjeta, estilos.barrasMes, { backgroundColor: tarjeta }]}>{[39, 68, 52, 84, 59, 93].map((alto, i) => <View key={i} style={[estilos.barraMes, { height: alto, backgroundColor: tonoSuave }]} />)}</View>{filas(2)}
+          </> : null}
+          {formulario ? <>
+            <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}>
+              {[0, 1, ...(panel === 'metas' || panel === 'contraseña' ? [2] : [])].map((i) => <View key={i} style={{ marginBottom: 19 }}><View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} /><View style={[estilos.huesoSaldo, { width: '100%', height: 48, backgroundColor: tonoSuave }]} /></View>)}
+              <View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: '#8B5A19' }]} />
+            </View>{panel === 'categorias' || panel === 'topes' ? filas(3, true) : null}
+          </> : null}
+          {panel === 'recurrentes' ? <>
+            <View style={[estilos.esqueletoTarjeta, estilos.calendarioNativo, { backgroundColor: tarjeta }]}>{Array.from({ length: 28 }, (_, i) => <View key={i} style={[estilos.diaNativo, { borderRadius: 20, backgroundColor: i % 7 === 0 ? tono : tonoSuave }]} />)}</View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{filas(3)}
+          </> : null}
+          {compartido ? <>
+            <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={{ flexDirection: 'row', marginBottom: 18 }}>{[0, 1, 2, 3].map((i) => <View key={i} style={[estilos.huesoIcono, { width: 42, height: 42, marginRight: -8, borderRadius: 22, backgroundColor: tonoSuave }]} />)}</View><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 14, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoSubtitulo, { width: '75%', marginTop: 8, backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{filas(2)}
+          </> : null}
+          {archivo ? <>
+            <View style={[estilos.esqueletoTarjeta, { minHeight: 176, alignItems: 'center', justifyContent: 'center', backgroundColor: tarjeta, borderStyle: 'dashed' }]}><View style={[estilos.huesoIcono, { width: 50, height: 50, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoEncabezado, { width: '70%', marginTop: 16, backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '90%', marginTop: 10, backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{panel === 'respaldo' ? filas(2, true) : null}
+          </> : null}
+          {panel === 'atajos' ? <>
+            <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 12, backgroundColor: tonoSuave }]} /></View>{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoMovimiento, { backgroundColor: tarjeta, borderBottomColor: 'transparent', paddingHorizontal: 13 }]}><View style={[estilos.huesoMovimientoIcono, { backgroundColor: tonoSuave }]} /><View style={estilos.esqueletoMovimientoDetalle}><View style={[estilos.huesoMovimientoTitulo, { width: '68%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoAccion, { borderRadius: 20, backgroundColor: tonoSuave }]} /></View>)}
+          </> : null}
+          {panel === 'revisiones' || panel === 'nombres' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoSaldo, { width: '100%', height: 42, backgroundColor: tonoSuave }]} /></View>{filas(4)}</> : null}
+          {panel === 'funciones-solicitadas' ? <><View style={[estilos.huesoSaldo, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEncabezado, { width: '78%', backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 12, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoAccion, { width: 94, marginTop: 15, backgroundColor: tonoSuave }]} /></View>)}</> : null}
+          {!grafica && !formulario && panel !== 'recurrentes' && !compartido && !archivo && !['atajos', 'revisiones', 'nombres', 'funciones-solicitadas'].includes(panel) ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, flexDirection: 'row', alignItems: 'center', gap: 14 }]}><View style={[estilos.huesoIcono, { width: 52, height: 52, borderRadius: 28, backgroundColor: tonoSuave }]} /><View style={estilos.esqueletoMovimientoDetalle}><View style={[estilos.huesoMovimientoTitulo, { width: '72%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: tonoSuave }]} /></View></View>{filas(4, true)}</> : null}
+        </>;
+      })() : null}
       {pantalla === 'acceso' ? (
         <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, marginTop: 20 }]}>
           <View style={[estilos.huesoEncabezado, { width: '100%', height: 42, borderRadius: 22, backgroundColor: tonoSuave }]} />
