@@ -5,7 +5,8 @@ import { useTema } from '../features/lukapp/data/useTema';
 import { obtenerSupabase } from '../features/lukapp/data/supabase';
 import { LandingLukApp } from '../features/lukapp/components/LandingLukApp';
 import { BASE_LUKAPP, esRutaConfirmacionPago, segmentosDe, useRuta } from '../features/lukapp/data/useRuta';
-import { Loader2, ShieldAlert, LogOut } from 'lucide-react';
+import { ShieldAlert, LogOut } from 'lucide-react';
+import { SkeletonInicio } from '../features/lukapp/components/Skeleton';
 import { registrarVisita } from '../lib/visita';
 import { activarProteccionCodigo } from '../lib/proteccionCodigo';
 import { apiUrl } from '../lib/api';
@@ -27,11 +28,7 @@ const ConfirmacionPagoWompi = lazy(() => import('../features/lukapp/components/C
 
 const VistaConCarga: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Suspense
-    fallback={(
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" />
-      </div>
-    )}
+    fallback={<SkeletonInicio />}
   >
     {children}
   </Suspense>
@@ -410,11 +407,7 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (sesion.estado.modo === 'cargando' || (sesion.estado.modo === 'autenticado' && loadingRol && activeApp !== 'finanzas')) {
-    return (
-      <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" />
-      </div>
-    );
+    return <SkeletonInicio />;
   }
 
   // Si el usuario llega por enlace de recuperación de contraseña: mostrar formulario de nueva clave

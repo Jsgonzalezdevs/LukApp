@@ -1,9 +1,10 @@
 import { useGrabacionNativa } from './useGrabacionNativa';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  Animated,
   Alert,
   BackHandler,
+  Image,
   Linking,
   Platform,
   PermissionsAndroid,
@@ -149,6 +150,17 @@ export default function App() {
   const [recarga, setRecarga] = useState(0);
   const [fondo, setFondo] = useState(FONDO);
   const [estiloBarra, setEstiloBarra] = useState<'light' | 'dark'>('light');
+  const opacidadEsqueleto = useRef(new Animated.Value(0.45)).current;
+
+  useEffect(() => {
+    if (!cargando) return;
+    const animacion = Animated.loop(Animated.sequence([
+      Animated.timing(opacidadEsqueleto, { toValue: 0.9, duration: 700, useNativeDriver: true }),
+      Animated.timing(opacidadEsqueleto, { toValue: 0.45, duration: 700, useNativeDriver: true }),
+    ]));
+    animacion.start();
+    return () => animacion.stop();
+  }, [cargando, opacidadEsqueleto]);
 
   useEffect(() => {
     const suscripcion = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -299,10 +311,7 @@ export default function App() {
         onShouldStartLoadWithRequest={permitirNavegacion}
         onNavigationStateChange={alCambiarNavegacion}
         onLoadStart={() => { setCargando(true); setFalloConexion(false); }}
-        onLoadProgress={({ nativeEvent }) => {
-          if (nativeEvent.progress >= 0.9) setCargando(false);
-        }}
-        onLoadEnd={() => { webView.current?.injectJavaScript(`${SINCRONIZAR_TEMA} true;`); setCargando(false); }}
+        onLoadEnd={() => { webView.current?.injectJavaScript(`${SINCRONIZAR_TEMA} true;`); }}
         onHttpError={({ nativeEvent }) => {
           if (nativeEvent.url === URL_LUKAPP && nativeEvent.statusCode >= 400) {
             setCargando(false);
@@ -314,8 +323,30 @@ export default function App() {
       />
 
       {cargando && !falloConexion ? (
-        <View pointerEvents="none" style={[estilos.cargando, { backgroundColor: fondo }]}>
-          <ActivityIndicator color="#F0AC26" size="small" />
+        <View pointerEvents="none" style={[estilos.cargando, { backgroundColor: fondo }]} accessibilityRole="progressbar" accessibilityLabel="Abriendo LukApp">
+          <Animated.View style={[estilos.esqueletoContenido, { opacity: opacidadEsqueleto }]}>
+            <View style={estilos.esqueletoMarca}>
+              <Image source={require('../assets-app-icon-square.png')} style={estilos.esqueletoLogo} />
+              <View style={estilos.esqueletoMarcaTexto}>
+                <View style={[estilos.huesoTitulo, { backgroundColor: estiloBarra === 'light' ? '#332F2D' : '#ECE8E3' }]} />
+                <View style={[estilos.huesoSubtitulo, { backgroundColor: estiloBarra === 'light' ? '#2C2928' : '#E5E0D9' }]} />
+              </View>
+            </View>
+            <View style={[estilos.esqueletoTarjeta, { backgroundColor: estiloBarra === 'light' ? '#211F1D' : '#FFFFFF' }]}>
+              <View style={[estilos.huesoEtiqueta, { backgroundColor: estiloBarra === 'light' ? '#48423E' : '#D6D1CA' }]} />
+              <View style={[estilos.huesoSaldo, { backgroundColor: estiloBarra === 'light' ? '#514A45' : '#E1DDD7' }]} />
+              <View style={estilos.esqueletoSeparador} />
+              <View style={estilos.esqueletoResumen}>
+                <View style={[estilos.huesoDato, { backgroundColor: estiloBarra === 'light' ? '#49433F' : '#D6D1CA' }]} />
+                <View style={[estilos.huesoDato, { backgroundColor: estiloBarra === 'light' ? '#49433F' : '#D6D1CA' }]} />
+              </View>
+            </View>
+            <View style={estilos.esqueletoAtajos}>
+              {[0, 1, 2].map((item) => <View key={item} style={estilos.esqueletoAtajo}><View style={[estilos.huesoIcono, { backgroundColor: estiloBarra === 'light' ? '#383330' : '#E5E0D9' }]} /><View style={[estilos.huesoTextoAtajo, { backgroundColor: estiloBarra === 'light' ? '#383330' : '#E5E0D9' }]} /></View>)}
+            </View>
+            <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: estiloBarra === 'light' ? '#413B37' : '#D6D1CA' }]} /><View style={[estilos.huesoAccion, { backgroundColor: estiloBarra === 'light' ? '#383330' : '#E5E0D9' }]} /></View>
+            {[0, 1, 2].map((item) => <View key={item} style={[estilos.esqueletoMovimiento, { borderBottomColor: estiloBarra === 'light' ? '#FFFFFF16' : '#00000012' }]}><View style={[estilos.huesoMovimientoIcono, { backgroundColor: estiloBarra === 'light' ? '#383330' : '#E5E0D9' }]} /><View style={estilos.esqueletoMovimientoDetalle}><View style={[estilos.huesoMovimientoTitulo, { backgroundColor: estiloBarra === 'light' ? '#413B37' : '#D6D1CA' }]} /><View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: estiloBarra === 'light' ? '#332F2D' : '#E5E0D9' }]} /></View><View style={[estilos.huesoMovimientoMonto, { backgroundColor: estiloBarra === 'light' ? '#413B37' : '#D6D1CA' }]} /></View>)}
+          </Animated.View>
         </View>
       ) : null}
 
@@ -347,10 +378,35 @@ const estilos = StyleSheet.create({
   cargando: {
     ...StyleSheet.absoluteFill,
     bottom: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: FONDO,
+    paddingHorizontal: 22,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
+  esqueletoContenido: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center' },
+  esqueletoMarca: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 23 },
+  esqueletoLogo: { width: 46, height: 46, borderRadius: 15 },
+  esqueletoMarcaTexto: { gap: 8 },
+  huesoTitulo: { width: 104, height: 15, borderRadius: 8 },
+  huesoSubtitulo: { width: 152, height: 9, borderRadius: 6 },
+  esqueletoTarjeta: { borderRadius: 25, padding: 20, borderWidth: 1, borderColor: '#FFFFFF16' },
+  huesoEtiqueta: { width: 105, height: 9, borderRadius: 5 },
+  huesoSaldo: { width: 205, height: 30, borderRadius: 9, marginTop: 16 },
+  esqueletoSeparador: { height: 1, backgroundColor: '#FFFFFF18', marginVertical: 19 },
+  esqueletoResumen: { flexDirection: 'row', justifyContent: 'space-between' },
+  huesoDato: { width: 102, height: 17, borderRadius: 7 },
+  esqueletoAtajos: { flexDirection: 'row', justifyContent: 'space-between', gap: 11, marginVertical: 18 },
+  esqueletoAtajo: { flex: 1, height: 76, borderRadius: 19, backgroundColor: '#FFFFFF08', borderWidth: 1, borderColor: '#FFFFFF12', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  huesoIcono: { width: 31, height: 31, borderRadius: 11 },
+  huesoTextoAtajo: { width: 44, height: 8, borderRadius: 5 },
+  esqueletoSeccion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9, marginTop: 3 },
+  huesoEncabezado: { width: 152, height: 15, borderRadius: 7 },
+  huesoAccion: { width: 45, height: 10, borderRadius: 5 },
+  esqueletoMovimiento: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1 },
+  huesoMovimientoIcono: { width: 39, height: 39, borderRadius: 14 },
+  esqueletoMovimientoDetalle: { flex: 1, gap: 7 },
+  huesoMovimientoTitulo: { width: '65%', height: 11, borderRadius: 6 },
+  huesoMovimientoSubtitulo: { width: '40%', height: 8, borderRadius: 5 },
+  huesoMovimientoMonto: { width: 69, height: 11, borderRadius: 6 },
   error: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
