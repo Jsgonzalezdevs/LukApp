@@ -17,6 +17,7 @@ import { IconoCuenta } from './IconoCuenta';
 import { componerCuentas } from '../lib/composicionCuentas';
 
 interface DineroViewProps {
+  cabecera?: React.ReactNode;
   onAbrirHerramienta?: (panel: PanelAjustes) => void;
   transacciones: readonly Transaction[];
   cajitas: readonly Cajita[];
@@ -43,6 +44,7 @@ const GRUPOS: ReadonlyArray<{ tipos: CajitaTipo[]; titulo: string; inversion?: b
 
 /** Cuentas, ahorros y pasivos, con accesos a metas, importación y herramientas compartidas. */
 export const DineroView: React.FC<DineroViewProps> = ({
+  cabecera,
   transacciones,
   cajitas,
   movimientos,
@@ -66,6 +68,7 @@ export const DineroView: React.FC<DineroViewProps> = ({
 
   return (
     <div className="flex flex-col gap-8">
+      {cabecera}
       {/* La misma cifra que en Inicio, en el mismo sitio de la pantalla. Es a
  propósito: tocaste un número y sigues viendo ese número, así que se
  entiende que entraste a su detalle y no a otra parte. */}

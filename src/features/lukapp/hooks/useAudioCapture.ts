@@ -318,6 +318,7 @@ export const useAudioCapture = (
         window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtxCtor) return;
       const ctx = new AudioCtxCtor();
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
       const fuente = ctx.createMediaStreamSource(stream);
       const analiser = ctx.createAnalyser();
       analiser.fftSize = 256;

@@ -5,6 +5,7 @@ import {
   BackHandler,
   Linking,
   Platform,
+  PermissionsAndroid,
   Pressable,
   Share,
   StyleSheet,
@@ -56,6 +57,31 @@ const SINCRONIZAR_TEMA = `
     enviar();
   })();
   true;
+`;
+const PUENTE_MICROFONO = `
+  (function () {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    var original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getUserMedia = async function (opciones) {
+      if (opciones.audio) await new Promise(function (resolver, rechazar) {
+        var id = String(Date.now());
+        var recibir = function (evento) {
+          if (!evento.detail || evento.detail.id !== id) return;
+          clearTimeout(limite);
+          window.removeEventListener('lukapp:microfono', recibir);
+          if (evento.detail.concedido) resolver();
+          else rechazar(new DOMException('Permite el micrófono en Ajustes de Android → LukApp.', 'NotAllowedError'));
+        };
+        var limite = setTimeout(function () {
+          window.removeEventListener('lukapp:microfono', recibir);
+          rechazar(new DOMException('No se pudo confirmar el permiso del micrófono.', 'NotAllowedError'));
+        }, 60000);
+        window.addEventListener('lukapp:microfono', recibir);
+        window.ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'lukapp:microfono', id: id }));
+      });
+      return original(opciones);
+    };
+  })(); true;
 `;
 const PUENTE_DESCARGAS = `
   (function () {
@@ -172,6 +198,12 @@ export default function App() {
     } catch {
       return;
     }
+    if (archivo.tipo === 'lukapp:microfono' && archivo.id) {
+      const concedido = Platform.OS !== 'android' ||
+        await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO) === PermissionsAndroid.RESULTS.GRANTED;
+      webView.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('lukapp:microfono', { detail: ${JSON.stringify({ id: archivo.id, concedido })} })); true;`);
+      return;
+    }
     if (archivo.tipo === 'lukapp:tema') {
       setEstiloBarra(archivo.oscuro ? 'light' : 'dark');
       if (archivo.fondo && /^#[0-9a-f]{3,8}$/i.test(archivo.fondo)) setFondo(archivo.fondo);
@@ -240,7 +272,7 @@ export default function App() {
         source={{ uri: URL_LUKAPP }}
         injectedJavaScriptBeforeContentLoaded={`window.__LUKAPP_SAFE_AREA_BOTTOM__ = 0; ${MARCA_WEBVIEW}`}
         injectedJavaScriptBeforeContentLoadedForMainFrameOnly
-        injectedJavaScript={`${SINCRONIZAR_TEMA}${PUENTE_DESCARGAS}`}
+        injectedJavaScript={`${SINCRONIZAR_TEMA}${PUENTE_MICROFONO}${PUENTE_DESCARGAS}`}
         onMessage={(evento) => {
           void alRecibirMensaje(evento.nativeEvent.data, evento.nativeEvent.url);
         }}

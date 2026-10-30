@@ -1,3 +1,4 @@
+import { CabeceraDinero } from './components/CabeceraDinero';
 import { panelDeSegmentos, rutaDePanel } from './lib/navegacionFunciones';
 import { ResultadosFunciones } from './components/ResultadosFunciones';
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1084,6 +1085,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {/* ------------------------------------------------------- 2. Dinero --- */}
         {section === 'dinero' ? (
           <DineroView
+            cabecera={<CabeceraDinero periodo={month} opciones={Array.from({ length: 13 }, (_, i) => {
+              const clave = periodoAdyacente(maxMonth, -i, periodoAjustes.periodo);
+              return { clave, etiqueta: etiquetaDePeriodo(clave, periodoAjustes.periodo) };
+            })} onPeriodo={setMonth} movimientos={transacciones} hoy={today} onAjustes={() => setSection('ajustes')} />}
             onAbrirHerramienta={setPanelAjustes}
             transacciones={transacciones}
             cajitas={cajitas}

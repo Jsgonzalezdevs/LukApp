@@ -936,13 +936,13 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   };
 
   return (
-    <div className="relative flex min-h-[60vh] flex-col">
+    <div className="fin-asesor relative flex min-h-[60dvh] w-full min-w-0 flex-col">
       {/* Sin cabecera propia: esta vista se abre dentro de una hoja que ya pone
           el título "Preguntar" arriba. Antes ponía otra encima que decía "Tu
           Asesor Financiero", así que se veían dos títulos seguidos diciendo casi
           lo mismo. Aquí solo queda la línea de estado, que sí aporta algo que el
           título no puede decir. */}
-      <div className="sticky top-0 z-20 -mx-1 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--fin-line)] bg-[var(--fin-bg)] px-1 pb-4 pt-1">
+      <div className="sticky top-0 z-20 -mx-1 flex flex-nowrap items-center justify-between gap-1.5 border-b border-[var(--fin-line)] bg-[var(--fin-bg)] px-1 pb-4 pt-1">
         <button
           type="button"
           onClick={() => void verificarDisponibilidadIA()}
@@ -969,7 +969,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             <Sparkles className="h-3 w-3" aria-hidden="true" /> Premium
           </span>
         ) : null}
-        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+        <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-2">
           <button
             type="button"
             onClick={() => setHistorialAbierto(true)}
@@ -988,14 +988,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           >
             <Plus className="h-4 w-4" />
           </button>
-          <button
-            type="button"
-            onClick={() => setRecordar((actual) => !actual)}
-            className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]"
-            title="Controla si el asesor guarda esta conversación"
-          >
-            {recordar ? 'Memoria activa' : 'Memoria apagada'}
-          </button>
+
         </div>
       </div>
 
@@ -1062,7 +1055,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-5">
+      <div className="min-w-0 flex-1 px-1 py-4 sm:p-5">
         {/* Antes de que exista una conversación real (solo el saludo inicial),
  un único globo de chat flotando en una pantalla ancha se ve como un
  vacío negro con una frase perdida en la esquina — es justo lo que
@@ -1084,7 +1077,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             <p className="text-[15px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
-            <div className="grid grid-cols-2 gap-2 w-full px-2">
+            <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 w-full min-w-0 px-2">
               {SUGERENCIAS_INICIALES.map((sug) => (
                 <button
                   key={sug}
@@ -1102,7 +1095,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex items-end gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                className={`flex min-w-0 items-end gap-2 sm:gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
                 {/* La pastilla gris identifica al usuario; Luki acompaña las
                     respuestas del asesor como en el dashboard. */}
@@ -1117,7 +1110,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                   />
                 )}
                 <div
-                  className={`max-w-[85%] rounded-[var(--fin-r-card)] px-4 py-3 text-[17px] leading-relaxed break-words ${
+                  className={`min-w-0 max-w-[calc(100%-3rem)] rounded-[var(--fin-r-card)] px-3 py-3 text-[15px] sm:px-4 sm:text-[17px] leading-relaxed break-words ${
                     msg.role === 'user'
                       ? 'rounded-br-none bg-[var(--fin-accent)] text-[var(--fin-on-accent)] font-medium'
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
@@ -1347,7 +1340,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
 
       {/* Input */}
       {errorIA && textoParaReintentar ? (
-        <div className="mx-auto mb-3 flex max-w-2xl items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[13px]" role="status" aria-live="polite">
+        <div className="mx-auto mb-3 flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2 text-[13px]" role="status" aria-live="polite">
           <span className="text-[var(--fin-ink-soft)]">{errorIA}</span>
           <button
             type="button"
@@ -1359,7 +1352,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           </button>
         </div>
       ) : null}
-      <div className="sticky bottom-0 bg-[var(--fin-bg)] pt-4 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="sticky bottom-[var(--fin-nav-h)] z-10 w-full min-w-0 bg-[var(--fin-bg)] pt-3 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {(dictado.status === 'listening' || dictado.status === 'processing' || dictado.error) && (
           <p
             className={`mx-auto mb-2 max-w-2xl px-3 text-center text-[13px] font-medium ${
@@ -1387,7 +1380,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             disabled={dictado.status === 'listening' || dictado.status === 'processing'}
-            autoFocus
           />
           <button
             type="button"
