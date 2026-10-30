@@ -230,7 +230,7 @@ export const BotonAnotar: React.FC<BotonAnotarProps> = ({
   return (
     <div
       className="pointer-events-none fixed inset-x-0 z-30 flex flex-col items-center gap-2"
-      style={{ bottom: 'calc(env(safe-area-inset-bottom) + var(--fin-nav-h) + 0.75rem)' }}
+      style={{ bottom: 'calc(var(--fin-safe-area-bottom) + var(--fin-nav-h) + 0.75rem)' }}
     >
       <DictadoOverlay
         abierto={overlayAbierto}

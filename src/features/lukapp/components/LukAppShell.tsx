@@ -80,7 +80,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
     />
     <main
       aria-label="Contenido principal de LukApp"
-      className={`mx-auto min-w-0 w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] ${section === 'ajustes' ? 'pb-[calc(env(safe-area-inset-bottom)+5rem)]' : 'pb-[calc(env(safe-area-inset-bottom)+8.5rem)]'}`}
+      className={`mx-auto min-w-0 w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] ${section === 'ajustes' ? 'pb-[calc(var(--fin-safe-area-bottom)+5rem)]' : 'pb-[calc(var(--fin-safe-area-bottom)+8.5rem)]'}`}
       style={{
         transform: pull.desplazamiento > 0 ? `translateY(${pull.desplazamiento}px)` : undefined,
         transition: pull.refrescando ? 'transform 0.2s ease-out' : undefined,
@@ -129,7 +129,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
  cuenta justo encima de esta barra, usando su altura (`--fin-nav-h`) para
  no superponerse. */}
     {createPortal(<nav
-      className="fin-glass fin-navigation fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[env(safe-area-inset-bottom)]"
+      className="fin-glass fin-navigation fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[var(--fin-safe-area-bottom)]"
       aria-label="Secciones"
     >
       {/* `data-guia` es el ancla de la guía de bienvenida. Es el único

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, RotateCw, WifiOff } from 'lucide-react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -39,6 +39,10 @@ const MARCA_WEBVIEW = `
 const SINCRONIZAR_TEMA = `
   (function () {
     var raiz = document.documentElement;
+    var bordeInferior = Number(window.__LUKAPP_SAFE_AREA_BOTTOM__);
+    if (Number.isFinite(bordeInferior)) {
+      raiz.style.setProperty('--lukapp-native-safe-area-bottom', bordeInferior + 'px');
+    }
     var sistema = window.matchMedia('(prefers-color-scheme: dark)');
     var enviar = function () {
       var elegido = raiz.getAttribute('data-tema');
@@ -106,6 +110,7 @@ const PUENTE_DESCARGAS = `
 
 export default function App() {
   const webView = useRef<WebView<{}>>(null);
+  const insets = useSafeAreaInsets();
   const puedeVolver = useRef(false);
   const [cargando, setCargando] = useState(true);
   const [falloConexion, setFalloConexion] = useState(false);
@@ -126,6 +131,13 @@ export default function App() {
     if (Platform.OS !== 'android') return;
     NavigationBar.setStyle(estiloBarra === 'light' ? 'dark' : 'light');
   }, [estiloBarra]);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    webView.current?.injectJavaScript(
+      `document.documentElement.style.setProperty('--lukapp-native-safe-area-bottom', '${insets.bottom}px'); true;`,
+    );
+  }, [insets.bottom]);
 
   useEffect(() => {
     if (!cargando) return;
@@ -225,13 +237,13 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={[estilos.pantalla, { backgroundColor: fondo }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[estilos.pantalla, { backgroundColor: fondo }]} edges={['top']}>
       <StatusBar style={estiloBarra} />
       <WebView<{}>
         key={recarga}
         ref={webView}
         source={{ uri: URL_LUKAPP }}
-        injectedJavaScriptBeforeContentLoaded={MARCA_WEBVIEW}
+        injectedJavaScriptBeforeContentLoaded={`window.__LUKAPP_SAFE_AREA_BOTTOM__ = ${insets.bottom}; ${MARCA_WEBVIEW}`}
         injectedJavaScriptBeforeContentLoadedForMainFrameOnly
         injectedJavaScript={`${SINCRONIZAR_TEMA}${PUENTE_DESCARGAS}`}
         onMessage={(evento) => {

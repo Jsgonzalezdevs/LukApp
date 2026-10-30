@@ -20,6 +20,7 @@
 
 .fin-html {
   color-scheme: light;
+  --fin-safe-area-bottom: max(env(safe-area-inset-bottom, 0px), var(--lukapp-native-safe-area-bottom, 0px));
 
   /* Surfaces */
   --fin-bg: #fbf9f6;
