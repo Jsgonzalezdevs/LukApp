@@ -4,14 +4,14 @@
     "slug": "julian-gonzalez",
     "owner": "lukapp",
     "scheme": "lukapp",
-    "version": "10.10.35",
+    "version": "10.10.36",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "icon": "./assets-app-icon-square.png",
     "android": {
       "package": "lukApp.App",
-      "versionCode": 1010035,
+      "versionCode": 1010036,
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
@@ -30,6 +30,17 @@
     },
     "plugins": [
       "expo-status-bar",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1a1817",
+          "dark": {
+            "backgroundColor": "#1a1817"
+          },
+          "image": "./assets-splash.png",
+          "imageWidth": 112
+        }
+      ],
       "expo-web-browser",
       "expo-sharing",
       [

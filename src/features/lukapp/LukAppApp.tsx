@@ -27,7 +27,7 @@ import { migrarLibroLocal, RepositorioIndexedDB, soportaIndexedDB } from './data
 import { RepositorioConCola } from './data/repositorioConCola';
 import { crearRepositorio } from './data/crearRepositorio';
 import { ColaCambios } from './data/colaCambios';
-import { SkeletonInicio } from './components/Skeleton';
+import { SkeletonAcceso, SkeletonDeSeccion } from './components/Skeleton';
 import { ES_PASIVO, claseDeCuenta, etiquetaTipoCajita } from './data/modelos';
 import { idsPasivos, saldosPorCajita } from './lib/cajitas';
 
@@ -197,17 +197,24 @@ export const LukAppMain: React.FC<LukAppMainProps> = (props) => {
 const LukAppContenido: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirConsolaEnProduccion }) => {
   const sesion = useSesion();
   const { tema, setTema } = useTema();
+  const { ruta } = useRuta();
+  const segmentosIniciales = segmentosDe(ruta);
+  const seccionInicial: SectionId = segmentosIniciales[0] === 'calendario'
+    ? 'calendario'
+    : SECTIONS.some((item) => item.id === segmentosIniciales[0])
+      ? segmentosIniciales[0] as SectionId
+      : 'inicio';
 
   if (sesion.estado.modo === 'cargando') {
-    return (
-      <div className="bg-[var(--fin-bg)]">
-        <SkeletonInicio />
-      </div>
-    );
+    return <SkeletonDeSeccion seccion={seccionInicial} />;
   }
 
   if (sesion.estado.modo === 'anonimo') {
-    return <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />;
+    return (
+      <Suspense fallback={<SkeletonAcceso />}>
+        <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />
+      </Suspense>
+    );
   }
 
   const cuenta = { email: sesion.estado.email, onSalir: () => void sesion.salir() };
@@ -903,11 +910,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const saldoCuentasSinEfectivoCop = contextoFinanciero.saldo.saldoBancosCop ?? 0;
 
   if (!migracionLista || almacen.cargando) {
-    return (
-      <div className="bg-[var(--fin-bg)]">
-        <SkeletonInicio />
-      </div>
-    );
+    return <SkeletonDeSeccion seccion={section} panel={panelAjustes} />;
   }
 
   if (almacen.error && Object.values(almacen.datos).every((lista) => lista.length === 0)) {
@@ -961,7 +964,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           )
         }
       >
-        <Suspense fallback={<SkeletonInicio />}>
+        <Suspense fallback={<SkeletonDeSeccion seccion={section} panel={panelAjustes} />}>
         {!enLinea ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] px-4 py-3" role="status">
             <CloudOff className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]" strokeWidth={2.5} />

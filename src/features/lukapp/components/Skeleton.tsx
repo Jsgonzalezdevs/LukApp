@@ -1,15 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import type { PanelAjustes, SectionId } from '../sections';
 
 interface SkeletonProps {
   className?: string;
   style?: React.CSSProperties;
 }
 
-/**
- * Un bloque gris con el brillo pasando por encima, del tamaño que le pongas
- * por className/style. No sabe qué está reemplazando -- eso lo arma quien lo
- * usa, apilando varios con el ancho/alto de lo que va a aparecer ahí.
- */
+/** Un bloque con brillo que conserva la forma del contenido que va a llegar. */
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '', style }) => (
   <span
     className={`fin-skeleton block rounded-[var(--fin-r-control)] ${className}`}
@@ -18,31 +15,108 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', style }) => 
   />
 );
 
-/**
- * La forma de la pantalla principal (saldo grande + fila de cuentas) para
- * mostrar mientras se carga la sesión o los datos guardados. Antes esas dos
- * pantallas eran un "Cargando..." solo, en blanco -- esto se ve, desde el
- * primer instante, como la app de verdad a punto de aparecer.
- */
-export const SkeletonInicio: React.FC = () => {
+const Contenedor: React.FC<{ children: React.ReactNode; pantalla: string; etiqueta: string }> = ({ children, pantalla, etiqueta }) => {
+  useEffect(() => {
+    document.documentElement.setAttribute('data-lukapp-esqueleto', pantalla);
+    return () => {
+      if (document.documentElement.getAttribute('data-lukapp-esqueleto') === pantalla) {
+        document.documentElement.removeAttribute('data-lukapp-esqueleto');
+      }
+    };
+  }, [pantalla]);
+
   return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col gap-6 px-5 pt-[calc(env(safe-area-inset-top)+2rem)]" role="status" aria-label="Abriendo LukApp">
-      <div className="flex flex-col items-center gap-3">
-        <Skeleton className="h-[15px] w-28" />
-        <Skeleton className="h-[44px] w-48" />
-      </div>
-      <div className="flex flex-col gap-3">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-            <Skeleton className="h-11 w-11 shrink-0 rounded-[var(--fin-r-pill)]" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <Skeleton className="h-[15px] w-2/5" />
-              <Skeleton className="h-[13px] w-1/4" />
-            </div>
-            <Skeleton className="h-[17px] w-16 shrink-0" />
-          </div>
-        ))}
-      </div>
-    </div>
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col gap-5 bg-[var(--fin-bg)] px-5 pb-28 pt-[calc(env(safe-area-inset-top)+1.5rem)] text-[var(--fin-ink)]" role="status" aria-label={`Cargando ${etiqueta}`}>
+      {children}
+    </main>
   );
 };
+
+const Titulo: React.FC<{ ancho?: string }> = ({ ancho = 'w-36' }) => (
+  <div className="flex flex-col gap-2"><Skeleton className={`h-7 ${ancho}`} /><Skeleton className="h-3 w-24" /></div>
+);
+
+const Fila: React.FC<{ detalle?: boolean }> = ({ detalle = true }) => (
+  <div className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+    <Skeleton className="h-11 w-11 shrink-0 rounded-[var(--fin-r-pill)]" />
+    <div className="flex min-w-0 flex-1 flex-col gap-2"><Skeleton className="h-[15px] w-2/5" />{detalle ? <Skeleton className="h-[13px] w-1/4" /> : null}</div>
+    <Skeleton className="h-[17px] w-16 shrink-0" />
+  </div>
+);
+
+export const SkeletonInicio: React.FC = () => (
+  <Contenedor pantalla="inicio" etiqueta="Inicio">
+    <div className="flex flex-col items-center gap-3"><Skeleton className="h-[15px] w-28" /><Skeleton className="h-[44px] w-48" /></div>
+    <div className="flex flex-col gap-3">{[0, 1, 2].map((i) => <Fila key={i} />)}</div>
+  </Contenedor>
+);
+
+const SkeletonDinero: React.FC = () => (
+  <>
+    <div className="flex items-center justify-between"><Titulo ancho="w-28" /><Skeleton className="h-10 w-28 rounded-full" /></div>
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-3 w-32" /><Skeleton className="mt-4 h-10 w-48" /><Skeleton className="mt-3 h-3 w-56 max-w-full" /></section>
+    <div className="grid grid-cols-2 gap-3">{[0, 1].map((i) => <div key={i} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-20" /><Skeleton className="mt-3 h-5 w-28 max-w-full" /></div>)}</div>
+    <Titulo ancho="w-32" />
+    {[0, 1, 2].map((i) => <Fila key={i} />)}
+  </>
+);
+
+const SkeletonMes: React.FC = () => (
+  <>
+    <div className="flex items-center justify-between"><Titulo ancho="w-20" /><Skeleton className="h-10 w-32 rounded-full" /></div>
+    <div className="grid grid-cols-2 gap-3">{[0, 1].map((i) => <div key={i} className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-20" /><Skeleton className="mt-3 h-6 w-28 max-w-full" /></div>)}</div>
+    <section className="flex h-48 items-end gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] px-5 pb-5 pt-8">{[45, 72, 55, 88, 63, 76, 48].map((alto, i) => <Skeleton key={i} className="flex-1 rounded-t-lg" style={{ height: `${alto}%` }} />)}</section>
+    <Titulo ancho="w-40" />
+    {[0, 1, 2].map((i) => <Fila key={i} />)}
+  </>
+);
+
+const SkeletonAsesor: React.FC = () => (
+  <>
+    <div className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-12 w-12 rounded-full" /><div className="flex flex-col gap-2"><Skeleton className="h-5 w-28" /><Skeleton className="h-3 w-36" /></div></div>
+    <div className="mt-4 flex flex-1 flex-col gap-4">
+      <div className="max-w-[85%] rounded-3xl rounded-tl-md bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-40 max-w-full" /><Skeleton className="mt-2 h-3 w-52 max-w-full" /><Skeleton className="mt-2 h-3 w-32" /></div>
+      <div className="ml-auto w-[75%] rounded-3xl rounded-tr-md bg-[var(--fin-card)] p-4"><Skeleton className="h-3 w-full" /><Skeleton className="mt-2 h-3 w-4/5" /></div>
+      <div className="mt-auto flex flex-wrap gap-2">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-9 w-28 rounded-full" />)}</div>
+      <Skeleton className="h-14 w-full rounded-full" />
+    </div>
+  </>
+);
+
+const SkeletonAjustes: React.FC<{ panel?: PanelAjustes | null }> = ({ panel }) => (
+  <>
+    <Titulo ancho={panel ? 'w-48' : 'w-28'} />
+    {panel ? <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"><Skeleton className="h-4 w-3/4" /><Skeleton className="mt-3 h-3 w-full" /></div> : <div className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4"><Skeleton className="h-14 w-14 rounded-full" /><div className="flex flex-col gap-2"><Skeleton className="h-4 w-36" /><Skeleton className="h-3 w-48" /></div></div>}
+    {[0, 1, 2, 3, 4, 5].map((i) => <Fila key={i} detalle={!panel} />)}
+  </>
+);
+
+const SkeletonCalendario: React.FC = () => (
+  <>
+    <div className="flex items-center justify-between"><Titulo ancho="w-40" /><Skeleton className="h-10 w-28 rounded-full" /></div>
+    <section className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+      <div className="mb-4 grid grid-cols-7 gap-2">{[0, 1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="mx-auto h-3 w-5" />)}</div>
+      <div className="grid grid-cols-7 gap-2">{Array.from({ length: 35 }, (_, i) => <Skeleton key={i} className="mx-auto h-8 w-8 rounded-full" />)}</div>
+    </section>
+    <Titulo ancho="w-36" />
+    {[0, 1, 2].map((i) => <Fila key={i} />)}
+  </>
+);
+
+export const SkeletonDeSeccion: React.FC<{ seccion: SectionId; panel?: PanelAjustes | null }> = ({ seccion, panel = null }) => {
+  if (seccion === 'dinero') return <Contenedor pantalla="dinero" etiqueta="Dinero"><SkeletonDinero /></Contenedor>;
+  if (seccion === 'mes') return <Contenedor pantalla="mes" etiqueta="Mes"><SkeletonMes /></Contenedor>;
+  if (seccion === 'asesor') return <Contenedor pantalla="asesor" etiqueta="Asesor"><SkeletonAsesor /></Contenedor>;
+  if (seccion === 'ajustes') return <Contenedor pantalla={panel ? 'ajustes-detalle' : 'ajustes'} etiqueta={panel ? 'este ajuste' : 'Más'}><SkeletonAjustes panel={panel} /></Contenedor>;
+  if (seccion === 'calendario') return <Contenedor pantalla="calendario" etiqueta="Calendario"><SkeletonCalendario /></Contenedor>;
+  return <SkeletonInicio />;
+};
+
+export const SkeletonAcceso: React.FC = () => (
+  <Contenedor pantalla="acceso" etiqueta="tu cuenta">
+    <div className="mx-auto mt-8 flex w-full max-w-md flex-col items-center gap-4"><Skeleton className="h-20 w-20 rounded-3xl" /><Skeleton className="h-9 w-36" /><Skeleton className="h-4 w-64 max-w-full" /></div>
+    <div className="mx-auto mt-5 flex w-full max-w-md flex-col gap-6 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-6">
+      <Skeleton className="h-12 w-full rounded-full" /><Skeleton className="h-4 w-48" /><Skeleton className="h-14 w-full rounded-2xl" /><Skeleton className="h-4 w-28" /><Skeleton className="h-14 w-full rounded-2xl" /><Skeleton className="h-14 w-full rounded-full" />
+    </div>
+  </Contenedor>
+);
