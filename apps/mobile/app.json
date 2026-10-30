@@ -4,21 +4,21 @@
     "slug": "julian-gonzalez",
     "owner": "lukapp",
     "scheme": "lukapp",
-    "version": "10.10.30",
+    "version": "10.10.31",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "icon": "./assets-app-icon.png",
+    "icon": "./assets-app-icon-square.png",
     "android": {
       "package": "lukApp.App",
-      "versionCode": 1010030,
+      "versionCode": 1010031,
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets-app-icon.png",
+        "foregroundImage": "./assets-app-icon-square.png",
         "backgroundColor": "#171220"
       },
       "predictiveBackGestureEnabled": true
