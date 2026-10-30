@@ -35,11 +35,12 @@ export const responderAyudaLukApp = (pregunta: string): string | null => {
     return 'Entra en **Dinero** y pulsa **Agregar cuenta**. Allí puedes indicar el nombre y el tipo de cuenta. Si no ves ese botón, dime qué aparece en tu pantalla.';
   }
 
-  if (/\b(top(e|es)|limite|presupuesto)\b/.test(texto) && /\b(crear|poner|cambiar|editar|configurar|donde|como|ver)\b/.test(texto)) {
+  if (/\b(top(e|es)|limite|presupuesto)\b/.test(texto) && /\b(donde|como|ver|buscar|encontrar|consultar)\b/.test(texto)) {
     return 'Los **Topes de gasto** están en la sección **Mes**. Abre esa herramienta para crear o revisar el límite de una categoría.';
   }
 
-  if (/\b(pago fijo|pagos fijos|recurrente|recurrentes|suscripcion|suscripciones)\b/.test(texto)) {
+  if (/\b(pago fijo|pagos fijos|recurrente|recurrentes|suscripcion|suscripciones)\b/.test(texto)
+    && /\b(donde|como|ver|buscar|encontrar|consultar|administrar|acceder)\b/.test(texto)) {
     return 'Los **Pagos fijos** están en **Mes**. Desde allí puedes consultar y administrar cobros recurrentes.';
   }
 
