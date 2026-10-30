@@ -949,7 +949,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         onRefrescar={almacen.recargar}
         habilitarRefresco={ningunModalAbierto}
         accion={
-          section === 'asesor' ? null : (
+          section === 'asesor' || section === 'ajustes' || !ningunModalAbierto ? null : (
             <BotonAnotar
               esPremium={esPremium}
               onDictado={handleSubmit}

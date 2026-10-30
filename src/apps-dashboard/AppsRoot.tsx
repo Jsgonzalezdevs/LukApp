@@ -470,7 +470,26 @@ export const AppsRoot: React.FC = () => {
   }
 
   if (activeApp === 'superadmin' && !esAdminOStaff) {
-    return <div className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)]"><Loader2 className="h-8 w-8 animate-spin text-[var(--fin-ink-faint)]" /></div>;
+    return (
+      <VistaConCarga>
+        <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)] p-6 text-[var(--fin-ink)]">
+          <section className="max-w-md rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center shadow-sm" role="status">
+            <h1 className="text-xl font-bold">No se pudo abrir esta pantalla</h1>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--fin-ink-soft)]">
+              Vuelve a intentarlo. Tus finanzas siguen disponibles.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={() => window.location.reload()} className="rounded-xl bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-purple-700">
+                Reintentar
+              </button>
+              <button type="button" onClick={() => { setActiveApp('finanzas'); ir('/app'); }} className="rounded-xl border border-[var(--fin-line)] px-4 py-2.5 text-sm font-semibold hover:bg-[var(--fin-soft)]">
+                Volver
+              </button>
+            </div>
+          </section>
+        </main>
+      </VistaConCarga>
+    );
   }
 
   if (!esAdminOStaff) {

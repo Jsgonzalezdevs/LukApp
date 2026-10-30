@@ -4,6 +4,7 @@ import {
   Alert,
   BackHandler,
   Linking,
+  Platform,
   Pressable,
   Share,
   StyleSheet,
@@ -11,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as NavigationBar from 'expo-navigation-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, RotateCw, WifiOff } from 'lucide-react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
@@ -119,6 +121,11 @@ export default function App() {
     });
     return () => suscripcion.remove();
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    NavigationBar.setStyle(estiloBarra === 'light' ? 'dark' : 'light');
+  }, [estiloBarra]);
 
   useEffect(() => {
     if (!cargando) return;

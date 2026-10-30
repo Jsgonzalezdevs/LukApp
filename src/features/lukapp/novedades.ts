@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.22', fecha: '2026-10-29', texto: 'Ajustes deja más espacio al contenido y los controles ya no se montan sobre las opciones. También corregimos la recuperación al abrir pantallas protegidas. 📱' },
+  { version: '10.10.21', fecha: '2026-10-29', texto: 'La barra de Android acompaña el tema claro u oscuro de LukApp, para que sus iconos siempre se vean bien. 🎨📲' },
   { version: '10.10.20', fecha: '2026-10-29', texto: 'LukApp abre con menos peso; el acceso a administración se comprueba de forma privada y solo hay dos cuentas Superadmin. ⚡🔒' },
   { version: '10.10.19', fecha: '2026-10-29', texto: 'La navegación y el botón para anotar se mantienen en su sitio aunque cambies de pantalla en Android. 📲' },
   { version: '10.10.18', fecha: '2026-10-29', texto: 'La app Android abre directamente LukApp, sin pasar por la portada pública. 📲' },

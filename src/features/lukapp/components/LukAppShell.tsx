@@ -80,7 +80,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
     />
     <main
       aria-label="Contenido principal de LukApp"
-      className="mx-auto min-w-0 w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-[calc(env(safe-area-inset-bottom)+8.5rem)]"
+      className={`mx-auto min-w-0 w-full max-w-[720px] px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] ${section === 'ajustes' ? 'pb-[calc(env(safe-area-inset-bottom)+5rem)]' : 'pb-[calc(env(safe-area-inset-bottom)+8.5rem)]'}`}
       style={{
         transform: pull.desplazamiento > 0 ? `translateY(${pull.desplazamiento}px)` : undefined,
         transition: pull.refrescando ? 'transform 0.2s ease-out' : undefined,

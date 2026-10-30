@@ -9,6 +9,7 @@ import { PasswordException, PDFParse } from 'pdf-parse';
 import { esUltimoAdmin, LIMITE_ADMINISTRADORES, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { validarContrasenaSegura } from './src/lib/seguridad.ts';
+import { urlSupabaseDelServidor } from './server_lib/configuracionSupabase.ts';
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
@@ -317,7 +318,7 @@ app.post('/api/crear-usuario', async (req, res) => {
 // Cliente admin + comprobación de que quien llama es administrador.
 // ----------------------------------------------------------------------
 const clienteAdmin = () => {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseUrl = urlSupabaseDelServidor(process.env);
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) return null;
 
@@ -2810,7 +2811,7 @@ app.get('/api/salud', (_req, res) => {
     // Diagnóstico seguro: confirma que Render puede escribir telemetría, sin
     // revelar URL, llaves ni ningún dato de Supabase.
     telemetriaPersistenteConfigurada: Boolean(
-      (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
+      urlSupabaseDelServidor(process.env)
       && process.env.SUPABASE_SERVICE_ROLE_KEY,
     ),
     version: process.env.npm_package_version || 'desconocida',
