@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.24', fecha: '2026-10-29', texto: 'La validación de acceso se recupera mejor si hay una falla temporal de conexión y mantiene protegidas las pantallas administrativas. 🔒' },
   { version: '10.10.23', fecha: '2026-10-29', texto: 'El Asesor distingue mejor entre pedir una guía y pedir una acción financiera, para revisar tus datos y preparar propuestas correctamente. 💬📊' },
   { version: '10.10.22', fecha: '2026-10-29', texto: 'Ajustes deja más espacio al contenido y los controles ya no se montan sobre las opciones. También corregimos la recuperación al abrir pantallas protegidas. 📱' },
   { version: '10.10.21', fecha: '2026-10-29', texto: 'La barra de Android acompaña el tema claro u oscuro de LukApp, para que sus iconos siempre se vean bien. 🎨📲' },

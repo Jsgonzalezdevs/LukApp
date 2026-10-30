@@ -656,11 +656,13 @@ const exigirAdmin = async (
   const { data: llamador, error } = await cliente.auth.getUser(token);
   if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
 
-  const { data: perfil } = await cliente
+  const { data: perfil, error: errorPerfil } = await cliente
     .from('perfiles')
     .select('rol')
     .eq('id', llamador.user.id)
-    .single();
+    .maybeSingle();
+
+  if (errorPerfil) return { status: 503, error: 'No se pudieron verificar los permisos.' };
 
   if (perfil?.rol !== 'admin') return { status: 403, error: 'No tienes permisos de administrador' };
   return { userId: llamador.user.id, email: llamador.user.email ?? '' };
@@ -700,23 +702,26 @@ const exigirPermiso = async (
   const { data: llamador, error } = await cliente.auth.getUser(token);
   if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
 
-  const { data: perfil } = await cliente
+  const { data: perfil, error: errorPerfil } = await cliente
     .from('perfiles')
     .select('rol, rol_personalizado_id')
     .eq('id', llamador.user.id)
-    .single();
+    .maybeSingle();
+
+  if (errorPerfil) return { status: 503, error: 'No se pudieron verificar los permisos.' };
 
   if (perfil?.rol === 'admin') {
     return { userId: llamador.user.id, email: llamador.user.email ?? '' };
   }
 
   if (perfil?.rol_personalizado_id) {
-    const { data: concedido } = await cliente
+    const { data: concedido, error: errorPermiso } = await cliente
       .from('permisos_por_rol')
       .select('permiso')
       .eq('rol_id', perfil.rol_personalizado_id)
       .eq('permiso', permiso)
       .maybeSingle();
+    if (errorPermiso) return { status: 503, error: 'No se pudieron verificar los permisos.' };
     if (concedido) return { userId: llamador.user.id, email: llamador.user.email ?? '' };
   }
 
@@ -733,22 +738,26 @@ const exigirGestionUsuarios = async (
   const { data: llamador, error } = await cliente.auth.getUser(token);
   if (error || !llamador.user) return { status: 401, error: 'Token inválido' };
 
-  const { data: perfil } = await cliente
+  const { data: perfil, error: errorPerfil } = await cliente
     .from('perfiles')
     .select('rol, rol_personalizado_id')
     .eq('id', llamador.user.id)
-    .single();
+    .maybeSingle();
+
+  if (errorPerfil) return { status: 503, error: 'No se pudieron verificar los permisos.' };
 
   if (perfil?.rol === 'admin') return { userId: llamador.user.id, email: llamador.user.email ?? '' };
   if (!perfil?.rol_personalizado_id) return { status: 403, error: 'No tienes permiso para esta acción.' };
 
-  const { data: concedido } = await cliente
+  const { data: concedido, error: errorPermiso } = await cliente
     .from('permisos_por_rol')
     .select('permiso')
     .eq('rol_id', perfil.rol_personalizado_id)
     .in('permiso', ['crear_usuario', 'editar_usuario', 'eliminar_usuario', 'impersonar_usuario'])
     .limit(1)
     .maybeSingle();
+
+  if (errorPermiso) return { status: 503, error: 'No se pudieron verificar los permisos.' };
 
   return concedido
     ? { userId: llamador.user.id, email: llamador.user.email ?? '' }
@@ -2156,20 +2165,23 @@ app.get('/api/mis-permisos', async (req, res) => {
   const quien = await exigirUsuario(cliente, token);
   if ('error' in quien) return res.status(quien.status).json({ error: quien.error });
 
-  const { data: perfil } = await cliente
+  const { data: perfil, error: errorPerfil } = await cliente
     .from('perfiles')
     .select('rol, rol_personalizado_id')
     .eq('id', quien.userId)
-    .single();
+    .maybeSingle();
+
+  if (errorPerfil) return res.status(503).json({ error: 'No se pudo cargar esta pantalla. Inténtalo de nuevo.' });
 
   const rol = perfil?.rol === 'admin' ? 'admin' : 'usuario';
   let permisos: string[] = [];
 
   if (rol !== 'admin' && perfil?.rol_personalizado_id) {
-    const { data } = await cliente
+    const { data, error } = await cliente
       .from('permisos_por_rol')
       .select('permiso')
       .eq('rol_id', perfil.rol_personalizado_id);
+    if (error) return res.status(503).json({ error: 'No se pudo cargar esta pantalla. Inténtalo de nuevo.' });
     permisos = (data ?? []).map((p) => p.permiso);
   }
 

@@ -133,6 +133,7 @@ export const AppsRoot: React.FC = () => {
   const [rol, setRol] = useState<'admin' | 'usuario'>('usuario');
   const [permisos, setPermisos] = useState<string[]>([]);
   const [loadingRol, setLoadingRol] = useState(true);
+  const [errorCargaRol, setErrorCargaRol] = useState(false);
   const [mostrarInstalacionPwa, setMostrarInstalacionPwa] = useState(false);
   const [vistaPreviaInstalacionPwa, setVistaPreviaInstalacionPwa] = useState(false);
   const ultimoAccesoRegistrado = useRef<string | null>(null);
@@ -261,6 +262,7 @@ export const AppsRoot: React.FC = () => {
     let cancelado = false;
     let timeoutId: NodeJS.Timeout | undefined;
     setLoadingRol(true);
+    setErrorCargaRol(false);
 
     const cargarRol = async (intentos = 0) => {
       if (sesion.estado.modo !== 'autenticado') {
@@ -301,6 +303,7 @@ export const AppsRoot: React.FC = () => {
         setRol(rolBD);
         setPermisos(permisosAsignados);
         setLoadingRol(false);
+        setErrorCargaRol(false);
       } catch (error) {
         if (cancelado) return;
 
@@ -315,6 +318,7 @@ export const AppsRoot: React.FC = () => {
         setRol('usuario');
         setPermisos([]);
         setLoadingRol(false);
+        setErrorCargaRol(true);
       }
     };
 
@@ -361,12 +365,13 @@ export const AppsRoot: React.FC = () => {
       activeApp === 'superadmin' &&
       sesion.estado.modo !== 'cargando' &&
       !loadingRol &&
-      !esAdminOStaff
+      !esAdminOStaff &&
+      !errorCargaRol
     ) {
       setActiveApp('finanzas');
       ir('/app');
     }
-  }, [activeApp, esAdminOStaff, ir, loadingRol, sesion.estado.modo]);
+  }, [activeApp, errorCargaRol, esAdminOStaff, ir, loadingRol, sesion.estado.modo]);
 
   const handleSalir = useCallback(async () => {
     try {
