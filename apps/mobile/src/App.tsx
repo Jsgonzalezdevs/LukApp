@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, RotateCw, WifiOff } from 'lucide-react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -24,6 +24,7 @@ const HOST_LUKAPP = new URL(URL_LUKAPP).hostname;
 const FONDO = '#1a1817';
 const MARCA_WEBVIEW = `
   window.__LUKAPP_NATIVE__ = true;
+  if (document.documentElement) document.documentElement.setAttribute('data-native', 'true');
   (function () {
     var enviado = false;
     var observador = new MutationObserver(function () {
@@ -39,6 +40,7 @@ const MARCA_WEBVIEW = `
 const SINCRONIZAR_TEMA = `
   (function () {
     var raiz = document.documentElement;
+    raiz.setAttribute('data-native', 'true');
     var bordeInferior = Number(window.__LUKAPP_SAFE_AREA_BOTTOM__);
     if (Number.isFinite(bordeInferior)) {
       raiz.style.setProperty('--lukapp-native-safe-area-bottom', bordeInferior + 'px');
@@ -110,7 +112,6 @@ const PUENTE_DESCARGAS = `
 
 export default function App() {
   const webView = useRef<WebView<{}>>(null);
-  const insets = useSafeAreaInsets();
   const puedeVolver = useRef(false);
   const [cargando, setCargando] = useState(true);
   const [falloConexion, setFalloConexion] = useState(false);
@@ -132,12 +133,6 @@ export default function App() {
     NavigationBar.setStyle(estiloBarra === 'light' ? 'dark' : 'light');
   }, [estiloBarra]);
 
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-    webView.current?.injectJavaScript(
-      `document.documentElement.style.setProperty('--lukapp-native-safe-area-bottom', '${insets.bottom}px'); true;`,
-    );
-  }, [insets.bottom]);
 
   useEffect(() => {
     if (!cargando) return;
@@ -243,7 +238,7 @@ export default function App() {
         key={recarga}
         ref={webView}
         source={{ uri: URL_LUKAPP }}
-        injectedJavaScriptBeforeContentLoaded={`window.__LUKAPP_SAFE_AREA_BOTTOM__ = ${insets.bottom}; ${MARCA_WEBVIEW}`}
+        injectedJavaScriptBeforeContentLoaded={`window.__LUKAPP_SAFE_AREA_BOTTOM__ = 0; ${MARCA_WEBVIEW}`}
         injectedJavaScriptBeforeContentLoadedForMainFrameOnly
         injectedJavaScript={`${SINCRONIZAR_TEMA}${PUENTE_DESCARGAS}`}
         onMessage={(evento) => {
@@ -265,7 +260,7 @@ export default function App() {
         onLoadProgress={({ nativeEvent }) => {
           if (nativeEvent.progress >= 0.9) setCargando(false);
         }}
-        onLoadEnd={() => setCargando(false)}
+        onLoadEnd={() => { webView.current?.injectJavaScript(`${SINCRONIZAR_TEMA} true;`); setCargando(false); }}
         onHttpError={({ nativeEvent }) => {
           if (nativeEvent.url === URL_LUKAPP && nativeEvent.statusCode >= 400) {
             setCargando(false);

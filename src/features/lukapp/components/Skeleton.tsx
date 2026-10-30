@@ -24,7 +24,11 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', style }) => 
  * pantallas eran un "Cargando..." solo, en blanco -- esto se ve, desde el
  * primer instante, como la app de verdad a punto de aparecer.
  */
-export const SkeletonInicio: React.FC = () => (
+export const SkeletonInicio: React.FC = () => {
+  if ((window as Window & { __LUKAPP_NATIVE__?: boolean }).__LUKAPP_NATIVE__) {
+    return <div className="min-h-dvh bg-[var(--fin-bg)]" role="status" aria-label="Abriendo LukApp" />;
+  }
+  return (
   <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col gap-6 px-5 pt-[calc(env(safe-area-inset-top)+2rem)]">
     <div className="flex flex-col items-center gap-3">
       <Skeleton className="h-[15px] w-28" />
@@ -44,3 +48,4 @@ export const SkeletonInicio: React.FC = () => (
     </div>
   </div>
 );
+};

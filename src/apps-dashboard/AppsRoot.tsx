@@ -497,7 +497,7 @@ export const AppsRoot: React.FC = () => {
     );
   }
 
-  if (!esAdminOStaff) {
+  if (rol !== 'admin' && activeApp !== 'superadmin' && activeApp !== 'estadisticas') {
     return (
       <VistaConCarga>
       <div className={adminBackup ? 'pt-11' : ''}>
@@ -515,8 +515,7 @@ export const AppsRoot: React.FC = () => {
       <div className={adminBackup ? 'pt-11' : ''}>
         {bannerAdmin}
         <LukAppMain
-          onBack={() => setActiveApp(null)}
-          esAdmin={true}
+          esAdmin={rol === 'admin'}
           permitirConsolaEnProduccion={rol === 'admin'}
         />
         {mostrarInstalacionPwa && <PWAInstall onClose={cerrarInstalacionPwa} forzarVistaPrevia={vistaPreviaInstalacionPwa} />}

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.27', fecha: '2026-10-29', texto: 'La app aprovecha mejor la pantalla de Android y abre sin mostrar tarjetas de carga. 📱' },
   { version: '10.10.26', fecha: '2026-10-29', texto: 'En Android, la navegación inferior queda junto a los controles del sistema, sin una franja vacía. 📲' },
   { version: '10.10.25', fecha: '2026-10-29', texto: 'Las actualizaciones se instalan solas al cerrar LukApp, sin avisos ni interrupciones mientras la usas. 🔄' },
   { version: '10.10.24', fecha: '2026-10-29', texto: 'La validación de acceso se recupera mejor si hay una falla temporal de conexión y mantiene protegidas las pantallas administrativas. 🔒' },
