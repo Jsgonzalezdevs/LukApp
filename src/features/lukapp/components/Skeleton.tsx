@@ -25,27 +25,24 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '', style }) => 
  * primer instante, como la app de verdad a punto de aparecer.
  */
 export const SkeletonInicio: React.FC = () => {
-  if ((window as Window & { __LUKAPP_NATIVE__?: boolean }).__LUKAPP_NATIVE__) {
-    return <div className="min-h-dvh bg-[var(--fin-bg)]" role="status" aria-label="Abriendo LukApp" />;
-  }
   return (
-  <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col gap-6 px-5 pt-[calc(env(safe-area-inset-top)+2rem)]">
-    <div className="flex flex-col items-center gap-3">
-      <Skeleton className="h-[15px] w-28" />
-      <Skeleton className="h-[44px] w-48" />
-    </div>
-    <div className="flex flex-col gap-3">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
-          <Skeleton className="h-11 w-11 shrink-0 rounded-[var(--fin-r-pill)]" />
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
-            <Skeleton className="h-[15px] w-2/5" />
-            <Skeleton className="h-[13px] w-1/4" />
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col gap-6 px-5 pt-[calc(env(safe-area-inset-top)+2rem)]" role="status" aria-label="Abriendo LukApp">
+      <div className="flex flex-col items-center gap-3">
+        <Skeleton className="h-[15px] w-28" />
+        <Skeleton className="h-[44px] w-48" />
+      </div>
+      <div className="flex flex-col gap-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-3 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+            <Skeleton className="h-11 w-11 shrink-0 rounded-[var(--fin-r-pill)]" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton className="h-[15px] w-2/5" />
+              <Skeleton className="h-[13px] w-1/4" />
+            </div>
+            <Skeleton className="h-[17px] w-16 shrink-0" />
           </div>
-          <Skeleton className="h-[17px] w-16 shrink-0" />
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
 };

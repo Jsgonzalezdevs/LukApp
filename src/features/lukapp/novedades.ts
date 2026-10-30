@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.35', fecha: '2026-10-30', texto: 'El skeleton de inicio también aparece al abrir LukApp desde su app Android, sin quedarse en una pantalla vacía mientras llegan tus datos. 📲' },
   { version: '10.10.34', fecha: '2026-10-30', texto: 'LukApp muestra esqueletos de carga al abrir, tanto en Android como en la página, para que veas la pantalla tomando forma enseguida. ✨📲' },
   { version: '10.10.33', fecha: '2026-10-30', texto: 'El Asesor responde al instante las consultas que ya puede resolver y la barra inferior ahora flota sin líneas divisorias. ✨' },
   { version: '10.10.32', fecha: '2026-10-30', texto: 'La barra inferior de Android queda por encima de los controles del teléfono y el fondo de acceso se dibuja sin cortes. 📲' },

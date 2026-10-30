@@ -1,6 +1,6 @@
 {
   "name": "lukapp-mobile",
-  "version": "10.10.34",
+  "version": "10.10.35",
   "private": true,
   "main": "index.tsx",
   "scripts": {
