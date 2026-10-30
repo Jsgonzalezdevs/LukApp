@@ -887,4 +887,4 @@ input[type='date']::-webkit-date-and-time-value {
 
 /* Android ya descuenta sus controles del viewport del WebView. */
 .fin-html[data-native="true"] { --fin-safe-area-bottom: 0px; }
-.fin-html[data-native="true"] main[aria-label="Contenido principal de LukApp"] { padding-top: 0.5rem; }
+.fin-html[data-native="true"] main[aria-label="Contenido principal de LukApp"] { padding-top: clamp(1.25rem, 3vh, 1.75rem); }
