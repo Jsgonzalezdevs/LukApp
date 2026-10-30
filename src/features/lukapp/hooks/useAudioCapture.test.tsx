@@ -581,3 +581,55 @@ describe('useAudioCapture', () => {
     expect(result.current.status).toBe('idle');
   });
 });
+
+describe('captura nativa Android', () => {
+  const activar = () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal('__LUKAPP_AUDIO_NATIVE__', true);
+    vi.stubGlobal('ReactNativeWebView', { postMessage });
+    return postMessage;
+  };
+  const responder = (detail: object) => window.dispatchEvent(new CustomEvent('lukapp:audio-nativo', { detail }));
+
+  it('abre el grabador nativo, muestra nivel y transcribe su archivo', async () => {
+    const enviar = activar();
+    const alFinal = vi.fn();
+    const { result } = renderHook(() => useAudioCapture(alFinal));
+    act(() => result.current.start());
+    const { id, accion } = JSON.parse(enviar.mock.calls[0][0]);
+    expect(accion).toBe('inicio');
+    expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+    act(() => responder({ id, estado: 'escuchando', nivel: 0.7 }));
+    expect(result.current.status).toBe('listening');
+    expect(result.current.level).toBe(0.7);
+    act(() => result.current.stop());
+    expect(JSON.parse(enviar.mock.calls.at(-1)![0]).accion).toBe('fin');
+    await act(async () => { responder({ id, estado: 'audio', base64: btoa('audio-nativo-valido') }); });
+    await waitFor(() => expect(alFinal).toHaveBeenCalledWith('pagué 20 mil'));
+    expect(result.current.status).toBe('idle');
+    expect(fetch).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ headers: expect.objectContaining({ 'Content-Type': 'audio/mp4' }) }));
+  });
+
+  it('expone el error real de Android en ambos usos de dictado', () => {
+    const enviar = activar();
+    const { result } = renderHook(() => useAudioCapture(vi.fn()));
+    act(() => result.current.start());
+    const { id } = JSON.parse(enviar.mock.calls[0][0]);
+    act(() => responder({ id, error: 'La grabación quedó vacía.' }));
+    expect(result.current.error).toBe('La grabación quedó vacía.');
+    expect(result.current.status).toBe('idle');
+  });
+
+  it('descarta audio tardío después de cancelar', async () => {
+    const enviar = activar();
+    const alFinal = vi.fn();
+    const { result } = renderHook(() => useAudioCapture(alFinal));
+    act(() => result.current.start());
+    const { id } = JSON.parse(enviar.mock.calls[0][0]);
+    act(() => result.current.cancel());
+    await act(async () => { responder({ id, estado: 'audio', base64: btoa('descartado') }); });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(alFinal).not.toHaveBeenCalled();
+    expect(JSON.parse(enviar.mock.calls.at(-1)![0]).accion).toBe('cancelar');
+  });
+});

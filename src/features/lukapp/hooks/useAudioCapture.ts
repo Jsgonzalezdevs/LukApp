@@ -250,6 +250,73 @@ const peticionTranscribir = async (
  * un `FormData` llegaba entero —con sobre y todo— y Whisper lo rechazaba por no
  * ser audio.
  */
+function useCapturaNativa(onFinal: (texto: string) => void, vocabulario: readonly string[]): UseAudioCapture {
+  const [status, setStatus] = useState<AudioCaptureStatus>('idle');
+  const [interim] = useState('');
+  const [level, setLevel] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const id = useRef<string | null>(null);
+  const reloj = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deteniendo = useRef(false);
+  const final = useRef(onFinal);
+  const palabras = useRef(vocabulario);
+  final.current = onFinal;
+  palabras.current = vocabulario;
+  const enviar = useCallback((accion: string, sesion: string) => {
+    (window as unknown as { ReactNativeWebView: { postMessage: (texto: string) => void } }).ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'lukapp:audio-nativo', id: sesion, accion }));
+  }, []);
+  const limpiar = useCallback(() => { if (reloj.current) clearTimeout(reloj.current); reloj.current = null; }, []);
+  const cancel = useCallback(() => {
+    if (id.current) enviar('cancelar', id.current);
+    id.current = null; limpiar(); setLevel(0); setStatus('idle');
+  }, [enviar, limpiar]);
+  const stop = useCallback(() => {
+    if (!id.current) return;
+    limpiar(); deteniendo.current = true; setStatus('processing'); enviar('fin', id.current);
+    reloj.current = setTimeout(() => { cancel(); setError('Android no entregó la grabación. Intenta otra vez.'); }, 15000);
+  }, [enviar, limpiar, cancel]);
+  const start = useCallback(() => {
+    if (id.current) return;
+    const sesion = crypto.randomUUID();
+    id.current = sesion; deteniendo.current = false; setError(null); setLevel(0);
+    enviar('inicio', sesion);
+    reloj.current = setTimeout(() => {
+      if (id.current !== sesion) return;
+      cancel(); setError('Android no confirmó la apertura del micrófono. Cierra y vuelve a abrir LukApp.');
+    }, 20000);
+  }, [enviar, cancel]);
+  useEffect(() => {
+    const recibir = async (evento: Event) => {
+      const datos = (evento as CustomEvent<{ id: string; estado?: string; nivel?: number; base64?: string; error?: string }>).detail;
+      if (!datos || datos.id !== id.current) return;
+      if (datos.error) { limpiar(); id.current = null; setStatus('idle'); setLevel(0); setError(datos.error); return; }
+      if (datos.estado === 'escuchando' && !deteniendo.current) {
+        setStatus('listening'); setLevel(datos.nivel ?? 0);
+        if (sesionConfirmada !== datos.id) { sesionConfirmada = datos.id; limpiar(); reloj.current = setTimeout(stop, MAX_MS); }
+      }
+      if (datos.estado === 'audio' && datos.base64) {
+        limpiar(); setStatus('processing'); setLevel(0);
+        try {
+          const binario = atob(datos.base64);
+          const audio = new Blob([Uint8Array.from(binario, (c) => c.charCodeAt(0))], { type: 'audio/mp4' });
+          const resultado = await peticionTranscribir(audio, 'audio/mp4', 'final', palabras.current);
+          if (id.current !== datos.id) return;
+          if (!resultado || resultado.offline) throw new Error(resultado?.error ? enPalabras(resultado.error) : 'No se pudo conectar para transcribir el audio.');
+          const texto = resultado.text?.trim();
+          if (!texto || esAlucinacion(texto)) throw new Error('No se entendió la grabación. Habla cerca del micrófono e intenta otra vez.');
+          if (resultado.calidad === 'baja') throw new Error('El audio no quedó suficientemente claro. Acércate al micrófono e intenta otra vez.');
+          final.current(texto);
+        } catch (err) { if (id.current === datos.id) setError(err instanceof Error ? err.message : 'No se pudo transcribir la grabación.'); }
+        finally { if (id.current === datos.id) { id.current = null; sesionConfirmada = ''; setStatus('idle'); } }
+      }
+    };
+    let sesionConfirmada = '';
+    window.addEventListener('lukapp:audio-nativo', recibir);
+    return () => { window.removeEventListener('lukapp:audio-nativo', recibir); cancel(); };
+  }, [cancel, limpiar, stop]);
+  return { supported: true, status, interim, level, error, start, stop, cancel };
+}
+
 export const useAudioCapture = (
   onFinal: (text: string) => void,
   vocabulario: readonly string[] = [],
@@ -259,6 +326,7 @@ export const useAudioCapture = (
   const [level, setLevel] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const permiso = usePermisoDeMicrófono();
+  const capturaNativa = useCapturaNativa(onFinal, vocabulario);
 
   const grabadoraRef = useRef<MediaRecorder | null>(null);
   const trozosRef = useRef<Blob[]>([]);
@@ -707,5 +775,6 @@ export const useAudioCapture = (
   // Si la pantalla se va mientras graba, se cierra el micrófono igual.
   useEffect(() => stop, [stop]);
 
+  if ((window as Window & { __LUKAPP_AUDIO_NATIVE__?: boolean }).__LUKAPP_AUDIO_NATIVE__ || navigator.userAgent.includes('LukAppNativeAudio/1')) return capturaNativa;
   return { supported, status, interim, level, error, start, stop, cancel };
 };

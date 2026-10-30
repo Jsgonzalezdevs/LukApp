@@ -1,3 +1,4 @@
+import { useGrabacionNativa } from './useGrabacionNativa';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -25,6 +26,7 @@ const HOST_LUKAPP = new URL(URL_LUKAPP).hostname;
 const FONDO = '#1a1817';
 const MARCA_WEBVIEW = `
   window.__LUKAPP_NATIVE__ = true;
+  window.__LUKAPP_AUDIO_NATIVE__ = true;
   if (document.documentElement) document.documentElement.setAttribute('data-native', 'true');
   (function () {
     var enviado = false;
@@ -138,6 +140,9 @@ const PUENTE_DESCARGAS = `
 
 export default function App() {
   const webView = useRef<WebView<{}>>(null);
+  const grabarNativo = useGrabacionNativa((detalle) => {
+    webView.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('lukapp:audio-nativo', { detail: ${JSON.stringify(detalle)} })); true;`);
+  });
   const puedeVolver = useRef(false);
   const [cargando, setCargando] = useState(true);
   const [falloConexion, setFalloConexion] = useState(false);
@@ -192,10 +197,14 @@ export default function App() {
       setEstiloBarra('dark');
       return;
     }
-    let archivo: { tipo?: string; nombre?: string; mime?: string; base64?: string; id?: string; titulo?: string; texto?: string; url?: string; oscuro?: boolean; fondo?: string };
+    let archivo: { tipo?: string; nombre?: string; mime?: string; base64?: string; id?: string; titulo?: string; texto?: string; url?: string; accion?: string; oscuro?: boolean; fondo?: string };
     try {
       archivo = JSON.parse(mensaje);
     } catch {
+      return;
+    }
+    if (archivo.tipo === 'lukapp:audio-nativo' && archivo.id && archivo.accion) {
+      grabarNativo(archivo.id, archivo.accion);
       return;
     }
     if (archivo.tipo === 'lukapp:microfono' && archivo.id) {
@@ -279,6 +288,7 @@ export default function App() {
         style={[estilos.web, { backgroundColor: fondo }]}
         containerStyle={[estilos.contenedorWeb, { backgroundColor: fondo }]}
         originWhitelist={['https://*', 'http://*', 'lukapp://*']}
+        applicationNameForUserAgent="LukAppNativeAudio/1"
         javaScriptEnabled
         domStorageEnabled
         sharedCookiesEnabled
