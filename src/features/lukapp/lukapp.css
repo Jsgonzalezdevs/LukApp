@@ -188,7 +188,7 @@ body.fin-page > #root,
   /* La altura de la barra de navegación de abajo, ya sin el hueco vacío que
      antes reservaba para el botón de anotar. `BotonAnotar` la lee para
      posicionarse justo encima sin superponerse ni dejar un salto raro. */
-  --fin-nav-h: 60px;
+  --fin-nav-h: 68px;
 }
 
 /* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,
@@ -362,40 +362,46 @@ body.fin-page > #root,
   -webkit-backdrop-filter: none !important;
 }
 
-/* La navegación inferior no debe ser translúcida: al quedar sobre una fila
-   de movimientos, su fondo semitransparente todavía daba la sensación de
-   desenfoque aunque el filtro ya estuviera apagado. */
+/* La navegación inferior usa una superficie opaca para no mezclar sus iconos
+   con las filas que quedan detrás. */
 nav[aria-label="Secciones"] {
-  background-color: var(--fin-bg) !important;
+  background-color: var(--fin-soft) !important;
 }
 
-/* La navegación no es una tarjeta: un borde continuo la hacía parecer una
-   barra antigua pegada sobre el contenido. La transición se desvanece antes de
-   llegar a la superficie para conservar separación sin dibujar una línea. */
+/* El dock flota sobre el contenido como una superficie compacta; no lleva el
+   marco rectangular continuo que hacía parecer antigua la navegación. */
 .fin-navigation {
   /* La barra vive en un portal directo a body para escapar de ancestros que
      cambian el containing block de `fixed`. Este selector debe seguir siendo
      global: `.fin-page` ya no es ancestro después de crear el portal. */
   position: fixed !important;
   bottom: 0 !important;
-  left: 0;
-  right: 0;
-  width: 100%;
-  max-width: none;
+  left: 50%;
+  right: auto;
+  width: min(696px, calc(100% - 24px));
+  max-width: 696px;
+  transform: translateX(-50%);
   z-index: 20;
-  isolation: isolate;
+  box-sizing: border-box;
+  border-radius: 24px;
+  background: var(--fin-soft) !important;
   border: 0;
-  box-shadow: none;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+  overflow: hidden;
 }
 
 .fin-navigation::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  inset: -18px 0 auto;
-  height: 18px;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent, var(--fin-bg));
+  content: none;
+  display: none;
+}
+
+.fin-navigation button[aria-current='page'] {
+  background: color-mix(in srgb, var(--fin-accent) 12%, var(--fin-soft));
+}
+
+.fin-navigation button[aria-current='page'] svg,
+.fin-navigation button[aria-current='page'] span {
+  color: var(--fin-accent) !important;
 }
 
 /* Novedades informa; no debe parecer una advertencia amarilla. El contraste

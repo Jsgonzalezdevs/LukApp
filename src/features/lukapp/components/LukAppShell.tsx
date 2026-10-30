@@ -129,7 +129,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
  cuenta justo encima de esta barra, usando su altura (`--fin-nav-h`) para
  no superponerse. */}
     {createPortal(<nav
-      className="fin-glass fin-navigation fixed inset-x-0 bottom-0 z-20 flex justify-center bg-[var(--fin-card)] pb-[var(--fin-safe-area-bottom)]"
+      className="fin-navigation fixed bottom-0 z-20 flex justify-center pb-[var(--fin-safe-area-bottom)]"
       aria-label="Secciones"
     >
       {/* `data-guia` es el ancla de la guía de bienvenida. Es el único
@@ -137,7 +137,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
    estructura, así que esto se puede reordenar sin romperla. */}
       <div
         data-guia="nav"
-        className="flex h-[var(--fin-nav-h)] w-full max-w-[720px] items-center justify-around px-2"
+        className="flex h-[var(--fin-nav-h)] w-full items-center justify-around px-2"
       >
         {SECTIONS.map((item) => {
           const activa = item.id === section || (section === 'calendario' && item.id === 'mes');
@@ -148,7 +148,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1 py-2"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[18px] py-2 transition-colors"
             >
               <item.icon
                 className="h-[22px] w-[22px] shrink-0 transition-colors"

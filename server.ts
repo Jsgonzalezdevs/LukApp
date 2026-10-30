@@ -3990,7 +3990,7 @@ Usa exclusivamente cifras del expediente; si una cifra falta, omite esa línea. 
       systemPrompt,
       userPrompt: preguntaParaModelo,
       history: Array.isArray(history) ? history : [],
-      maxTokens: 500,
+      maxTokens: 220,
       temperature: 0.6,
       preferirEconomico: true,
     });

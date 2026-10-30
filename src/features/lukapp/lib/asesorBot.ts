@@ -67,6 +67,11 @@ function getRandom(arr: string[]) {
  */
 const SUGERENCIAS_FALLBACK = ['¿Cuánto he gastado?', 'Dame un resumen'];
 
+/** Distingue una pregunta no reconocida de las respuestas locales instantáneas. */
+export const esRespuestaFallbackAsesor = (respuesta: Pick<AsesorResponse, 'suggestions'>): boolean =>
+  respuesta.suggestions?.length === SUGERENCIAS_FALLBACK.length &&
+  respuesta.suggestions.every((sugerencia, indice) => sugerencia === SUGERENCIAS_FALLBACK[indice]);
+
 // Las consultas dictadas suelen llegar sin signos de interrogación. Un monto
 // dentro de una decisión o un plan no demuestra que haya ocurrido un movimiento.
 function esConsultaOPlan(norm: string): boolean {

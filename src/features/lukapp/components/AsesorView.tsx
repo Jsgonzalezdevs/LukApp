@@ -27,7 +27,7 @@ import { useDictation } from '../hooks/useDictation';
 import type { Transaction } from '../types';
 import { CATEGORY_LABELS } from '../types';
 import type { Cajita, Meta } from '../data/modelos';
-import { responderAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
+import { responderAsesor, esRespuestaFallbackAsesor, detectarMovimiento, type AsesorContext } from '../lib/asesorBot';
 import type { EntradaMotorFinanciero } from '../lib/motorFinanciero';
 import { simularPregunta } from '../lib/simulacionConversacional';
 import type { ContextoParaAsesor } from '../lib/centroInteligenciaFinanciera';
@@ -626,9 +626,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     const respuestaLocalDeAyuda = responderAyudaLukApp(textoUsuario);
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
+    let guardadoUsuario: Promise<void> | null = null;
     if (!esReintento) {
       setMessages((prev) => [...prev, userMsg]);
-      void guardarMensaje(userMsg);
+      guardadoUsuario = guardarMensaje(userMsg);
     } else {
       // El primer intento ya dejó la respuesta local como respaldo. Al
       // reintentar con IA se reemplaza ese respaldo para no mostrar dos
@@ -641,11 +642,46 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     if (respuestaLocalDeAyuda) {
       const mensajeAyuda: Message = { id: nuevoId(), role: 'bot', text: respuestaLocalDeAyuda, provider: 'Guía de LukApp' };
       setMessages((prev) => [...prev, mensajeAyuda]);
-      void guardarMensaje(mensajeAyuda);
+      void (guardadoUsuario ?? Promise.resolve()).then(() => guardarMensaje(mensajeAyuda));
       setInput('');
       setErrorIA(null);
       setTextoParaReintentar(null);
       return;
+    }
+    const simulacionLocal = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
+    if (simulacionLocal) {
+      const mensajeSimulacion: Message = { id: nuevoId(), role: 'bot', text: simulacionLocal.respuesta, provider: 'Luki' };
+      setMessages((prev) => [...prev, mensajeSimulacion]);
+      void (guardadoUsuario ?? Promise.resolve()).then(() => guardarMensaje(mensajeSimulacion));
+      setConexion('local');
+      setInput('');
+      setErrorIA(null);
+      setTextoParaReintentar(null);
+      return;
+    }
+    if (!esReintento && !propuestaFinanciera) {
+      const respuestaInstantanea = responderAsesor(
+        textoUsuario, transacciones, cajitas, cajitasBalances, categorias, lexico, context, disponibleDiarioCop,
+      );
+      if (!esRespuestaFallbackAsesor(respuestaInstantanea)) {
+        const mensajeInstantaneo: Message = {
+          id: nuevoId(),
+          role: 'bot',
+          text: respuestaInstantanea.text,
+          provider: 'Luki',
+          action: respuestaInstantanea.action,
+          actions: respuestaInstantanea.actions,
+          suggestions: respuestaInstantanea.suggestions,
+        };
+        setMessages((prev) => [...prev, mensajeInstantaneo]);
+        setContext(respuestaInstantanea.newContext);
+        void (guardadoUsuario ?? Promise.resolve()).then(() => guardarMensaje(mensajeInstantaneo));
+        setConexion('local');
+        setInput('');
+        setErrorIA(null);
+        setTextoParaReintentar(null);
+        return;
+      }
     }
     setInput('');
     setPensando(true);
@@ -694,14 +730,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     };
 
     try {
-      const simulacion = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
-      if (simulacion) {
-        setConexion('local');
-        const simulacionMsg: Message = { id: nuevoId(), role: 'bot', text: simulacion.respuesta };
-        setMessages((prev) => [...prev, simulacionMsg]);
-        void guardarMensaje(simulacionMsg);
-        return;
-      }
       // 1. Intentar llamar al Asesor con Inteligencia Artificial (LLM)
       const mesActual = bogotaDate().slice(0, 7);
       const txMes = transacciones.filter((t) => t.occurredOn.startsWith(mesActual));
