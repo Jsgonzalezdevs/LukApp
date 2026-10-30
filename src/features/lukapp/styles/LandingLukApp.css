@@ -190,6 +190,25 @@
   .landing-finanzas::before { position: absolute; animation: none; filter: blur(10px); }
 }
 
+/* Android WebView puede dejar artefactos al combinar varias capas radiales,
+   el lienzo de puntos y el pseudo-elemento animado. La app nativa conserva el
+   color y el resplandor de marca con una sola capa estática y liviana. */
+.fin-html[data-native='true'] .landing-finanzas {
+  background-color: var(--lp-bg);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--lp-accent) 9%, transparent), transparent 58%);
+  background-size: auto;
+  background-attachment: scroll;
+}
+
+.fin-html[data-native='true'] .landing-finanzas::before {
+  content: none;
+  display: none;
+  animation: none;
+  filter: none;
+  transform: none;
+}
+
 @keyframes lp-lava {
   0% { transform: translate3d(-2%, -1%, 0) scale(1); }
   50% { transform: translate3d(2%, 2%, 0) scale(1.04); }

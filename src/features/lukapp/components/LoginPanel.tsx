@@ -161,7 +161,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
 
   const marca = (
     <>
-      <span className="absolute -inset-2.5 rounded-[var(--fin-r-card)] bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
+      <span className="login-nativo-marca-brillo absolute -inset-2.5 rounded-[var(--fin-r-card)] bg-gradient-to-r from-violet-500/30 via-purple-500/20 to-lime-400/30 blur-xl animate-pulse" />
       <span className="relative flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-[0_4px_20px_-2px_rgb(0_0_0/0.15)]">
         <span
           className="absolute inset-0 rounded-[1.4rem] opacity-80"
@@ -179,10 +179,10 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
   const exito = modo === 'registrarse' && enviado && !sesion.error && !sesion.ocupado;
 
   return (
-    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[var(--fin-bg)] px-5 py-10 selection:bg-[var(--fin-accent)] selection:text-[var(--fin-on-accent)]">
+    <div className="login-nativo-fondo relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[var(--fin-bg)] px-5 py-10 selection:bg-[var(--fin-accent)] selection:text-[var(--fin-on-accent)]">
       {/* Dynamic Background Grid Pattern */}
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(var(--fin-line)_1px,transparent_1px)] [background-size:28px_28px] opacity-30 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,#000_60%,transparent_100%)]"
+        className="login-nativo-puntos pointer-events-none absolute inset-0 bg-[radial-gradient(var(--fin-line)_1px,transparent_1px)] [background-size:28px_28px] opacity-30 [mask-image:radial-gradient(ellipse_75%_65%_at_50%_45%,#000_60%,transparent_100%)]"
         aria-hidden="true"
       />
 
@@ -196,7 +196,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           opacity: [0.35, 0.6, 0.35],
         }}
         transition={{ duration: 16, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut' }}
-        className="pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-[var(--fin-r-pill)] bg-gradient-to-br from-amber-500/25 via-sky-500/15 to-transparent blur-[120px]"
+        className="login-nativo-halo pointer-events-none absolute -left-40 -top-40 h-[500px] w-[500px] rounded-[var(--fin-r-pill)] bg-gradient-to-br from-amber-500/25 via-sky-500/15 to-transparent blur-[120px]"
         aria-hidden="true"
       />
       <motion.div
@@ -206,7 +206,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
           opacity: [0.3, 0.55, 0.3],
         }}
         transition={{ duration: 18, repeat: movimientoReducido ? 0 : Infinity, ease: 'easeInOut', delay: 2 }}
-        className="pointer-events-none absolute -bottom-40 -right-40 h-[550px] w-[550px] rounded-[var(--fin-r-pill)] bg-gradient-to-tl from-emerald-500/25 via-amber-500/15 to-transparent blur-[130px]"
+        className="login-nativo-halo pointer-events-none absolute -bottom-40 -right-40 h-[550px] w-[550px] rounded-[var(--fin-r-pill)] bg-gradient-to-tl from-emerald-500/25 via-amber-500/15 to-transparent blur-[130px]"
         aria-hidden="true"
       />
 
@@ -241,7 +241,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
         </div>
 
         {/* Form Card Container */}
-        <div className="relative overflow-hidden rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)]/90 bg-[var(--fin-card)]/90 p-6 shadow-[0_8px_32px_-4px_rgb(0_0_0/0.16),0_24px_64px_-16px_rgb(0_0_0/0.3)] backdrop-blur-2xl sm:p-8 before:absolute before:inset-x-0 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-400/40 before:to-transparent">
+        <div className="login-nativo-tarjeta relative overflow-hidden rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)]/90 bg-[var(--fin-card)]/90 p-6 shadow-[0_8px_32px_-4px_rgb(0_0_0/0.16),0_24px_64px_-16px_rgb(0_0_0/0.3)] backdrop-blur-2xl sm:p-8 before:absolute before:inset-x-0 before:top-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-amber-400/40 before:to-transparent">
           {exito ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}

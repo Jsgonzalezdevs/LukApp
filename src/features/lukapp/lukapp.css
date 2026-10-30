@@ -888,6 +888,12 @@ input[type='date']::-webkit-date-and-time-value {
 /* Android ya descuenta sus controles del viewport del WebView. */
 .fin-html[data-native="true"] { --fin-safe-area-bottom: 0px; }
 .fin-html[data-native="true"] main[aria-label="Contenido principal de LukApp"] { padding-top: clamp(1.25rem, 3vh, 1.75rem); }
+.fin-html[data-native="true"] .login-nativo-fondo { background-image: none; }
+.fin-html[data-native="true"] .login-nativo-puntos,
+.fin-html[data-native="true"] .login-nativo-halo,
+.fin-html[data-native="true"] .fin-aurora,
+.fin-html[data-native="true"] .login-nativo-marca-brillo { display: none; animation: none; filter: none; transform: none; }
+.fin-html[data-native="true"] .login-nativo-tarjeta { background-color: var(--fin-card); backdrop-filter: none; -webkit-backdrop-filter: none; }
 
 .fin-asesor { overflow-wrap: anywhere; }
 .fin-asesor input, .fin-asesor select { max-width: 100%; }

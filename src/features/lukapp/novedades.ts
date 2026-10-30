@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.32', fecha: '2026-10-30', texto: 'La barra inferior de Android queda por encima de los controles del teléfono y el fondo de acceso se dibuja sin cortes. 📲' },
   { version: '10.10.31', fecha: '2026-10-30', texto: 'El ícono de LukApp en Android ahora muestra mejor el isotipo y la versión de prueba se instala sin reemplazar la anterior. 📲' },
   { version: '10.10.30', fecha: '2026-10-29', texto: 'Android graba la voz directamente con el micrófono nativo y detecta grabaciones vacías o interrumpidas. 🎙️' },
   { version: '10.10.29', fecha: '2026-10-29', texto: 'Mejoras del micrófono en Android y controles más ordenados en Asesor y Dinero. 🎙️' },

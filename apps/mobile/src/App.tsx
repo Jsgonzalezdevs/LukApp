@@ -273,7 +273,7 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={[estilos.pantalla, { backgroundColor: fondo }]} edges={['top']}>
+    <SafeAreaView style={[estilos.pantalla, { backgroundColor: fondo }]} edges={['top', 'bottom']}>
       <StatusBar style={estiloBarra} />
       <WebView<{}>
         key={recarga}
