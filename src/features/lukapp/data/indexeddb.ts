@@ -79,6 +79,20 @@ export const migrarLibroLocal = async (destino: Repositorio, usuario?: string): 
   const tieneDatos = Object.values(datos).some((lista) => lista.length > 0);
   if (!tieneDatos) return false;
 
+  // El repositorio con cola puede guardar la migración como dos operaciones
+  // atómicas en vez de serializar una petición remota por cada fila. Se dejan
+  // primero las cuentas para que sus referencias existan al importar el resto.
+  const importarLibroMigrado = (destino as Repositorio & {
+    importarLibroMigrado?: (libro: Instantanea) => Promise<void>;
+  }).importarLibroMigrado;
+  if (importarLibroMigrado) {
+    await importarLibroMigrado.call(destino, datos);
+    if (clave) {
+      try { localStorage.setItem(clave, 'completa'); } catch { /* El libro original sigue intacto si falla esta marca. */ }
+    }
+    return true;
+  }
+
   // La migración es un respaldo oportunista. Una fila antigua puede quedar
   // fuera de las políticas de la cuenta actual; no debe bloquear el resto de
   // LukApp ni impedir crear espacios compartidos.

@@ -152,6 +152,21 @@ export class RepositorioConCola implements Repositorio {
     });
   }
 
+  /**
+   * Importa el libro previo con dos operaciones: primero las cuentas, que son
+   * la referencia de movimientos y metas, y después el resto del historial.
+   * Mantenerlo en un RPC por grupo evita poner una escritura remota por fila en
+   * la cola serializada y dejar toda la app detrás de la pantalla de carga.
+   */
+  async importarLibroMigrado(datos: Instantanea): Promise<void> {
+    if (datos.cajitas.length > 0) {
+      await this.aplicarCambios({ guardar: { cajitas: datos.cajitas } });
+    }
+
+    const resto: Instantanea = { ...datos, cajitas: [] };
+    if (tieneDatos(resto)) await this.aplicarCambios({ guardar: resto });
+  }
+
   private async leerTodo(): Promise<Instantanea> {
     if (navigator.onLine) {
       await this.sincronizarPendientes();

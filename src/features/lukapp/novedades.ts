@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.39', fecha: '2026-10-31', texto: 'Dinero y las demás pantallas ya no se quedan cargando indefinidamente; si falla la conexión, LukApp te permite volver a intentarlo. ✨📲' },
   { version: '10.10.38', fecha: '2026-10-30', texto: 'Los esqueletos de cada herramienta ahora anticipan su contenido: metas, topes, categorías, 4x1000, respaldos y más. ✨' },
   { version: '10.10.37', fecha: '2026-10-30', texto: 'Cada herramienta que abres en “Más” muestra un esqueleto propio mientras carga, también al iniciar LukApp en Android. ✨📲' },
   { version: '10.10.36', fecha: '2026-10-30', texto: 'Cada pantalla muestra su propio esqueleto mientras carga, también en Android; el arranque nativo conserva el fondo oscuro de LukApp. 📲✨' },

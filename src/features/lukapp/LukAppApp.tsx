@@ -27,7 +27,7 @@ import { migrarLibroLocal, RepositorioIndexedDB, soportaIndexedDB } from './data
 import { RepositorioConCola } from './data/repositorioConCola';
 import { crearRepositorio } from './data/crearRepositorio';
 import { ColaCambios } from './data/colaCambios';
-import { SkeletonAcceso, SkeletonDeSeccion } from './components/Skeleton';
+import { CargaSeccion, LimiteErrorCarga, SkeletonAcceso } from './components/Skeleton';
 import { ES_PASIVO, claseDeCuenta, etiquetaTipoCajita } from './data/modelos';
 import { idsPasivos, saldosPorCajita } from './lib/cajitas';
 
@@ -207,7 +207,7 @@ const LukAppContenido: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirC
   const panelInicial = panelDeSegmentos(segmentosIniciales);
 
   if (sesion.estado.modo === 'cargando') {
-    return <SkeletonDeSeccion seccion={seccionInicial} panel={panelInicial} />;
+    return <CargaSeccion key={`${seccionInicial}:${panelInicial ?? ''}`} seccion={seccionInicial} panel={panelInicial} />;
   }
 
   if (sesion.estado.modo === 'anonimo') {
@@ -911,7 +911,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const saldoCuentasSinEfectivoCop = contextoFinanciero.saldo.saldoBancosCop ?? 0;
 
   if (!migracionLista || almacen.cargando) {
-    return <SkeletonDeSeccion seccion={section} panel={panelAjustes} />;
+    return <CargaSeccion key={`${section}:${panelAjustes ?? ''}`} seccion={section} panel={panelAjustes} />;
   }
 
   if (almacen.error && Object.values(almacen.datos).every((lista) => lista.length === 0)) {
@@ -965,7 +965,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           )
         }
       >
-        <Suspense fallback={<SkeletonDeSeccion seccion={section} panel={panelAjustes} />}>
+        <LimiteErrorCarga key={`${section}:${panelAjustes ?? ''}`} seccion={section} panel={panelAjustes}>
+        <Suspense fallback={<CargaSeccion key={`${section}:${panelAjustes ?? ''}`} seccion={section} panel={panelAjustes} />}>
         {!enLinea ? (
           <div className="mb-4 flex items-start gap-2.5 rounded-[var(--fin-r-card)] bg-[var(--fin-warn-bg)] px-4 py-3" role="status">
             <CloudOff className="mt-0.5 h-4 w-4 shrink-0 text-[var(--fin-warn)]" strokeWidth={2.5} />
@@ -1721,6 +1722,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           />
         ) : null}
         </Suspense>
+        </LimiteErrorCarga>
       </LukAppShell>
     </CatalogoProvider>
   );

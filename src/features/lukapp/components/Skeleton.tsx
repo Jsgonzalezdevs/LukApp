@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PANELES_AJUSTES, type PanelAjustes, type SectionId } from '../sections';
 
 interface SkeletonProps {
@@ -172,6 +172,59 @@ export const SkeletonDeSeccion: React.FC<{ seccion: SectionId; panel?: PanelAjus
   if (seccion === 'calendario') return <Contenedor pantalla="calendario" etiqueta="Calendario"><SkeletonCalendario /></Contenedor>;
   return <SkeletonInicio />;
 };
+
+const MensajeReintento: React.FC<{ etiqueta: string }> = ({ etiqueta }) => (
+  <main className="flex min-h-[100dvh] items-center justify-center bg-[var(--fin-bg)] p-6 text-[var(--fin-ink)]">
+    <section className="max-w-md text-center" role="alert">
+      <h1 className="text-xl font-semibold">No terminó de abrir {etiqueta}</h1>
+      <p className="mt-3 text-[var(--fin-ink-soft)]">La carga tardó más de lo esperado. Revisa tu conexión y vuelve a intentarlo; tus datos guardados no se han reemplazado.</p>
+      <button type="button" className="mt-6 rounded-full bg-[var(--fin-accent)] px-6 py-3 font-semibold text-white" onClick={() => window.location.reload()}>
+        Volver a cargar LukApp
+      </button>
+    </section>
+  </main>
+);
+
+/** Evita que una espera de red o de un módulo deje el esqueleto en pantalla para siempre. */
+export const CargaSeccion: React.FC<{ seccion: SectionId; panel?: PanelAjustes | null }> = ({ seccion, panel = null }) => {
+  const [vencida, setVencida] = useState(false);
+  const etiqueta = panel ? PANELES_AJUSTES.find((item) => item.id === panel)?.label ?? 'esta pantalla' :
+    seccion === 'dinero' ? 'Dinero' : seccion === 'mes' ? 'Mes' : seccion === 'asesor' ? 'Asesor' : seccion === 'calendario' ? 'Calendario' : seccion === 'ajustes' ? 'Más' : 'Inicio';
+
+  useEffect(() => {
+    const temporizador = window.setTimeout(() => setVencida(true), 22_000);
+    return () => window.clearTimeout(temporizador);
+  }, []);
+
+  return vencida ? <MensajeReintento etiqueta={etiqueta} /> : <SkeletonDeSeccion seccion={seccion} panel={panel} />;
+};
+
+interface LimiteCargaProps {
+  children: React.ReactNode;
+  seccion: SectionId;
+  panel?: PanelAjustes | null;
+}
+
+/** Recupera la navegación si falla la descarga de un componente diferido. */
+export class LimiteErrorCarga extends React.Component<LimiteCargaProps, { fallo: boolean }> {
+  state = { fallo: false };
+
+  static getDerivedStateFromError() {
+    return { fallo: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error('No se pudo abrir la pantalla solicitada:', error);
+  }
+
+  render() {
+    if (this.state.fallo) {
+      const etiqueta = this.props.panel ? 'esta pantalla' : this.props.seccion === 'dinero' ? 'Dinero' : this.props.seccion === 'mes' ? 'Mes' : this.props.seccion === 'asesor' ? 'Asesor' : 'esta pantalla';
+      return <MensajeReintento etiqueta={etiqueta} />;
+    }
+    return this.props.children;
+  }
+}
 
 export const SkeletonAcceso: React.FC = () => (
   <Contenedor pantalla="acceso" etiqueta="tu cuenta">
