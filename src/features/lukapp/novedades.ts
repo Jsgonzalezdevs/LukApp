@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.11.1', fecha: '2026-11-06', texto: 'Preparamos la versión Android para la prueba cerrada de Google Play, con la última versión de LukApp. 📲' },
   { version: '10.11.0', fecha: '2026-11-06', texto: 'Ahora tienes una página pública para solicitar la eliminación parcial o total de tus datos sin borrar tu cuenta. 🔐' },
   { version: '10.10.40', fecha: '2026-11-06', texto: 'Ahora puedes elegir Superadmin al editar o crear una cuenta, sin un límite de dos administradores. 🔐' },
   { version: '10.10.39', fecha: '2026-10-31', texto: 'Dinero y las demás pantallas ya no se quedan cargando indefinidamente; si falla la conexión, LukApp te permite volver a intentarlo. ✨📲' },
