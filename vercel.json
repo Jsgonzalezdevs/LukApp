@@ -22,7 +22,7 @@
     { "source": "/finanzas/:path*", "destination": "/index.html" },
     { "source": "/pago/confirmado", "destination": "/index.html" },
     {
-      "source": "/(app|entrar|registro|superadmin|estadisticas|dinero|mes|asesor|ajustes|ecosistema|blog|legal|terminos)(/.*)?",
+      "source": "/(app|entrar|registro|superadmin|estadisticas|dinero|mes|asesor|ajustes|ecosistema|blog|legal|terminos|eliminar-datos)(/.*)?",
       "destination": "/index.html"
     }
   ],

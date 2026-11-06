@@ -200,6 +200,7 @@ export const LandingLukApp: React.FC<LandingProps> = ({
             <a href="/legal#terminos">Términos y condiciones</a>
             <a href="/legal#almacenamiento">Almacenamiento y analítica</a>
             <a href="/legal#datos">Tus derechos sobre los datos</a>
+            <a href="/eliminar-datos">Solicitar eliminación de datos</a>
           </div>
           <div className="footer-columna">
             <h2>Contacto</h2>

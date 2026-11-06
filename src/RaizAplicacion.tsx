@@ -6,6 +6,7 @@ import { useMovimientoReducido } from './features/lukapp/lib/useMovimientoReduci
 import { esDominioAppPrincipal, urlAppPrincipal } from './features/lukapp/lib/dominios'
 
 const SeoContenido = lazy(() => import('./features/lukapp/components/SeoContenido'))
+const SolicitudEliminacionDatos = lazy(() => import('./features/lukapp/components/SolicitudEliminacionDatos').then(({ SolicitudEliminacionDatos: Pagina }) => ({ default: Pagina })))
 
 /* Esta frontera mantiene Supabase, el contexto de sesión, OCR y los paneles
    financieros fuera del grafo de carga de la portada pública. */
@@ -67,6 +68,10 @@ const ContenidoAplicacion = () => {
   const rutaPublica = window.location.pathname.replace(/\/+$/, '') || '/'
   if (rutaPublica === '/blog' || rutaPublica.startsWith('/blog/')) {
     return <Suspense fallback={<CargandoAplicacion />}><SeoContenido /></Suspense>
+  }
+
+  if (rutaPublica === '/eliminar-datos') {
+    return <Suspense fallback={<CargandoAplicacion />}><SolicitudEliminacionDatos /></Suspense>
   }
 
   const esPortadaPublica =
