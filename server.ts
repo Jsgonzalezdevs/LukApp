@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { PasswordException, PDFParse } from 'pdf-parse';
-import { esUltimoAdmin, LIMITE_ADMINISTRADORES, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
+import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_lib/superadmin.ts';
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { validarContrasenaSegura } from './src/lib/seguridad.ts';
 import { urlSupabaseDelServidor } from './server_lib/configuracionSupabase.ts';
@@ -255,14 +255,6 @@ app.post('/api/crear-usuario', async (req, res) => {
     if (rol === 'admin') {
       const admin = await exigirAdmin(cliente, token);
       if ('error' in admin) return res.status(admin.status).json({ error: admin.error });
-      const { count, error } = await cliente
-        .from('perfiles')
-        .select('id', { count: 'exact', head: true })
-        .eq('rol', 'admin');
-      if (error || count === null) return res.status(503).json({ error: 'No se pudo validar el acceso.' });
-      if (count >= LIMITE_ADMINISTRADORES) {
-        return res.status(409).json({ error: 'LukApp ya tiene sus dos cuentas administradoras.' });
-      }
     }
 
     // La excepción de complejidad es exclusiva de cuentas administradoras y
@@ -289,9 +281,6 @@ app.post('/api/crear-usuario', async (req, res) => {
         .eq('id', newUser.user.id);
       if (perfilError) {
         await cliente.auth.admin.deleteUser(newUser.user.id);
-        if (perfilError.code === '23514') {
-          return res.status(409).json({ error: 'LukApp ya tiene sus dos cuentas administradoras.' });
-        }
         throw perfilError;
       }
     }
@@ -307,9 +296,6 @@ app.post('/api/crear-usuario', async (req, res) => {
     return res.status(200).json({ success: true, user: newUser.user });
   } catch (error: any) {
     console.error('Error creando usuario:', error);
-    if (error?.code === '23514') {
-      return res.status(409).json({ error: 'LukApp ya tiene sus dos cuentas administradoras.' });
-    }
     return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
 });
@@ -1352,14 +1338,11 @@ app.post('/api/editar-usuario', async (req, res) => {
         // traducen a un mensaje que se entiende, no al error crudo de Postgres.
         const dup = error.code === '23505';
         const rolInexistente = error.code === '23503';
-        const limiteAdmin = error.code === '23514';
-        return res.status(dup || rolInexistente || limiteAdmin ? 409 : 500).json({
+        return res.status(dup || rolInexistente ? 409 : 500).json({
           error: dup
             ? 'Ese nombre de usuario ya está tomado.'
             : rolInexistente
               ? 'Ese rol personalizado ya no existe.'
-              : limiteAdmin
-                ? 'LukApp ya tiene sus dos cuentas administradoras.'
               : error.message,
         });
       }

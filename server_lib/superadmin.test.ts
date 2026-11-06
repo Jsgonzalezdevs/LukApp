@@ -99,13 +99,8 @@ describe('motivoParaNoBorrar', () => {
     ).toBeNull();
   });
 
-  it('no permite conceder un tercer acceso de administrador', () => {
+  it('permite conceder acceso de administrador sin un tope artificial de cuentas', () => {
     expect(motivoParaRechazar({ rol: 'admin' }, ctx({ objetivoRol: 'usuario', totalAdmins: 2 })))
-      .toMatch(/dos cuentas administradoras/i);
-  });
-
-  it('permite ocupar un cupo cuando hay menos de dos administradores', () => {
-    expect(motivoParaRechazar({ rol: 'admin' }, ctx({ objetivoRol: 'usuario', totalAdmins: 1 })))
       .toBeNull();
   });
 });

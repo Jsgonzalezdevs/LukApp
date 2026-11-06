@@ -60,7 +60,11 @@ export const SelectorApp: React.FC<Props> = ({
     const caja = botonRef.current?.getBoundingClientRect();
     if (!caja) return;
     const margen = 8;
-    const altoDeseado = Math.min(320, window.innerHeight - margen * 2);
+    // El menú debe reservar solo el alto que realmente ocupan sus opciones.
+    // Si se asume siempre 320px, un selector con una sola opción se abre muy
+    // lejos hacia arriba aunque sí quepa debajo del control.
+    const altoContenido = opciones.length * 44 + 12;
+    const altoDeseado = Math.min(320, Math.max(56, altoContenido), window.innerHeight - margen * 2);
     const espacioAbajo = window.innerHeight - caja.bottom - margen;
     const espacioArriba = caja.top - margen;
     const abrirArriba = espacioAbajo < Math.min(220, altoDeseado) && espacioArriba > espacioAbajo;

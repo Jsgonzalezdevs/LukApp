@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.10.40', fecha: '2026-11-06', texto: 'Ahora puedes elegir Superadmin al editar o crear una cuenta, sin un límite de dos administradores. 🔐' },
   { version: '10.10.39', fecha: '2026-10-31', texto: 'Dinero y las demás pantallas ya no se quedan cargando indefinidamente; si falla la conexión, LukApp te permite volver a intentarlo. ✨📲' },
   { version: '10.10.38', fecha: '2026-10-30', texto: 'Los esqueletos de cada herramienta ahora anticipan su contenido: metas, topes, categorías, 4x1000, respaldos y más. ✨' },
   { version: '10.10.37', fecha: '2026-10-30', texto: 'Cada herramienta que abres en “Más” muestra un esqueleto propio mientras carga, también al iniciar LukApp en Android. ✨📲' },
