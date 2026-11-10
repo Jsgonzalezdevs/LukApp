@@ -188,7 +188,7 @@ body.fin-page > #root,
   /* La altura de la barra de navegación de abajo, ya sin el hueco vacío que
      antes reservaba para el botón de anotar. `BotonAnotar` la lee para
      posicionarse justo encima sin superponerse ni dejar un salto raro. */
-  --fin-nav-h: 68px;
+  --fin-nav-h: 60px;
 }
 
 /* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,
@@ -368,8 +368,8 @@ nav[aria-label="Secciones"] {
   background-color: var(--fin-soft) !important;
 }
 
-/* El dock flota sobre el contenido como una superficie compacta; no lleva el
-   marco rectangular continuo que hacía parecer antigua la navegación. */
+/* El dock centrado deja respirar el contenido y mantiene zonas de toque
+   cómodas sin extender la superficie por todo el ancho del teléfono. */
 .fin-navigation {
   /* La barra vive en un portal directo a body para escapar de ancestros que
      cambian el containing block de `fixed`. Este selector debe seguir siendo
@@ -378,12 +378,12 @@ nav[aria-label="Secciones"] {
   bottom: 0 !important;
   left: 50%;
   right: auto;
-  width: min(696px, calc(100% - 24px));
-  max-width: 696px;
+  width: min(320px, calc(100% - 32px));
+  max-width: 320px;
   transform: translateX(-50%);
   z-index: 20;
   box-sizing: border-box;
-  border-radius: 24px;
+  border-radius: 999px;
   background: var(--fin-soft) !important;
   border: 0;
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.12);

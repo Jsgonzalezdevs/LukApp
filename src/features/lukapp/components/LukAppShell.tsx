@@ -137,7 +137,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
    estructura, así que esto se puede reordenar sin romperla. */}
       <div
         data-guia="nav"
-        className="flex h-[var(--fin-nav-h)] w-full items-center justify-around px-2"
+        className="flex h-[var(--fin-nav-h)] w-full items-center justify-center gap-2 px-3"
       >
         {SECTIONS.map((item) => {
           const activa = item.id === section || (section === 'calendario' && item.id === 'mes');
@@ -149,14 +149,16 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
               aria-label={item.label}
-              className="flex min-w-0 flex-1 items-center justify-center rounded-[18px] transition-colors"
+              title={item.label}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors"
             >
               <item.icon
-                className="h-[32px] w-[32px] shrink-0 transition-colors"
+                className="h-6 w-6 shrink-0 transition-colors"
                 strokeWidth={activa ? 2.5 : 2}
                 style={{ color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-faint)' }}
                 aria-hidden="true"
               />
+              <span className="sr-only">{item.label}</span>
             </button>
           );
         })}

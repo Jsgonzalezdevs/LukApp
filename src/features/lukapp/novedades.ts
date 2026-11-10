@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.11.3', fecha: '2026-11-09', texto: 'La barra inferior ocupa menos espacio, con iconos más discretos y botones cómodos para tocar. ✨' },
   { version: '10.11.2', fecha: '2026-11-09', texto: 'La barra de navegación queda más despejada: ahora muestra solo iconos más grandes. ✨' },
   { version: '10.11.1', fecha: '2026-11-06', texto: 'Preparamos la versión Android para la prueba cerrada de Google Play, con la última versión de LukApp. 📲' },
   { version: '10.11.0', fecha: '2026-11-06', texto: 'Ahora tienes una página pública para solicitar la eliminación parcial o total de tus datos sin borrar tu cuenta. 🔐' },
