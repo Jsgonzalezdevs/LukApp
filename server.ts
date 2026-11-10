@@ -634,6 +634,13 @@ const estadoPlanDe = async (cliente: ClienteAdmin, userId: string): Promise<Esta
   };
 };
 
+/**
+ * Cuenta de demostración compartida (alias `demo` en el inicio de sesión). Su
+ * contraseña la conocen muchas personas, así que no puede borrarse ni
+ * convertirse en administradora desde la aplicación.
+ */
+const CUENTA_DEMO = 'demofestech@lukapp.app';
+
 /** El id y correo del que llama si es admin; si no, el estado y mensaje a devolver. */
 const exigirAdmin = async (
   cliente: ClienteAdmin,
@@ -1526,6 +1533,14 @@ app.post('/api/eliminar-usuario', async (req, res) => {
     });
     if (motivo) return res.status(400).json({ error: motivo });
 
+    // Un permiso delegado no puede borrar a un superadmin: solo el admin fijo.
+    if (ctx.objetivoRol === 'admin') {
+      const admin = await exigirAdmin(cliente, token);
+      if ('error' in admin) {
+        return res.status(403).json({ error: 'Solo un superadmin puede eliminar a otro superadmin.' });
+      }
+    }
+
     // Borra la cuenta de auth; la fila de `perfiles` se va sola por la llave
     // foránea con `on delete cascade` contra auth.users.
     const { error } = await cliente.auth.admin.deleteUser(userId);
@@ -1567,6 +1582,10 @@ app.post('/api/mi-cuenta/eliminar', async (req, res) => {
   try {
     const acceso = await exigirUsuario(cliente, token);
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    if (acceso.email.toLowerCase() === CUENTA_DEMO) {
+      return res.status(403).json({ error: 'La cuenta de demostración no se puede eliminar.' });
+    }
 
     const ctx = await contextoDe(cliente, acceso.userId);
     if (esUltimoAdmin(ctx)) {
@@ -1632,6 +1651,16 @@ app.post('/api/impersonar-usuario', async (req, res) => {
 
     if (userId === acceso.userId) {
       return res.status(400).json({ error: 'No puedes impersonarte a ti mismo.' });
+    }
+
+    // Un permiso delegado no puede asumir la sesión de un superadmin: eso le
+    // daría todo lo que el superadmin puede hacer, incluido borrar cuentas.
+    const objetivo = await contextoDe(cliente, userId);
+    if (objetivo.objetivoRol === 'admin') {
+      const admin = await exigirAdmin(cliente, token);
+      if ('error' in admin) {
+        return res.status(403).json({ error: 'Solo un superadmin puede asumir la cuenta de otro superadmin.' });
+      }
     }
 
     // Obtener datos del usuario objetivo

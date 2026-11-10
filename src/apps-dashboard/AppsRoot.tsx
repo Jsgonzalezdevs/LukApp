@@ -170,10 +170,17 @@ export const AppsRoot: React.FC = () => {
     if (!adminBackup) return;
     const cliente = obtenerSupabase();
     if (!cliente) return;
-    await cliente.auth.setSession({
+    const { error } = await cliente.auth.setSession({
       access_token: adminBackup.access_token,
       refresh_token: adminBackup.refresh_token,
     });
+    // Si el admin no puede recuperar su sesión, se conserva el respaldo para
+    // reintentar. Borrarlo aquí dejaría al superadmin dentro de la cuenta
+    // asesorada sin forma de volver.
+    if (error) {
+      console.error('No se pudo volver a la sesión del superadmin:', error);
+      return;
+    }
     sessionStorage.removeItem(ADMIN_BACKUP_KEY);
     sessionStorage.removeItem(IMPERSONATED_USER_KEY);
     setAdminBackup(null);

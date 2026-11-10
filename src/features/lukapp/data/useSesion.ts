@@ -260,9 +260,28 @@ export const useSesion = (): Sesion => {
       [cliente],
     ),
 
-    salir: useCallback(() => ejecutar(() => cliente!.auth.signOut()), [cliente, ejecutar]),
+    /**
+     * Durante una suplantación, cerrar sesión solo termina esa sesión en este
+     * navegador. Un cierre global revocaría todas las sesiones del usuario
+     * asesorado, en todos sus dispositivos. Además se borra el respaldo de la
+     * sesión del superadmin: no debe quedar en sessionStorage.
+     */
+    salir: useCallback(
+      () =>
+        ejecutar(async () => {
+          const suplantando = sessionStorage.getItem(CLAVE_RESPALDO_ADMIN) !== null;
+          if (!suplantando) return cliente!.auth.signOut();
+          sessionStorage.removeItem(CLAVE_RESPALDO_ADMIN);
+          sessionStorage.removeItem(CLAVE_USUARIO_SUPLANTADO);
+          return cliente!.auth.signOut({ scope: 'local' });
+        }),
+      [cliente, ejecutar],
+    ),
   };
 };
+
+const CLAVE_RESPALDO_ADMIN = '__admin_session_backup__';
+const CLAVE_USUARIO_SUPLANTADO = '__impersonated_user__';
 
 const LIMITE_MS = 12_000;
 const TIEMPO_AGOTADO = 'tiempo-agotado';
