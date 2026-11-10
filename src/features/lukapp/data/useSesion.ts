@@ -143,19 +143,10 @@ export const useSesion = (): Sesion => {
     finalizarRecuperacion: useCallback(() => setEnRecuperacion(false), []),
     limpiarError: useCallback(() => setError(null), []),
 
-    /**
-     * Sign-in is by email only.
-     *
-     * It used to accept a username too, resolving it through
-     * `correo_de_usuario`. That function handed out the address behind any name
-     * somebody guessed, and migration 0002 accepted the disclosure on one
-     * explicit condition: that accounts were created by the admin and there was
-     * no public sign-up. Opening registration ended that condition, so 0017
-     * drops the function and this path with it.
-     */
+    // El alias público demo corresponde únicamente a la cuenta de demostración.
     entrar: useCallback(
       (email, password) =>
-        ejecutar(() => cliente!.auth.signInWithPassword({ email: email.trim(), password })),
+        ejecutar(() => cliente!.auth.signInWithPassword({ email: email.trim().toLowerCase() === 'demo' ? 'demofestech@lukapp.app' : email.trim(), password })),
       [cliente, ejecutar],
     ),
 

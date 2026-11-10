@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.11.5', fecha: '2026-11-09', texto: 'Ya puedes acceder a la cuenta de demostración usando demo como usuario. ✨' },
   { version: '10.11.4', fecha: '2026-11-09', texto: 'Corregimos la barra inferior en iPhone: los iconos quedan centrados y la cápsula conserva su altura compacta. ✨' },
   { version: '10.11.3', fecha: '2026-11-09', texto: 'La barra inferior ocupa menos espacio, con iconos más discretos y botones cómodos para tocar. ✨' },
   { version: '10.11.2', fecha: '2026-11-09', texto: 'La barra de navegación queda más despejada: ahora muestra solo iconos más grandes. ✨' },
