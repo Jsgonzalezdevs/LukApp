@@ -122,14 +122,9 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
       ? createPortal(<div className="fin-root" style={{ display: 'contents' }}>{accion}</div>, document.body)
       : null}
 
-    {/* La barra de navegación. Pegada al fondo, con su propia altura fija —
- antes tenía un hueco vacío abajo (`pb-[4.75rem]`) donde se metía el botón
- de anotar por encima, así que el menú quedaba arriba y el micrófono
- abajo, más cerca del borde. `BotonAnotar` ahora se posiciona por su
- cuenta justo encima de esta barra, usando su altura (`--fin-nav-h`) para
- no superponerse. */}
+    {/* La zona segura queda fuera de la cápsula para mantener los iconos centrados. */}
     {createPortal(<nav
-      className="fin-navigation fixed bottom-0 z-20 flex justify-center pb-[var(--fin-safe-area-bottom)]"
+      className="fin-navigation fixed z-20 flex justify-center"
       aria-label="Secciones"
     >
       {/* `data-guia` es el ancla de la guía de bienvenida. Es el único

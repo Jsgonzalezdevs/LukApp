@@ -375,7 +375,7 @@ nav[aria-label="Secciones"] {
      cambian el containing block de `fixed`. Este selector debe seguir siendo
      global: `.fin-page` ya no es ancestro después de crear el portal. */
   position: fixed !important;
-  bottom: 0 !important;
+  bottom: var(--fin-safe-area-bottom) !important;
   left: 50%;
   right: auto;
   width: min(320px, calc(100% - 32px));
