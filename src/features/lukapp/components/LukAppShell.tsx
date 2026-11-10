@@ -148,23 +148,15 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
-              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[18px] py-2 transition-colors"
+              aria-label={item.label}
+              className="flex min-w-0 flex-1 items-center justify-center rounded-[18px] transition-colors"
             >
               <item.icon
-                className="h-[22px] w-[22px] shrink-0 transition-colors"
+                className="h-[32px] w-[32px] shrink-0 transition-colors"
                 strokeWidth={activa ? 2.5 : 2}
                 style={{ color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-faint)' }}
                 aria-hidden="true"
               />
-              <span
-                className="max-w-full truncate text-[13px] transition-colors"
-                style={{
-                  color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-faint)',
-                  fontWeight: activa ? 600 : 400,
-                }}
-              >
-                {item.label}
-              </span>
             </button>
           );
         })}
