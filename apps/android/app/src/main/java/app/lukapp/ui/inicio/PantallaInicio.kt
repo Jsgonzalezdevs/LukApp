@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -275,6 +276,8 @@ private fun SelectorPeriodo(vista: VistaInicio, alElegir: (String) -> Unit) {
                 Column(
                     Modifier
                         .padding(top = 48.dp)
+                        // `min-w-[190px]` y ancho según el contenido, no el de la pantalla.
+                        .width(androidx.compose.foundation.layout.IntrinsicSize.Max)
                         .widthIn(min = 190.dp)
                         .graphicsLayer {
                             alpha = p

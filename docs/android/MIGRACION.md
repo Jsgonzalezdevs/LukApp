@@ -50,14 +50,18 @@ Defectos encontrados en el emulador y corregidos: sombras que se transparentaban
 superficies translúcidas, el selector de tema fijo encima del formulario, los íconos de la barra
 de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 
+### Con sesión real (el dueño entró en el emulador)
+
+- Inicio carga los datos reales de Supabase, sin errores en el registro. Toma el período semanal
+  guardado en `user_metadata` y muestra disponible, bancos/efectivo, gastos/ingresos, racha y
+  movimientos agrupados por día.
+- El menú de período lista 13 períodos semanales. Se corrigió que ocupara todo el ancho.
+- La barra inferior cambia de sección, y Atrás desde una sección vuelve a Inicio.
+
 ## Sin verificar todavía
 
-- **Nada después del acceso.** Para entrar hay que escribir credenciales reales en la base de
-  producción, y eso lo tiene que hacer el dueño, no el agente. Por eso Inicio, la sincronización,
-  la barra inferior, el candado biométrico y los hápticos siguen solo compilados. Para probarlos:
-  instalar el APK y entrar con una cuenta propia, o darle al agente una cuenta de un proyecto de
-  Supabase de pruebas.
-- Falta la comparación visual lado a lado contra la WebView.
+- Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
+- El candado biométrico (el emulador no tiene huella registrada), los hápticos y la cola sin conexión.
 
 ## Avance por área
 
@@ -69,7 +73,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Google nativo | Hecho en código. Bloqueado por configuración externa (ver abajo) |
 | Desbloqueo biométrico | Hecho en código (provisional en Más) |
 | Shell: barra inferior, fundido, Atrás, pull to refresh en Inicio | Hecho en código |
-| Inicio | Parcial: faltan próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
+| Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
 | Dinero, Mes, Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |
 | Firma de publicación | **Bloqueado** (ver abajo) |
