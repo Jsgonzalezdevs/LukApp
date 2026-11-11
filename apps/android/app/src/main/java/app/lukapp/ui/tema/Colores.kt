@@ -140,3 +140,20 @@ fun mezclar(a: Color, porcentaje: Float, b: Color): Color {
         alpha = a.alpha * p + b.alpha * (1 - p),
     )
 }
+
+/**
+ * Un color translúcido ya compuesto sobre el fondo de la página.
+ *
+ * En CSS `box-shadow` solo se ve por fuera del elemento; en Compose la sombra
+ * se pinta también debajo, y con `--fin-card` (blanco al 72 %) se transparenta
+ * como una mancha. Toda superficie translúcida que lleve sombra usa esto.
+ */
+fun ColoresLukApp.sobreFondo(color: Color, fondo: Color = bg): Color {
+    val a = color.alpha
+    return Color(
+        red = color.red * a + fondo.red * (1 - a),
+        green = color.green * a + fondo.green * (1 - a),
+        blue = color.blue * a + fondo.blue * (1 - a),
+        alpha = 1f,
+    )
+}

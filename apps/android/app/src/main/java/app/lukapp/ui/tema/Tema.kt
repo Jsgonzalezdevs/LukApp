@@ -73,6 +73,18 @@ fun TemaLukApp(preferencia: PreferenciaTema, contenido: @Composable () -> Unit) 
             surface = colores.surface, onSurface = colores.ink, onBackground = colores.ink, error = colores.salio,
             outline = colores.line, surfaceVariant = colores.soft, onSurfaceVariant = colores.inkSoft)
     }
+    // La barra de estado y la de gestos siguen al tema de LukApp, no al del sistema:
+    // con "Oscuro" elegido en un teléfono claro, los íconos oscuros se perdían.
+    val vista = androidx.compose.ui.platform.LocalView.current
+    if (!vista.isInEditMode) {
+        androidx.compose.runtime.SideEffect {
+            val ventana = (vista.context as? android.app.Activity)?.window ?: return@SideEffect
+            androidx.core.view.WindowCompat.getInsetsController(ventana, vista).apply {
+                isAppearanceLightStatusBars = !oscuro
+                isAppearanceLightNavigationBars = !oscuro
+            }
+        }
+    }
     CompositionLocalProvider(LocalColores provides colores) {
         MaterialTheme(colorScheme = esquema) {
             CompositionLocalProvider(LocalTextStyle provides TipografiaLukApp.cuerpo.copy(color = colores.ink)) {

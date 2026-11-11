@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.14.2', fecha: '2026-11-11', texto: 'Seguimos puliendo por dentro la nueva app de Android: la pantalla de entrada ya se ve igual que siempre en modo claro y oscuro. Tu app actual no cambia. 🛠️' },
   { version: '10.14.1', fecha: '2026-11-11', texto: 'Por dentro: empezamos a construir la app de Android desde cero, con piezas nativas del teléfono, para que más adelante abra más rápido, use tu huella y vibre como debe. Por ahora tu app sigue igual. 🛠️📱' },
   { version: '10.14.0', fecha: '2026-11-11', texto: 'La app de Android ya te deja entrar o crear tu cuenta con Google: se abre Google en tu navegador y vuelves a LukApp con la sesión lista. Si tu app es más vieja, te avisamos para que la actualices desde Google Play. 📲🔑' },
   { version: '10.13.1', fecha: '2026-11-11', texto: 'El checklist de la contraseña ahora se marca con un verde más fuerte y vivo, para que veas de una qué requisitos ya cumples. ✅' },

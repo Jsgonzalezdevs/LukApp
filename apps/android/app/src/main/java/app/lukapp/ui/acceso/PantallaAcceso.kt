@@ -91,6 +91,7 @@ import app.lukapp.ui.iconos.Lucide
 import app.lukapp.ui.tema.LukApp
 import app.lukapp.ui.tema.Medidas
 import app.lukapp.ui.tema.PreferenciaTema
+import app.lukapp.ui.tema.sobreFondo
 
 // Ámbar de Tailwind que usa el botón principal del acceso (from-amber-500 via-amber-600).
 private val Ambar500 = Color(0xFFF59E0B)
@@ -123,17 +124,22 @@ fun PantallaAcceso(
             .safeDrawingPadding()
             .imePadding(),
     ) {
-        Box(Modifier.align(Alignment.TopEnd).padding(20.dp)) { SelectorTema(tema, alCambiarTema) }
-
         // Entrada: opacity 0→1, y 24→0, scale .97→1 en 0.2s easeOut.
         var visible by remember { mutableStateOf(false) }
         LaunchedEffect(Unit) { visible = true }
         val progreso by animateFloatAsState(if (visible) 1f else 0f, tween(200, easing = FastOutSlowInEasing), label = "entrada")
 
+        // `absolute right-5 top-5` dentro del contenedor que se desplaza: el selector
+        // de tema sube con la página en vez de quedar flotando sobre el formulario.
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+        val altoVisible = maxHeight
+        Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Box(Modifier.align(Alignment.TopEnd).padding(20.dp)) { SelectorTema(tema, alCambiarTema) }
+        // `min-h-[100dvh] items-center`: centrado cuando cabe, desplazable cuando no.
         Column(
             Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                .fillMaxWidth()
+                .heightIn(min = altoVisible)
                 .padding(horizontal = 20.dp, vertical = 40.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -179,6 +185,8 @@ fun PantallaAcceso(
                 }
             }
         }
+        }
+        }
     }
 }
 
@@ -192,7 +200,7 @@ private fun Cabecera(modo: ModoAcceso) {
                 .size(64.dp)
                 .shadow(20.dp, RoundedCornerShape(22.4.dp), ambientColor = Color.Black.copy(.15f), spotColor = Color.Black.copy(.15f))
                 .clip(RoundedCornerShape(22.4.dp))
-                .background(c.card)
+                .background(c.sobreFondo(c.card))
                 .border(1.dp, c.line, RoundedCornerShape(22.4.dp))
                 .background(
                     Brush.radialGradient(listOf(Color(0x357C3AED), Color.Transparent), center = androidx.compose.ui.geometry.Offset(10f, 10f), radius = 120f),
@@ -222,8 +230,7 @@ private fun Tarjeta(contenido: @Composable () -> Unit) {
             .fillMaxWidth()
             .shadow(32.dp, forma, ambientColor = Color.Black.copy(.16f), spotColor = Color.Black.copy(.3f))
             .clip(forma)
-            .background(c.card)
-            .background(if (c.esOscuro) Color.Transparent else Color.Transparent)
+            .background(c.sobreFondo(c.card))
             .border(1.dp, c.line.copy(alpha = 0.9f), forma),
     ) {
         // Brillo de 1px arriba: `before:via-amber-400/40`.
@@ -424,7 +431,7 @@ private fun SelectorModo(modo: ModoAcceso, alCambiar: (ModoAcceso) -> Unit) {
         )
         Box(
             Modifier.offset(x = desplazamiento).width(ancho).height(44.dp)
-                .shadow(1.dp, Medidas.formaControl).clip(Medidas.formaControl).background(c.card),
+                .shadow(1.dp, Medidas.formaControl).clip(Medidas.formaControl).background(c.sobreFondo(c.card, c.sobreFondo(c.soft, c.sobreFondo(c.card)))),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf(ModoAcceso.ENTRAR to "Entrar", ModoAcceso.REGISTRARSE to "Crear cuenta").forEach { (m, texto) ->

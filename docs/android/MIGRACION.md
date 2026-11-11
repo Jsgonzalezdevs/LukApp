@@ -34,13 +34,30 @@ paridad del intérprete de voz.
 - `./gradlew :app:assembleDebug` → genera el APK de debug.
 - `./gradlew :app:bundleRelease` → genera el AAB con R8, **sin firmar**.
 
+## Verificado en emulador (2026-11-11, Android 16, Pixel 7, AVD `LukAppPrueba`)
+
+- La app abre sin cierres inesperados (`logcat -b crash` vacío). El splash da paso al acceso.
+- Acceso en claro y en oscuro: tarjeta, pastilla Entrar/Crear cuenta, campos, «Recuérdame» y pie.
+- Crear cuenta: el apodo consulta la RPC real `usuario_disponible` en Supabase y muestra
+  «disponible». Con «Abc12», el checklist marca mayúscula y minúscula y deja pendientes largo y
+  carácter especial, como la web.
+- Recuperar contraseña: encabezado, «Volver» y botón deshabilitado sin correo válido.
+- La preferencia de tema sobrevive al reinicio de la app. La barra de estado sigue al tema.
+- Google, sin `GOOGLE_WEB_CLIENT_ID`, muestra «El acceso con Google todavía no está disponible
+  en esta versión.» en lugar de fallar.
+
+Defectos encontrados en el emulador y corregidos: sombras que se transparentaban debajo de
+superficies translúcidas, el selector de tema fijo encima del formulario, los íconos de la barra
+de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
+
 ## Sin verificar todavía
 
-- **Nada se ha ejecutado en un dispositivo ni en un emulador.** La imagen de sistema
-  `android-36/google_apis/arm64-v8a` del SDK está vacía (instalación incompleta) y no hay ningún
-  teléfono conectado.
-- Login, Google, biometría, sincronización y hápticos solo están compilados. Falta la comparación
-  visual contra la WebView.
+- **Nada después del acceso.** Para entrar hay que escribir credenciales reales en la base de
+  producción, y eso lo tiene que hacer el dueño, no el agente. Por eso Inicio, la sincronización,
+  la barra inferior, el candado biométrico y los hápticos siguen solo compilados. Para probarlos:
+  instalar el APK y entrar con una cuenta propia, o darle al agente una cuenta de un proyecto de
+  Supabase de pruebas.
+- Falta la comparación visual lado a lado contra la WebView.
 
 ## Avance por área
 
@@ -71,8 +88,7 @@ sin migrar (Buscar, BotonAnotar, abrir un movimiento) no se muestran.
 2. **Firma:** la llave de subida de Play la administra EAS. Para firmar el AAB nativo hay que
    descargarla (`eas credentials`) y poner `UPLOAD_STORE_FILE`, `UPLOAD_STORE_PASSWORD`,
    `UPLOAD_KEY_ALIAS` y `UPLOAD_KEY_PASSWORD` en `lukapp.properties`.
-3. **Emulador:** hay que instalar la imagen de sistema (`sdkmanager "system-images;android-36;google_apis;arm64-v8a"`,
-   ~1,5 GB) o conectar un teléfono con depuración USB.
+3. **Probar con sesión:** hace falta una cuenta para entrar (ver «Sin verificar todavía»).
 4. **Supabase → Auth → URL Configuration:** `lukapp://auth/callback` ya está permitido para Google.
    Los correos de confirmación y de recuperación ahora vuelven ahí: hay que confirmar que
    funcione con las plantillas de correo.
@@ -94,6 +110,12 @@ sin migrar (Buscar, BotonAnotar, abrir un movimiento) no se muestran.
 
 ## Cómo compilar
 
+**Importante:** el repo está en `~/Documents`, que iCloud sincroniza, y eso duplicaba archivos
+dentro de `build/` (`Clase$1 2.class`, que hacía fallar D8). Por eso la salida de compilación va
+a `~/Library/Caches/lukapp-android/` (configurable con `-Plukapp.dirCompilacion=…`). El APK queda
+en `~/Library/Caches/lukapp-android/app/outputs/apk/debug/app-debug.apk`. Los archivos « 2»
+sueltos que ya hay en el repo (`apps/mobile/* 2.*`, `netlify 2.toml`…) tienen el mismo origen.
+
 ```bash
 cd apps/android
 ./gradlew :app:testDebugUnitTest   # reglas + voz
@@ -108,5 +130,5 @@ La URL y la clave publishable de Supabase se leen de `apps/mobile/.env`, o de
 
 ## Siguiente paso sugerido
 
-Instalar la imagen del emulador y probar el acceso y el Inicio contra la WebView. Después, Captura
+Entrar con una cuenta en el emulador y comparar Inicio contra la WebView. Después, Captura
 y BotonAnotar (con el intérprete ya portado), Dinero y Mes, en ese orden de prioridad.
