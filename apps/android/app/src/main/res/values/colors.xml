@@ -1,0 +1,4 @@
+<resources>
+    <!-- El mismo fondo del splash de la app Expo (app.json). -->
+    <color name="fondo_arranque">#1A1817</color>
+</resources>
