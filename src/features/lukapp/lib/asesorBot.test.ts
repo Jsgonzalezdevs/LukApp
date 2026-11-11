@@ -97,7 +97,7 @@ const preguntar = (
 describe('responderAsesor — resumen del mes', () => {
   it('mantiene el alcance financiero también cuando responde sin IA', () => {
     const r = preguntar('¿Cómo hago una base de datos en SQL?');
-    expect(r.text).toMatch(/analiza tus finanzas/i);
+    expect(r.text).toMatch(/te guía por las finanzas/i);
     expect(r.text).toMatch(/resumen del mes/i);
   });
 

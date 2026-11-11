@@ -6,6 +6,25 @@ const TOPE_PX = 110;
 /** Cuánto se resiste el arrastre según baja el dedo -- 1 = sigue al dedo 1:1, 0 = no se mueve nada. */
 const RESISTENCIA = 0.45;
 
+/**
+ * Un toque que nace dentro de una hoja, un diálogo o una lista con su propio
+ * scroll no es un "jalar para refrescar". Con una hoja abierta el body queda
+ * `position: fixed` (useBloqueoScroll), así que la ventana SIEMPRE parece estar
+ * en el tope: el gesto se adueñaba de cada arrastre hacia abajo y la invitación
+ * Premium no dejaba volver a subir — se movía la pantalla entera.
+ */
+export const gestoPerteneceAOtroScroll = (objetivo: EventTarget | null): boolean => {
+  if (typeof document !== 'undefined' && document.body.style.position === 'fixed') return true;
+  let nodo = objetivo instanceof Element ? objetivo : null;
+  while (nodo && nodo !== document.body && nodo !== document.documentElement) {
+    if (nodo.matches('[role="dialog"], [aria-modal="true"], [data-no-pull-refresh]')) return true;
+    const { overflowY } = getComputedStyle(nodo);
+    if ((overflowY === 'auto' || overflowY === 'scroll') && nodo.scrollHeight > nodo.clientHeight && nodo.scrollTop > 0) return true;
+    nodo = nodo.parentElement;
+  }
+  return false;
+};
+
 export interface UsePullToRefresh {
   /** 0 a 1: qué tan cerca está de soltar y disparar el refresco. */
   progreso: number;
@@ -41,7 +60,7 @@ export const usePullToRefresh = (
   const enElTope = () => (document.scrollingElement?.scrollTop ?? window.scrollY) <= 0;
 
   const alEmpezar = useCallback((e: TouchEvent) => {
-    if (!enabled || !enElTope() || refrescando) {
+    if (!enabled || !enElTope() || refrescando || gestoPerteneceAOtroScroll(e.target)) {
       inicioXRef.current = null;
       inicioYRef.current = null;
       esGestoHorizontalRef.current = false;

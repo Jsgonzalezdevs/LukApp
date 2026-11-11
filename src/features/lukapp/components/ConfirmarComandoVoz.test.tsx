@@ -24,12 +24,14 @@ describe('ConfirmarComandoVoz', () => {
     expect(confirmar).toHaveBeenCalledWith({ tipo: 'abono', deudaId: 'nu', cuentaId: 'banco', montoCop: 200_000 });
   });
 
-  it('obliga a completar una orden incompleta antes de ejecutarla', () => {
+  it('obliga a completar una orden incompleta antes de ejecutarla', async () => {
     const confirmar = vi.fn();
     render(<ConfirmarComandoVoz comando={{ tipo: 'transferencia', origenId: null, destinoId: 'viaje', montoCop: 50_000, raw: 'Aparta cincuenta mil en Viaje' }} cajitas={CAJITAS} saldos={SALDOS} onConfirmar={confirmar} onCancelar={vi.fn()} />);
     const boton = screen.getByRole('button', { name: /Transferir/ });
     expect(boton).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Cuenta de origen'), { target: { value: 'nequi' } });
+    // El selector es un combobox propio: se abre y se toca la opción, como en el teléfono.
+    fireEvent.click(screen.getByRole('combobox', { name: 'Cuenta de origen' }));
+    fireEvent.click(await screen.findByRole('option', { name: /^Nequi/ }));
     expect(boton).toBeEnabled();
     fireEvent.click(boton);
     expect(confirmar).toHaveBeenCalledWith({ tipo: 'transferencia', origenId: 'nequi', destinoId: 'viaje', montoCop: 50_000 });

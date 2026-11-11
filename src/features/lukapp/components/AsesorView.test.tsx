@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
 import { act, render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AsesorView, elegirIndiceImagenLuki, PROBABILIDAD_LUKI_LOCO } from './AsesorView';
 import { etiquetaConexion } from '../lib/localDate';
@@ -149,7 +149,9 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
     fireEvent.keyDown(screen.getByPlaceholderText('Pregúntale a tu asesor...'), { key: 'Enter' });
     const monto = await screen.findByRole('spinbutton', { name: 'Nuevo tope mensual en COP' });
     expect(screen.getByText(/quedarían 300\.000 COP disponibles/)).toBeTruthy();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Categoría del presupuesto' }), { target: { value: 'transporte' } });
+    // La categoría se elige en el combobox propio de LukApp, no en un <select>.
+    fireEvent.click(screen.getByRole('combobox', { name: 'Categoría del presupuesto' }));
+    fireEvent.click(await screen.findByRole('option', { name: /Transporte/ }));
     fireEvent.change(monto, { target: { value: '400000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar presupuesto' }));
     await waitFor(() => expect(onFijarPresupuesto).toHaveBeenCalledWith('transporte', 400000));
@@ -157,6 +159,11 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
   });
 
   it('permite editar el nombre y objetivo de una meta antes de confirmar', async () => {
+    // La fecha objetivo se toca en el calendario, que abre en el mes de "hoy":
+    // se fija junio de 2027 para que el día buscado esté a la vista.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2027, 5, 15, 12));
+    onTestFinished(() => { vi.useRealTimers(); });
     vi.stubGlobal('fetch', fetchPorRuta({ offline: false, text: 'Dejé lista una propuesta de meta.', provider: 'Groq' }));
     const onCrearMeta = vi.fn().mockResolvedValue(true);
     render(<AsesorView {...props} onCrearMeta={onCrearMeta} entradaFinanciera={{
@@ -170,7 +177,8 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
     fireEvent.keyDown(screen.getByPlaceholderText('Pregúntale a tu asesor...'), { key: 'Enter' });
     fireEvent.change(await screen.findByRole('textbox', { name: 'Nombre de la meta' }), { target: { value: 'Viaje' } });
     fireEvent.change(screen.getByRole('spinbutton', { name: 'Objetivo total de la meta en COP' }), { target: { value: '2500000' } });
-    fireEvent.change(screen.getByLabelText('Fecha objetivo de la meta'), { target: { value: '2027-06-01' } });
+    fireEvent.click(screen.getByLabelText('Fecha objetivo de la meta'));
+    fireEvent.click(await screen.findByRole('gridcell', { name: /, 1 de junio de 2027/ }));
     expect(screen.getByText(/necesitarías ahorrar cerca de .* COP al mes/)).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar meta' }));
     await waitFor(() => expect(onCrearMeta).toHaveBeenCalledWith(expect.objectContaining({
@@ -194,7 +202,9 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
     await waitFor(() => expect(screen.getByText('En línea')).toBeTruthy());
 
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'como estas?' } });
+    // El saludo ("como estas?") ya se contesta al instante sin IA; esta frase
+    // no la reconoce el motor local, así que sí llega al modelo.
+    fireEvent.change(input, { target: { value: 'Cuéntame algo sobre el ahorro' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
     await waitFor(() =>
@@ -306,6 +316,10 @@ describe('AsesorView — conversaciones guardadas', () => {
   });
 });
 
+// El resumen del mes ya se contesta al instante con el motor local; estas
+// pruebas necesitan una pregunta que el motor no reconozca para llegar a la IA.
+const PREGUNTA_PARA_IA = 'Cuéntame algo sobre el ahorro';
+
 describe('AsesorView — conversación de deuda en modo local', () => {
   it('no responde con reglas y reintenta sin duplicar el mensaje del usuario', async () => {
     let intentos = 0;
@@ -315,11 +329,11 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     } })));
     render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     fireEvent.keyDown(input, { key: 'Enter' });
     fireEvent.click(await screen.findByRole('button', { name: 'Reintentar con IA' }));
     await screen.findByText('Respuesta real del proveedor');
-    expect(screen.getAllByText('Dime mi resumen')).toHaveLength(1);
+    expect(screen.getAllByText(PREGUNTA_PARA_IA)).toHaveLength(1);
     expect(screen.queryByText(/no has registrado movimientos/)).toBeNull();
     expect(screen.getByText('En línea')).toBeTruthy();
   });
@@ -339,7 +353,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     })));
     render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await screen.findByText(/Reintentar con IA/);
     expect(screen.queryByText('En línea')).toBeNull();
@@ -354,7 +368,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     vi.stubGlobal('fetch', peticiones);
     const vista = render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     act(() => {
       fireEvent.keyDown(input, { key: 'Enter' });
       fireEvent.keyDown(input, { key: 'Enter' });
@@ -372,7 +386,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     }));
     render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await act(async () => { await vi.advanceTimersByTimeAsync(60000); });
     expect(screen.getByText(/Reintentar con IA/)).toBeTruthy();
@@ -387,7 +401,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     vi.stubGlobal('fetch', peticiones);
     render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(screen.getByText('Validando tu sesión…')).toBeTruthy();
     await act(async () => { await vi.advanceTimersByTimeAsync(8000); });
@@ -408,7 +422,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     render(<AsesorView {...props} />);
     await screen.findByText('En línea');
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await screen.findByText(
       status === 401
@@ -430,7 +444,7 @@ describe('AsesorView — conversación de deuda en modo local', () => {
     ));
     render(<AsesorView {...props} />);
     const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
-    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.change(input, { target: { value: PREGUNTA_PARA_IA } });
     fireEvent.keyDown(input, { key: 'Enter' });
     await screen.findByText(/ningún proveedor de IA/);
     completarComprobacion({ ok: true, json: async () => ({ ia: true }) });

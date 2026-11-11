@@ -1,7 +1,7 @@
 import { useGrabacionNativa } from './useGrabacionNativa';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
+  ActivityIndicator,
   Alert,
   BackHandler,
   Image,
@@ -25,33 +25,19 @@ import * as Sharing from 'expo-sharing';
 const URL_LUKAPP = process.env.EXPO_PUBLIC_LUKAPP_WEB_URL || 'https://mi.lukapp.app/app';
 const HOST_LUKAPP = new URL(URL_LUKAPP).hostname;
 const FONDO = '#1a1817';
-const PANTALLA_INICIAL = (() => {
-  const segmentos = new URL(URL_LUKAPP).pathname.replace(/\/$/, '').split('/').filter(Boolean);
-  const seccion = segmentos.at(-1);
-  if (['inicio', 'dinero', 'mes', 'asesor', 'ajustes', 'calendario'].includes(seccion || '')) return seccion || 'inicio';
-  if (segmentos.length > 1 && ['dinero', 'mes', 'ajustes', 'calendario'].includes(segmentos[0])) return `panel-${segmentos[1]}`;
-  return 'inicio';
-})();
 const MARCA_WEBVIEW = `
   window.__LUKAPP_NATIVE__ = true;
   window.__LUKAPP_AUDIO_NATIVE__ = true;
   if (document.documentElement) document.documentElement.setAttribute('data-native', 'true');
   (function () {
-    var enviado = false;
-    var ultimaPantalla = '';
+    // Avisa una sola vez, cuando React ya pintó algo tocable, y se desconecta:
+    // dejarlo escuchando cada cambio del DOM solo gastaba batería.
     var observador = new MutationObserver(function () {
-      var pantalla = document.documentElement.getAttribute('data-lukapp-esqueleto') || '';
-      if (pantalla !== ultimaPantalla) {
-        ultimaPantalla = pantalla;
-        window.ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'lukapp:esqueleto', pantalla: pantalla }));
-      }
-      if (enviado || !document.querySelector('#root button, #root input, #root nav')) return;
-      enviado = true;
+      if (!document.querySelector('#root button, #root input, #root nav')) return;
+      observador.disconnect();
       window.ReactNativeWebView.postMessage('lukapp:lista');
     });
-    observador.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-lukapp-esqueleto'] });
-    var pantallaInicial = document.documentElement.getAttribute('data-lukapp-esqueleto') || '';
-    if (pantallaInicial) window.ReactNativeWebView.postMessage(JSON.stringify({ tipo: 'lukapp:esqueleto', pantalla: pantallaInicial }));
+    observador.observe(document, { childList: true, subtree: true });
   })();
   true;
 `;
@@ -153,127 +139,6 @@ const PUENTE_DESCARGAS = `
   true;
 `;
 
-function EsqueletoNativo({ pantalla, claro }: { pantalla: string; claro: boolean }) {
-  const tono = claro ? '#332F2D' : '#D6D1CA';
-  const tonoSuave = claro ? '#383330' : '#E5E0D9';
-  const tarjeta = claro ? '#211F1D' : '#FFFFFF';
-  const filas = (cantidad: number, ajustes = false) => Array.from({ length: cantidad }, (_, item) => (
-    <View key={item} style={[estilos.esqueletoMovimiento, { borderBottomColor: claro ? '#FFFFFF16' : '#00000012' }]}>
-      <View style={[estilos.huesoMovimientoIcono, { backgroundColor: tonoSuave }]} />
-      <View style={estilos.esqueletoMovimientoDetalle}>
-        <View style={[estilos.huesoMovimientoTitulo, { width: item % 2 ? '54%' : '68%', backgroundColor: tono }]} />
-        {!ajustes ? <View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: tonoSuave }]} /> : null}
-      </View>
-      {!ajustes ? <View style={[estilos.huesoMovimientoMonto, { backgroundColor: tono }]} /> : <View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} />}
-    </View>
-  ));
-
-  return (
-    <View style={estilos.esqueletoContenido}>
-      <View style={estilos.esqueletoMarca}>
-        <Image source={require('../assets-app-icon-square.png')} style={estilos.esqueletoLogo} />
-        <View style={estilos.esqueletoMarcaTexto}>
-          <View style={[estilos.huesoTitulo, { backgroundColor: tono }]} />
-          <View style={[estilos.huesoSubtitulo, { backgroundColor: tonoSuave }]} />
-        </View>
-      </View>
-      {pantalla === 'inicio' ? (
-        <>
-          <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}>
-            <View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} />
-            <View style={[estilos.huesoSaldo, { backgroundColor: claro ? '#514A45' : '#E1DDD7' }]} />
-            <View style={estilos.esqueletoSeparador} />
-            <View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tono }]} /><View style={[estilos.huesoDato, { backgroundColor: tono }]} /></View>
-          </View>
-          <View style={estilos.esqueletoAtajos}>{[0, 1, 2].map((i) => <View key={i} style={estilos.esqueletoAtajo}><View style={[estilos.huesoIcono, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoTextoAtajo, { backgroundColor: tonoSuave }]} /></View>)}</View>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /></View>
-          {filas(3)}
-        </>
-      ) : null}
-      {pantalla === 'dinero' ? (
-        <>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /></View>
-          <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} /><View style={[estilos.huesoSaldo, { backgroundColor: tono }]} /></View>
-          <View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /></View>{filas(3)}
-        </>
-      ) : null}
-      {pantalla === 'mes' ? (
-        <>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /></View>
-          <View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View>
-          <View style={[estilos.esqueletoTarjeta, estilos.barrasMes, { backgroundColor: tarjeta }]}>{[34, 62, 45, 82, 57, 72, 42].map((alto, i) => <View key={i} style={[estilos.barraMes, { height: alto, backgroundColor: tonoSuave }]} />)}</View>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /></View>{filas(2)}
-        </>
-      ) : null}
-      {pantalla === 'asesor' ? (
-        <View style={estilos.esqueletoAsesor}>
-          <View style={[estilos.burbujaAsesor, { backgroundColor: tarjeta, alignSelf: 'flex-start' }]}><View style={[estilos.huesoMovimientoTitulo, { width: '75%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoTitulo, { width: '92%', marginTop: 10, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoMovimientoTitulo, { width: '58%', marginTop: 10, backgroundColor: tonoSuave }]} /></View>
-          <View style={[estilos.burbujaAsesor, { backgroundColor: tarjeta, alignSelf: 'flex-end', marginTop: 18 }]}><View style={[estilos.huesoMovimientoTitulo, { width: '90%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoTitulo, { width: '63%', marginTop: 10, backgroundColor: tonoSuave }]} /></View>
-          <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, marginTop: 'auto' }]}><View style={[estilos.huesoSaldo, { width: '100%', height: 17, marginTop: 0, backgroundColor: tonoSuave }]} /></View>
-        </View>
-      ) : null}
-      {pantalla === 'ajustes' || pantalla === 'ajustes-detalle' ? (
-        <>
-          {pantalla === 'ajustes' ? <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, flexDirection: 'row', alignItems: 'center', gap: 14 }]}><View style={[estilos.huesoIcono, { width: 48, height: 48, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /></View> : null}
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /></View>{filas(5, true)}
-        </>
-      ) : null}
-      {pantalla === 'calendario' ? (
-        <>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { width: 175, backgroundColor: tono }]} /><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /></View>
-          <View style={[estilos.esqueletoTarjeta, estilos.calendarioNativo, { backgroundColor: tarjeta }]}>{Array.from({ length: 35 }, (_, i) => <View key={i} style={[estilos.diaNativo, { backgroundColor: i % 6 === 0 ? tono : tonoSuave }]} />)}</View>
-          <View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /></View>{filas(2)}
-        </>
-      ) : null}
-      {pantalla.startsWith('panel-') ? (() => {
-        const panel = pantalla.slice('panel-'.length);
-        return <>
-          {panel === 'forecast' ? <>
-            <View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View>
-            <View style={[estilos.esqueletoTarjeta, estilos.barrasMes, { backgroundColor: tarjeta }]}>{[39, 68, 52, 84, 59, 93].map((alto, i) => <View key={i} style={[estilos.barraMes, { height: alto, backgroundColor: tonoSuave }]} />)}</View>{filas(2)}
-          </> : null}
-          {panel === 'categorias' ? <><View style={[estilos.huesoSaldo, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} /><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>{[0, 1, 2, 3, 4, 5].map((i) => <View key={i} style={[estilos.esqueletoTarjeta, { width: '47%', alignItems: 'center', backgroundColor: tarjeta }]}><View style={[estilos.huesoIcono, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoSubtitulo, { width: '80%', marginTop: 12, backgroundColor: tono }]} /></View>)}</View></> : null}
-          {panel === 'topes' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} /><View style={[estilos.huesoSaldo, { backgroundColor: tono }]} /><View style={[estilos.esqueletoSeparador, { marginVertical: 15 }]} /><View style={[estilos.huesoAccion, { width: '100%', backgroundColor: tonoSuave }]} /></View>{filas(4)}</> : null}
-          {panel === 'periodo' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 18 }}>{[0, 1, 2, 3].map((i) => <View key={i} style={[estilos.huesoSaldo, { width: '47%', height: 50, backgroundColor: tonoSuave }]} />)}</View><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 18, backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} /></> : null}
-          {panel === 'metas' ? <><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoMovimientoTitulo, { width: '68%', backgroundColor: tono }]} /><View style={[estilos.esqueletoResumen, { marginTop: 16 }]}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoAccion, { width: '100%', marginTop: 15, borderRadius: 10, backgroundColor: tonoSuave }]} /></View>)}</> : null}
-          {panel === 'contraseña' ? <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}>{[0, 1, 2].map((i) => <View key={i} style={{ marginBottom: 19 }}><View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} /><View style={[estilos.huesoSaldo, { width: '100%', height: 48, backgroundColor: tonoSuave }]} /></View>)}<View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: '#8B5A19' }]} /></View> : null}
-          {panel === 'gmf' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} /><View style={[estilos.huesoSaldo, { backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '78%', marginTop: 11, backgroundColor: tonoSuave }]} /></View><View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View>{filas(2, true)}</> : null}
-          {panel === 'recurrentes' ? <>
-            <View style={[estilos.esqueletoTarjeta, estilos.calendarioNativo, { backgroundColor: tarjeta }]}>{Array.from({ length: 28 }, (_, i) => <View key={i} style={[estilos.diaNativo, { borderRadius: 20, backgroundColor: i % 7 === 0 ? tono : tonoSuave }]} />)}</View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{filas(3)}
-          </> : null}
-          {panel === 'compartido' ? <>
-            <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={{ flexDirection: 'row', marginBottom: 18 }}>{[0, 1, 2, 3].map((i) => <View key={i} style={[estilos.huesoIcono, { width: 42, height: 42, marginRight: -8, borderRadius: 22, backgroundColor: tonoSuave }]} />)}</View><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 14, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoSubtitulo, { width: '75%', marginTop: 8, backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{filas(2)}
-          </> : null}
-          {panel === 'extractos' ? <>
-            <View style={[estilos.esqueletoTarjeta, { minHeight: 176, alignItems: 'center', justifyContent: 'center', backgroundColor: tarjeta, borderStyle: 'dashed' }]}><View style={[estilos.huesoIcono, { width: 50, height: 50, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoEncabezado, { width: '70%', marginTop: 16, backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '90%', marginTop: 10, backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoEncabezado, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />
-          </> : null}
-          {panel === 'atajos' ? <>
-            <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 12, backgroundColor: tonoSuave }]} /></View>{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoMovimiento, { backgroundColor: tarjeta, borderBottomColor: 'transparent', paddingHorizontal: 13 }]}><View style={[estilos.huesoMovimientoIcono, { backgroundColor: tonoSuave }]} /><View style={estilos.esqueletoMovimientoDetalle}><View style={[estilos.huesoMovimientoTitulo, { width: '68%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoAccion, { borderRadius: 20, backgroundColor: tonoSuave }]} /></View>)}
-          </> : null}
-          {panel === 'revisiones' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoSaldo, { width: '100%', height: 42, backgroundColor: tonoSuave }]} /></View>{filas(4)}</> : null}
-          {panel === 'nombres' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoSaldo, { width: '100%', height: 42, backgroundColor: tonoSuave }]} /></View>{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, flexDirection: 'row', alignItems: 'center', gap: 12 }]}><View style={[estilos.huesoIcono, { borderRadius: 24, backgroundColor: tonoSuave }]} /><View style={estilos.esqueletoMovimientoDetalle}><View style={[estilos.huesoMovimientoTitulo, { width: '72%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: tonoSuave }]} /></View></View>)}</> : null}
-          {panel === 'dividir-cuenta' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoSaldo, { width: '100%', height: 50, marginTop: 18, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoAccion, { width: '100%', marginTop: 14, borderRadius: 22, backgroundColor: tonoSuave }]} /></View><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEtiqueta, { backgroundColor: tono }]} /><View style={[estilos.huesoSaldo, { backgroundColor: tono }]} /></View></> : null}
-          {panel === 'vaquitas' ? <><View style={estilos.esqueletoSeccion}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /></View>{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={estilos.esqueletoResumen}><View style={[estilos.huesoDato, { backgroundColor: tono }]} /><View style={[estilos.huesoDato, { backgroundColor: tonoSuave }]} /></View><View style={[estilos.huesoAccion, { width: '100%', marginTop: 15, borderRadius: 10, backgroundColor: tonoSuave }]} /></View>)}</> : null}
-          {panel === 'respaldo' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEncabezado, { backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 12, backgroundColor: tonoSuave }]} /><View style={[estilos.esqueletoResumen, { marginTop: 18 }]}><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /><View style={[estilos.huesoAccion, { backgroundColor: tonoSuave }]} /></View></View>{filas(2, true)}</> : null}
-          {panel === 'funciones-solicitadas' ? <><View style={[estilos.huesoSaldo, { width: '100%', height: 48, borderRadius: 24, backgroundColor: tonoSuave }]} />{[0, 1, 2].map((i) => <View key={i} style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta }]}><View style={[estilos.huesoEncabezado, { width: '78%', backgroundColor: tono }]} /><View style={[estilos.huesoSubtitulo, { width: '100%', marginTop: 12, backgroundColor: tonoSuave }]} /><View style={[estilos.huesoAccion, { width: 94, marginTop: 15, backgroundColor: tonoSuave }]} /></View>)}</> : null}
-          {panel === 'cuenta' ? <><View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, flexDirection: 'row', alignItems: 'center', gap: 14 }]}><View style={[estilos.huesoIcono, { width: 52, height: 52, borderRadius: 28, backgroundColor: tonoSuave }]} /><View style={estilos.esqueletoMovimientoDetalle}><View style={[estilos.huesoMovimientoTitulo, { width: '72%', backgroundColor: tono }]} /><View style={[estilos.huesoMovimientoSubtitulo, { backgroundColor: tonoSuave }]} /></View></View>{filas(4, true)}</> : null}
-        </>;
-      })() : null}
-      {pantalla === 'acceso' ? (
-        <View style={[estilos.esqueletoTarjeta, { backgroundColor: tarjeta, marginTop: 20 }]}>
-          <View style={[estilos.huesoEncabezado, { width: '100%', height: 42, borderRadius: 22, backgroundColor: tonoSuave }]} />
-          <View style={[estilos.huesoEtiqueta, { marginTop: 26, backgroundColor: tono }]} />
-          <View style={[estilos.huesoSaldo, { width: '100%', height: 46, backgroundColor: tonoSuave }]} />
-          <View style={[estilos.huesoEtiqueta, { marginTop: 22, backgroundColor: tono }]} />
-          <View style={[estilos.huesoSaldo, { width: '100%', height: 46, backgroundColor: tonoSuave }]} />
-          <View style={[estilos.huesoEncabezado, { width: '100%', height: 50, marginTop: 28, borderRadius: 20, backgroundColor: '#8B5A19' }]} />
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 export default function App() {
   const webView = useRef<WebView<{}>>(null);
   const grabarNativo = useGrabacionNativa((detalle) => {
@@ -285,18 +150,9 @@ export default function App() {
   const [recarga, setRecarga] = useState(0);
   const [fondo, setFondo] = useState(FONDO);
   const [estiloBarra, setEstiloBarra] = useState<'light' | 'dark'>('light');
-  const [pantallaEsqueleto, setPantallaEsqueleto] = useState(PANTALLA_INICIAL);
-  const opacidadEsqueleto = useRef(new Animated.Value(0.45)).current;
-
-  useEffect(() => {
-    if (!cargando) return;
-    const animacion = Animated.loop(Animated.sequence([
-      Animated.timing(opacidadEsqueleto, { toValue: 0.9, duration: 700, useNativeDriver: true }),
-      Animated.timing(opacidadEsqueleto, { toValue: 0.45, duration: 700, useNativeDriver: true }),
-    ]));
-    animacion.start();
-    return () => animacion.stop();
-  }, [cargando, opacidadEsqueleto]);
+  const [, setPuedeVolverVisible] = useState(false);
+  /** Si el HTML llegó, la red funciona aunque React tarde en pintar. */
+  const htmlCargado = useRef(false);
 
   useEffect(() => {
     const suscripcion = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -317,13 +173,14 @@ export default function App() {
     if (!cargando) return;
     const limite = setTimeout(() => {
       setCargando(false);
-      setFalloConexion(true);
+      if (!htmlCargado.current) setFalloConexion(true);
     }, 25_000);
     return () => clearTimeout(limite);
   }, [cargando, recarga]);
 
   const alCambiarNavegacion = (estado: WebViewNavigation) => {
     puedeVolver.current = estado.canGoBack;
+    setPuedeVolverVisible(estado.canGoBack);
   };
 
   const alRecibirMensaje = async (mensaje: string, origen: string) => {
@@ -345,14 +202,10 @@ export default function App() {
       setEstiloBarra('dark');
       return;
     }
-    let archivo: { tipo?: string; nombre?: string; mime?: string; base64?: string; id?: string; titulo?: string; texto?: string; url?: string; accion?: string; oscuro?: boolean; fondo?: string; pantalla?: string };
+    let archivo: { tipo?: string; nombre?: string; mime?: string; base64?: string; id?: string; titulo?: string; texto?: string; url?: string; accion?: string; oscuro?: boolean; fondo?: string };
     try {
       archivo = JSON.parse(mensaje);
     } catch {
-      return;
-    }
-    if (archivo.tipo === 'lukapp:esqueleto' && archivo.pantalla) {
-      setPantallaEsqueleto(archivo.pantalla);
       return;
     }
     if (archivo.tipo === 'lukapp:audio-nativo' && archivo.id && archivo.accion) {
@@ -419,6 +272,7 @@ export default function App() {
   };
 
   const reintentar = () => {
+    htmlCargado.current = false;
     setFalloConexion(false);
     setCargando(true);
     setRecarga((actual) => actual + 1);
@@ -450,8 +304,14 @@ export default function App() {
         setSupportMultipleWindows={false}
         onShouldStartLoadWithRequest={permitirNavegacion}
         onNavigationStateChange={alCambiarNavegacion}
-        onLoadStart={() => { setCargando(true); setFalloConexion(false); }}
-        onLoadEnd={() => { webView.current?.injectJavaScript(`${SINCRONIZAR_TEMA} true;`); }}
+        // Android dispara onLoadStart en cada cambio de ruta interno (pushState),
+        // no solo al cargar la página. Si aquí se volviera a tapar la web, tocar
+        // la billetera dejaba la pantalla de carga puesta hasta el límite de
+        // tiempo y terminaba en un falso «No pudimos conectar».
+        onLoadEnd={({ nativeEvent }) => {
+          if (!nativeEvent.loading) htmlCargado.current = true;
+          webView.current?.injectJavaScript(`${SINCRONIZAR_TEMA} true;`);
+        }}
         onHttpError={({ nativeEvent }) => {
           if (nativeEvent.url === URL_LUKAPP && nativeEvent.statusCode >= 400) {
             setCargando(false);
@@ -459,14 +319,13 @@ export default function App() {
           }
         }}
         onRenderProcessGone={() => { setCargando(false); setFalloConexion(true); }}
-        onError={() => { setCargando(false); setFalloConexion(true); }}
+        onError={() => { htmlCargado.current = false; setCargando(false); setFalloConexion(true); }}
       />
 
       {cargando && !falloConexion ? (
         <View pointerEvents="none" style={[estilos.cargando, { backgroundColor: fondo }]} accessibilityRole="progressbar" accessibilityLabel="Abriendo LukApp">
-          <Animated.View style={[estilos.esqueletoContenido, { opacity: opacidadEsqueleto }]}>
-            <EsqueletoNativo pantalla={pantallaEsqueleto} claro={estiloBarra === 'light'} />
-          </Animated.View>
+          <Image source={require('../assets-app-icon-square.png')} style={estilos.logoCarga} />
+          <ActivityIndicator style={estilos.indicadorCarga} color="#F0AC26" />
         </View>
       ) : null}
 
@@ -480,8 +339,8 @@ export default function App() {
             <Text style={estilos.textoReintentar}>Intentar de nuevo</Text>
           </Pressable>
           {puedeVolver.current ? (
-            <Pressable onPress={() => webView.current?.goBack()} style={estilos.botonVolver} accessibilityRole="button">
-              <ArrowLeft color="#F5F3F0" size={16} />
+            <Pressable onPress={() => { setFalloConexion(false); webView.current?.goBack(); }} style={estilos.botonVolver} accessibilityRole="button">
+              <ArrowLeft color={estiloBarra === 'dark' ? '#1c1917' : '#F5F3F0'} size={16} />
               <Text style={[estilos.textoVolver, { color: estiloBarra === 'dark' ? '#1c1917' : '#F5F3F0' }]}>Volver</Text>
             </Pressable>
           ) : null}
@@ -497,42 +356,11 @@ const estilos = StyleSheet.create({
   web: { flex: 1, backgroundColor: FONDO },
   cargando: {
     ...StyleSheet.absoluteFill,
-    bottom: 24,
-    paddingHorizontal: 22,
-    paddingTop: 24,
-    paddingBottom: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  esqueletoContenido: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center' },
-  esqueletoMarca: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 23 },
-  esqueletoLogo: { width: 46, height: 46, borderRadius: 15 },
-  esqueletoMarcaTexto: { gap: 8 },
-  huesoTitulo: { width: 104, height: 15, borderRadius: 8 },
-  huesoSubtitulo: { width: 152, height: 9, borderRadius: 6 },
-  esqueletoTarjeta: { borderRadius: 25, padding: 20, borderWidth: 1, borderColor: '#FFFFFF16' },
-  huesoEtiqueta: { width: 105, height: 9, borderRadius: 5 },
-  huesoSaldo: { width: 205, height: 30, borderRadius: 9, marginTop: 16 },
-  esqueletoSeparador: { height: 1, backgroundColor: '#FFFFFF18', marginVertical: 19 },
-  esqueletoResumen: { flexDirection: 'row', justifyContent: 'space-between' },
-  huesoDato: { width: 102, height: 17, borderRadius: 7 },
-  esqueletoAtajos: { flexDirection: 'row', justifyContent: 'space-between', gap: 11, marginVertical: 18 },
-  esqueletoAtajo: { flex: 1, height: 76, borderRadius: 19, backgroundColor: '#FFFFFF08', borderWidth: 1, borderColor: '#FFFFFF12', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  huesoIcono: { width: 31, height: 31, borderRadius: 11 },
-  huesoTextoAtajo: { width: 44, height: 8, borderRadius: 5 },
-  esqueletoSeccion: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9, marginTop: 3 },
-  huesoEncabezado: { width: 152, height: 15, borderRadius: 7 },
-  huesoAccion: { width: 45, height: 10, borderRadius: 5 },
-  esqueletoMovimiento: { minHeight: 66, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1 },
-  huesoMovimientoIcono: { width: 39, height: 39, borderRadius: 14 },
-  esqueletoMovimientoDetalle: { flex: 1, gap: 7 },
-  huesoMovimientoTitulo: { width: '65%', height: 11, borderRadius: 6 },
-  huesoMovimientoSubtitulo: { width: '40%', height: 8, borderRadius: 5 },
-  huesoMovimientoMonto: { width: 69, height: 11, borderRadius: 6 },
-  barrasMes: { height: 172, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 9, marginTop: 14 },
-  barraMes: { flex: 1, borderRadius: 8 },
-  esqueletoAsesor: { flex: 1, paddingTop: 20 },
-  burbujaAsesor: { width: '82%', minHeight: 76, padding: 16, borderRadius: 20 },
-  calendarioNativo: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, marginTop: 14 },
-  diaNativo: { width: '11%', aspectRatio: 1, borderRadius: 20 },
+  logoCarga: { width: 64, height: 64, borderRadius: 20 },
+  indicadorCarga: { marginTop: 22 },
   error: {
     ...StyleSheet.absoluteFill,
     alignItems: 'center',

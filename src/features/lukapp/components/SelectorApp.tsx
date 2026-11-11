@@ -157,17 +157,6 @@ export const SelectorApp: React.FC<Props> = ({
 
   return (
     <>
-      <select
-        ref={selectRef}
-        tabIndex={-1}
-        aria-hidden="true"
-        className="pointer-events-none absolute h-px w-px opacity-0"
-        value={valor}
-        name={name}
-        form={form}
-      >
-        {opciones.map((opcion, indice) => <option key={`${opcion.valor}-${indice}`} value={opcion.valor} disabled={opcion.deshabilitada}>{opcion.texto}</option>)}
-      </select>
       <button
         ref={botonRef}
         id={id}
@@ -188,6 +177,21 @@ export const SelectorApp: React.FC<Props> = ({
         <span className="min-w-0 flex-1 truncate">{opcionSeleccionada?.texto ?? opciones[0]?.texto ?? 'Selecciona una opción'}</span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--fin-ink-faint)] transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
+      {/* Va después del botón a propósito: un <label> que envuelve al selector
+          apunta a su primer control etiquetable, y si fuera este select oculto
+          el toque en el texto enfocaría algo invisible y el combobox se quedaría
+          sin nombre accesible. */}
+      <select
+        ref={selectRef}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="pointer-events-none absolute h-px w-px opacity-0"
+        value={valor}
+        name={name}
+        form={form}
+      >
+        {opciones.map((opcion, indice) => <option key={`${opcion.valor}-${indice}`} value={opcion.valor} disabled={opcion.deshabilitada}>{opcion.texto}</option>)}
+      </select>
       {abierto && posicion && typeof document !== 'undefined' ? createPortal(
         <div
           ref={menuRef}

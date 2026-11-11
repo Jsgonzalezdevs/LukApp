@@ -18,12 +18,14 @@ interface EntidadFinanciera {
 
 // Colores tomados de los estilos de los sitios oficiales, consultados el 21/10/2026.
 // Davivienda y DaviPlata comparten el rojo de su familia de marca.
+// Rappi conserva el blanco de su identidad, pero su naranja es claro: sin velo
+// de lectura el texto queda en 3.4:1 y no llega al AA que se pide a todas.
 export const ENTIDADES_FINANCIERAS: readonly EntidadFinanciera[] = [
   { nombre: 'Nu', logo: '/bancos/nu.svg', alias: ['nu', 'nubank', 'nu bank'], fondo: '#820AD1', familiaColor: 'morado', texto: '#FFFFFF', claseCuenta: 'banco', fuente: 'https://nu.com.co/' },
   { nombre: 'Nequi', logo: '/bancos/nequi.png', alias: ['nequi'], fondo: '#200020', familiaColor: 'morado', texto: '#FFFFFF', claseCuenta: 'billetera', fuente: 'https://www.nequi.com.co/' },
   { nombre: 'Bancolombia', logo: '/bancos/bancolombia.svg', alias: ['bancolombia', 'banco colombia'], fondo: '#FDDA24', familiaColor: 'amarillo', texto: '#2C2A29', claseCuenta: 'banco', fuente: 'https://www.bancolombia.com/' },
   { nombre: 'Davivienda', logo: '/bancos/davivienda.png', encajeLogo: 'auto 80%', posicionLogo: 'left center', alias: ['davivienda', 'davi vivienda'], fondo: '#ED1C27', familiaColor: 'rojo', texto: '#FFFFFF', sombraLectura: 0.08, claseCuenta: 'banco', fuente: 'https://epayco.com/wp-content/uploads/2026/04/Toolkit-ePayco.pdf' },
-  { nombre: 'Rappi', logo: '/bancos/rappipay.png', luminanciaLogo: true, alias: ['rapi', 'rappi', 'rappipay', 'rappi pay', 'rappicuenta', 'rappi cuenta', 'rappicard'], fondo: '#FF441F', familiaColor: 'naranja', texto: '#FFFFFF', claseCuenta: 'banco', fuente: 'https://www.rappipay.co/' },
+  { nombre: 'Rappi', logo: '/bancos/rappipay.png', luminanciaLogo: true, alias: ['rapi', 'rappi', 'rappipay', 'rappi pay', 'rappicuenta', 'rappi cuenta', 'rappicard'], fondo: '#FF441F', familiaColor: 'naranja', texto: '#FFFFFF', sombraLectura: 0.16, claseCuenta: 'banco', fuente: 'https://www.rappipay.co/' },
   { nombre: 'DaviPlata', logo: '/bancos/daviplata.png', encajeLogo: 'auto 72%', alias: ['daviplata', 'davi plata'], fondo: '#ED1C27', familiaColor: 'rojo', texto: '#FFFFFF', sombraLectura: 0.08, claseCuenta: 'billetera', fuente: 'https://conectesunegocio.daviplata.com/' },
   {"nombre": "Banco Agrario", "alias": ["agrario", "banco agrario"], "fondo": "#5BC500", "familiaColor": "verde", "texto": "#000000", "claseCuenta": "banco", "fuente": "https://www.bancoagrario.gov.co/themes/custom/bancoagrario/logo.svg", "logo": "/bancos/agrario.svg"},
   {"nombre": "Bancamía", "alias": ["bancamia", "banco de las microfinanzas"], "fondo": "#F26F21", "familiaColor": "naranja", "texto": "#000000", "claseCuenta": "banco", "fuente": "https://www.bancamia.com.co/wp-content/uploads/2025/04/Logo-bancamia-solo.png", "logo": "/bancos/bancamia.svg"},

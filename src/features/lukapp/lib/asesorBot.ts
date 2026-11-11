@@ -24,6 +24,12 @@ export interface AsesorResponse {
   action?: ParsedTransaction;
   actions?: ParsedTransaction[];
   suggestions?: string[];
+  /**
+   * La respuesta no sale de los datos de la persona sino de una frase genérica
+   * de "no te entendí". Con IA disponible esa pregunta se le debe pasar al
+   * modelo en vez de contestarla aquí.
+   */
+  sinRespuestaPropia?: true;
 }
 
 const VARIANCES = {
@@ -68,9 +74,9 @@ function getRandom(arr: string[]) {
 const SUGERENCIAS_FALLBACK = ['¿Cuánto he gastado?', 'Dame un resumen'];
 
 /** Distingue una pregunta no reconocida de las respuestas locales instantáneas. */
-export const esRespuestaFallbackAsesor = (respuesta: Pick<AsesorResponse, 'suggestions'>): boolean =>
-  respuesta.suggestions?.length === SUGERENCIAS_FALLBACK.length &&
-  respuesta.suggestions.every((sugerencia, indice) => sugerencia === SUGERENCIAS_FALLBACK[indice]);
+export const esRespuestaFallbackAsesor = (respuesta: Pick<AsesorResponse, 'suggestions' | 'sinRespuestaPropia'>): boolean =>
+  respuesta.sinRespuestaPropia === true || (respuesta.suggestions?.length === SUGERENCIAS_FALLBACK.length &&
+  respuesta.suggestions.every((sugerencia, indice) => sugerencia === SUGERENCIAS_FALLBACK[indice]));
 
 // Las consultas dictadas suelen llegar sin signos de interrogación. Un monto
 // dentro de una decisión o un plan no demuestra que haya ocurrido un movimiento.
@@ -1024,6 +1030,10 @@ export function responderAsesor(
     return {
       text: '¡Esa es una pregunta profunda! Como soy una IA local basada en reglas, soy experto en buscar sumas, fechas y gastos exactos, pero me cuesta leer párrafos muy largos. Prueba preguntándome montos o resúmenes directos.',
       newContext,
+      // Sin esta marca el Asesor la tomaba como respuesta instantánea y nunca
+      // consultaba la IA: justo las preguntas largas, las que más la necesitan,
+      // recibían "soy una IA local" aunque el indicador dijera "En línea".
+      sinRespuestaPropia: true,
     };
   }
 

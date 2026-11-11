@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, onTestFinished } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import type { Cajita, CajitaMovimiento, CajitaTipo } from '../data/modelos';
 import { CajitasView } from './CajitasView';
@@ -26,6 +26,13 @@ const mov = (over: Partial<CajitaMovimiento> = {}): CajitaMovimiento => ({
   createdAt: '2026-08-01T00:00:00.000Z',
   ...over,
 });
+
+// Los selectores de LukApp son un combobox propio (SelectorApp), no un <select>
+// nativo: se eligen como lo hace la persona, abriendo la lista y tocando la opción.
+const elegirOpcion = async (control: HTMLElement, opcion: string) => {
+  fireEvent.click(control);
+  fireEvent.click(await screen.findByRole('option', { name: opcion }));
+};
 
 const AMBOS: Cajita[] = [
   caj({ id: 'banco', nombre: 'Bancolombia', tipo: 'cuenta' }),
@@ -61,7 +68,7 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     const nombre = screen.getByLabelText('Nombre');
     fireEvent.change(nombre, { target: { value: 'Neqii personal' } });
     expect(screen.getByText('Nequi · Color reconocido automáticamente')).toHaveStyle({ backgroundColor: '#200020' });
-    expect(screen.getByLabelText('Tipo de cuenta')).toHaveValue('billetera');
+    expect(screen.getByLabelText('Tipo de cuenta')).toHaveTextContent('Billetera digital');
     expect(nombre).toHaveValue('Neqii personal');
     fireEvent.change(nombre, { target: { value: 'Vacaciones' } });
     expect(screen.queryByText(/Color reconocido automáticamente/)).not.toBeInTheDocument();
@@ -127,12 +134,12 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     );
   });
 
-  it('permite crear efectivo sin disfrazarlo de cuenta bancaria', () => {
+  it('permite crear efectivo sin disfrazarlo de cuenta bancaria', async () => {
     const { onCrear } = montar('cuenta', []);
 
     fireEvent.click(screen.getByRole('button', { name: /Agregar cuenta/ }));
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Caja menor' } });
-    fireEvent.change(screen.getByLabelText('Tipo de cuenta'), { target: { value: 'efectivo' } });
+    await elegirOpcion(screen.getByLabelText('Tipo de cuenta'), 'Efectivo');
     fireEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
 
     expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({
@@ -218,7 +225,7 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'ETF global' } });
     fireEvent.click(screen.getByRole('button', { name: /Inversión/ }));
     await waitFor(() => expect(screen.getByLabelText(/Moneda/)).toBeInTheDocument());
-    fireEvent.change(screen.getByLabelText(/Moneda/), { target: { value: 'USD' } });
+    await elegirOpcion(screen.getByLabelText(/Moneda/), 'USD');
     fireEvent.click(screen.getByRole('button', { name: /Crear ahorro/ }));
 
     await waitFor(() => expect(onCrear).toHaveBeenCalledWith(expect.objectContaining({
@@ -227,12 +234,18 @@ describe('CajitasView — cuentas y cajitas son módulos separados', () => {
   });
 
   it('convierte un aporte a COP y conserva el valor, moneda, tasa y fecha originales', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 25, 12));
+    onTestFinished(() => { vi.useRealTimers(); });
     const inversor = caj({ id: 'etf', nombre: 'ETF global', tipo: 'cajita', esInversion: true, moneda: 'USD' });
     const { onMovimiento } = montar('cajita', [inversor]);
     fireEvent.click(screen.getByRole('button', { name: 'Depositar' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Depositar' }), { target: { value: '10.5' } });
     fireEvent.change(screen.getByLabelText('Tasa de hoy · COP por USD'), { target: { value: '4000' } });
-    fireEvent.change(screen.getByLabelText('Fecha del movimiento'), { target: { value: '2026-10-20' } });
+    // La fecha se elige en el calendario (el campo no acepta texto), así que se
+    // abre y se toca el día; antes se fija "hoy" para que octubre sea el mes visible.
+    fireEvent.click(screen.getByLabelText('Fecha del movimiento'));
+    fireEvent.click(await screen.findByRole('gridcell', { name: /20 de octubre de 2026/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
     await waitFor(() => expect(onMovimiento).toHaveBeenCalledWith('etf', 'deposito', 42000, {

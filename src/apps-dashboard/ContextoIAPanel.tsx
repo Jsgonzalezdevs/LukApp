@@ -153,11 +153,11 @@ export const ContextoIAPanel: React.FC = () => {
       <div className="mt-5 grid gap-3 rounded-2xl bg-[var(--fin-soft)] p-4 md:grid-cols-[minmax(0,1fr)_210px_auto] md:items-end">
         <label className="block text-xs font-bold text-[var(--fin-ink)]">
           Documento (PDF, TXT o MD; máximo 4 MB)
-          <input ref={entradaArchivo} type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" onChange={(evento) => setArchivo(evento.target.files?.[0] ?? null)} className="mt-2 block w-full text-xs font-medium file:mr-3 file:rounded-xl file:border-0 file:bg-[var(--fin-card)] file:px-3 file:py-2 file:font-bold file:text-[var(--fin-ink)]" />
+          <input ref={entradaArchivo} type="file" accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" onChange={(evento) => setArchivo(evento.target.files?.[0] ?? null)} className="mt-2 block w-full text-base font-medium file:mr-3 file:rounded-xl file:border-0 file:bg-[var(--fin-card)] file:px-3 file:py-2 file:font-bold file:text-[var(--fin-ink)]" />
         </label>
         <label className="block text-xs font-bold text-[var(--fin-ink)]">
           Tema
-          <select value={alcance} onChange={(evento) => setAlcance(evento.target.value as AlcanceDocumento)} className="mt-2 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-xs">
+          <select value={alcance} onChange={(evento) => setAlcance(evento.target.value as AlcanceDocumento)} className="mt-2 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-3 py-2.5 text-base">
             {Object.entries(ETIQUETAS).map(([valor, etiqueta]) => <option key={valor} value={valor}>{etiqueta}</option>)}
           </select>
         </label>

@@ -27,7 +27,7 @@ import { migrarLibroLocal, RepositorioIndexedDB, soportaIndexedDB } from './data
 import { RepositorioConCola } from './data/repositorioConCola';
 import { crearRepositorio } from './data/crearRepositorio';
 import { ColaCambios } from './data/colaCambios';
-import { CargaSeccion, LimiteErrorCarga, SkeletonAcceso } from './components/Skeleton';
+import { CargaSeccion, LimiteErrorCarga, PantallaCarga } from './components/PantallaCarga';
 import { ES_PASIVO, claseDeCuenta, etiquetaTipoCajita } from './data/modelos';
 import { idsPasivos, saldosPorCajita } from './lib/cajitas';
 
@@ -131,6 +131,14 @@ const MultiCapturaModal = lazy(() =>
 const ReporteFinancieroModal = lazy(() =>
   import('./components/ReporteFinancieroModal').then(({ ReporteFinancieroModal }) => ({ default: ReporteFinancieroModal })),
 );
+/** Mismas rutas que los `lazy` de las pestañas, para que compartan el módulo ya descargado. */
+const PRECARGA_PESTANAS: Array<() => Promise<unknown>> = [
+  () => import('./components/DineroView'),
+  () => import('./components/MesView'),
+  () => import('./components/AsesorView'),
+  () => import('./components/CalendarioFinancieroView'),
+  () => import('./components/AjustesView'),
+];
 const InvitacionPremium = lazy(() =>
   import('./components/InvitacionPremium').then(({ InvitacionPremium }) => ({ default: InvitacionPremium })),
 );
@@ -212,7 +220,7 @@ const LukAppContenido: React.FC<LukAppMainProps> = ({ onBack, esAdmin, permitirC
 
   if (sesion.estado.modo === 'anonimo') {
     return (
-      <Suspense fallback={<SkeletonAcceso />}>
+      <Suspense fallback={<PantallaCarga etiqueta="tu cuenta" />}>
         <LoginPanel sesion={sesion} tema={tema} onCambiarTema={setTema} />
       </Suspense>
     );
@@ -258,6 +266,21 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 }) => {
   const [migracionLista, setMigracionLista] = useState(false);
   const [enLinea, setEnLinea] = useState(() => navigator.onLine);
+  useEffect(() => {
+    // Las pestañas de la barra se descargan en segundo plano apenas abre la
+    // app: en Android, la primera vez que se tocaba la billetera había que
+    // esperar el módulo de Dinero por la red con la pantalla en blanco.
+    const precargar = () => {
+      for (const importar of PRECARGA_PESTANAS) void importar().catch(() => undefined);
+    };
+    const ventana = window as Window & { requestIdleCallback?: (cb: () => void, opciones?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void };
+    if (ventana.requestIdleCallback) {
+      const id = ventana.requestIdleCallback(precargar, { timeout: 4_000 });
+      return () => ventana.cancelIdleCallback?.(id);
+    }
+    const temporizador = window.setTimeout(precargar, 1_500);
+    return () => window.clearTimeout(temporizador);
+  }, []);
   useEffect(() => {
     try {
       for (let indice = localStorage.length - 1; indice >= 0; indice -= 1) {

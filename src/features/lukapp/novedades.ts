@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.11.7', fecha: '2026-11-10', texto: 'En Android, tocar la billetera ya no se queda cargando ni muestra un falso error de conexión, y la invitación a Premium vuelve a dejarte subir. Quitamos los esqueletos de carga: ahora las pantallas abren directo. Además, el Asesor vuelve a pasarle a la IA tus preguntas largas. 📲✨' },
   { version: '10.11.6', fecha: '2026-11-10', texto: 'Reforzamos la seguridad de tu cuenta y de los permisos del equipo: nadie puede cambiar su propio rol ni borrar a un superadmin desde una cuenta delegada. 🔐' },
   { version: '10.11.5', fecha: '2026-11-09', texto: 'Ya puedes acceder a la cuenta de demostración usando demo como usuario. ✨' },
   { version: '10.11.4', fecha: '2026-11-09', texto: 'Corregimos la barra inferior en iPhone: los iconos quedan centrados y la cápsula conserva su altura compacta. ✨' },
