@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.14.6', fecha: '2026-11-11', texto: 'Comprobamos que la nueva app de Android guarda tus movimientos en tu cuenta de verdad, igual que la app de siempre. Tu app actual no cambia. ✅' },
   { version: '10.14.5', fecha: '2026-11-11', texto: 'La nueva app de Android ya tiene la barra para anotar: a mano con su teclado de números o hablando con el micrófono. Tu app actual no cambia. 🛠️🎙️' },
   { version: '10.14.4', fecha: '2026-11-11', texto: 'La nueva app de Android ya tiene Dinero y Mes: tus cuentas con el color y el logo de tu banco, tus ahorros con su meta y en qué se te va la plata cada período. Tu app actual no cambia. 🛠️💳' },
   { version: '10.14.3', fecha: '2026-11-11', texto: 'La nueva app de Android ya muestra tu Inicio con tus datos de verdad y su menú de períodos quedó del tamaño justo. Tu app actual no cambia. 🛠️' },

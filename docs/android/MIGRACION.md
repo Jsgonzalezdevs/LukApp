@@ -70,8 +70,10 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   de dictado grabando.
 - Corregido de paso: con el token vencido al abrir, la app mostraba un instante el acceso; ahora
   entra con la copia local mientras renueva la sesión.
-- **No probado a propósito:** pulsar Guardar (escribiría un movimiento en la cuenta real) ni enviar
-  audio a transcribir (gasta cupo de dictado y el emulador no tiene micrófono). Lo debe probar el dueño.
+- Guardado verificado de punta a punta (con permiso del dueño): un gasto de $1 «PruebaAppNativa» se
+  guardó por la RPC, la cola quedó vacía y, borrando la copia local, volvió a bajar desde Supabase.
+  Ese movimiento de prueba sigue en la cuenta: hay que borrarlo desde la web.
+- **No probado:** enviar audio a transcribir (gasta cupo de dictado y el emulador no tiene micrófono).
 
 ## Sin verificar todavía
 
