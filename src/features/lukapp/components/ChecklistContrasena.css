@@ -1,0 +1,97 @@
+/* Vive tanto en la portada (variables --lp-*) como dentro de la app
+   (variables --fin-*): cada color prueba primero la de la portada. */
+.checklist-clave {
+  --cc-ok: var(--lp-in, var(--fin-in, #15803d));
+  --cc-falta: var(--lp-ink-faint, var(--fin-ink-faint, #8a8580));
+  --cc-pista: var(--lp-ink-soft, var(--fin-ink-soft, #57534e));
+  --cc-pista-fondo: var(--lp-line, var(--fin-line, #ede9e3));
+  /* El chulito toma el color del fondo: así contrasta con el verde oscuro del
+     tema claro y con el verde claro del tema oscuro. */
+  --cc-sobre-ok: var(--lp-bg, var(--fin-bg, #fff));
+  margin-top: 0.6rem;
+}
+
+.checklist-clave-barra {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--cc-pista-fondo);
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+
+.checklist-clave-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cc-pista);
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+/* El verde se reserva para "ya está": mientras falta algo la barra es neutra. */
+.checklist-clave-barra > span.lleno {
+  background: var(--cc-ok);
+}
+
+.checklist-clave ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem 0.75rem;
+}
+
+.checklist-clave li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--cc-falta);
+  transition: color 0.2s ease;
+}
+
+.checklist-clave li.cumple {
+  color: var(--cc-ok);
+  font-weight: 600;
+}
+
+.checklist-clave-icono {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.checklist-clave li.cumple .checklist-clave-icono {
+  background: var(--cc-ok);
+  border-color: var(--cc-ok);
+  color: var(--cc-sobre-ok);
+  animation: checklist-clave-pop 0.28s ease;
+}
+
+.checklist-clave-aviso {
+  margin: 0.55rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--lp-out, var(--fin-out, #d4025a));
+}
+
+@keyframes checklist-clave-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@media (max-width: 360px) {
+  .checklist-clave ul { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checklist-clave * { transition: none !important; animation: none !important; }
+}

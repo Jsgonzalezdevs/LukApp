@@ -5,10 +5,8 @@ import { ArrowRight, Check, Eye, EyeOff, Loader2, MailCheck, X } from 'lucide-re
 import type { Sesion } from '../../data/useSesion';
 import { Reveal } from './primitivas';
 import { MascotaLuki } from './MascotaLuki';
-import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../../lib/seguridad';
-
-/** Lo mínimo que pide Supabase. Decirlo antes evita el viaje de ida y vuelta. */
-const MINIMO_PASSWORD = LARGO_MINIMO_CONTRASENA;
+import { validarContrasenaSegura } from '../../../../lib/seguridad';
+import { ChecklistContrasena } from '../ChecklistContrasena';
 
 /** Estado de la comprobación del apodo contra la base. */
 type EstadoApodo = 'vacio' | 'corto' | 'comprobando' | 'libre' | 'cogido';
@@ -141,6 +139,7 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 autoComplete="new-password"
+                aria-describedby="registro-requisitos-clave"
                 required
               />
               <button
@@ -151,11 +150,11 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
                 {verPassword ? <EyeOff size={17} /> : <Eye size={17} />}
               </button>
             </span>
-            <span className="registro-pista">
-              {password.length > 0 && errorPassword
-                ? errorPassword
-                : `Mínimo ${MINIMO_PASSWORD}: mayúscula, minúscula, número y símbolo.`}
-            </span>
+            <ChecklistContrasena
+              id="registro-requisitos-clave"
+              contrasena={password}
+              identificadores={[usuario, correo]}
+            />
           </label>
 
           {sesion.error && (

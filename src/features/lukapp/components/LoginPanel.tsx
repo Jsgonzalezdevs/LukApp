@@ -21,6 +21,7 @@ import type { Sesion } from '../data/useSesion';
 import type { Tema } from '../data/useTema';
 import { BrandMark } from './BrandMark';
 import { TemaToggle } from './TemaToggle';
+import { ChecklistContrasena } from './ChecklistContrasena';
 import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
 import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 import { esDominioAppPrincipal } from '../lib/dominios';
@@ -464,13 +465,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                           >
                             ¿Olvidaste tu contraseña?
                           </button>
-                        ) : (
-                          <span className="text-[13px] font-medium text-[var(--fin-ink-faint)]">
-                            {password.length > 0 && errorPassword
-                              ? errorPassword
-                              : `Mín. ${MINIMO_PASSWORD}: mayús., minús., número y símbolo.`}
-                          </span>
-                        )}
+                        ) : null}
                       </div>
                       <div className="relative">
                         <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]" />
@@ -483,6 +478,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                           autoComplete={modo === 'entrar' ? 'current-password' : 'new-password'}
                           required
                           minLength={modo === 'entrar' ? 1 : MINIMO_PASSWORD}
+                          aria-describedby={modo === 'entrar' ? undefined : 'login-requisitos-clave'}
                           className={`${campo} pr-12`}
                         />
                         <button
@@ -499,6 +495,13 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                           )}
                         </button>
                       </div>
+                      {modo !== 'entrar' ? (
+                        <ChecklistContrasena
+                          id="login-requisitos-clave"
+                          contrasena={password}
+                          identificadores={modo === 'registrarse' ? [usuario, identidad] : []}
+                        />
+                      ) : null}
                     </div>
                   ) : null}
 

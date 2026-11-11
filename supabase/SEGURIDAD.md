@@ -6,8 +6,11 @@ también es una API: para que nadie pueda saltarse la validación del navegador,
 activa estos controles en **Authentication → Password Security** antes de
 desplegar:
 
-1. Longitud mínima: **12**.
-2. Exigir **minúscula, mayúscula, número y símbolo**.
+1. Longitud mínima: **6**.
+2. En *Password requirements* deja **No required characters**: Supabase no
+   ofrece la combinación «minúscula, mayúscula y símbolo» sin exigir número, y
+   LukApp ya la valida en el navegador y en el servidor. Si escoges una opción
+   con dígitos, las claves sin número que LukApp acepta fallarán al registrarse.
 3. Activa la protección contra contraseñas filtradas si tu plan la ofrece.
 4. Exige reautenticación reciente para cambiar contraseña.
 
