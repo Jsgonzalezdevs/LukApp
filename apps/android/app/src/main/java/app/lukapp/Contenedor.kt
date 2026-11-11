@@ -3,6 +3,7 @@ package app.lukapp
 import android.content.Context
 import app.lukapp.datos.Preferencias
 import app.lukapp.datos.PreferenciasCuenta
+import app.lukapp.datos.Transcripcion
 import app.lukapp.datos.RepositorioFinanzas
 import app.lukapp.seguridad.AccesoGoogle
 import app.lukapp.sesion.ServicioSesion
@@ -38,9 +39,11 @@ class Contenedor(contexto: Context) {
     }
 
     val accesoGoogle = AccesoGoogle(supabase)
-    val http = HttpClient(OkHttp)
+    // HttpTimeout permite el límite de 18 s por petición de la transcripción.
+    val http = HttpClient(OkHttp) { install(io.ktor.client.plugins.HttpTimeout) }
     val sesion = ServicioSesion(supabase, http)
     val preferencias = Preferencias(app)
     val finanzas = RepositorioFinanzas(supabase, app)
     val preferenciasCuenta = PreferenciasCuenta(supabase)
+    val transcripcion = Transcripcion(supabase, http)
 }

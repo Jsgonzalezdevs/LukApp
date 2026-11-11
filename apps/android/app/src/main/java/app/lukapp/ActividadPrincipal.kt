@@ -63,6 +63,7 @@ class ActividadPrincipal : FragmentActivity() {
         viewModelFactory {
             initializer { ModeloAcceso(contenedor.sesion, contenedor.accesoGoogle, contenedor.preferencias) }
             initializer { ModeloApp(contenedor.finanzas, contenedor.preferenciasCuenta) }
+            initializer { app.lukapp.ui.anotar.ModeloAnotar(application, contenedor.finanzas, contenedor.transcripcion) }
         }
     }
 
@@ -82,6 +83,7 @@ class ActividadPrincipal : FragmentActivity() {
         val proveedor = ViewModelProvider(this, fabrica)
         val modeloAcceso = proveedor[ModeloAcceso::class.java]
         val modeloApp = proveedor[ModeloApp::class.java]
+        val modeloAnotar = proveedor[app.lukapp.ui.anotar.ModeloAnotar::class.java]
 
         setContent {
             val temaGuardado by contenedor.preferencias.tema.collectAsState(initial = null)
@@ -95,13 +97,20 @@ class ActividadPrincipal : FragmentActivity() {
             }
 
             TemaLukApp(tema) {
+                // Con el token vencido al abrir, supabase-kt pasa por RefreshFailure mientras renueva
+                // (o mientras no hay red). La sesión sigue guardada y sigue siendo de la persona:
+                // como la web, se entra con los datos en caché en vez de mandarla al acceso.
+                val uidRenovando = (estadoSesion as? SessionStatus.RefreshFailure)?.let { contenedor.sesion.idUsuario }
                 when (val s = estadoSesion) {
                     is SessionStatus.Initializing -> PantallaCarga()
-                    is SessionStatus.Authenticated -> if (enRecuperacion) {
+                    is SessionStatus.Authenticated, is SessionStatus.RefreshFailure -> if (s is SessionStatus.RefreshFailure && uidRenovando == null) {
+                        val e by modeloAcceso.estado.collectAsState()
+                        PantallaAcceso(modeloAcceso, tema, cambiarTema, e)
+                    } else if (enRecuperacion) {
                         val e by modeloAcceso.estado.collectAsState()
                         PantallaAcceso(modeloAcceso, tema, cambiarTema, e)
                     } else {
-                        val uid = s.session.user?.id
+                        val uid = (s as? SessionStatus.Authenticated)?.session?.user?.id ?: uidRenovando
                         LaunchedEffect(uid) { if (uid != null) modeloApp.abrir(uid) }
                         if (desbloqueo && bloqueada) {
                             Candado { pedirHuella() }
@@ -109,6 +118,7 @@ class ActividadPrincipal : FragmentActivity() {
                         } else {
                             ShellLukApp(
                                 modelo = modeloApp,
+                                anotar = modeloAnotar,
                                 alCerrarSesion = {
                                     alcance.launch {
                                         uid?.let(contenedor.finanzas::olvidarLocal)

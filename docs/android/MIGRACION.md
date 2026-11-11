@@ -62,6 +62,17 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 - Para comparar con la web: la racha de Dinero sale con todo el historial (366 días en esta cuenta) y
   la de Inicio solo con el período. Es igual en la web.
 
+### Barra de anotar (v10.14.5)
+
+- Probado en emulador: la barra aparece en Inicio, Dinero y Mes; Captura abre con la cuenta principal,
+  el teclado propio escribe el monto, «almuerzo» detecta Comida y «taxi» Transporte, y al cerrar el
+  teclado del sistema vuelve el de LukApp. El micrófono pide permiso solo al tocarlo y abre la capa
+  de dictado grabando.
+- Corregido de paso: con el token vencido al abrir, la app mostraba un instante el acceso; ahora
+  entra con la copia local mientras renueva la sesión.
+- **No probado a propósito:** pulsar Guardar (escribiría un movimiento en la cuenta real) ni enviar
+  audio a transcribir (gasta cupo de dictado y el emulador no tiene micrófono). Lo debe probar el dueño.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -80,6 +91,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
 | Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Falta lo que abre otras pantallas: detalle de cuenta, tarjetas, crear cuenta o ahorro, metas, extractos y herramientas compartidas |
 | Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. Falta: resumen tipo Wrapped, topes, tendencias («Cómo vienes»), calendario y exportar a Excel |
+| Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Falta: escanear con cámara (OCR), Buscar, varios movimientos en un dictado, comandos de voz (transferir, abonar, saldo, rendimiento), aviso de guardado con Deshacer y editar un movimiento |
 | Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |
 | Firma de publicación | **Bloqueado** (ver abajo) |

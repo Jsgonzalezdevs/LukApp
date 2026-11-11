@@ -62,6 +62,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ShellLukApp(
     modelo: ModeloApp,
+    anotar: app.lukapp.ui.anotar.ModeloAnotar,
     alCerrarSesion: () -> Unit,
     desbloqueoActivo: Boolean,
     biometriaDisponible: Boolean,
@@ -142,6 +143,7 @@ fun ShellLukApp(
                 alElegir = { modelo.seccion.value = it },
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 16.dp),
             )
+            CapaAnotar(anotar, actual, seccion, alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
         }
     }
 }
@@ -234,5 +236,84 @@ private fun PantallaMasProvisional(
             app.lukapp.ui.comun.Emoji("👋", 20)
             Text("Cerrar sesión", style = LukApp.tipo.cuerpoB, color = c.salio)
         }
+    }
+}
+
+/**
+ * La barra de anotar con todo lo que abre: capa de dictado, Captura y avisos.
+ * Como en LukAppApp.tsx, la barra se oculta en Asesor y Más y con cualquier capa abierta.
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
+    anotar: app.lukapp.ui.anotar.ModeloAnotar,
+    vista: VistaInicio,
+    seccion: Seccion,
+    alGuardado: (String) -> Unit,
+) {
+    val dictado by anotar.dictado.collectAsState()
+    val pendiente by anotar.pendiente.collectAsState()
+    val aviso by anotar.aviso.collectAsState()
+    val contexto = androidx.compose.ui.platform.LocalContext.current
+    val hapticos = rememberHapticos()
+    val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { concedido ->
+        anotar.microfonoBloqueado(!concedido)
+        if (concedido) { hapticos.disparar(Haptico.HEAVY); anotar.empezarDictado() }
+    }
+    val alMicrofono: () -> Unit = {
+        when {
+            dictado.fase == app.lukapp.ui.anotar.FaseDictado.PROCESANDO -> {}
+            androidx.core.content.ContextCompat.checkSelfPermission(contexto, android.Manifest.permission.RECORD_AUDIO) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED -> { hapticos.disparar(Haptico.HEAVY); anotar.empezarDictado() }
+            // El permiso se pide al tocar el micrófono, nunca al abrir la app.
+            else -> pedirMicrofono.launch(android.Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    val hayCapa = dictado.abierto || pendiente != null || aviso != null
+    if (!hayCapa && seccion != Seccion.ASESOR && seccion != Seccion.AJUSTES) {
+        app.lukapp.ui.anotar.BarraAnotar(
+            escuchando = false,
+            procesando = false,
+            bloqueado = dictado.microfonoBloqueado,
+            alManual = anotar::abrirManual,
+            alMicrofono = alMicrofono,
+            // 12dp sobre la barra inferior de 60dp (`--fin-nav-h + 0.75rem`).
+            modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 72.dp),
+        )
+    }
+    if (dictado.abierto) {
+        app.lukapp.ui.anotar.CapaDictado(
+            estado = dictado,
+            alCancelar = { hapticos.disparar(Haptico.LIGHT); anotar.cancelarDictado() },
+            alTerminar = { hapticos.disparar(Haptico.MEDIUM); anotar.terminarDictado() },
+            alContinuar = anotar::continuarConTexto,
+            alEscribir = { anotar.cancelarDictado(); anotar.abrirManual() },
+        )
+    }
+    val p = pendiente
+    if (p != null) {
+        app.lukapp.ui.anotar.PantallaCaptura(
+            parsed = p,
+            libro = vista.libro,
+            catalogo = vista.catalogo,
+            cuentaPorDefecto = vista.ajustes.cuentaFavoritaId,
+            alGuardar = { b ->
+                val ok = anotar.guardar(b)
+                if (ok) alGuardado(b.occurredOn ?: app.lukapp.dominio.bogotaDate())
+                ok
+            },
+            alCancelar = anotar::cerrarCaptura,
+            alReintentarVoz = if (p.raw.isNotBlank()) ({ anotar.cerrarCaptura(); alMicrofono() }) else null,
+        )
+    }
+    val a = aviso
+    if (a != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = anotar::cerrarAviso,
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { anotar.cerrarAviso(); anotar.abrirManual() }) { Text("Anotar a mano") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = anotar::cerrarAviso) { Text("Cerrar") } },
+            text = { Text(a, style = LukApp.tipo.secundario) },
+        )
     }
 }
