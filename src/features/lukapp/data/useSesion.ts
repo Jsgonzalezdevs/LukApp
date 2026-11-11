@@ -155,18 +155,34 @@ export const useSesion = (): Sesion => {
      * privada. El origen se calcula en el navegador para que el mismo flujo
      * funcione en producción, previews y desarrollo local; cada origen debe
      * estar permitido también en Auth → URL Configuration.
+     *
+     * Dentro de la app Android la web vive en un WebView, y Google rechaza
+     * iniciar sesión ahí (`disallowed_useragent`). En ese caso se le pasa el
+     * enlace a la app nativa, que lo abre en el navegador del sistema y
+     * devuelve los tokens al WebView por `lukapp://auth/callback`.
      */
     entrarConGoogle: useCallback(
       () =>
-        ejecutar(() =>
-          cliente!.auth.signInWithOAuth({
+        ejecutar(async () => {
+          const puente = puenteNativo();
+          if (!puente) {
+            return cliente!.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo:
+                  typeof window !== 'undefined' ? `${window.location.origin}/app` : undefined,
+              },
+            });
+          }
+          const { data, error: fallo } = await cliente!.auth.signInWithOAuth({
             provider: 'google',
-            options: {
-              redirectTo:
-                typeof window !== 'undefined' ? `${window.location.origin}/app` : undefined,
-            },
-          }),
-        ),
+            options: { redirectTo: REDIRECCION_NATIVA, skipBrowserRedirect: true },
+          });
+          if (fallo) return { error: fallo };
+          if (!data?.url) return { error: { message: 'google sin enlace' } };
+          puente.postMessage(JSON.stringify({ tipo: 'lukapp:google', url: data.url }));
+          return { error: null };
+        }),
       [cliente, ejecutar],
     ),
 
@@ -325,6 +341,18 @@ const esSesionGuardadaInvalida = (fallo: unknown): boolean => {
 };
 
 /** Supabase reports auth failures in English; this is a Spanish-only tool. */
+/** Adonde vuelve Google cuando el acceso empezó dentro de la app Android. */
+export const REDIRECCION_NATIVA = 'lukapp://auth/callback';
+
+type Puente = { postMessage: (texto: string) => void };
+
+/** El canal con la app Android, si la web está corriendo dentro de su WebView. */
+const puenteNativo = (): Puente | null => {
+  if (typeof window === 'undefined') return null;
+  const w = window as Window & { __LUKAPP_NATIVE__?: boolean; ReactNativeWebView?: Puente };
+  return w.__LUKAPP_NATIVE__ && w.ReactNativeWebView ? w.ReactNativeWebView : null;
+};
+
 const traducir = (mensaje: string): string => {
   const m = mensaje.toLowerCase();
   if (m === TIEMPO_AGOTADO) {
@@ -343,6 +371,7 @@ const traducir = (mensaje: string): string => {
   }
   if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.';
   if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar.';
+  if (m === 'google sin enlace') return 'Google no devolvió el enlace de acceso. Inténtalo de nuevo.';
   if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
     return 'El acceso con Google todavía no está habilitado. Inténtalo con tu correo.';
   }

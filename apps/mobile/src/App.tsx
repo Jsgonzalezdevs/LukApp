@@ -21,7 +21,10 @@ import { ArrowLeft, RotateCw, WifiOff } from 'lucide-react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import * as WebBrowser from 'expo-web-browser';
 
+/** Debe coincidir con REDIRECCION_NATIVA de la web y estar en Auth → URL Configuration. */
+const REDIRECCION_GOOGLE = 'lukapp://auth/callback';
 const URL_LUKAPP = process.env.EXPO_PUBLIC_LUKAPP_WEB_URL || 'https://mi.lukapp.app/app';
 const HOST_LUKAPP = new URL(URL_LUKAPP).hostname;
 const FONDO = '#1a1817';
@@ -208,6 +211,10 @@ export default function App() {
     } catch {
       return;
     }
+    if (archivo.tipo === 'lukapp:google' && archivo.url) {
+      void entrarConGoogle(archivo.url);
+      return;
+    }
     if (archivo.tipo === 'lukapp:audio-nativo' && archivo.id && archivo.accion) {
       grabarNativo(archivo.id, archivo.accion);
       return;
@@ -257,6 +264,29 @@ export default function App() {
       });
     } catch {
       Alert.alert('No se pudo guardar', 'Vuelve a intentarlo desde el menú de exportación de LukApp.');
+    }
+  };
+
+  /**
+   * Google no deja iniciar sesión dentro de un WebView, así que el enlace que
+   * prepara la web se abre en el navegador del sistema. Los tokens vuelven por
+   * `lukapp://auth/callback` y se le entregan a la web recargándola con ellos
+   * en la URL: su cliente de Supabase los detecta y guarda la sesión.
+   */
+  const entrarConGoogle = async (enlace: string) => {
+    try {
+      const destino = new URL(enlace);
+      // Solo se abre el autorizador de Supabase, nunca una URL arbitraria.
+      if (destino.protocol !== 'https:' || !destino.pathname.endsWith('/auth/v1/authorize')) return;
+      const resultado = await WebBrowser.openAuthSessionAsync(enlace, REDIRECCION_GOOGLE);
+      if (resultado.type !== 'success') return;
+      const vuelta = new URL(resultado.url);
+      const web = new URL(URL_LUKAPP);
+      web.search = vuelta.search;
+      web.hash = vuelta.hash;
+      webView.current?.injectJavaScript(`window.location.replace(${JSON.stringify(web.toString())}); true;`);
+    } catch {
+      Alert.alert('No se pudo entrar con Google', 'Inténtalo de nuevo o entra con tu correo.');
     }
   };
 

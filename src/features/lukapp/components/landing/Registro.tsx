@@ -7,6 +7,7 @@ import { Reveal } from './primitivas';
 import { MascotaLuki } from './MascotaLuki';
 import { validarContrasenaSegura } from '../../../../lib/seguridad';
 import { ChecklistContrasena } from '../ChecklistContrasena';
+import { BotonGoogle } from '../BotonGoogle';
 
 /** Estado de la comprobación del apodo contra la base. */
 type EstadoApodo = 'vacio' | 'corto' | 'comprobando' | 'libre' | 'cogido';
@@ -102,6 +103,8 @@ export const Registro: React.FC<RegistroProps> = ({ sesion, onIrAEntrar }) => {
 
       <Reveal className="registro-caja" delay={0.1}>
         <form onSubmit={enviar} noValidate>
+          <BotonGoogle onClick={sesion.entrarConGoogle} deshabilitado={sesion.ocupado} />
+
           <label className="registro-campo">
             <span className="registro-etiqueta">Tu correo</span>
             <input

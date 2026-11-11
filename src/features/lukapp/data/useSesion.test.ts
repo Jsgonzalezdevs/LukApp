@@ -18,7 +18,8 @@ const auth = {
   onAuthStateChange:
     vi.fn<(cb: Aviso) => { data: { subscription: { unsubscribe: () => void } } }>(),
   signInWithPassword: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
-  signInWithOAuth: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
+  signInWithOAuth:
+    vi.fn<(datos: unknown) => Promise<{ data?: { url: string | null }; error: Fallo | null }>>(),
   signUp: vi.fn<(datos: unknown) => Promise<{ error: Fallo | null }>>(),
   signOut: vi.fn<(opciones?: { scope?: string }) => Promise<{ error: Fallo | null }>>(),
 };
@@ -112,6 +113,37 @@ describe('useSesion — entrar', () => {
     expect(result.current.error).toBe(
       'El acceso con Google todavía no está habilitado. Inténtalo con tu correo.',
     );
+  });
+
+  it('dentro de la app Android le pasa el enlace de Google a la app nativa', async () => {
+    const postMessage = vi.fn();
+    const w = window as Window & { __LUKAPP_NATIVE__?: boolean; ReactNativeWebView?: unknown };
+    w.__LUKAPP_NATIVE__ = true;
+    w.ReactNativeWebView = { postMessage };
+    auth.signInWithOAuth.mockResolvedValueOnce({
+      data: { url: 'https://proyecto.supabase.co/auth/v1/authorize?provider=google' },
+      error: null,
+    });
+    try {
+      const { result } = await montar();
+
+      await act(async () => {
+        await result.current.entrarConGoogle();
+      });
+
+      expect(auth.signInWithOAuth).toHaveBeenCalledWith({
+        provider: 'google',
+        options: { redirectTo: 'lukapp://auth/callback', skipBrowserRedirect: true },
+      });
+      expect(JSON.parse(postMessage.mock.calls[0][0])).toEqual({
+        tipo: 'lukapp:google',
+        url: 'https://proyecto.supabase.co/auth/v1/authorize?provider=google',
+      });
+      expect(result.current.error).toBeNull();
+    } finally {
+      delete w.__LUKAPP_NATIVE__;
+      delete w.ReactNativeWebView;
+    }
   });
 
   it('usa el correo tal cual cuando le dan uno', async () => {

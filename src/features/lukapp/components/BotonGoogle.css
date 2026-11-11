@@ -1,0 +1,82 @@
+/* Igual que el checklist, sirve en la portada (--lp-*) y en la app (--fin-*). */
+.boton-google-bloque {
+  --bg-tinta: var(--lp-ink, var(--fin-ink, #1c1917));
+  --bg-tenue: var(--lp-ink-faint, var(--fin-ink-faint, #8a8580));
+  --bg-linea: var(--lp-line, var(--fin-line, #ede9e3));
+  --bg-fondo: var(--lp-surface, var(--fin-surface, #fff));
+  --bg-hover: var(--lp-surface-hover, var(--fin-soft, #f5f3f0));
+  margin-bottom: 1.1rem;
+}
+
+.boton-google {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--bg-linea);
+  background: var(--bg-fondo);
+  color: var(--bg-tinta);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.boton-google:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.boton-google:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.boton-google:disabled {
+  cursor: progress;
+  opacity: 0.75;
+}
+
+.boton-google:focus-visible {
+  outline: 2px solid var(--lp-accent, var(--fin-accent, #7c3aed));
+  outline-offset: 2px;
+}
+
+.boton-google-marca {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.boton-google-girando {
+  animation: boton-google-giro 0.9s linear infinite;
+}
+
+.boton-google-separador {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--bg-tenue);
+}
+
+.boton-google-separador::before,
+.boton-google-separador::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--bg-linea);
+}
+
+@keyframes boton-google-giro {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boton-google-girando { animation: none; }
+}

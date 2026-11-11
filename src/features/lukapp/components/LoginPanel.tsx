@@ -22,6 +22,7 @@ import type { Tema } from '../data/useTema';
 import { BrandMark } from './BrandMark';
 import { TemaToggle } from './TemaToggle';
 import { ChecklistContrasena } from './ChecklistContrasena';
+import { BotonGoogle } from './BotonGoogle';
 import { LARGO_MINIMO_CONTRASENA, validarContrasenaSegura } from '../../../lib/seguridad';
 import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 import { esDominioAppPrincipal } from '../lib/dominios';
@@ -352,11 +353,13 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
               ) : null}
 
               {modo === 'entrar' || modo === 'registrarse' ? (
-                <>
+                permitirRegistro ? (
+                  <BotonGoogle onClick={sesion.entrarConGoogle} deshabilitado={sesion.ocupado} />
+                ) : (
                   <p className="mb-5 text-center text-[13px] text-[var(--fin-ink-faint)]">
-                    Crea tu cuenta o accede con tu correo electrónico.
+                    Accede con tu correo electrónico.
                   </p>
-                </>
+                )
               ) : null}
 
               {modo === 'recuperar' ? (
