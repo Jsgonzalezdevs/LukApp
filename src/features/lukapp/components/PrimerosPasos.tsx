@@ -17,10 +17,10 @@ export const PrimerosPasos = ({ estado, onCuenta, onAnotar }: Props) => {
     </div>
     <ol className="mt-3 space-y-4">
       <li>
-        <p className="flex items-center gap-2 font-medium text-[var(--fin-ink)]">{estado.saldosCompletos ? <Check size={18} aria-hidden="true" /> : <Wallet size={18} aria-hidden="true" />}1. Confirma cuánto tienes</p>
-        <p className="mt-1 text-sm text-[var(--fin-ink-soft)]">{estado.saldosCompletos ? 'Tus cuentas tienen un saldo de referencia.' : 'Escribe el saldo actual de cada cuenta, incluido Efectivo. Si está vacía, confirma $0; dejarlo pendiente no significa tener cero.'}</p>
+        <p className="flex items-center gap-2 font-medium text-[var(--fin-ink)]">{estado.saldosCompletos ? <Check size={18} aria-hidden="true" /> : <Wallet size={18} aria-hidden="true" />}1. Ajusta cuánto tienes (opcional)</p>
+        <p className="mt-1 text-sm text-[var(--fin-ink-soft)]">{estado.saldosCompletos ? 'Tus cuentas tienen un saldo de referencia.' : 'Mientras no lo escribas, cada cuenta cuenta como $0. Si tienes plata en alguna, ajústala para que el disponible sea real.'}</p>
         {!estado.saldosCompletos && onCuenta ? <div className="mt-2 flex flex-wrap gap-2">
-          {estado.sinSaldo.map((c) => <button key={c.id} type="button" onClick={() => onCuenta(c.id)} className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-sm font-semibold text-[var(--fin-ink)]">Confirmar saldo de {c.nombre}</button>)}
+          {estado.sinSaldo.map((c) => <button key={c.id} type="button" onClick={() => onCuenta(c.id)} className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-sm font-semibold text-[var(--fin-ink)]">Ajustar saldo de {c.nombre}</button>)}
           <button type="button" onClick={() => onCuenta(null)} className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] px-3 py-2 text-sm text-[var(--fin-ink)]">Agregar una cuenta</button>
         </div> : null}
       </li>

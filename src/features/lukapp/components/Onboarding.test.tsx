@@ -28,15 +28,15 @@ describe('Onboarding — fuente inicial de dinero', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Efectivo ya viene incluido');
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
   });
-  it('dejar el saldo pendiente descarta los dígitos escritos y conserva null', async () => {
+  it('empezar en $0 descarta los dígitos escritos y conserva null', async () => {
     const terminar = vi.fn().mockResolvedValue(true);
     render(<Onboarding onTerminar={terminar} />);
     fireEvent.click(screen.getByRole('button', { name: 'Prefiero no decirlo' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Nequi' }));
     fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
     fireEvent.click(await screen.findByRole('button', { name: '5' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Dejar saldo pendiente' }));
-    await screen.findByText('Saldo pendiente de confirmar');
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar en $0' }));
+    await screen.findByText('Saldo inicial: $0 (lo ajustas cuando quieras)');
     fireEvent.click(screen.getByRole('button', { name: 'Entrar a LukApp' }));
     await waitFor(() => expect(terminar).toHaveBeenCalledWith(expect.objectContaining({ banco: 'Nequi', saldoCop: null })));
   });

@@ -188,7 +188,7 @@ export const CajitaCard: React.FC<CajitaCardProps> = ({
           </h3>
           {usaMonedaOrigen ? <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">📈 Inversión · {moneda}</p> : null}
           <p className="text-[28px] font-semibold tabular-nums text-[var(--fin-ink)]">
-            {saldoPendiente ? <span className="text-lg">Saldo pendiente</span> : <AnimatedNumber value={saldoCop} format={formatCop} />}
+            <AnimatedNumber value={saldoCop} format={formatCop} />
           </p>
         </div>
 

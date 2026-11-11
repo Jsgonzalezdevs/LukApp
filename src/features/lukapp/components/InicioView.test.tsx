@@ -20,11 +20,12 @@ const montar = (confirmado = false) => {
 };
 
 describe('Inicio — saldo e historial', () => {
-  it('mantiene el saldo desconocido como guion y explica cómo mostrar el saldo', () => {
+  it('una cuenta sin saldo escrito cuenta como $0, sin guion ni obligación de llenarlo', () => {
     montar();
     expect(screen.getByText('Dinero disponible')).toBeInTheDocument();
-    expect(screen.getByLabelText('Saldo todavía sin confirmar')).toBeInTheDocument();
-    expect(screen.getByText('Confirma tus saldos para calcular cuánto tienes disponible.')).toBeInTheDocument();
+    expect(screen.queryByText('—')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ver el resumen de mi dinero' })).toHaveTextContent('$0');
+    expect(screen.getByText('Las cuentas sin saldo cuentan como $0. Ajústalo cuando quieras.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Completar saldos' })).not.toBeInTheDocument();
     expect(screen.queryByText('Pon tu dinero al día')).not.toBeInTheDocument();
     expect(screen.queryByText('Comida')).not.toBeInTheDocument();

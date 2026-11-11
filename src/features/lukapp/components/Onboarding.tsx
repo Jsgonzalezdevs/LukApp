@@ -155,7 +155,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
               color: digitos === '' ? 'var(--fin-ink-ghost)' : 'var(--fin-ink)',
             }}
           >
-            {digitos === '' ? 'Sin confirmar' : `$${formatAmountInput(saldoCop)}`}
+            {digitos === '' ? '$0' : `$${formatAmountInput(saldoCop)}`}
           </p>
           <TecladoNumerico
             onDigito={(d) => setDigitos((prev) => (prev + d).replace(/^0+(?=\d)/, '').slice(0, 12))}
@@ -164,7 +164,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
         </div>
       ),
       boton: 'Continuar',
-      salida: 'Dejar saldo pendiente',
+      salida: 'Empezar en $0',
     },
     {
       titulo: nombre.trim() ? `Listo, ${nombre.trim()}.` : 'Todo listo.',
@@ -178,7 +178,7 @@ export const Onboarding: React.FC<OnboardingProps> = ({
                 {bancoFinal} · {ETIQUETA_CLASE[claseCuentaFinal]}
               </p>
               <p className="mt-1 tabular-nums text-[15px] text-[var(--fin-ink-soft)]">
-                {saldoCop === null ? 'Saldo pendiente de confirmar' : `Saldo inicial: $${formatAmountInput(saldoCop)}`}
+                {saldoCop === null ? 'Saldo inicial: $0 (lo ajustas cuando quieras)' : `Saldo inicial: $${formatAmountInput(saldoCop)}`}
               </p>
               <button
                 type="button"

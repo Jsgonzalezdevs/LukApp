@@ -1,7 +1,6 @@
 import { SelectorApp } from './SelectorApp';
 import { nombreVisibleCuenta } from '../lib/entidadesFinancieras';
 import { etiquetaIcono } from '../lib/etiquetaIcono';
-import { tieneSaldoConfirmado } from '../lib/preparacionInicio';
 import { useGuardadoFinanciero, type ResultadoGuardado } from '../hooks/useGuardadoFinanciero';
 import React, { useState } from 'react';
 import { ChevronDown, Check, Pencil, Send, Star, Trash2, X } from 'lucide-react';
@@ -62,8 +61,8 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
   esFavorita = false,
   onAlternarFavorita,
 }) => {
-  const saldoPendiente = cajita.tipo === 'cuenta' && !tieneSaldoConfirmado(cajita.id, movimientos);
-  const [editandoSaldo, setEditandoSaldo] = useState(saldoPendiente);
+  // Escribir el saldo es opcional: la cuenta abre mostrando $0, no un teclado obligatorio.
+  const [editandoSaldo, setEditandoSaldo] = useState(false);
   const [nuevoSaldoTexto, setNuevoSaldoTexto] = useState('');
   const [mostrarAjustes, setMostrarAjustes] = useState(false);
   const [transfiriendo, setTransfiriendo] = useState(false);
@@ -300,7 +299,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
         className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-5"
         style={{ backdropFilter: 'var(--fin-glass-filter)', boxShadow: 'inset 0 1px 0 rgb(255 255 255 / 0.6)' }}
       >
-        <p className="text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">{saldoPendiente ? 'Confirma tu saldo actual' : 'Saldo actual'}</p>
+        <p className="text-[13px] font-medium uppercase tracking-wider text-[var(--fin-ink-faint)]">Saldo actual</p>
 
         {!editandoSaldo ? (
           <>
@@ -314,7 +313,7 @@ export const DetalleCajita: React.FC<DetalleCajitaProps> = ({
                 className="text-[44px] font-bold tabular-nums leading-none text-[var(--fin-ink)]"
                 style={{ letterSpacing: 'var(--fin-track-cifra)' }}
               >
-                {saldoPendiente ? 'Sin confirmar' : formatCop(saldo)}
+                {formatCop(saldo)}
               </span>
               <span className="flex items-center gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-medium text-[var(--fin-ink-soft)]">
                 <Pencil className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />

@@ -325,18 +325,20 @@ export const InicioView: React.FC<InicioViewProps> = ({
             className="text-[44px] sm:text-[44px] font-bold tracking-tight tabular-nums text-[var(--fin-ink)] transition-transform active:scale-[0.98]"
             style={{ font: 'var(--fin-t-cifra)', letterSpacing: 'var(--fin-track-cifra)' }}
           >
-            {preparacion.saldosCompletos ? <AnimatedNumber
+            {/* Una cuenta sin saldo escrito cuenta como $0: escribirlo es
+                opcional y un guion hacía parecer que la app estaba rota. */}
+            <AnimatedNumber
               value={patrimonioCop}
               format={(val) => (modoPrivacidad ? '$ ••••••' : formatCop(val))}
-            /> : <span aria-label="Saldo todavía sin confirmar">—</span>}
+            />
           </button>
         </div>
         <p className="mt-1 text-[13px] text-[var(--fin-ink-faint)]">
-          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Confirma tus saldos para calcular cuánto tienes disponible.'}
+          {preparacion.saldosCompletos ? 'Saldo total menos ahorros reservados y obligaciones.' : 'Las cuentas sin saldo cuentan como $0. Ajústalo cuando quieras.'}
         </p>
 
         {/* Desglose bancos y efectivo si existen */}
-        {preparacion.saldosCompletos && saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
+        {saldoEfectivoCop !== undefined && saldoCuentasSinEfectivoCop !== undefined ? (
           <div className="mt-1 flex items-center gap-2.5 text-[13px] text-[var(--fin-ink-soft)]">
             <span>
               Bancos:{' '}
