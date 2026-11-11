@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.13.1', fecha: '2026-11-11', texto: 'El checklist de la contraseña ahora se marca con un verde más fuerte y vivo, para que veas de una qué requisitos ya cumples. ✅' },
   { version: '10.13.0', fecha: '2026-11-11', texto: 'Ya puedes entrar o crear tu cuenta con Google, sin inventar otra contraseña. Funciona en la página y en la app de Android. 🚀' },
   { version: '10.12.0', fecha: '2026-11-10', texto: 'Crear tu cuenta es más fácil: la contraseña ahora pide mínimo 6 caracteres con una mayúscula, una minúscula y un carácter especial, y mientras la escribes ves un checklist que se va marcando con ✅ a medida que cumples cada requisito. 🔐' },
   { version: '10.11.8', fecha: '2026-11-10', texto: 'Ya no tienes que escribir cuánto dinero tienes para empezar: las cuentas sin saldo cuentan como $0 y el disponible se ve de una, sin el guion. Lo ajustas cuando quieras. 💸' },

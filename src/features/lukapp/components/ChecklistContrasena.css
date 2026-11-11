@@ -1,13 +1,14 @@
 /* Vive tanto en la portada (variables --lp-*) como dentro de la app
    (variables --fin-*): cada color prueba primero la de la portada. */
 .checklist-clave {
-  --cc-ok: var(--lp-in, var(--fin-in, #15803d));
+  /* El verde del indicador de Bloq Mayús de la Mac (systemGreen de Apple):
+     fuerte y reconocible, se lee igual en tema claro y oscuro. */
+  --cc-ok: #34c759;
   --cc-falta: var(--lp-ink-faint, var(--fin-ink-faint, #8a8580));
   --cc-pista: var(--lp-ink-soft, var(--fin-ink-soft, #57534e));
   --cc-pista-fondo: var(--lp-line, var(--fin-line, #ede9e3));
-  /* El chulito toma el color del fondo: así contrasta con el verde oscuro del
-     tema claro y con el verde claro del tema oscuro. */
-  --cc-sobre-ok: var(--lp-bg, var(--fin-bg, #fff));
+  /* Chulito blanco sobre el verde, como lo pinta macOS. */
+  --cc-sobre-ok: #fff;
   margin-top: 0.6rem;
 }
 
