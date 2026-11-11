@@ -26,6 +26,7 @@ data class AjustesCuenta(
     val proximosPagos: Boolean = true,
     val privacidad: Boolean = false,
     val periodo: ConfigPeriodo = PERIODO_POR_DEFECTO,
+    val cuentaFavoritaId: String? = null,
 )
 
 /**
@@ -48,6 +49,8 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             proximosPagos = bool("finanzas:inicio:proximos-pagos", true),
             privacidad = bool("finanzas:modo-privacidad", false),
             periodo = (meta["finanzas:periodo"] as? JsonObject)?.let(::periodoDe) ?: PERIODO_POR_DEFECTO,
+            // La web guarda el id como texto, o un falso/vacío para "ninguna".
+            cuentaFavoritaId = (meta["finanzas:cuenta-favorita"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.ifBlank { null },
         )
     }
 

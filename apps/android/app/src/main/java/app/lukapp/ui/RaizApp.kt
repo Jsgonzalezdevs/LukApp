@@ -98,8 +98,10 @@ fun ShellLukApp(
                     Column(
                         Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
+                            // La barra de estado queda fuera del desplazamiento: en la app actual el
+                            // contenido empieza debajo de ella y nunca pasa por detrás.
                             .windowInsetsPadding(WindowInsets.statusBars)
+                            .verticalScroll(rememberScrollState())
                             .padding(top = margenSuperior),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -113,6 +115,12 @@ fun ShellLukApp(
                                     alVerMes = { modelo.seccion.value = Seccion.MES },
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
                                 )
+                                Seccion.DINERO -> app.lukapp.ui.dinero.PantallaDinero(
+                                    vista = actual,
+                                    alElegirPeriodo = modelo::elegirPeriodo,
+                                    alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
+                                )
+                                Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo)
                                 Seccion.AJUSTES -> PantallaMasProvisional(desbloqueoActivo, biometriaDisponible, alCambiarDesbloqueo, alCerrarSesion)
                                 else -> PantallaSinMigrar(s)
                             }

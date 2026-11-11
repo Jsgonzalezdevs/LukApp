@@ -529,11 +529,11 @@ Prioridad: **1** = núcleo (acceso, Inicio, captura de movimientos, Dinero, Mes)
 | Análisis de movimiento | `AnalisisMovimiento.tsx` | `HojaAnalisisMovimiento` | `senalesDeMovimiento` | 3 | Pendiente |
 | Aviso de guardado y Deshacer | `AvisoGuardado.tsx` | `AvisoGuardado` (Snackbar personalizado) | `borrarTransaccion` | 1 | Pendiente |
 | Buscar movimientos y funciones | `BuscadorMovimientos.tsx`, `ResultadosFunciones.tsx` | `PantallaBuscar` | `filtros`, `buscarFunciones` | 2 | Pendiente |
-| Dinero (resumen) | `DineroView.tsx`, `CabeceraDinero.tsx`, `FilaCuenta.tsx`, `IconoCuenta.tsx`, `AccesosFunciones.tsx` | `PantallaDinero` | Saldos, entidades financieras (logos) | 1 | Pendiente |
+| Dinero (resumen) | `DineroView.tsx`, `CabeceraDinero.tsx`, `FilaCuenta.tsx`, `IconoCuenta.tsx`, `AccesosFunciones.tsx` | `PantallaDinero` | Saldos, entidades financieras (logos) | 1 | Parcial (ver MIGRACION.md) |
 | Cuentas y ahorros (crear y operar) | `CajitasView.tsx`, `CajitaCard.tsx`, `AvanzadoAhorro.tsx` | `PantallaCuentas` + `TarjetaCuenta` | `crearCajita`, `fijarSaldo`, `registrarMovimiento`, `transferir`; multimoneda | 1 | Pendiente |
 | Detalle de cuenta | `DetalleCajita.tsx` | `PantallaDetalleCuenta` | Almacén, cuenta favorita | 1 | Pendiente |
 | Tarjetas y deudas | `DeudasView.tsx` | `PantallaTarjetasDeudas` | `abonarDeuda`, compras a cuotas, `resumenTarjeta` | 1 | Pendiente |
-| Mes | `MesView.tsx` | `PantallaMes` | Período, agregados | 1 | Pendiente |
+| Mes | `MesView.tsx` | `PantallaMes` | Período, agregados | 1 | Parcial (ver MIGRACION.md) |
 | Desglose por categoría | `CategoryBreakdown.tsx` | `DesgloseCategorias` | Catálogo | 1 | Pendiente |
 | Detalle del mes (días, mayores, contrapartes) | `DetalleMes.tsx` | `DetalleDelMes` (Canvas) | `lib/detalle` | 1 | Pendiente |
 | Tendencias | `TendenciasView.tsx`, `GraficaLineas.tsx` | `SeccionTendencias` + `GraficaLineas` (Canvas) | `lib/tendencias` | 2 | Pendiente |

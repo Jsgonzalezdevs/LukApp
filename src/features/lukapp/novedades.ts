@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.14.4', fecha: '2026-11-11', texto: 'La nueva app de Android ya tiene Dinero y Mes: tus cuentas con el color y el logo de tu banco, tus ahorros con su meta y en qué se te va la plata cada período. Tu app actual no cambia. 🛠️💳' },
   { version: '10.14.3', fecha: '2026-11-11', texto: 'La nueva app de Android ya muestra tu Inicio con tus datos de verdad y su menú de períodos quedó del tamaño justo. Tu app actual no cambia. 🛠️' },
   { version: '10.14.2', fecha: '2026-11-11', texto: 'Seguimos puliendo por dentro la nueva app de Android: la pantalla de entrada ya se ve igual que siempre en modo claro y oscuro. Tu app actual no cambia. 🛠️' },
   { version: '10.14.1', fecha: '2026-11-11', texto: 'Por dentro: empezamos a construir la app de Android desde cero, con piezas nativas del teléfono, para que más adelante abra más rápido, use tu huella y vibre como debe. Por ahora tu app sigue igual. 🛠️📱' },

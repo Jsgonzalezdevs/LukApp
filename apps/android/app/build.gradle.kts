@@ -82,7 +82,18 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     testOptions { unitTests.isReturnDefaultValues = true }
+
+    // Los logos de bancos se toman de public/bancos, los mismos archivos que usa la web:
+    // así una marca nueva o corregida llega a Android sin copiarla a mano.
+    sourceSets["main"].assets.directories.add(layout.buildDirectory.dir("generated/assetsMarca").get().asFile.path)
 }
+
+val copiarLogosBancos by tasks.registering(Sync::class) {
+    from(rootDir.resolve("../../public/bancos")) { include("*.svg", "*.png") }
+    into(layout.buildDirectory.dir("generated/assetsMarca/bancos"))
+}
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos) }
+tasks.matching { it.name.contains("generate") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos) }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -112,6 +123,9 @@ dependencies {
     implementation(libs.supabase.functions)
     implementation(libs.ktor.okhttp)
     implementation(libs.kotlinx.serialization.json)
+
+    implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
 
     testImplementation(libs.junit)
 }

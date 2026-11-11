@@ -36,6 +36,8 @@ fun Icono(
     grosor: Float = 1.8f,
     color: Color = LukApp.colores.ink,
     descripcion: String? = null,
+    /** `fill-…` de Tailwind: algunos íconos (la estrella de "Principal") van rellenos además del trazo. */
+    relleno: Color? = null,
 ) {
     val semantica = if (descripcion != null) Modifier.semantics { contentDescription = descripcion } else Modifier
     val caminos = remember(icono) { icono.caminos }
@@ -43,6 +45,7 @@ fun Icono(
         val escala = size.minDimension / 24f
         scale(escala, pivot = androidx.compose.ui.geometry.Offset.Zero) {
             val trazo = Stroke(width = grosor, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            if (relleno != null) caminos.forEach { drawPath(it, relleno) }
             caminos.forEach { drawPath(it, color, style = trazo) }
         }
     }

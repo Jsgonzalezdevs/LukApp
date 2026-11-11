@@ -57,6 +57,10 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   movimientos agrupados por día.
 - El menú de período lista 13 períodos semanales. Se corrigió que ocupara todo el ancho.
 - La barra inferior cambia de sección, y Atrás desde una sección vuelve a Inicio.
+- Dinero y Mes, con los datos reales. Se corrigieron: la proporción de la fila de cuenta (60/40), el
+  recorte del logo de Davivienda (`auto 80%`) y el contenido que pasaba por detrás de la barra de estado.
+- Para comparar con la web: la racha de Dinero sale con todo el historial (366 días en esta cuenta) y
+  la de Inicio solo con el período. Es igual en la web.
 
 ## Sin verificar todavía
 
@@ -74,7 +78,9 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Desbloqueo biométrico | Hecho en código (provisional en Más) |
 | Shell: barra inferior, fundido, Atrás, pull to refresh en Inicio | Hecho en código |
 | Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
-| Dinero, Mes, Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
+| Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Falta lo que abre otras pantallas: detalle de cuenta, tarjetas, crear cuenta o ahorro, metas, extractos y herramientas compartidas |
+| Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. Falta: resumen tipo Wrapped, topes, tendencias («Cómo vienes»), calendario y exportar a Excel |
+| Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |
 | Firma de publicación | **Bloqueado** (ver abajo) |
 
