@@ -117,8 +117,13 @@ describe('useSesion — entrar', () => {
 
   it('dentro de la app Android le pasa el enlace de Google a la app nativa', async () => {
     const postMessage = vi.fn();
-    const w = window as Window & { __LUKAPP_NATIVE__?: boolean; ReactNativeWebView?: unknown };
+    const w = window as Window & {
+      __LUKAPP_NATIVE__?: boolean;
+      __LUKAPP_GOOGLE_NATIVO__?: boolean;
+      ReactNativeWebView?: unknown;
+    };
     w.__LUKAPP_NATIVE__ = true;
+    w.__LUKAPP_GOOGLE_NATIVO__ = true;
     w.ReactNativeWebView = { postMessage };
     auth.signInWithOAuth.mockResolvedValueOnce({
       data: { url: 'https://proyecto.supabase.co/auth/v1/authorize?provider=google' },
@@ -140,6 +145,30 @@ describe('useSesion — entrar', () => {
         url: 'https://proyecto.supabase.co/auth/v1/authorize?provider=google',
       });
       expect(result.current.error).toBeNull();
+    } finally {
+      delete w.__LUKAPP_NATIVE__;
+      delete w.__LUKAPP_GOOGLE_NATIVO__;
+      delete w.ReactNativeWebView;
+    }
+  });
+
+  it('en una app Android sin el puente de Google pide actualizarla', async () => {
+    const postMessage = vi.fn();
+    const w = window as Window & { __LUKAPP_NATIVE__?: boolean; ReactNativeWebView?: unknown };
+    w.__LUKAPP_NATIVE__ = true;
+    w.ReactNativeWebView = { postMessage };
+    try {
+      const { result } = await montar();
+
+      await act(async () => {
+        await result.current.entrarConGoogle();
+      });
+
+      expect(auth.signInWithOAuth).not.toHaveBeenCalled();
+      expect(postMessage).not.toHaveBeenCalled();
+      expect(result.current.error).toBe(
+        'Para entrar con Google actualiza LukApp desde Google Play. Mientras tanto, entra con tu correo.',
+      );
     } finally {
       delete w.__LUKAPP_NATIVE__;
       delete w.ReactNativeWebView;

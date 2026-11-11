@@ -165,6 +165,7 @@ export const useSesion = (): Sesion => {
       () =>
         ejecutar(async () => {
           const puente = puenteNativo();
+          if (puente === 'sin-google') return { error: { message: GOOGLE_APP_VIEJA } };
           if (!puente) {
             return cliente!.auth.signInWithOAuth({
               provider: 'google',
@@ -340,18 +341,31 @@ const esSesionGuardadaInvalida = (fallo: unknown): boolean => {
     /(invalid refresh token|refresh token.*(?:not found|already used|revoked|expired)|session.*expired)/i.test(message);
 };
 
-/** Supabase reports auth failures in English; this is a Spanish-only tool. */
 /** Adonde vuelve Google cuando el acceso empezó dentro de la app Android. */
 export const REDIRECCION_NATIVA = 'lukapp://auth/callback';
 
+const GOOGLE_APP_VIEJA = 'google app vieja';
+
 type Puente = { postMessage: (texto: string) => void };
 
-/** El canal con la app Android, si la web está corriendo dentro de su WebView. */
-const puenteNativo = (): Puente | null => {
+/**
+ * El canal con la app Android, si la web está corriendo dentro de su WebView.
+ * La web se actualiza sola pero el APK no: las instalaciones anteriores a
+ * v10.14.0 no saben abrir Google y dejarían el botón sin respuesta, así que
+ * solo se usa el puente si la app anuncia `__LUKAPP_GOOGLE_NATIVO__`.
+ */
+const puenteNativo = (): Puente | 'sin-google' | null => {
   if (typeof window === 'undefined') return null;
-  const w = window as Window & { __LUKAPP_NATIVE__?: boolean; ReactNativeWebView?: Puente };
-  return w.__LUKAPP_NATIVE__ && w.ReactNativeWebView ? w.ReactNativeWebView : null;
+  const w = window as Window & {
+    __LUKAPP_NATIVE__?: boolean;
+    __LUKAPP_GOOGLE_NATIVO__?: boolean;
+    ReactNativeWebView?: Puente;
+  };
+  if (!w.__LUKAPP_NATIVE__ || !w.ReactNativeWebView) return null;
+  return w.__LUKAPP_GOOGLE_NATIVO__ ? w.ReactNativeWebView : 'sin-google';
 };
+
+/** Supabase reports auth failures in English; this is a Spanish-only tool. */
 
 const traducir = (mensaje: string): string => {
   const m = mensaje.toLowerCase();
@@ -371,6 +385,9 @@ const traducir = (mensaje: string): string => {
   }
   if (m.includes('invalid login credentials')) return 'Correo o contraseña incorrectos.';
   if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar.';
+  if (m === GOOGLE_APP_VIEJA) {
+    return 'Para entrar con Google actualiza LukApp desde Google Play. Mientras tanto, entra con tu correo.';
+  }
   if (m === 'google sin enlace') return 'Google no devolvió el enlace de acceso. Inténtalo de nuevo.';
   if (m.includes('unsupported provider') || m.includes('provider is not enabled')) {
     return 'El acceso con Google todavía no está habilitado. Inténtalo con tu correo.';

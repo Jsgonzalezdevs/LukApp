@@ -31,6 +31,7 @@ const FONDO = '#1a1817';
 const MARCA_WEBVIEW = `
   window.__LUKAPP_NATIVE__ = true;
   window.__LUKAPP_AUDIO_NATIVE__ = true;
+  window.__LUKAPP_GOOGLE_NATIVO__ = true;
   if (document.documentElement) document.documentElement.setAttribute('data-native', 'true');
   (function () {
     // Avisa una sola vez, cuando React ya pintó algo tocable, y se desconecta:
