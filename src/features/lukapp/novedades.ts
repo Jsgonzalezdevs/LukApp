@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.14.12', fecha: '2026-11-12', texto: 'Por dentro: probamos la pantalla Más de la nueva app de Android y encontramos que sin internet debería abrir con tus datos guardados; lo estamos puliendo. Tu app actual no cambia. 🔧' },
   { version: '10.14.11', fecha: '2026-11-12', texto: 'La nueva app de Android estrena la pantalla Más: aquí eliges si cuentan tus ahorros, el tema, el desbloqueo con huella y cierras sesión. Tu app actual no cambia. ⚙️' },
   { version: '10.14.10', fecha: '2026-11-11', texto: 'En la nueva app de Android ya puedes ver tus tarjetas y deudas: cuánto debes, cuánto pagar este mes, tu cupo, y registrar compras con cuotas o abonar desde una cuenta. Tu app actual no cambia. 💳' },
   { version: '10.14.9', fecha: '2026-11-11', texto: 'En la nueva app de Android ya puedes tocar una cuenta o un ahorro para ver su saldo, su meta y su historial, marcarla como principal, cambiar su saldo o eliminarla. Tu app actual no cambia. 💳' },
