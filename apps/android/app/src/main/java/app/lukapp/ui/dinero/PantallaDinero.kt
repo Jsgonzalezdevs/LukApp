@@ -254,7 +254,8 @@ private fun FilaCajita(
             .fillMaxWidth()
             .background(entidad?.let { colorHex(it.fondo) } ?: Color.Transparent)
             .then(velo(entidad?.sombraLectura))
-            .then(if (alAbrir != null) Modifier.pulsable { alAbrir(cajita) } else Modifier),
+            // Tarjetas y deudas se abren en su propia vista (DeudasView), que aún no está migrada: sin toque.
+            .then(if (alAbrir != null && !pasivo) Modifier.pulsable { alAbrir(cajita) } else Modifier),
     ) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),

@@ -64,6 +64,12 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
         guardar("finanzas:modo-privacidad", JsonPrimitive(valor))
     }
 
+    /** `setCuentaFavorita`: marcar o desmarcar la cuenta principal (null se guarda como null, igual que la web). */
+    suspend fun cuentaFavorita(id: String?) {
+        _ajustes.update { it.copy(cuentaFavoritaId = id) }
+        guardar("finanzas:cuenta-favorita", if (id == null) kotlinx.serialization.json.JsonNull else JsonPrimitive(id))
+    }
+
     private suspend fun guardar(clave: String, valor: JsonElement) {
         // Igual que la web: si falla, el interruptor sigue funcionando en este teléfono.
         runCatching { supabase.auth.updateUser { data = buildJsonObject { put(clave, valor) } } }

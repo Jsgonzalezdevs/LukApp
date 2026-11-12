@@ -121,6 +121,7 @@ fun ShellLukApp(
                                     vista = actual,
                                     alElegirPeriodo = modelo::elegirPeriodo,
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
+                                    alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo)
                                 Seccion.AJUSTES -> PantallaMasProvisional(desbloqueoActivo, biometriaDisponible, alCambiarDesbloqueo, alCerrarSesion)
@@ -145,6 +146,16 @@ fun ShellLukApp(
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 16.dp),
             )
             CapaAnotar(anotar, actual, seccion, estadoGuardado = if (estado == EstadoSincronizacion.SIN_CONEXION) "Guardado en este dispositivo · pendiente de sincronizar" else "Sincronizado con tu cuenta", alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
+            val abierta by modelo.cuentaAbierta.collectAsState()
+            actual.libro.cajitas.firstOrNull { it.id == abierta && it.archivedAt == null }?.let { cuenta ->
+                app.lukapp.ui.cuenta.PantallaDetalleCuenta(
+                    cajita = cuenta, vista = actual,
+                    alCerrar = { modelo.cuentaAbierta.value = null },
+                    alFijarSaldo = { modelo.fijarSaldo(cuenta.id, it) },
+                    alAlternarFavorita = { modelo.alternarFavorita(cuenta.id) },
+                    alEliminar = { modelo.eliminarCuenta(cuenta.id) },
+                )
+            }
         }
     }
 }

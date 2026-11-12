@@ -59,4 +59,40 @@ class OperacionesLibroTest {
         assertFalse(analizarAnomalias(emptyList(), "comida", 10_200).esAnomalia)
         assertEquals(10_000.0, analizarAnomalias(historial, "comida", 1).promedio, 0.001)
     }
+
+    private fun mov(id: String, caja: String, delta: Long, kind: String = "deposito", nota: String = "") =
+        CajitaMovimiento(id, caja, kind, delta, null, "2026-11-01", nota, "2026-11-01T00:00:00.000Z")
+
+    @Test fun fijarSaldoRegistraElAjusteSobreElSaldoEfectivo() {
+        // 100.000 de movimientos − 30.000 de un gasto atribuido = 70.000 efectivos; objetivo 90.000 → ajuste +20.000.
+        val libro = Libro(cajitas = cuentas, movimientos = listOf(mov("m1", "banco", 100_000)), transacciones = listOf(tx("t1", "banco", 30_000)))
+        val c = OperacionesLibro.fijarSaldo(libro, "banco", 90_000)!!
+        val m = c.guardar.movimientos.single()
+        assertEquals("ajuste", m.kind); assertEquals(20_000L, m.deltaCop); assertEquals("Saldo actualizado", m.nota)
+    }
+
+    @Test fun fijarSaldoSinCambioNoHaceNadaSalvoElPrimerCeroDeUnaCuenta() {
+        val ya = Libro(cajitas = cuentas, movimientos = listOf(mov("m1", "banco", 0, "ajuste")))
+        assertTrue(OperacionesLibro.fijarSaldo(ya, "banco", 0) == null)
+        // Una cuenta que nunca confirmó su saldo: escribir 0 sí es información.
+        val sinConfirmar = Libro(cajitas = cuentas)
+        assertEquals(0L, OperacionesLibro.fijarSaldo(sinConfirmar, "banco", 0)!!.guardar.movimientos.single().deltaCop)
+        // Una cajita de ahorro sin cambio: nada.
+        assertTrue(OperacionesLibro.fijarSaldo(Libro(cajitas = listOf(cajita("ahorro", "cajita"))), "ahorro", 0) == null)
+    }
+
+    @Test fun borrarCuentaConservaLoDemasSinVinculo() {
+        val libro = Libro(
+            cajitas = cuentas, movimientos = listOf(mov("m1", "banco", 100), mov("m2", "visa", 5)),
+            transacciones = listOf(tx("t1", "banco"), tx("t2", "visa")),
+            metas = listOf(app.lukapp.dominio.Meta("g1", "Viaje", "Plane", 1000, null, "banco", 0, "2026-01-01T00:00:00.000Z", null)),
+        )
+        val c = OperacionesLibro.borrarCajita(libro, "banco")
+        assertEquals(listOf("banco"), c.borrar["cajitas"]); assertEquals(listOf("m1"), c.borrar["cajitaMovimientos"])
+        assertEquals(listOf("t1"), c.guardar.transacciones.map { it.id }); assertEquals(null, c.guardar.transacciones.single().cuentaId)
+        assertEquals(null, c.guardar.metas.single().cajitaId)
+        val despues = aplicarLocal(libro, c)
+        assertEquals(listOf("visa"), despues.cajitas.map { it.id }); assertEquals(listOf("m2"), despues.movimientos.map { it.id })
+        assertEquals(2, despues.transacciones.size); assertEquals(null, despues.transacciones.first { it.id == "t1" }.cuentaId)
+    }
 }

@@ -96,6 +96,20 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 - No probado en pantalla: tocar un mes en la gráfica y el aro de aviso (ningún tope está cerca del límite).
 - Decisión: los dos «Otros» seguidos son categorías propias del usuario con el mismo nombre; igual en la web.
 
+### Detalle de cuenta (v10.14.9)
+
+- Probado en emulador con la cuenta real: al tocar Bancolombia abre su detalle (saldo $3.670.600, «Cuenta
+  principal activa», historial con 2 ajustes); la edición del saldo abre con el teclado numérico y se
+  cancela; «Eliminar cuenta» pregunta «¿Eliminar Bancolombia? Esta acción no se puede deshacer» y se
+  canceló. Las filas de tarjetas y deudas no se pueden tocar todavía (su pantalla no está migrada).
+- 3 pruebas JUnit nuevas: «mi saldo es X» mide contra el saldo efectivo y registra el ajuste, el primer
+  cero de una cuenta cuenta como dato, y borrar una cuenta deja los movimientos, recurrentes y metas sin
+  vínculo y se refleja igual en la copia local.
+- **No probado a propósito (escriben o borran datos reales):** guardar un saldo nuevo, activar/desmarcar
+  la cuenta principal y confirmar la eliminación.
+- Diferencia: al eliminar la cuenta principal, la app nativa la desmarca; la web la deja apuntando a una
+  cuenta que ya no existe.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -112,7 +126,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Desbloqueo biométrico | Hecho en código (provisional en Más) |
 | Shell: barra inferior, fundido, Atrás, pull to refresh en Inicio | Hecho en código |
 | Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
-| Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Falta lo que abre otras pantallas: detalle de cuenta, tarjetas, crear cuenta o ahorro, metas, extractos y herramientas compartidas |
+| Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Detalle de cuenta/ahorro al tocar una fila (saldo editable, meta, cuenta principal, historial, eliminar). Falta: tarjetas y deudas (DeudasView), crear cuenta o ahorro, metas, extractos, herramientas compartidas y, dentro del detalle, editar la cuenta, enviar dinero a otra cuenta e importar extracto |
 | Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. «Cómo vienes» (gráfica 3M/6M/12M, promedio y comparativo con el mes pasado) y los topes de gasto (lectura). Falta: resumen tipo Wrapped, crear/editar/quitar topes y sus alertas, botón de calendario, Pagos fijos, Proyección y exportar a Excel |
 | Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Además: detalle de un movimiento (tocar la fila), Editar, Borrar y aviso de guardado con Deshacer. Falta: escanear con cámara (OCR), Buscar, Analizar con IA, selector de fecha al editar, deslizar para repetir/editar, varios movimientos en un dictado y comandos de voz (transferir, abonar, saldo, rendimiento) |
 | Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |

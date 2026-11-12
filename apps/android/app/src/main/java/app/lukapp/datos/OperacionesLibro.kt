@@ -1,6 +1,13 @@
 package app.lukapp.datos
 
 import app.lukapp.dominio.CATEGORIES
+import app.lukapp.dominio.CajitaMovimiento
+import app.lukapp.dominio.ajusteHacia
+import app.lukapp.dominio.bogotaDate
+import app.lukapp.dominio.nuevoId
+import app.lukapp.dominio.saldoDeCajita
+import app.lukapp.dominio.tieneSaldoConfirmado
+import java.time.Instant
 import app.lukapp.dominio.Libro
 import app.lukapp.dominio.TipoTx
 import app.lukapp.dominio.Transaccion
@@ -43,6 +50,41 @@ object OperacionesLibro {
             borrar = if (anterior != null) mapOf("cajitaMovimientos" to listOf(anterior.id)) else emptyMap(),
         )
     }
+
+    /**
+     * Origen: `fijarSaldo` + `registrarMovimiento`. «Mi saldo es X»: se mide contra el saldo EFECTIVO
+     * (movimientos de la cuenta más lo que se le atribuyó) y se registra un movimiento `ajuste` por la
+     * diferencia. Devuelve null si no hay nada que ajustar; confirmar por primera vez un cero sí cuenta,
+     * porque antes el saldo era desconocido.
+     */
+    fun fijarSaldo(libro: Libro, cajitaId: String, objetivo: Long, nota: String = "Saldo actualizado"): Cambios? {
+        val cajita = libro.cajitas.firstOrNull { it.id == cajitaId } ?: return null
+        val actual = saldoDeCajita(libro.movimientos, cajitaId, libro.transacciones, idsPasivos(libro.cajitas))
+        val delta = ajusteHacia(actual, objetivo)
+        if (delta == 0L && (cajita.tipo != "cuenta" || tieneSaldoConfirmado(cajitaId, libro.movimientos))) return null
+        val movimiento = CajitaMovimiento(
+            id = nuevoId(), cajitaId = cajitaId, kind = "ajuste", deltaCop = delta, categoria = null,
+            occurredOn = bogotaDate(), nota = nota, createdAt = Instant.now().toString(),
+        )
+        return Cambios(guardar = Libro(movimientos = listOf(movimiento)))
+    }
+
+    /**
+     * Origen: `borrarCajita`. Se va la cuenta con su historial; los movimientos del libro, los recurrentes y las
+     * metas que la nombraban sobreviven sin vínculo (en la base lo hace la cascada; aquí se manda explícito
+     * porque la RPC no la hace por sí sola y la copia local debe quedar igual al instante).
+     */
+    fun borrarCajita(libro: Libro, id: String): Cambios = Cambios(
+        guardar = Libro(
+            transacciones = libro.transacciones.filter { it.cuentaId == id }.map { it.copy(cuentaId = null) },
+            recurrentes = libro.recurrentes.filter { it.cuentaId == id }.map { it.copy(cuentaId = null) },
+            metas = libro.metas.filter { it.cajitaId == id }.map { it.copy(cajitaId = null) },
+        ),
+        borrar = mapOf(
+            "cajitas" to listOf(id),
+            "cajitaMovimientos" to libro.movimientos.filter { it.cajitaId == id }.map { it.id },
+        ),
+    )
 
     /** Origen: `borrarTransaccion`. Borra también la `compra` emparejada de la tarjeta, si la hay. */
     fun borrarTransaccion(libro: Libro, id: String): Cambios {

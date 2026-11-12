@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.14.9', fecha: '2026-11-11', texto: 'En la nueva app de Android ya puedes tocar una cuenta o un ahorro para ver su saldo, su meta y su historial, marcarla como principal, cambiar su saldo o eliminarla. Tu app actual no cambia. 💳' },
   { version: '10.14.8', fecha: '2026-11-11', texto: 'La nueva app de Android ya muestra en Mes cómo vienes (la gráfica de tus últimos meses, tu promedio y cómo te fue contra el mes pasado) y cuánto llevas de cada tope. Tu app actual no cambia. 📈' },
   { version: '10.14.7', fecha: '2026-11-11', texto: 'En la nueva app de Android ya puedes tocar un movimiento para verlo, editarlo o borrarlo, y al guardar uno nuevo te sale el aviso con Deshacer. Tu app actual no cambia. ✏️🗑️' },
   { version: '10.14.6', fecha: '2026-11-11', texto: 'Comprobamos que la nueva app de Android guarda tus movimientos en tu cuenta de verdad, igual que la app de siempre. Tu app actual no cambia. ✅' },

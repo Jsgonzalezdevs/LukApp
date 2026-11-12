@@ -3,6 +3,7 @@ package app.lukapp.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.lukapp.datos.AjustesCuenta
+import app.lukapp.datos.OperacionesLibro
 import app.lukapp.datos.EstadoSincronizacion
 import app.lukapp.datos.PreferenciasCuenta
 import app.lukapp.datos.RepositorioFinanzas
@@ -93,6 +94,26 @@ class ModeloApp(
     fun sincronizar() {
         preferencias.recargar()
         viewModelScope.launch { finanzas.sincronizar() }
+    }
+
+    /** La cuenta o ahorro abierto en su detalle (`panelDineroCajitaId`). */
+    val cuentaAbierta = MutableStateFlow<String?>(null)
+
+    suspend fun fijarSaldo(id: String, saldo: Long): Boolean = runCatching {
+        OperacionesLibro.fijarSaldo(finanzas.libro.value, id, saldo)?.let { finanzas.aplicar(it) }
+        true
+    }.getOrDefault(false)
+
+    suspend fun eliminarCuenta(id: String): Boolean = runCatching {
+        finanzas.aplicar(OperacionesLibro.borrarCajita(finanzas.libro.value, id))
+        // Si era la principal, deja de serlo (la web la dejaría apuntando a una cuenta que ya no existe).
+        if (preferencias.ajustes.value.cuentaFavoritaId == id) preferencias.cuentaFavorita(null)
+        cuentaAbierta.value = null
+        true
+    }.getOrDefault(false)
+
+    fun alternarFavorita(id: String) {
+        viewModelScope.launch { preferencias.cuentaFavorita(if (preferencias.ajustes.value.cuentaFavoritaId == id) null else id) }
     }
 
     fun elegirPeriodo(clave: String) { periodoElegido.value = clave }
