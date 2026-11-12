@@ -87,6 +87,15 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   ve unos 10 s mientras la sesión cifrada termina de cargar. Hay que comprobar si pasa en un teléfono
   y, si pasa, mostrar la pantalla de carga en ese intervalo.
 
+### Mes completo (v10.14.8)
+
+- Probado en emulador con la cuenta real: «Cómo vienes» con la gráfica de líneas (6 meses), selector
+  3M/6M/12M, lectura del mes, frase comparativa, «Promedio mensual», «Contra el mes pasado» y los topes
+  con su barra y «Te quedan…». Corregido: la lectura del mes partía la cifra en 3 líneas.
+- 8 pruebas JUnit nuevas de `lib/tendencias`. Los topes usan `estadoDeTodos`, ya probado.
+- No probado en pantalla: tocar un mes en la gráfica y el aro de aviso (ningún tope está cerca del límite).
+- Decisión: los dos «Otros» seguidos son categorías propias del usuario con el mismo nombre; igual en la web.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -104,7 +113,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Shell: barra inferior, fundido, Atrás, pull to refresh en Inicio | Hecho en código |
 | Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
 | Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Falta lo que abre otras pantallas: detalle de cuenta, tarjetas, crear cuenta o ahorro, metas, extractos y herramientas compartidas |
-| Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. Falta: resumen tipo Wrapped, topes, tendencias («Cómo vienes»), calendario y exportar a Excel |
+| Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. «Cómo vienes» (gráfica 3M/6M/12M, promedio y comparativo con el mes pasado) y los topes de gasto (lectura). Falta: resumen tipo Wrapped, crear/editar/quitar topes y sus alertas, botón de calendario, Pagos fijos, Proyección y exportar a Excel |
 | Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Además: detalle de un movimiento (tocar la fila), Editar, Borrar y aviso de guardado con Deshacer. Falta: escanear con cámara (OCR), Buscar, Analizar con IA, selector de fecha al editar, deslizar para repetir/editar, varios movimientos en un dictado y comandos de voz (transferir, abonar, saldo, rendimiento) |
 | Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |

@@ -65,8 +65,8 @@ import kotlin.math.max
 
 /**
  * MesView.tsx. Pendiente (se omite, no se simula): accesos a Pagos fijos y
- * Proyección, la tarjeta del resumen tipo Wrapped, los topes de gasto,
- * "Cómo vienes" (tendencias), el botón de calendario y exportar a Excel.
+ * Proyección, el resumen tipo Wrapped, editar topes, el botón de calendario
+ * y exportar a Excel; todos abren pantallas que aún no existen.
  */
 @Composable
 fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit) {
@@ -111,6 +111,8 @@ fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit) {
             )
         }
 
+        Topes(vista)
+
         val gastos = remember(vista.delPeriodo) { byCategory(vista.delPeriodo, "gasto") }
         val ingresos = remember(vista.delPeriodo) { byCategory(vista.delPeriodo, "ingreso") }
         Reparto("En qué se te va", gastos, vista.catalogo)
@@ -123,6 +125,8 @@ fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit) {
             Contrapartes(vista.delPeriodo, "ingreso")
             Entradas(vista.delPeriodo, vista.hoy)
         }
+
+        Tendencias(vista.libro.transacciones, mesCalendario, vista.catalogo)
     }
 }
 

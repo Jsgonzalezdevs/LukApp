@@ -27,6 +27,8 @@ data class AjustesCuenta(
     val privacidad: Boolean = false,
     val periodo: ConfigPeriodo = PERIODO_POR_DEFECTO,
     val cuentaFavoritaId: String? = null,
+    val alertasPresupuesto: Boolean = true,
+    val umbralAlertaPct: Int = 80,
 )
 
 /**
@@ -50,6 +52,9 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             privacidad = bool("finanzas:modo-privacidad", false),
             periodo = (meta["finanzas:periodo"] as? JsonObject)?.let(::periodoDe) ?: PERIODO_POR_DEFECTO,
             // La web guarda el id como texto, o un falso/vacío para "ninguna".
+            alertasPresupuesto = bool("finanzas:presupuestos:alertas-activas", true),
+            // `setUmbralAlertaPct` acota a 1..100 y guarda un entero.
+            umbralAlertaPct = ((meta["finanzas:presupuestos:umbral-alerta"] as? JsonPrimitive)?.doubleOrNull ?: 80.0).let { Math.round(it).toInt().coerceIn(1, 100) },
             cuentaFavoritaId = (meta["finanzas:cuenta-favorita"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.ifBlank { null },
         )
     }
