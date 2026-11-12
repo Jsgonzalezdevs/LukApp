@@ -64,6 +64,12 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
         guardar("finanzas:modo-privacidad", JsonPrimitive(valor))
     }
 
+    /** `useMostrarAhorro`: si los ahorros cuentan en el total de Dinero. Se guarda como booleano, igual que la web. */
+    suspend fun contarAhorros(valor: Boolean) {
+        _ajustes.update { it.copy(contarAhorros = valor) }
+        guardar("finanzas:resumen:ahorro", JsonPrimitive(valor))
+    }
+
     /** `setCuentaFavorita`: marcar o desmarcar la cuenta principal (null se guarda como null, igual que la web). */
     suspend fun cuentaFavorita(id: String?) {
         _ajustes.update { it.copy(cuentaFavoritaId = id) }

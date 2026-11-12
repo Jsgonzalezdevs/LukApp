@@ -67,6 +67,9 @@ fun ShellLukApp(
     desbloqueoActivo: Boolean,
     biometriaDisponible: Boolean,
     alCambiarDesbloqueo: (Boolean) -> Unit,
+    tema: app.lukapp.ui.tema.PreferenciaTema,
+    alCambiarTema: (app.lukapp.ui.tema.PreferenciaTema) -> Unit,
+    correo: String?,
 ) {
     val c = LukApp.colores
     val seccion by modelo.seccion.collectAsState()
@@ -125,7 +128,12 @@ fun ShellLukApp(
                                     alAbrirPasivos = { modelo.panelPasivos.value = it },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo)
-                                Seccion.AJUSTES -> PantallaMasProvisional(desbloqueoActivo, biometriaDisponible, alCambiarDesbloqueo, alCerrarSesion)
+                                Seccion.AJUSTES -> app.lukapp.ui.mas.PantallaMas(
+                                    contarAhorros = actual.ajustes.contarAhorros, alContarAhorros = modelo::contarAhorros,
+                                    tema = tema, alCambiarTema = alCambiarTema,
+                                    desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
+                                    correo = correo, alCerrarSesion = alCerrarSesion,
+                                )
                                 else -> PantallaSinMigrar(s)
                             }
                             Box(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
@@ -216,49 +224,6 @@ private fun PantallaSinMigrar(seccion: Seccion) {
             "Esta sección todavía no está migrada a la app nativa. Mientras tanto se usa en la app publicada.",
             Modifier.padding(top = 12.dp), style = LukApp.tipo.secundario, color = c.inkSoft, textAlign = TextAlign.Center,
         )
-    }
-}
-
-/**
- * Lo mínimo de Más para probar la app nativa: desbloqueo con huella (propio de
- * Android) y cerrar sesión. El resto de AjustesView está pendiente.
- */
-@Composable
-private fun PantallaMasProvisional(
-    desbloqueoActivo: Boolean,
-    biometriaDisponible: Boolean,
-    alCambiarDesbloqueo: (Boolean) -> Unit,
-    alCerrarSesion: () -> Unit,
-) {
-    val c = LukApp.colores
-    Column(Modifier.fillMaxWidth()) {
-        Text("Más", style = LukApp.tipo.tituloXl, color = c.ink)
-        Column(Modifier.padding(top = 24.dp).fillMaxWidth().background(c.card, Medidas.formaCard)) {
-            Row(
-                Modifier.fillMaxWidth().pulsable(habilitado = biometriaDisponible) { alCambiarDesbloqueo(!desbloqueoActivo) }.padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
-            ) {
-                app.lukapp.ui.comun.Emoji("🔐", 20)
-                Column(Modifier.weight(1f)) {
-                    Text("Desbloquear con huella o rostro", style = LukApp.tipo.cuerpoB, color = c.ink)
-                    Text(
-                        if (biometriaDisponible) "Pide tu huella, rostro o PIN al abrir LukApp." else "Configura una huella, rostro o PIN en los ajustes del teléfono.",
-                        style = LukApp.tipo.pie, color = c.inkSoft,
-                    )
-                }
-                androidx.compose.material3.Switch(
-                    checked = desbloqueoActivo, onCheckedChange = alCambiarDesbloqueo, enabled = biometriaDisponible,
-                    colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = c.accent, checkedThumbColor = c.onAccent),
-                )
-            }
-        }
-        Row(
-            Modifier.padding(top = 16.dp).fillMaxWidth().background(c.card, Medidas.formaCard).pulsable(alPulsar = alCerrarSesion).padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
-        ) {
-            app.lukapp.ui.comun.Emoji("👋", 20)
-            Text("Cerrar sesión", style = LukApp.tipo.cuerpoB, color = c.salio)
-        }
     }
 }
 

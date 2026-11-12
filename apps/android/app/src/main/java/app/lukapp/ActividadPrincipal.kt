@@ -130,6 +130,7 @@ class ActividadPrincipal : FragmentActivity() {
                                 desbloqueoActivo = desbloqueo,
                                 biometriaDisponible = Biometria.disponibilidad(this@ActividadPrincipal) == Biometria.Disponibilidad.LISTA,
                                 alCambiarDesbloqueo = { activar -> alcance.launch { cambiarDesbloqueo(activar) } },
+                                tema = tema, alCambiarTema = cambiarTema, correo = contenedor.sesion.correo,
                             )
                         }
                     }

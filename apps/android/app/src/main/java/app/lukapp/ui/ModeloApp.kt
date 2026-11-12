@@ -131,6 +131,8 @@ class ModeloApp(
 
     fun elegirPeriodo(clave: String) { periodoElegido.value = clave }
 
+    fun contarAhorros(valor: Boolean) { viewModelScope.launch { preferencias.contarAhorros(valor) } }
+
     fun alternarPrivacidad() {
         viewModelScope.launch { preferencias.privacidad(!preferencias.ajustes.value.privacidad) }
     }

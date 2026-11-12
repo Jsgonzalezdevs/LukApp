@@ -38,6 +38,8 @@ class ServicioSesion(private val supabase: SupabaseClient, private val http: Htt
 
     fun finalizarRecuperacion() { _enRecuperacion.value = false }
 
+    val correo: String? get() = supabase.auth.currentUserOrNull()?.email
+
     val idUsuario: String? get() = supabase.auth.currentUserOrNull()?.id
 
     suspend fun entrar(identidad: String, contrasena: String): String? = intentar {

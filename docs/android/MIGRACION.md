@@ -122,6 +122,14 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 - En la web el botón «Tarjetas de crédito» va junto a «Agregar cuenta» en una cuadrícula de dos; aquí va solo,
   a todo el ancho, hasta que exista crear cuenta.
 
+### Más (v10.14.11)
+
+- **Bloqueo para verificarla:** al reabrir el emulador la app pide acceso: la sesión guardada se carga pero el
+  servidor ya no la acepta (la cuenta es la de «demo», y pasaron ~9 horas). Hay que volver a entrar a mano para
+  verla en pantalla; el agente no escribe credenciales.
+- Pendiente de revisar (aparece cada vez que la sesión no es válida): mientras Supabase decide, la pantalla de
+  acceso se ve hasta ~10 s en lugar de la de carga.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -141,7 +149,8 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Detalle de cuenta/ahorro al tocar una fila (saldo editable, meta, cuenta principal, historial, eliminar). Tarjetas y deudas (tocar una fila, «Ver todas» o el botón «Tarjetas de crédito»): total, saldo, «Para pagar este mes», cupo, registrar compra con cuotas, abonar, actualizar saldo, historial, compras y eliminar. Falta: crear tarjeta o deuda y editar su cupo/corte/pago, crear cuenta o ahorro, metas, extractos, herramientas compartidas y, dentro del detalle, editar la cuenta, enviar dinero a otra cuenta e importar extracto |
 | Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. «Cómo vienes» (gráfica 3M/6M/12M, promedio y comparativo con el mes pasado) y los topes de gasto (lectura). Falta: resumen tipo Wrapped, crear/editar/quitar topes y sus alertas, botón de calendario, Pagos fijos, Proyección y exportar a Excel |
 | Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Además: detalle de un movimiento (tocar la fila), Editar, Borrar y aviso de guardado con Deshacer. Falta: escanear con cámara (OCR), Buscar, Analizar con IA, selector de fecha al editar, deslizar para repetir/editar, varios movimientos en un dictado y comandos de voz (transferir, abonar, saldo, rendimiento) |
-| Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
+| Más | Parcial, **compilado pero sin verificar en pantalla** (la sesión del emulador caducó): título «Ajustes» y el bloque «La app» con Contar los ahorros (lo guarda en `user_metadata` y cambia el total de Dinero), Desbloquear con huella o rostro (propio de Android), Apariencia, Cuenta (correo) y Cerrar sesión. Falta: Preferencias, Tus datos y Comunidad (abren paneles sin migrar), Próximos pagos, decisiones, efectivo por separado, recordatorio de racha, guía y Premium |
+| Calendario, Asesor, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |
 | Firma de publicación | **Bloqueado** (ver abajo) |
 
