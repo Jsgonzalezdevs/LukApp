@@ -95,4 +95,30 @@ class OperacionesLibroTest {
         assertEquals(listOf("visa"), despues.cajitas.map { it.id }); assertEquals(listOf("m2"), despues.movimientos.map { it.id })
         assertEquals(2, despues.transacciones.size); assertEquals(null, despues.transacciones.first { it.id == "t1" }.cuentaId)
     }
+
+    @Test fun abonarBajaLaDeudaYLaCuentaSinCrearUnGasto() {
+        val libro = Libro(cajitas = listOf(cajita("banco", "cuenta").copy(nombre = "Bancolombia"), cajita("visa", "tarjeta").copy(nombre = "Visa")))
+        val c = OperacionesLibro.abonarDeuda(libro, "visa", "banco", 40_000)!!
+        assertTrue(c.guardar.transacciones.isEmpty())
+        val (enDeuda, enCuenta) = c.guardar.movimientos
+        assertEquals("visa", enDeuda.cajitaId); assertEquals("abono", enDeuda.kind); assertEquals(-40_000L, enDeuda.deltaCop); assertEquals("Pagado desde Bancolombia", enDeuda.nota)
+        assertEquals("banco", enCuenta.cajitaId); assertEquals("retiro", enCuenta.kind); assertEquals(-40_000L, enCuenta.deltaCop); assertEquals("Abono a Visa", enCuenta.nota)
+        assertTrue(OperacionesLibro.abonarDeuda(libro, "visa", "banco", 0) == null)
+    }
+
+    @Test fun compraConTarjetaGuardaElMovimientoYElGastoConElMismoId() {
+        val libro = Libro(cajitas = cuentas)
+        val c = OperacionesLibro.registrarCompra(libro, "visa", 90_000, "ropa", "Zapatos", cuotasTotal = 3, cuotaCop = 30_000)
+        val m = c.guardar.movimientos.single(); val g = c.guardar.transacciones.single()
+        assertEquals(m.id, g.id); assertEquals("compra", m.kind); assertEquals(90_000L, m.deltaCop)
+        assertEquals("gasto", g.kind); assertEquals("visa", g.cuentaId); assertEquals(3, g.cuotasTotal); assertEquals(30_000L, g.cuotaCop)
+        // Con el libro armado, la compra queda emparejada: una sola vez en el saldo de la tarjeta.
+        val despues = aplicarLocal(libro, c)
+        assertEquals(90_000L, app.lukapp.dominio.saldoDeCajita(despues.movimientos, "visa", despues.transacciones, setOf("visa")))
+    }
+
+    @Test fun unaSolaCuotaNoEsFinanciada() {
+        val c = OperacionesLibro.registrarCompra(Libro(cajitas = cuentas), "visa", 10_000, "comida", cuotasTotal = 1, cuotaCop = 10_000)
+        assertEquals(null, c.guardar.transacciones.single().cuotasTotal); assertEquals(null, c.guardar.movimientos.single().cuotaCop)
+    }
 }

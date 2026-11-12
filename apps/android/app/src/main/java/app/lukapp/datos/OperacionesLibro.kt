@@ -70,6 +70,48 @@ object OperacionesLibro {
     }
 
     /**
+     * Origen: `abonarDeuda`. Pagar una deuda o tarjeta con plata de una cuenta son DOS movimientos y una sola
+     * escritura: baja la deuda y baja la cuenta. No es un gasto del libro porque no es consumo nuevo: mueve
+     * plata que ya se contó, y anotarlo como gasto inflaría el mes cada vez que se paga una tarjeta.
+     */
+    fun abonarDeuda(libro: Libro, deudaId: String, cuentaId: String, montoCop: Long, fecha: String = bogotaDate()): Cambios? {
+        val monto = abs(montoCop)
+        if (monto == 0L) return null
+        fun nombre(id: String) = libro.cajitas.firstOrNull { it.id == id }?.nombre.orEmpty()
+        val creado = Instant.now().toString()
+        val base = CajitaMovimiento("", "", "", 0, null, fecha, "", creado)
+        return Cambios(guardar = Libro(movimientos = listOf(
+            base.copy(id = nuevoId(), cajitaId = deudaId, kind = "abono", deltaCop = -monto, nota = "Pagado desde ${nombre(cuentaId)}".trim()),
+            base.copy(id = nuevoId(), cajitaId = cuentaId, kind = "retiro", deltaCop = -monto, nota = "Abono a ${nombre(deudaId)}".trim()),
+        )))
+    }
+
+    /**
+     * Origen: `registrarMovimiento` con `kind = compra`. Una compra con tarjeta vive en dos sitios con el MISMO id:
+     * el movimiento `compra` de la tarjeta (sube el saldo usado) y el gasto del libro (entra en los reportes).
+     * Las cuotas solo cuentan si son 2 o más; la cuota mensual por defecto es el total repartido.
+     */
+    fun registrarCompra(
+        libro: Libro, tarjetaId: String, montoCop: Long, categoria: String, nota: String = "",
+        cuotasTotal: Int? = null, cuotaCop: Long? = null, interesPct: Double? = null, cuotaManejoCop: Long? = null,
+        fecha: String = bogotaDate(),
+    ): Cambios {
+        val financiado = cuotasTotal != null && cuotasTotal >= 2
+        val cuotas = if (financiado) cuotasTotal else null
+        val cuota = if (financiado && cuotaCop != null && cuotaCop > 0) cuotaCop else null
+        val id = nuevoId()
+        val creado = Instant.now().toString()
+        val mov = CajitaMovimiento(
+            id, tarjetaId, "compra", abs(montoCop), categoria.takeIf { it in CATEGORIES }, fecha, nota, creado,
+            cuotas, cuota, interesPct, cuotaManejoCop,
+        )
+        val gasto = Transaccion(
+            id, TipoTx.GASTO, abs(montoCop), categoria, nota.ifEmpty { "Compra con tarjeta" }, fecha, tarjetaId, true, "", cuotas, cuota, creado,
+        )
+        return Cambios(guardar = Libro(movimientos = listOf(mov), transacciones = listOf(gasto)))
+    }
+
+    /**
      * Origen: `borrarCajita`. Se va la cuenta con su historial; los movimientos del libro, los recurrentes y las
      * metas que la nombraban sobreviven sin vínculo (en la base lo hace la cascada; aquí se manda explícito
      * porque la RPC no la hace por sí sola y la copia local debe quedar igual al instante).

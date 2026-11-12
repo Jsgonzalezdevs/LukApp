@@ -110,6 +110,18 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 - Diferencia: al eliminar la cuenta principal, la app nativa la desmarca; la web la deja apuntando a una
   cuenta que ya no existe.
 
+### Tarjetas y deudas (v10.14.10)
+
+- Probado en emulador con la cuenta real: «Ver todas» abre la vista; NuBank muestra $320.459 usados,
+  «Para pagar este mes $50.000», cupo disponible $1.679.541 · corte 10 · pago 18, y sus compras (incluida
+  «Curso de inglés, 5 cuotas de $50.000»). El formulario de compra se ve completo y no deja guardar sin monto.
+- 3 pruebas JUnit nuevas (12 en OperacionesLibro): abonar mueve la deuda y la cuenta sin crear un gasto;
+  una compra con tarjeta guarda el movimiento y el gasto con el mismo id y cuenta una sola vez en el saldo;
+  una sola cuota no es compra financiada.
+- **No probado a propósito (escriben datos reales):** guardar una compra, un abono o un saldo, y eliminar.
+- En la web el botón «Tarjetas de crédito» va junto a «Agregar cuenta» en una cuadrícula de dos; aquí va solo,
+  a todo el ancho, hasta que exista crear cuenta.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -126,7 +138,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Desbloqueo biométrico | Hecho en código (provisional en Más) |
 | Shell: barra inferior, fundido, Atrás, pull to refresh en Inicio | Hecho en código |
 | Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
-| Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Detalle de cuenta/ahorro al tocar una fila (saldo editable, meta, cuenta principal, historial, eliminar). Falta: tarjetas y deudas (DeudasView), crear cuenta o ahorro, metas, extractos, herramientas compartidas y, dentro del detalle, editar la cuenta, enviar dinero a otra cuenta e importar extracto |
+| Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Detalle de cuenta/ahorro al tocar una fila (saldo editable, meta, cuenta principal, historial, eliminar). Tarjetas y deudas (tocar una fila, «Ver todas» o el botón «Tarjetas de crédito»): total, saldo, «Para pagar este mes», cupo, registrar compra con cuotas, abonar, actualizar saldo, historial, compras y eliminar. Falta: crear tarjeta o deuda y editar su cupo/corte/pago, crear cuenta o ahorro, metas, extractos, herramientas compartidas y, dentro del detalle, editar la cuenta, enviar dinero a otra cuenta e importar extracto |
 | Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. «Cómo vienes» (gráfica 3M/6M/12M, promedio y comparativo con el mes pasado) y los topes de gasto (lectura). Falta: resumen tipo Wrapped, crear/editar/quitar topes y sus alertas, botón de calendario, Pagos fijos, Proyección y exportar a Excel |
 | Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Además: detalle de un movimiento (tocar la fila), Editar, Borrar y aviso de guardado con Deshacer. Falta: escanear con cámara (OCR), Buscar, Analizar con IA, selector de fecha al editar, deslizar para repetir/editar, varios movimientos en un dictado y comandos de voz (transferir, abonar, saldo, rendimiento) |
 | Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |

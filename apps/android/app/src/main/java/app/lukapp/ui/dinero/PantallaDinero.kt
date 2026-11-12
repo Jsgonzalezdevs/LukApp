@@ -82,6 +82,7 @@ fun PantallaDinero(
     alElegirPeriodo: (String) -> Unit,
     alAjustes: () -> Unit,
     alAbrirCuenta: ((Cajita) -> Unit)? = null,
+    alAbrirPasivos: ((String) -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val libro = vista.libro
@@ -152,6 +153,9 @@ fun PantallaDinero(
                 Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp).padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(grupo.titulo, style = LukApp.tipo.xs, color = c.inkFaint)
                     if (grupo.tipo == TipoCajita.CUENTA && delGrupo.size > 2) Text("Por color", style = LukApp.tipo.xs, color = c.inkFaint)
+                    if (grupo.tipo == TipoCajita.TARJETA && alAbrirPasivos != null) {
+                        Text("Ver todas", Modifier.pulsable { alAbrirPasivos(TipoCajita.TARJETA) }, style = LukApp.tipo.de(13, 600, 1.3f).copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline), color = c.inkSoft)
+                    }
                 }
                 if (grupo.tipo == TipoCajita.CUENTA) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -160,11 +164,20 @@ fun PantallaDinero(
                 } else {
                     Column(Modifier.clip(Medidas.formaCard).background(c.card)) {
                         delGrupo.forEachIndexed { i, cajita ->
-                            FilaCajita(cajita, saldos[cajita.id] ?: 0L, privacidad, cajita.id == favorita, i < delGrupo.lastIndex, vista, hoy, alAbrirCuenta)
+                            FilaCajita(cajita, saldos[cajita.id] ?: 0L, privacidad, cajita.id == favorita, i < delGrupo.lastIndex, vista, hoy, alAbrirCuenta, alAbrirPasivos)
                         }
                     }
                 }
             }
+        }
+
+        if (vivas.isNotEmpty() && alAbrirPasivos != null) {
+            // En la web va junto a «Agregar cuenta» (pendiente) en una cuadrícula de dos.
+            Text(
+                "Tarjetas de crédito",
+                Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.soft).pulsable { alAbrirPasivos(TipoCajita.TARJETA) }.padding(horizontal = 16.dp, vertical = 16.dp),
+                style = LukApp.tipo.de(15, 600, 1.4f), color = c.ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }
@@ -235,7 +248,7 @@ private fun velo(sombra: Double?): Modifier = if (sombra == null) Modifier else 
 @Composable
 private fun FilaCajita(
     cajita: Cajita, saldo: Long, privacidad: Boolean, favorita: Boolean, conLinea: Boolean,
-    vista: VistaInicio, hoy: String, alAbrir: ((Cajita) -> Unit)?,
+    vista: VistaInicio, hoy: String, alAbrir: ((Cajita) -> Unit)?, alAbrirPasivos: ((String) -> Unit)?,
 ) {
     val c = LukApp.colores
     val entidad = entidadDeCuenta(cajita)
@@ -254,8 +267,11 @@ private fun FilaCajita(
             .fillMaxWidth()
             .background(entidad?.let { colorHex(it.fondo) } ?: Color.Transparent)
             .then(velo(entidad?.sombraLectura))
-            // Tarjetas y deudas se abren en su propia vista (DeudasView), que aún no está migrada: sin toque.
-            .then(if (alAbrir != null && !pasivo) Modifier.pulsable { alAbrir(cajita) } else Modifier),
+            // Tarjetas y deudas se abren en su propia vista (DeudasView), no en el detalle de una cuenta.
+            .then(
+                if (pasivo && alAbrirPasivos != null) Modifier.pulsable { alAbrirPasivos(cajita.tipo) }
+                else if (!pasivo && alAbrir != null) Modifier.pulsable { alAbrir(cajita) } else Modifier,
+            ),
     ) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),

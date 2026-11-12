@@ -99,6 +99,19 @@ class ModeloApp(
     /** La cuenta o ahorro abierto en su detalle (`panelDineroCajitaId`). */
     val cuentaAbierta = MutableStateFlow<String?>(null)
 
+    /** La vista de tarjetas y deudas abierta (`panelDinero = 'tarjeta' | 'deuda'`). */
+    val panelPasivos = MutableStateFlow<String?>(null)
+
+    suspend fun abonar(deudaId: String, cuentaId: String, monto: Long): Boolean = runCatching {
+        OperacionesLibro.abonarDeuda(finanzas.libro.value, deudaId, cuentaId, monto)?.let { finanzas.aplicar(it) }
+        true
+    }.getOrDefault(false)
+
+    suspend fun comprar(id: String, monto: Long, categoria: String, cuotas: Int?, cuota: Long?, interes: Double?, manejo: Long?): Boolean = runCatching {
+        finanzas.aplicar(OperacionesLibro.registrarCompra(finanzas.libro.value, id, monto, categoria, cuotasTotal = cuotas, cuotaCop = cuota, interesPct = interes, cuotaManejoCop = manejo))
+        true
+    }.getOrDefault(false)
+
     suspend fun fijarSaldo(id: String, saldo: Long): Boolean = runCatching {
         OperacionesLibro.fijarSaldo(finanzas.libro.value, id, saldo)?.let { finanzas.aplicar(it) }
         true

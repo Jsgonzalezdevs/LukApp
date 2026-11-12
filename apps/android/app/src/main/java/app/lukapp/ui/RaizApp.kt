@@ -122,6 +122,7 @@ fun ShellLukApp(
                                     alElegirPeriodo = modelo::elegirPeriodo,
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
                                     alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
+                                    alAbrirPasivos = { modelo.panelPasivos.value = it },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo)
                                 Seccion.AJUSTES -> PantallaMasProvisional(desbloqueoActivo, biometriaDisponible, alCambiarDesbloqueo, alCerrarSesion)
@@ -146,6 +147,16 @@ fun ShellLukApp(
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 16.dp),
             )
             CapaAnotar(anotar, actual, seccion, estadoGuardado = if (estado == EstadoSincronizacion.SIN_CONEXION) "Guardado en este dispositivo · pendiente de sincronizar" else "Sincronizado con tu cuenta", alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
+            val pasivos by modelo.panelPasivos.collectAsState()
+            pasivos?.let { tipo ->
+                app.lukapp.ui.pasivos.PantallaPasivos(
+                    tipo = tipo, vista = actual, alCerrar = { modelo.panelPasivos.value = null },
+                    acciones = app.lukapp.ui.pasivos.AccionesPasivo(
+                        fijarSaldo = modelo::fijarSaldo, comprar = modelo::comprar, abonar = modelo::abonar,
+                        eliminar = { modelo.eliminarCuenta(it) },
+                    ),
+                )
+            }
             val abierta by modelo.cuentaAbierta.collectAsState()
             actual.libro.cajitas.firstOrNull { it.id == abierta && it.archivedAt == null }?.let { cuenta ->
                 app.lukapp.ui.cuenta.PantallaDetalleCuenta(
