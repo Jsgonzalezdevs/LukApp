@@ -75,6 +75,18 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   Ese movimiento de prueba sigue en la cuenta: hay que borrarlo desde la web.
 - **No probado:** enviar audio a transcribir (gasta cupo de dictado y el emulador no tiene micrófono).
 
+### Detalle, edición y borrado (v10.14.7)
+
+- Probado en emulador con la cuenta real: tocar un movimiento abre su detalle; Editar abre la hoja con
+  los datos; **Borrar** quitó el movimiento de prueba de $1 y las cifras volvieron exactas a las de antes
+  (disponible $5.162.394, Bancos $3.674.544, racha 2). La cola quedó vacía. Cuenta limpia.
+- Pruebas JUnit nuevas (6): editar o borrar una compra de tarjeta actualiza o borra también su
+  movimiento de la tarjeta, y el detector de montos fuera de lo usual.
+- No probado en pantalla: guardar una edición y el aviso con Deshacer (el aviso aparece tras guardar).
+- **Pendiente a revisar en un teléfono real:** con el emulador recién arrancado, la pantalla de acceso se
+  ve unos 10 s mientras la sesión cifrada termina de cargar. Hay que comprobar si pasa en un teléfono
+  y, si pasa, mostrar la pantalla de carga en ese intervalo.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -93,7 +105,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Inicio | Parcial, probado con datos reales: falta BotonAnotar/Captura, próximos pagos, análisis/categorías, Pulso Premium, insights, novedades y modal de racha |
 | Dinero | Parcial, probado con datos reales: cabecera, Disponible, cuentas con marca y logo real (public/bancos), efectivo, ahorros con meta, inversiones, tarjetas con pago mensual y deudas. Falta lo que abre otras pantallas: detalle de cuenta, tarjetas, crear cuenta o ahorro, metas, extractos y herramientas compartidas |
 | Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. Falta: resumen tipo Wrapped, topes, tendencias («Cómo vienes»), calendario y exportar a Excel |
-| Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Falta: escanear con cámara (OCR), Buscar, varios movimientos en un dictado, comandos de voz (transferir, abonar, saldo, rendimiento), aviso de guardado con Deshacer y editar un movimiento |
+| Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Además: detalle de un movimiento (tocar la fila), Editar, Borrar y aviso de guardado con Deshacer. Falta: escanear con cámara (OCR), Buscar, Analizar con IA, selector de fecha al editar, deslizar para repetir/editar, varios movimientos en un dictado y comandos de voz (transferir, abonar, saldo, rendimiento) |
 | Calendario, Asesor, Más completo, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |
 | Firma de publicación | **Bloqueado** (ver abajo) |

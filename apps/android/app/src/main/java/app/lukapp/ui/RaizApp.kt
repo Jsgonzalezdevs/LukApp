@@ -115,6 +115,7 @@ fun ShellLukApp(
                                     alAlternarPrivacidad = modelo::alternarPrivacidad,
                                     alVerMes = { modelo.seccion.value = Seccion.MES },
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
+                                    alAbrirMovimiento = anotar::abrirDetalle,
                                 )
                                 Seccion.DINERO -> app.lukapp.ui.dinero.PantallaDinero(
                                     vista = actual,
@@ -143,7 +144,7 @@ fun ShellLukApp(
                 alElegir = { modelo.seccion.value = it },
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 16.dp),
             )
-            CapaAnotar(anotar, actual, seccion, alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
+            CapaAnotar(anotar, actual, seccion, estadoGuardado = if (estado == EstadoSincronizacion.SIN_CONEXION) "Guardado en este dispositivo · pendiente de sincronizar" else "Sincronizado con tu cuenta", alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
         }
     }
 }
@@ -248,11 +249,15 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
     anotar: app.lukapp.ui.anotar.ModeloAnotar,
     vista: VistaInicio,
     seccion: Seccion,
+    estadoGuardado: String,
     alGuardado: (String) -> Unit,
 ) {
     val dictado by anotar.dictado.collectAsState()
     val pendiente by anotar.pendiente.collectAsState()
     val aviso by anotar.aviso.collectAsState()
+    val detalle by anotar.detalle.collectAsState()
+    val editando by anotar.editando.collectAsState()
+    val guardado by anotar.guardado.collectAsState()
     val contexto = androidx.compose.ui.platform.LocalContext.current
     val hapticos = rememberHapticos()
     val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -270,7 +275,7 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             else -> pedirMicrofono.launch(android.Manifest.permission.RECORD_AUDIO)
         }
     }
-    val hayCapa = dictado.abierto || pendiente != null || aviso != null
+    val hayCapa = dictado.abierto || pendiente != null || aviso != null || detalle != null || editando != null
     if (!hayCapa && seccion != Seccion.ASESOR && seccion != Seccion.AJUSTES) {
         app.lukapp.ui.anotar.BarraAnotar(
             escuchando = false,
@@ -307,6 +312,31 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             alReintentarVoz = if (p.raw.isNotBlank()) ({ anotar.cerrarCaptura(); alMicrofono() }) else null,
         )
     }
+    val d = detalle
+    if (d != null) {
+        app.lukapp.ui.anotar.DetalleMovimiento(d, vista.catalogo, vista.libro, vista.hoy, alCerrar = anotar::cerrarDetalle, alEditar = { anotar.editar(d) }, alBorrar = { anotar.borrar(d.id) })
+    }
+    val e = editando
+    if (e != null) {
+        app.lukapp.ui.anotar.HojaEditar(
+            tx = e, libro = vista.libro, catalogo = vista.catalogo,
+            alGuardar = { b ->
+                val ok = anotar.actualizar(e, b)
+                // Si el día cambió de período, saltar a donde quedó (handleUpdate).
+                if (ok) alGuardado(b.occurredOn ?: e.occurredOn)
+                ok
+            },
+            alCancelar = anotar::cerrarEdicion,
+        )
+    }
+    app.lukapp.ui.anotar.AvisoGuardado(
+        guardado = guardado,
+        estado = estadoGuardado,
+        alDeshacer = anotar::deshacer,
+        alCerrar = anotar::cerrarGuardado,
+        // `pb-[safe-bottom + 7rem]`: encima de la barra de anotar y la de navegación.
+        modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 112.dp),
+    )
     val a = aviso
     if (a != null) {
         androidx.compose.material3.AlertDialog(
