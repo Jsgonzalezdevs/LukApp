@@ -97,13 +97,15 @@ class ActividadPrincipal : FragmentActivity() {
             }
 
             TemaLukApp(tema) {
-                // Con el token vencido al abrir, supabase-kt pasa por RefreshFailure mientras renueva
-                // (o mientras no hay red). La sesión sigue guardada y sigue siendo de la persona:
-                // como la web, se entra con los datos en caché en vez de mandarla al acceso.
-                val uidRenovando = (estadoSesion as? SessionStatus.RefreshFailure)?.let { contenedor.sesion.idUsuario }
+                // Con el token vencido al abrir, supabase-kt pasa por RefreshFailure si no puede renovarlo (sin red
+                // o servidor caído). La sesión sigue guardada y sigue siendo de la persona: como la web, se entra
+                // con los datos locales en vez de mandarla al acceso. El usuario sale de la sesión si ya cargó,
+                // y si no del último que entró en este teléfono.
+                val sinRenovar = estadoSesion is SessionStatus.RefreshFailure
+                val uidRenovando = if (sinRenovar) contenedor.sesion.idUsuario ?: contenedor.ultimoUsuario.leer("uid") else null
                 when (val s = estadoSesion) {
                     is SessionStatus.Initializing -> PantallaCarga()
-                    is SessionStatus.Authenticated, is SessionStatus.RefreshFailure -> if (s is SessionStatus.RefreshFailure && uidRenovando == null) {
+                    is SessionStatus.Authenticated, is SessionStatus.RefreshFailure -> if (sinRenovar && uidRenovando == null) {
                         val e by modeloAcceso.estado.collectAsState()
                         PantallaAcceso(modeloAcceso, tema, cambiarTema, e)
                     } else if (enRecuperacion) {
@@ -111,7 +113,12 @@ class ActividadPrincipal : FragmentActivity() {
                         PantallaAcceso(modeloAcceso, tema, cambiarTema, e)
                     } else {
                         val uid = (s as? SessionStatus.Authenticated)?.session?.user?.id ?: uidRenovando
-                        LaunchedEffect(uid) { if (uid != null) modeloApp.abrir(uid) }
+                        LaunchedEffect(uid) {
+                            if (uid != null) {
+                                if (s is SessionStatus.Authenticated) contenedor.ultimoUsuario.guardar("uid", uid)
+                                modeloApp.abrir(uid)
+                            }
+                        }
                         if (desbloqueo && bloqueada) {
                             Candado { pedirHuella() }
                             LaunchedEffect(Unit) { pedirHuella() }
@@ -122,6 +129,7 @@ class ActividadPrincipal : FragmentActivity() {
                                 alCerrarSesion = {
                                     alcance.launch {
                                         uid?.let(contenedor.finanzas::olvidarLocal)
+                                        contenedor.ultimoUsuario.borrar("uid")
                                         contenedor.finanzas.cerrar()
                                         contenedor.sesion.salir()
                                         contenedor.accesoGoogle.olvidarCuenta(this@ActividadPrincipal)

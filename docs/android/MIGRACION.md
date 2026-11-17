@@ -130,9 +130,12 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 - **Causa del «no tengo internet»:** el emulador había perdido el DNS (`unknown host google.com`) tras un
   cambio de red del Mac; la app no podía renovar la sesión y mostraba el acceso. No era una sesión caducada.
   Se arregló reiniciando el emulador con `-dns-server 8.8.8.8,1.1.1.1`.
-- **Defecto real que dejó ver (pendiente):** sin red y con el token vencido, la app debería abrir con la copia
-  local cifrada del libro, como la web; en cambio muestra el acceso, porque `RefreshFailure` llega sin usuario
-  cargado. Hay que recordar el último usuario y abrir en modo sin conexión.
+- **Arranque sin red con token vencido (v10.14.14):** `RefreshFailure` llega sin usuario, así que la app
+  guarda el último uid cifrado (`Contenedor.ultimoUsuario`, se borra al cerrar sesión) y, si no puede renovar,
+  abre con la copia local del libro y el aviso «Sin conexión». Compila y pasa las pruebas, pero **no se
+  verificó en emulador**: el token de la sesión de prueba fue revocado por el servidor
+  (`refresh_token_not_found`, un 400 real, no un fallo de red) y el emulador mostró el acceso, que es lo
+  correcto en ese caso. Falta probarlo entrando de nuevo, apagando la red y adelantando el reloj.
 
 ## Sin verificar todavía
 

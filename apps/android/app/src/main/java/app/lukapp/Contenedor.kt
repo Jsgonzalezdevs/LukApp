@@ -38,6 +38,13 @@ class Contenedor(contexto: Context) {
         install(Functions)
     }
 
+    /**
+     * El último usuario que entró, cifrado como la sesión. Si al abrir no hay red para renovar el token,
+     * supabase-kt avisa del fallo pero no trae al usuario: con esto se abre su libro local (que sigue
+     * cifrado con otra llave) en vez de mandarlo al acceso. Se borra al cerrar sesión.
+     */
+    val ultimoUsuario = AlmacenCifrado(app, "usuario")
+
     val accesoGoogle = AccesoGoogle(supabase)
     // HttpTimeout permite el límite de 18 s por petición de la transcripción.
     val http = HttpClient(OkHttp) { install(io.ktor.client.plugins.HttpTimeout) }
