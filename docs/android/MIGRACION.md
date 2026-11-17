@@ -289,3 +289,8 @@ El encabezado del Asesor muestra «✦ Premium» cuando `GET /api/mi-plan` (con 
 - Descartar oculta un insight 24 h (misma clave y formato que la web, en DataStore). Rota cada 45 s si hay varios.
 - Tocar un insight o el Pulso abre el Asesor y envía la pregunta de la web (`handleConsultarTipEnAsesor`).
 - Sin verificar en emulador ni con cuenta Premium. Diferencias: el plan se lee al abrir Inicio (la web además cada 30 s y al enfocar); la banda de «novedad» de la web, que cede su lugar al insight, aún no existe.
+
+
+### v10.25.1 — Cierre al abrir sin sesión
+
+Al probar en emulador, la app se cerraba al abrir sin sesión (NPE en `ModeloAsesor`): `premium`, añadida en v10.24.0, estaba declarada después del `init`, y sin sesión la consulta de plan termina sin suspender y la escribe antes de existir. Se movió antes del `init`. Estuvo así de v10.24.0 a v10.25.0; con sesión no se notaba. Verificado: abre y muestra el acceso, 0 `FATAL EXCEPTION`. Lección: en los ViewModels, todo `StateFlow` va antes del `init`.

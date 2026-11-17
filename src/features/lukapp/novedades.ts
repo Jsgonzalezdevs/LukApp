@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.25.1', fecha: '2026-11-17', texto: 'Arreglamos un cierre inesperado de la app de Android al abrirla sin haber entrado a tu cuenta. 🔧' },
   { version: '10.25.0', fecha: '2026-11-17', texto: 'En la app de Android, Inicio ahora te muestra lo que LukApp nota por ti (un tope que se acerca, una categoría que subió, tu ritmo del mes) y, con Premium, tu Pulso. Tócalo y Luki lo analiza contigo. ✨' },
   { version: '10.24.0', fecha: '2026-11-17', texto: 'Si tienes Premium con el Asesor incluido, la app de Android ahora te lo marca con una insignia junto al estado de la IA. ✨' },
   { version: '10.23.0', fecha: '2026-11-17', texto: 'Luki ahora puede leerte sus respuestas en voz alta en la app de Android: toca el parlante debajo de la respuesta, y otra vez para detenerlo. 🔊' },

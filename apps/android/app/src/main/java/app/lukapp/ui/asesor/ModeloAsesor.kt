@@ -64,6 +64,10 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     private var recordar = true
     private val candado = Mutex()
 
+    /** Insignia «Premium» del encabezado. Va ANTES del `init`: sin sesión la consulta termina al instante y la escribe. */
+    val premium = MutableStateFlow(false)
+    val valoraciones = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+
     init {
         verificar()
         viewModelScope.launch {
@@ -110,9 +114,6 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
         }
     }
 
-    /** Insignia «Premium» del encabezado. */
-    val premium = MutableStateFlow(false)
-
     fun actualizarPlan() { viewModelScope.launch { premium.value = cliente.prestaciones().let { it.esPremium && it.asesorIa } } }
 
     fun verificar() {
@@ -122,8 +123,6 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     }
 
     /** Útil (true) / no útil (false) por mensaje. Como en la web, vive solo en pantalla: no se guarda ni se envía. */
-    val valoraciones = MutableStateFlow<Map<String, Boolean>>(emptyMap())
-
     fun valorar(id: String, util: Boolean) = valoraciones.update { if (it[id] == util) it - id else it + (id to util) }
 
     /** Como `handleRegenerar`: vuelve a mandar la pregunta anterior a esa respuesta, o un resumen si no hay. */
