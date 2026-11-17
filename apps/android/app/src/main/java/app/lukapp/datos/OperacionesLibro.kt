@@ -102,6 +102,54 @@ object OperacionesLibro {
     fun confirmarRecurrente(p: Pendiente): Cambios =
         Cambios(guardar = Libro(transacciones = listOf(comoTransaccion(p, nuevoId(), Instant.now().toString()))))
 
+    /**
+     * `almacen.crearCajita` (cuentas y ahorros; las tarjetas llevan además cupo, corte y pago, aún sin migrar).
+     * El nombre se vuelve único sin distinguir mayúsculas («Nequi (2)»), y el saldo inicial es un MOVIMIENTO de
+     * apertura, no un campo: un saldo es la suma de sus movimientos, y de ahí sale desde cuándo rinde.
+     * Una cuenta con saldo en blanco (`null`) queda pendiente de confirmar; un ahorro en 0 no abre movimiento.
+     */
+    fun crearCajita(
+        libro: Libro, nombre: String, icon: String, tipo: String, claseCuenta: String?, metaCop: Long?, tasaEaPct: Double?,
+        esInversion: Boolean, moneda: String, saldoInicialCop: Long?,
+    ): Cambios {
+        val base = nombre.trim()
+        val es = java.util.Locale.forLanguageTag("es")
+        val repetidas = libro.cajitas.filter { it.archivedAt == null }.map { it.nombre.trim().lowercase(es) }.toSet()
+        var unico = base
+        var sufijo = 2
+        while (unico.lowercase(es) in repetidas) { unico = "$base ($sufijo)"; sufijo++ }
+        val ahora = Instant.now().toString()
+        val cajita = app.lukapp.dominio.Cajita(
+            id = nuevoId(), nombre = unico, icon = icon, tipo = tipo,
+            claseCuenta = if (tipo == app.lukapp.dominio.TipoCajita.CUENTA) claseCuenta ?: app.lukapp.dominio.claseDeCuenta(app.lukapp.dominio.Cajita("", base, icon, tipo, null, createdAt = ahora)) else null,
+            metaCop = metaCop, tasaEaPct = tasaEaPct,
+            esInversion = tipo == app.lukapp.dominio.TipoCajita.CAJITA && esInversion,
+            moneda = if (tipo == app.lukapp.dominio.TipoCajita.CAJITA) moneda else "COP",
+            createdAt = ahora,
+        )
+        val apertura = if (saldoInicialCop != null && (saldoInicialCop > 0 || tipo == app.lukapp.dominio.TipoCajita.CUENTA))
+            listOf(CajitaMovimiento(nuevoId(), cajita.id, app.lukapp.dominio.TipoMovimiento.DEPOSITO, saldoInicialCop, null, bogotaDate(), "Saldo inicial", ahora)) else emptyList()
+        return Cambios(guardar = Libro(cajitas = listOf(cajita), movimientos = apertura))
+    }
+
+    /**
+     * `almacen.transferirEntreCuentas`: un PAR de movimientos de cajita y una fila de transferencia neutral, nunca un
+     * gasto y un ingreso: plata que sale de Nequi hacia un ahorro no se gastó ni entró, y contarla inflaría ambos lados del mes.
+     * Mover plata a sí misma, o $0, no es transferencia.
+     */
+    fun transferir(libro: Libro, origenId: String, destinoId: String, montoCop: Long, fecha: String = bogotaDate()): Cambios? {
+        val monto = abs(montoCop)
+        if (monto == 0L || origenId == destinoId) return null
+        fun nombre(id: String) = libro.cajitas.firstOrNull { it.id == id }?.nombre.orEmpty()
+        val ahora = Instant.now().toString()
+        val par = listOf(
+            CajitaMovimiento(nuevoId(), origenId, app.lukapp.dominio.TipoMovimiento.RETIRO, -monto, null, fecha, "Enviado a ${nombre(destinoId)}".trim(), ahora),
+            CajitaMovimiento(nuevoId(), destinoId, app.lukapp.dominio.TipoMovimiento.DEPOSITO, monto, null, fecha, "Recibido de ${nombre(origenId)}".trim(), ahora),
+        )
+        val tx = Transaccion(nuevoId(), TipoTx.TRANSFERENCIA, monto, "transferencia", "Transferencia de ${nombre(origenId)} a ${nombre(destinoId)}".trim(), fecha, null, createdAt = ahora)
+        return Cambios(guardar = Libro(movimientos = par, transacciones = listOf(tx)))
+    }
+
     /** `almacen.crearMeta`: la meta nueva empieza sin completar. */
     fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0): Cambios =
         Cambios(guardar = Libro(metas = listOf(Meta(nuevoId(), nombre, icon, objetivoCop, fechaObjetivo, null, ahorradoCop, Instant.now().toString(), null))))

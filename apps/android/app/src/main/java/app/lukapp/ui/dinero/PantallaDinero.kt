@@ -83,6 +83,7 @@ fun PantallaDinero(
     alAjustes: () -> Unit,
     alAbrirCuenta: ((Cajita) -> Unit)? = null,
     alAbrirPasivos: ((String) -> Unit)? = null,
+    alCrear: ((String) -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val libro = vista.libro
@@ -140,6 +141,11 @@ fun PantallaDinero(
                     Modifier.padding(top = 8.dp).widthIn(max = 320.dp),
                     style = LukApp.tipo.de(15, 400, 1.625f), color = c.inkSoft, textAlign = TextAlign.Center,
                 )
+                if (alCrear != null) Text(
+                    "Agregar cuenta",
+                    Modifier.padding(top = 16.dp).clip(Medidas.formaPildora).background(c.accent).pulsable { alCrear(TipoCajita.CUENTA) }.padding(horizontal = 24.dp, vertical = 12.dp),
+                    style = LukApp.tipo.de(15, 600, 1.4f), color = c.onAccent,
+                )
             }
         }
 
@@ -167,6 +173,17 @@ fun PantallaDinero(
                             FilaCajita(cajita, saldos[cajita.id] ?: 0L, privacidad, cajita.id == favorita, i < delGrupo.lastIndex, vista, hoy, alAbrirCuenta, alAbrirPasivos)
                         }
                     }
+                }
+            }
+        }
+
+        if (vivas.isNotEmpty() && alCrear != null) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                listOf(TipoCajita.CUENTA to "Agregar cuenta", TipoCajita.CAJITA to "🐷 Crear ahorro").forEach { (t, titulo) ->
+                    Text(
+                        titulo, Modifier.weight(1f).clip(Medidas.formaCard).background(c.soft).pulsable { alCrear(t) }.padding(horizontal = 16.dp, vertical = 16.dp),
+                        style = LukApp.tipo.de(15, 600, 1.4f), color = c.ink, textAlign = TextAlign.Center,
+                    )
                 }
             }
         }

@@ -6,6 +6,7 @@ import app.lukapp.dominio.Libro
 import app.lukapp.dominio.Transaccion
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -150,5 +151,45 @@ class OperacionesLibroTest {
 
     @Test fun borrarRecurrenteBorraPorId() {
         assertEquals(mapOf("recurrentes" to listOf("x")), OperacionesLibro.borrarRecurrente("x").borrar)
+    }
+
+    private fun cuentaDe(id: String, nombre: String) = app.lukapp.dominio.Cajita(id, nombre, "Wallet", app.lukapp.dominio.TipoCajita.CUENTA, createdAt = "2026-01-01T00:00:00Z")
+
+    @Test fun crearCajitaVuelveUnicoElNombreSinImportarMayusculas() {
+        val libro = Libro(cajitas = listOf(cuentaDe("a", "Nequi")))
+        val c = OperacionesLibro.crearCajita(libro, "  nequi ", "Wallet", app.lukapp.dominio.TipoCajita.CUENTA, null, null, null, false, "COP", null)
+        assertEquals("nequi (2)", c.guardar.cajitas.single().nombre)
+    }
+
+    @Test fun crearCuentaInfiereLaClasePorNombreYElSaldoEnBlancoQuedaPendiente() {
+        val c = OperacionesLibro.crearCajita(Libro(), "Nequi", "Wallet", app.lukapp.dominio.TipoCajita.CUENTA, null, null, null, false, "COP", null)
+        assertEquals("billetera", c.guardar.cajitas.single().claseCuenta)
+        assertTrue(c.guardar.movimientos.isEmpty())
+        // Escribir 0 es un saldo confirmado: sí abre movimiento.
+        val cero = OperacionesLibro.crearCajita(Libro(), "Nequi", "Wallet", app.lukapp.dominio.TipoCajita.CUENTA, null, null, null, false, "COP", 0)
+        assertEquals(0L, cero.guardar.movimientos.single().deltaCop)
+    }
+
+    @Test fun crearAhorroSoloAbreMovimientoSiEmpiezaConPlata() {
+        val sin = OperacionesLibro.crearCajita(Libro(), "Viaje", "Plane", app.lukapp.dominio.TipoCajita.CAJITA, null, 2_000_000, 9.5, false, "COP", 0)
+        assertTrue(sin.guardar.movimientos.isEmpty()); assertEquals(null, sin.guardar.cajitas.single().claseCuenta); assertEquals(9.5, sin.guardar.cajitas.single().tasaEaPct!!, 0.0)
+        val con = OperacionesLibro.crearCajita(Libro(), "Viaje", "Plane", app.lukapp.dominio.TipoCajita.CAJITA, null, null, null, true, "USD", 150_000)
+        assertEquals("Saldo inicial", con.guardar.movimientos.single().nota); assertEquals("USD", con.guardar.cajitas.single().moneda)
+    }
+
+    @Test fun transferirEsUnParDeMovimientosYUnaFilaNeutral() {
+        val libro = Libro(cajitas = listOf(cuentaDe("a", "Nequi"), cuentaDe("b", "Bancolombia")))
+        val c = OperacionesLibro.transferir(libro, "a", "b", 50_000, "2026-11-17")!!
+        assertEquals(listOf(-50_000L, 50_000L), c.guardar.movimientos.map { it.deltaCop })
+        assertEquals("Enviado a Bancolombia", c.guardar.movimientos[0].nota); assertEquals("Recibido de Nequi", c.guardar.movimientos[1].nota)
+        val tx = c.guardar.transacciones.single()
+        // Ni gasto ni ingreso: si lo fuera, inflaría los dos lados del mes.
+        assertEquals(app.lukapp.dominio.TipoTx.TRANSFERENCIA, tx.kind); assertEquals(null, tx.cuentaId)
+    }
+
+    @Test fun transferirANadaOASiMismaNoHaceNada() {
+        val libro = Libro(cajitas = listOf(cuentaDe("a", "Nequi"), cuentaDe("b", "Bancolombia")))
+        assertNull(OperacionesLibro.transferir(libro, "a", "a", 100))
+        assertNull(OperacionesLibro.transferir(libro, "a", "b", 0))
     }
 }

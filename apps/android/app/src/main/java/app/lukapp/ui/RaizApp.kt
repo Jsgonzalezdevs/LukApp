@@ -133,6 +133,7 @@ fun ShellLukApp(
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
                                     alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
                                     alAbrirPasivos = { modelo.panelPasivos.value = it },
+                                    alCrear = { modelo.nuevaCajitaTipo.value = it },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
                                     topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta))
@@ -178,6 +179,8 @@ fun ShellLukApp(
             if (historialAsesor && seccion == Seccion.ASESOR) app.lukapp.ui.asesor.HojaHistorial(asesor)
             val calendario by modelo.calendarioAbierto.collectAsState()
             if (calendario) app.lukapp.ui.calendario.PantallaCalendario(actual, alCerrar = { modelo.calendarioAbierto.value = false }, alAnadirPagoFijo = { modelo.pagosFijosAbierto.value = true })
+            val nuevaCajita by modelo.nuevaCajitaTipo.collectAsState()
+            nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
             val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
             if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
             val abierta by modelo.cuentaAbierta.collectAsState()
@@ -188,6 +191,7 @@ fun ShellLukApp(
                     alFijarSaldo = { modelo.fijarSaldo(cuenta.id, it) },
                     alAlternarFavorita = { modelo.alternarFavorita(cuenta.id) },
                     alEliminar = { modelo.eliminarCuenta(cuenta.id) },
+                    alTransferir = { destino, monto -> modelo.transferir(cuenta.id, destino, monto) },
                 )
             }
         }

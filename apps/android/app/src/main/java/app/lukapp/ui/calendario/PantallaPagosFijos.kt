@@ -268,7 +268,7 @@ private fun FormularioPagoFijo(vista: VistaInicio, acciones: AccionesPagosFijos,
 }
 
 @Composable
-private fun Etiquetado(texto: String, modifier: Modifier = Modifier, contenido: @Composable () -> Unit) {
+internal fun Etiquetado(texto: String, modifier: Modifier = Modifier, contenido: @Composable () -> Unit) {
     Column(modifier) {
         Text(texto, style = LukApp.tipo.de(15, 600, 1.4f), color = LukApp.colores.inkSoft)
         Box(Modifier.padding(top = 8.dp)) { contenido() }
@@ -276,7 +276,7 @@ private fun Etiquetado(texto: String, modifier: Modifier = Modifier, contenido: 
 }
 
 @Composable
-private fun CampoTexto(valor: String, alCambiar: (String) -> Unit, marcador: String, descripcion: String, numerico: Boolean = false) {
+internal fun CampoTexto(valor: String, alCambiar: (String) -> Unit, marcador: String, descripcion: String, numerico: Boolean = false) {
     val c = LukApp.colores
     val estilo = LukApp.tipo.de(17, 400, 1.3f)
     BasicTextField(
@@ -288,7 +288,7 @@ private fun CampoTexto(valor: String, alCambiar: (String) -> Unit, marcador: Str
 }
 
 @Composable
-private fun Desplegable(actual: String, opciones: List<Pair<String, String>>, descripcion: String, alElegir: (String) -> Unit) {
+internal fun Desplegable(actual: String, opciones: List<Pair<String, String>>, descripcion: String, alElegir: (String) -> Unit) {
     val c = LukApp.colores
     var abierto by remember { mutableStateOf(false) }
     Box {

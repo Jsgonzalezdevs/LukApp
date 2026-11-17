@@ -81,6 +81,7 @@ fun PantallaDetalleCuenta(
     alFijarSaldo: suspend (Long) -> Boolean,
     alAlternarFavorita: () -> Unit,
     alEliminar: suspend () -> Boolean,
+    alTransferir: suspend (String, Long) -> Boolean,
 ) {
     val c = LukApp.colores
     val hapticos = rememberHapticos()
@@ -223,6 +224,8 @@ fun PantallaDetalleCuenta(
                     )
                 }
             }
+
+            PanelTransferir(cajita, libro.cajitas, alTransferir)
 
             Row(
                 Modifier.padding(top = 4.dp).fillMaxWidth().clip(Medidas.formaControl).background(c.salioBg).border(1.dp, c.salio.copy(.3f), Medidas.formaControl)

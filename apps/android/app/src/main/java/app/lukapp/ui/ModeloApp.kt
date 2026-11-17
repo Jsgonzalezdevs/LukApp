@@ -109,6 +109,13 @@ class ModeloApp(
     }.getOrDefault(false)
 
     val pagosFijosAbierto = MutableStateFlow(false)
+    /** «cuenta» o «cajita» mientras el formulario de nuevo está abierto. */
+    val nuevaCajitaTipo = MutableStateFlow<String?>(null)
+
+    suspend fun crearCajita(nombre: String, icon: String, tipo: String, clase: String?, meta: Long?, tasa: Double?, inversion: Boolean, moneda: String, saldoInicial: Long?) =
+        aplicarCambios { OperacionesLibro.crearCajita(finanzas.libro.value, nombre, icon, tipo, clase, meta, tasa, inversion, moneda, saldoInicial) }
+    suspend fun transferir(origen: String, destino: String, monto: Long) =
+        aplicarCambios { OperacionesLibro.transferir(finanzas.libro.value, origen, destino, monto) }
 
     private suspend fun aplicarCambios(c: () -> app.lukapp.datos.Cambios?): Boolean = runCatching { c()?.let { finanzas.aplicar(it) }; true }.getOrDefault(false)
 
