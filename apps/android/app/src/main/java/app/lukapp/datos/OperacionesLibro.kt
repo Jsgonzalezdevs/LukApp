@@ -10,7 +10,10 @@ import app.lukapp.dominio.tieneSaldoConfirmado
 import java.time.Instant
 import app.lukapp.dominio.Libro
 import app.lukapp.dominio.Meta
+import app.lukapp.dominio.Pendiente
 import app.lukapp.dominio.Presupuesto
+import app.lukapp.dominio.Recurrente
+import app.lukapp.dominio.comoTransaccion
 import app.lukapp.dominio.TipoTx
 import app.lukapp.dominio.Transaccion
 import app.lukapp.dominio.emparejarComprasTarjeta
@@ -85,6 +88,19 @@ object OperacionesLibro {
 
     /** `quitarPresupuesto`: el tope se borra por su categoría (la RPC usa `categoria` como clave de esa tabla). */
     fun quitarPresupuesto(categoria: String): Cambios = Cambios(borrar = mapOf("presupuestos" to listOf(categoria)))
+
+    /** `almacen.crearRecurrente`: el día se acota a 1..31 en el formulario; `archivedAt` empieza vacío. */
+    fun crearRecurrente(nombre: String, kind: String, montoCop: Long, categoria: String, cuentaId: String?, diaDelMes: Int): Cambios =
+        Cambios(guardar = Libro(recurrentes = listOf(Recurrente(nuevoId(), nombre, kind, montoCop, categoria, cuentaId, diaDelMes, Instant.now().toString(), null))))
+
+    /** `almacen.actualizarRecurrente` (lo usa «Actualizar precio» de las sugerencias). */
+    fun actualizarRecurrente(r: Recurrente): Cambios = Cambios(guardar = Libro(recurrentes = listOf(r)))
+
+    fun borrarRecurrente(id: String): Cambios = Cambios(borrar = mapOf("recurrentes" to listOf(id)))
+
+    /** `almacen.confirmarRecurrente`: «Sí pasó» crea el movimiento real con la fecha que le tocaba; antes de eso no hay nada en el libro. */
+    fun confirmarRecurrente(p: Pendiente): Cambios =
+        Cambios(guardar = Libro(transacciones = listOf(comoTransaccion(p, nuevoId(), Instant.now().toString()))))
 
     /** `almacen.crearMeta`: la meta nueva empieza sin completar. */
     fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0): Cambios =

@@ -55,7 +55,7 @@ private fun etiquetaFecha(e: EventoFinanciero) = e.fecha ?: e.periodo?.let { "Pe
  * «Semana» agrupa igual que «Mes» (por YYYY-MM).
  */
 @Composable
-fun PantallaCalendario(vista: VistaInicio, alCerrar: () -> Unit) {
+fun PantallaCalendario(vista: VistaInicio, alCerrar: () -> Unit, alAnadirPagoFijo: () -> Unit) {
     val c = LukApp.colores
     BackHandler(onBack = alCerrar)
     var modo by remember { mutableStateOf(Vista.MES) }
@@ -76,8 +76,17 @@ fun PantallaCalendario(vista: VistaInicio, alCerrar: () -> Unit) {
                     Text("Qué entra, qué sale y qué tan seguro es", style = LukApp.tipo.xs, color = c.inkFaint)
                 }
             }
-            Box(Modifier.size(36.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Cerrar" }.pulsable(alPulsar = alCerrar), contentAlignment = Alignment.Center) {
-                Icono(Lucide.X, tamano = 20.dp, grosor = 2.5f, color = c.inkSoft)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.clip(Medidas.formaPildora).background(c.accent).semantics { contentDescription = "Añadir pago fijo" }.pulsable(alPulsar = alAnadirPagoFijo).padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icono(Lucide.Plus, tamano = 16.dp, grosor = 2.5f, color = c.onAccent)
+                    Text("Añadir", style = LukApp.tipo.de(13, 600, 1.4f), color = c.onAccent)
+                }
+                Box(Modifier.size(36.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Cerrar" }.pulsable(alPulsar = alCerrar), contentAlignment = Alignment.Center) {
+                    Icono(Lucide.X, tamano = 20.dp, grosor = 2.5f, color = c.inkSoft)
+                }
             }
         }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = 16.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

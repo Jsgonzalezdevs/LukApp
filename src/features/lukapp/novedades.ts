@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.27.0', fecha: '2026-11-17', texto: 'En la app de Android ya puedes manejar tus pagos fijos: añadirlos desde el Calendario, confirmar con «Sí pasó» los que ocurrieron, ver los próximos cobros y aceptar los que LukApp detecta. 🔁' },
   { version: '10.26.0', fecha: '2026-11-17', texto: 'En la app de Android ya puedes ponerle tope a una categoría, cambiarlo o quitarlo, y ajustar las alertas de presupuesto y su umbral desde Mes. 🎯' },
   { version: '10.25.1', fecha: '2026-11-17', texto: 'Arreglamos un cierre inesperado de la app de Android al abrirla sin haber entrado a tu cuenta. 🔧' },
   { version: '10.25.0', fecha: '2026-11-17', texto: 'En la app de Android, Inicio ahora te muestra lo que LukApp nota por ti (un tope que se acerca, una categoría que subió, tu ritmo del mes) y, con Premium, tu Pulso. Tócalo y Luki lo analiza contigo. ✨' },

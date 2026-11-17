@@ -108,6 +108,16 @@ class ModeloApp(
         true
     }.getOrDefault(false)
 
+    val pagosFijosAbierto = MutableStateFlow(false)
+
+    private suspend fun aplicarCambios(c: () -> app.lukapp.datos.Cambios?): Boolean = runCatching { c()?.let { finanzas.aplicar(it) }; true }.getOrDefault(false)
+
+    suspend fun crearPagoFijo(nombre: String, kind: String, monto: Long, categoria: String, cuentaId: String?, dia: Int) =
+        aplicarCambios { OperacionesLibro.crearRecurrente(nombre, kind, monto, categoria, cuentaId, dia) }
+    suspend fun actualizarPagoFijo(r: app.lukapp.dominio.Recurrente) = aplicarCambios { OperacionesLibro.actualizarRecurrente(r) }
+    suspend fun borrarPagoFijo(id: String) = aplicarCambios { OperacionesLibro.borrarRecurrente(id) }
+    suspend fun confirmarPagoFijo(p: app.lukapp.dominio.Pendiente) = aplicarCambios { OperacionesLibro.confirmarRecurrente(p) }
+
     suspend fun quitarPresupuesto(categoria: String): Boolean = runCatching {
         finanzas.aplicar(OperacionesLibro.quitarPresupuesto(categoria))
         true

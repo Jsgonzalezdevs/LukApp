@@ -177,7 +177,9 @@ fun ShellLukApp(
             val historialAsesor by asesor.historialAbierto.collectAsState()
             if (historialAsesor && seccion == Seccion.ASESOR) app.lukapp.ui.asesor.HojaHistorial(asesor)
             val calendario by modelo.calendarioAbierto.collectAsState()
-            if (calendario) app.lukapp.ui.calendario.PantallaCalendario(actual, alCerrar = { modelo.calendarioAbierto.value = false })
+            if (calendario) app.lukapp.ui.calendario.PantallaCalendario(actual, alCerrar = { modelo.calendarioAbierto.value = false }, alAnadirPagoFijo = { modelo.pagosFijosAbierto.value = true })
+            val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
+            if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
             val abierta by modelo.cuentaAbierta.collectAsState()
             actual.libro.cajitas.firstOrNull { it.id == abierta && it.archivedAt == null }?.let { cuenta ->
                 app.lukapp.ui.cuenta.PantallaDetalleCuenta(

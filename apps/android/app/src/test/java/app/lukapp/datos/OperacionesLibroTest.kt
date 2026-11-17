@@ -139,4 +139,16 @@ class OperacionesLibroTest {
         assertEquals(mapOf("presupuestos" to listOf("comida")), c.borrar)
         assertEquals(Libro(), c.guardar)
     }
+
+    @Test fun crearRecurrenteEmpiezaActivoYConfirmarLoVuelveMovimientoConSuFecha() {
+        val r = OperacionesLibro.crearRecurrente("Arriendo", app.lukapp.dominio.TipoTx.GASTO, 900_000, "vivienda", null, 5).guardar.recurrentes.single()
+        assertEquals("Arriendo", r.nombre); assertEquals(5, r.diaDelMes); assertEquals(null, r.archivedAt)
+        val tx = OperacionesLibro.confirmarRecurrente(app.lukapp.dominio.Pendiente(r, "2026-11-05", true)).guardar.transacciones.single()
+        // Lleva la fecha que le tocaba, no la de hoy, y dice de dónde salió.
+        assertEquals("2026-11-05", tx.occurredOn); assertEquals(900_000L, tx.amountCop); assertEquals("Recurrente: Arriendo", tx.rawTranscript)
+    }
+
+    @Test fun borrarRecurrenteBorraPorId() {
+        assertEquals(mapOf("recurrentes" to listOf("x")), OperacionesLibro.borrarRecurrente("x").borrar)
+    }
 }

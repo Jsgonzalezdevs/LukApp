@@ -299,3 +299,8 @@ Al probar en emulador, la app se cerraba al abrir sin sesión (NPE en `ModeloAse
 ### v10.26.0 — Topes: crear, editar, quitar y alertas
 
 En Mes, el bloque de topes ya escribe: interruptor de alertas y umbral (10–100 de 5 en 5, se guarda al soltar, en `user_metadata` con las mismas claves de la web), crear un tope tocando una categoría sin tope («Sueles gastar…»), editar y quitar desde el menú de cada fila. Quitar usa `borrar: {presupuestos: [categoria]}` (la tabla se clava por categoría en la RPC). Una prueba nueva de `quitarPresupuesto`. Sin ver en emulador. Falta el atajo «Nueva transacción» del menú.
+
+
+### v10.27.0 — Pagos fijos y botón «Añadir» del Calendario
+
+`PantallaPagosFijos` porta `RecurrentesView`: total «Cada mes» y proyección anual, próximos cobros a 60 días, patrones detectados (añadir o actualizar precio), «Ya pasó la fecha de…» con «Sí pasó» (crea el movimiento con la fecha que le tocaba), formulario de nuevo recurrente (día acotado a 1..31) y lista con eliminar. Se abre desde «Añadir» del Calendario (que ya no falta). Escritura por la RPC: crear/actualizar guardan en `recurrentes`, borrar usa `borrar.recurrentes`, confirmar guarda una transacción. Pruebas nuevas en `OperacionesLibroTest`. Sin ver en emulador. Falta: editar un recurrente (la web tampoco lo permite aparte de «Actualizar precio») y un acceso desde Más/Mes (la web lo abre desde Preferencias).
