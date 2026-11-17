@@ -23,6 +23,8 @@ class Preferencias(private val contexto: Context) {
         val RECORDAR_USUARIO = booleanPreferencesKey("lukapp_recordar_usuario")
         val CORREO_GUARDADO = stringPreferencesKey("lukapp_correo_guardado")
         /** Propia de Android: la PWA no tenía desbloqueo biométrico. */
+        /** Insights descartados: JSON `[{id, dismissedAt}]`, como en la web; cada uno reaparece a las 24 h. */
+        val INSIGHTS_DESCARTADOS = stringPreferencesKey("dismissed-insights")
         val DESBLOQUEO_BIOMETRICO = booleanPreferencesKey("android:desbloqueo_biometrico")
     }
 

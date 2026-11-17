@@ -50,22 +50,48 @@ class ClienteAsesor(private val supabase: SupabaseClient, private val http: Http
         r.status.value in 200..299 && objeto(r.bodyAsText())?.get("ia")?.let { (it as? JsonPrimitive)?.booleanOrNull } == true
     } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
 
-    /**
-     * Como `useAiInsights`: la marca solo sale con plan «premium» Y el beneficio `asesor_ia` activo.
-     * Sin sesión, sin red o con cualquier fallo es false: no se muestra una marca que no se pudo comprobar.
-     */
-    suspend fun marcaPremium(): Boolean = try {
+    /** Lo que incluye el plan, como `prestaciones` de `useAiInsights`. Todo false si no se pudo comprobar. */
+    data class Prestaciones(val asesorIa: Boolean = false, val insightsIa: Boolean = false, val pulsoPremium: Boolean = false, val esPremium: Boolean = false)
+
+    /** `GET /api/mi-plan`. Sin sesión, sin red o con cualquier fallo no se arriesga una llamada a IA ni se muestra una marca sin comprobar. */
+    suspend fun prestaciones(): Prestaciones = try {
         val token = supabase.auth.currentAccessTokenOrNull()
-        if (token == null) false else {
+        if (token == null) Prestaciones() else {
             val r = http.get("${BuildConfig.API_URL}/api/mi-plan") { header("Authorization", "Bearer $token") }
             val plan = objeto(r.bodyAsText())
-            val activo = (plan?.get("beneficios") as? kotlinx.serialization.json.JsonArray)?.any { b ->
+            val ok = r.status.value in 200..299
+            val beneficios = plan?.get("beneficios") as? kotlinx.serialization.json.JsonArray
+            fun tiene(clave: String) = ok && beneficios?.any { b ->
                 val o = b as? JsonObject
-                (o?.get("clave") as? JsonPrimitive)?.contentOrNull == "asesor_ia" && (o["activo"] as? JsonPrimitive)?.booleanOrNull == true
+                (o?.get("clave") as? JsonPrimitive)?.contentOrNull == clave && (o["activo"] as? JsonPrimitive)?.booleanOrNull == true
             } == true
-            r.status.value in 200..299 && (plan?.get("codigo") as? JsonPrimitive)?.contentOrNull == "premium" && activo
+            Prestaciones(tiene("asesor_ia"), tiene("insights_ia"), tiene("pulso_premium"), ok && (plan?.get("codigo") as? JsonPrimitive)?.contentOrNull == "premium")
         }
-    } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { Prestaciones() }
+
+    /**
+     * `POST /api/finanzas-insights-ia` con cuerpo vacío: el servidor arma el perfil desde la cuenta autenticada,
+     * así el cliente no manda cifras. null = falló o no hay insights (se queda con los locales).
+     */
+    suspend fun insightsIa(): List<app.lukapp.dominio.Insight>? = try {
+        val token = supabase.auth.currentAccessTokenOrNull()
+        val r = http.post("${BuildConfig.API_URL}/api/finanzas-insights-ia") {
+            contentType(ContentType.Application.Json)
+            if (token != null) header("Authorization", "Bearer $token")
+            setBody("{}")
+            timeout { requestTimeoutMillis = 60_000 }
+        }
+        val o = objeto(r.bodyAsText())
+        val lista = (o?.get("insights") as? kotlinx.serialization.json.JsonArray)?.mapNotNull { e ->
+            val i = e as? JsonObject ?: return@mapNotNull null
+            fun t(k: String) = (i[k] as? JsonPrimitive)?.contentOrNull
+            val id = t("id"); val titulo = t("titulo"); val detalle = t("detalle")
+            if (id == null || titulo == null || detalle == null) null
+            // El servidor devuelve el contenido; «IA» lo marca este lado, que es quien comprobó el plan.
+            else app.lukapp.dominio.Insight(id, titulo, detalle, t("tono")?.takeIf { it in setOf("neutral", "bien", "atento") } ?: "neutral", t("seccion")?.takeIf { it == "mes" || it == "dinero" }, true)
+        }
+        if (r.status.value in 200..299 && (o?.get("success") as? JsonPrimitive)?.booleanOrNull == true && !lista.isNullOrEmpty()) lista else null
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
 
     suspend fun consultar(prompt: String, historial: List<TurnoChat>, idConsulta: String, memoria: List<String> = emptyList()): Respuesta {
         val token = supabase.auth.currentAccessTokenOrNull()

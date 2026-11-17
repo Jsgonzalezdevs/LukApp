@@ -113,7 +113,7 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     /** Insignia «Premium» del encabezado. */
     val premium = MutableStateFlow(false)
 
-    fun actualizarPlan() { viewModelScope.launch { premium.value = cliente.marcaPremium() } }
+    fun actualizarPlan() { viewModelScope.launch { premium.value = cliente.prestaciones().let { it.esPremium && it.asesorIa } } }
 
     fun verificar() {
         actualizarPlan()

@@ -65,6 +65,7 @@ fun ShellLukApp(
     modelo: ModeloApp,
     anotar: app.lukapp.ui.anotar.ModeloAnotar,
     asesor: app.lukapp.ui.asesor.ModeloAsesor,
+    insights: app.lukapp.ui.inicio.ModeloInsights,
     alCerrarSesion: () -> Unit,
     desbloqueoActivo: Boolean,
     biometriaDisponible: Boolean,
@@ -122,6 +123,9 @@ fun ShellLukApp(
                                     alVerMes = { modelo.seccion.value = Seccion.MES },
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
                                     alAbrirMovimiento = anotar::abrirDetalle,
+                                    insights = insights,
+                                    // Como `promptInicial`: pasa al Asesor y la pregunta sale sola.
+                                    alConsultarAsesor = { pregunta -> modelo.seccion.value = Seccion.ASESOR; asesor.enviar(pregunta, actual) },
                                 )
                                 Seccion.DINERO -> app.lukapp.ui.dinero.PantallaDinero(
                                     vista = actual,

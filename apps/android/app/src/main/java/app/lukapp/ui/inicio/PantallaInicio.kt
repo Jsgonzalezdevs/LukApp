@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,8 +77,8 @@ internal fun formatMontoCompacto(monto: Long): String {
  * bancos y efectivo; la pastilla de gastos e ingresos y la lista de movimientos.
  *
  * Lo que falta (ver docs/android/MIGRACION.md) se omite y no se simula:
- * próximos pagos, el bloque "Análisis y categorías del período", Pulso Premium,
- * insights de IA, novedades y el modal de racha. Buscar, ajustes y abrir un
+ * próximos pagos, la decisión financiera y el carrusel de categorías (el desplegable solo trae Pulso Premium y «Para ti»),
+ * novedades y el modal de racha. Buscar, ajustes y abrir un
  * movimiento llegan como lambdas opcionales: si su destino no existe todavía,
  * el botón no se muestra.
  */
@@ -91,6 +92,8 @@ fun PantallaInicio(
     alBuscar: (() -> Unit)? = null,
     alAbrirMovimiento: ((app.lukapp.dominio.Transaccion) -> Unit)? = null,
     alVerRacha: (() -> Unit)? = null,
+    insights: ModeloInsights? = null,
+    alConsultarAsesor: ((String) -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val privacidad = vista.ajustes.privacidad
@@ -151,6 +154,29 @@ fun PantallaInicio(
                 Text("|", style = estilo, color = c.line)
                 Text("↑ " + if (privacidad) "••••" else formatMontoCompacto(vista.totales.ingresos), style = estilo, color = c.entro)
             }
+        }
+
+        // ── 4/2. Análisis del período: Pulso Premium y «Para ti» (solo con datos que lo respalden, como la web) ──
+        if (insights != null && alConsultarAsesor != null && vista.preparacion.primerMovimiento) {
+            val prest by insights.prestaciones.collectAsState()
+            val ia by insights.insightsIa.collectAsState()
+            val cargando by insights.cargandoIa.collectAsState()
+            val descartes by insights.descartados.collectAsState()
+            // Anclado al mes calendario salvo con período mensual, como `mesCalendarioActivo` de LukAppApp.
+            val mes = if (vista.ajustes.periodo.frecuencia == app.lukapp.dominio.FrecuenciaPeriodo.MENSUAL)
+                app.lukapp.dominio.monthKey(if (vista.clavePeriodo.length > 7) vista.clavePeriodo else vista.clavePeriodo + "-01")
+            else app.lukapp.dominio.monthKey(vista.hoy)
+            val locales = remember(vista.libro.transacciones, vista.libro.presupuestos, mes, vista.hoy, vista.catalogo, vista.ajustes.periodo, vista.ajustes.umbralAlertaPct) {
+                app.lukapp.dominio.insightsDelMes(vista.libro.transacciones, vista.libro.presupuestos, mes, vista.hoy, { vista.catalogo.de(it).nombre }, vista.ajustes.periodo, vista.ajustes.umbralAlertaPct)
+            }
+            val n = vista.libro.transacciones.size
+            androidx.compose.runtime.LaunchedEffect(mes, n) { insights.actualizarPlan(mes, n) }
+            val visibles = (if (ia.isNotEmpty()) ia else locales).filter { it.id !in descartes }
+            BloqueAnalisis(
+                vista, if (vista.preparacion.saldosCompletos) visibles else emptyList(),
+                pulsoPremium = prest.pulsoPremium && vista.preparacion.saldosCompletos, cargandoIa = cargando,
+                alRefrescar = { insights.refrescar(mes, n) }, alDescartar = insights::descartar, alConsultar = alConsultarAsesor,
+            )
         }
 
         // ── 6. Filtro por categoría ──

@@ -279,3 +279,13 @@ Botón de parlante en cada respuesta de Luki con `TextToSpeech` de Android (voz 
 ### v10.24.0 — Insignia Premium en el Asesor
 
 El encabezado del Asesor muestra «✦ Premium» cuando `GET /api/mi-plan` (con la sesión) devuelve `codigo == "premium"` y el beneficio `asesor_ia` activo, igual que `esPremium && tieneAsesorIa` en la web. Se consulta al abrir la pestaña y al tocar el indicador de conexión; la web además sondea cada 30 s y al volver a enfocar, aquí no. Cualquier fallo oculta la insignia. Sin prueba propia ni verificación con una cuenta Premium real.
+
+
+### v10.25.0 — Insights «Para ti», Pulso Premium y paso al Asesor
+
+- `dominio/Insights.kt` porta `lib/insights.ts` (los seis detectores, umbrales y redacción de la web; máximo tres, lo «atento» primero) con 8 pruebas JUnit de cifras calculadas a mano.
+- Inicio estrena el desplegable «Análisis y categorías del período» (cerrado por defecto, solo si ya hay un movimiento). Dentro, por ahora, solo el Pulso Premium y la franja de insights; faltan la decisión financiera y el carrusel de categorías.
+- Con plan que incluye `insights_ia` se piden los de IA (`POST /api/finanzas-insights-ia`, cuerpo vacío, una vez por mes + cantidad de movimientos); si fallan quedan los locales. El Pulso sale con `pulso_premium`. Todo se lee de `GET /api/mi-plan`.
+- Descartar oculta un insight 24 h (misma clave y formato que la web, en DataStore). Rota cada 45 s si hay varios.
+- Tocar un insight o el Pulso abre el Asesor y envía la pregunta de la web (`handleConsultarTipEnAsesor`).
+- Sin verificar en emulador ni con cuenta Premium. Diferencias: el plan se lee al abrir Inicio (la web además cada 30 s y al enfocar); la banda de «novedad» de la web, que cede su lugar al insight, aún no existe.
