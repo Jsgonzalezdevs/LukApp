@@ -259,3 +259,8 @@ La URL y la clave publishable de Supabase se leen de `apps/mobile/.env`, o de
 
 Entrar con una cuenta en el emulador y comparar Inicio contra la WebView. Después, Captura
 y BotonAnotar (con el intérprete ya portado), Dinero y Mes, en ese orden de prioridad.
+
+
+### v10.21.0 — Copiar y compartir en el Asesor
+
+Debajo de cada respuesta de Luki hay dos botones: copiar al portapapeles (con confirmación «Copiado») y compartir por la hoja del sistema (solo el texto). Sin prueba propia ni verificación en emulador (sin sesión). Siguen pendientes 👍👎, leer en voz alta y regenerar.
