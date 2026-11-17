@@ -147,7 +147,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   disponibilidad (`GET /api/asesor-ia/disponibilidad`), chat contra `POST /api/asesor-ia` (historial de 5, 60 s,
   mensajes de error de la web), «Reintentar con IA», Nueva conversación y el aviso de IA. Compila y pasa 2 pruebas
   nuevas (pose y limpieza de `<think>`); **no se vio en emulador ni se probó contra el servidor** (sin sesión).
-  **Falta:** historial y memoria guardados, movimiento detectado, propuestas
+  **Falta:** movimiento detectado, propuestas
   de presupuesto/meta, copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
   Inicio.
 
@@ -158,6 +158,13 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   local con «Reintentar con IA». Se replicaron a propósito dos rarezas de la web: el mes pasado desbordado
   (`setMonth(-1)` el día 31) y el mes UTC en la alerta de promedio. **No se vio en emulador** (sin sesión). Falta: telemetría
   `/respaldo-local`, `detectarPropuestaAsesor`, y que «Revisar y editar movimiento» abra Captura.
+
+- **Asesor, historial (v10.18.0):** cada mensaje se guarda en la conversación del servidor (`/api/asesor/conversaciones` y
+  `/mensajes`, con el primer mensaje como título de 70 caracteres y el mismo proveedor que la web: «Guía de LukApp», «Luki»
+  o el de la IA), hoja lateral «Conversaciones» con abrir y «Nueva conversación», y la memoria autorizada
+  (`/api/asesor/memoria`) viaja a la IA. Compila; **no se vio en emulador ni se probó contra el servidor** (sin sesión). La fecha
+  de cada chat usa `d MMM yyyy, h:mm a` de Java, no `Intl`, así que el formato puede diferir en detalle. Falta: telemetría
+  del respaldo local, olvidar datos de memoria desde la UI y el interruptor `recordar` por conversación.
 
 ## Sin verificar todavía
 

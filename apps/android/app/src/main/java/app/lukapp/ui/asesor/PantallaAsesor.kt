@@ -82,8 +82,13 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, modif
                 Box(Modifier.size(8.dp).clip(CircleShape).background(when (conexion) { ConexionIA.EN_LINEA -> c.accent; ConexionIA.DESPERTANDO -> c.warn; else -> c.inkFaint }))
                 Text(etiquetaConexion(conexion), style = LukApp.tipo.de(13, if (conexion == ConexionIA.EN_LINEA) 600 else 400, 1.4f), color = if (conexion == ConexionIA.EN_LINEA) c.ink else c.inkSoft)
             }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Ver conversaciones anteriores" }.pulsable(alPulsar = modelo::abrirHistorial), contentAlignment = Alignment.Center) {
+                Icono(Lucide.History, tamano = 16.dp, grosor = 2f, color = c.inkSoft)
+            }
             Box(Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Nueva conversación" }.pulsable(alPulsar = modelo::nuevaConversacion), contentAlignment = Alignment.Center) {
                 Icono(Lucide.Plus, tamano = 16.dp, grosor = 2f, color = c.inkSoft)
+            }
             }
         }
 

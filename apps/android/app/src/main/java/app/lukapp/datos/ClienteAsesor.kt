@@ -50,7 +50,7 @@ class ClienteAsesor(private val supabase: SupabaseClient, private val http: Http
         r.status.value in 200..299 && objeto(r.bodyAsText())?.get("ia")?.let { (it as? JsonPrimitive)?.booleanOrNull } == true
     } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
 
-    suspend fun consultar(prompt: String, historial: List<TurnoChat>, idConsulta: String): Respuesta {
+    suspend fun consultar(prompt: String, historial: List<TurnoChat>, idConsulta: String, memoria: List<String> = emptyList()): Respuesta {
         val token = supabase.auth.currentAccessTokenOrNull()
         return try {
             val cuerpo = buildJsonObject {
@@ -58,7 +58,7 @@ class ClienteAsesor(private val supabase: SupabaseClient, private val http: Http
                 put("history", buildJsonArray {
                     historial.takeLast(5).forEach { add(buildJsonObject { put("id", it.id); put("role", it.rol); put("text", it.texto) }) }
                 })
-                put("memoriaUsuario", buildJsonArray { })
+                put("memoriaUsuario", buildJsonArray { memoria.forEach { add(JsonPrimitive(it)) } })
                 put("idConsulta", idConsulta)
             }
             val r = http.post("${BuildConfig.API_URL}/api/asesor-ia") {
@@ -92,6 +92,55 @@ class ClienteAsesor(private val supabase: SupabaseClient, private val http: Http
             Respuesta.Error("No pudimos conectar con la IA.")
         }
     }
+
+    data class Conversacion(val id: String, val titulo: String, val recordar: Boolean, val actualizadoEn: String)
+    data class Mensaje(val id: String, val rol: String, val texto: String, val proveedor: String?)
+    data class DatoMemoria(val clave: String, val valor: String)
+
+    private suspend fun leer(ruta: String): JsonObject? = try {
+        val token = supabase.auth.currentAccessTokenOrNull()
+        val r = http.get("${BuildConfig.API_URL}$ruta") { if (token != null) header("Authorization", "Bearer $token") }
+        if (r.status.value in 200..299) objeto(r.bodyAsText()) else null
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+
+    private fun JsonObject.texto(k: String) = (get(k) as? JsonPrimitive)?.contentOrNull
+
+    /** Las 30 más recientes, como `GET /api/asesor/conversaciones`; null si no se pudo leer. */
+    suspend fun conversaciones(): List<Conversacion>? = (leer("/api/asesor/conversaciones")?.get("conversaciones") as? kotlinx.serialization.json.JsonArray)?.mapNotNull {
+        val o = it as? JsonObject ?: return@mapNotNull null
+        Conversacion(o.texto("id") ?: return@mapNotNull null, o.texto("titulo").orEmpty(), (o["recordar"] as? JsonPrimitive)?.booleanOrNull != false, o.texto("actualizado_en").orEmpty())
+    }
+
+    suspend fun memoria(): List<DatoMemoria>? = (leer("/api/asesor/memoria")?.get("memoria") as? kotlinx.serialization.json.JsonArray)?.mapNotNull {
+        val o = it as? JsonObject ?: return@mapNotNull null
+        DatoMemoria(o.texto("clave") ?: return@mapNotNull null, o.texto("valor").orEmpty())
+    }
+
+    suspend fun mensajes(conversacionId: String): List<Mensaje>? = (leer("/api/asesor/conversaciones/$conversacionId/mensajes")?.get("mensajes") as? kotlinx.serialization.json.JsonArray)?.mapNotNull {
+        val o = it as? JsonObject ?: return@mapNotNull null
+        Mensaje(o.texto("id") ?: return@mapNotNull null, o.texto("rol").orEmpty(), o.texto("texto").orEmpty(), o.texto("proveedor"))
+    }
+
+    private suspend fun escribir(ruta: String, cuerpo: JsonObject): JsonObject? = try {
+        val token = supabase.auth.currentAccessTokenOrNull()
+        val r = http.post("${BuildConfig.API_URL}$ruta") {
+            contentType(ContentType.Application.Json)
+            if (token != null) header("Authorization", "Bearer $token")
+            setBody(cuerpo.toString())
+        }
+        if (r.status.value in 200..299) objeto(r.bodyAsText()) ?: JsonObject(emptyMap()) else null
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+
+    suspend fun crearConversacion(titulo: String): Conversacion? {
+        val o = escribir("/api/asesor/conversaciones", buildJsonObject { put("titulo", titulo) })?.get("conversacion") as? JsonObject ?: return null
+        return Conversacion(o.texto("id") ?: return null, o.texto("titulo").orEmpty(), (o["recordar"] as? JsonPrimitive)?.booleanOrNull != false, o.texto("actualizado_en") ?: java.time.Instant.now().toString())
+    }
+
+    suspend fun guardarMensaje(conversacionId: String, esAsistente: Boolean, texto: String, proveedor: String?): Boolean =
+        escribir("/api/asesor/mensajes", buildJsonObject {
+            put("conversacionId", conversacionId); put("rol", if (esAsistente) "assistant" else "user"); put("texto", texto)
+            if (proveedor != null) put("proveedor", proveedor)
+        }) != null
 
     private fun objeto(texto: String): JsonObject? = runCatching { Json.parseToJsonElement(texto).jsonObject }.getOrNull()
 }

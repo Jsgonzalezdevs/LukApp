@@ -169,6 +169,8 @@ fun ShellLukApp(
                     ),
                 )
             }
+            val historialAsesor by asesor.historialAbierto.collectAsState()
+            if (historialAsesor && seccion == Seccion.ASESOR) app.lukapp.ui.asesor.HojaHistorial(asesor)
             val calendario by modelo.calendarioAbierto.collectAsState()
             if (calendario) app.lukapp.ui.calendario.PantallaCalendario(actual, alCerrar = { modelo.calendarioAbierto.value = false })
             val abierta by modelo.cuentaAbierta.collectAsState()

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.18.0', fecha: '2026-11-17', texto: 'Tus conversaciones con Luki ahora se guardan: puedes volver a leerlas desde el historial y él recuerda lo que le pediste tener presente. 🗂️' },
   { version: '10.17.0', fecha: '2026-11-17', texto: 'Luki ahora responde en tu celular sin esperar a la IA: tu resumen, cuánto puedes gastar, simulaciones y ayuda para usar LukApp. Y si la IA falla, te contesta igual. 💬' },
   { version: '10.16.0', fecha: '2026-11-17', texto: 'Luki, tu asesor con IA, ya conversa contigo en la app de Android: pregúntale por tu resumen, cuánto puedes gastar o tus impuestos. 🦦' },
   { version: '10.15.0', fecha: '2026-11-17', texto: 'Ya puedes ver tu calendario financiero en la app de Android: qué entra, qué sale y qué tan seguro es, por día, semana o mes. 📅' },

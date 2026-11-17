@@ -21,16 +21,18 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-data class MensajeAsesor(val id: String, val esUsuario: Boolean, val texto: String, val sugerencias: List<String> = emptyList())
+data class MensajeAsesor(val id: String, val esUsuario: Boolean, val texto: String, val sugerencias: List<String> = emptyList(), val proveedor: String? = null)
 
 /**
  * Estado del chat del Asesor, con el orden de resolución de AsesorView.handleSend:
  * guía de LukApp, simulación, motor local si sabe responder, IA del servidor y,
  * si la IA falla, el motor local como respaldo con «Reintentar con IA».
- * Pendiente (no se simula): historial y memoria guardados, propuestas de
- * presupuesto/meta, «Revisar y editar movimiento», telemetría del respaldo y dictado.
+ * Guarda cada mensaje en la conversación del servidor (como la web) y deja leer las anteriores.
+ * Pendiente (no se simula): propuestas de presupuesto/meta, «Revisar y editar movimiento», telemetría del respaldo y dictado.
  */
 class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     val mensajes = MutableStateFlow<List<MensajeAsesor>>(emptyList())
@@ -46,7 +48,60 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     private var contador = 0
     private fun nuevoId() = "msg-${System.currentTimeMillis()}-${contador++}"
 
-    init { verificar() }
+    val conversaciones = MutableStateFlow<List<ClienteAsesor.Conversacion>>(emptyList())
+    val conversacionId = MutableStateFlow<String?>(null)
+    val historialAbierto = MutableStateFlow(false)
+    val cargandoConversacion = MutableStateFlow(false)
+    val aviso = MutableStateFlow<String?>(null)
+    private var memoria = emptyList<ClienteAsesor.DatoMemoria>()
+    private var recordar = true
+    private val candado = Mutex()
+
+    init {
+        verificar()
+        viewModelScope.launch {
+            memoria = cliente.memoria().orEmpty()
+            cliente.conversaciones()?.let { conversaciones.value = it }
+        }
+    }
+
+    /** Guarda en orden (usuario antes que respuesta) y crea la conversación con el primer mensaje, como `guardarMensaje`. */
+    private fun guardar(m: MensajeAsesor) {
+        if (!recordar) return
+        viewModelScope.launch {
+            candado.withLock {
+                var id = conversacionId.value
+                if (id == null) {
+                    val nueva = cliente.crearConversacion(m.texto.take(70)) ?: return@withLock
+                    id = nueva.id
+                    conversacionId.value = id
+                    conversaciones.update { listOf(nueva) + it.filter { c -> c.id != nueva.id } }
+                }
+                if (cliente.guardarMensaje(id, !m.esUsuario, m.texto, m.proveedor)) {
+                    val ahora = java.time.Instant.now().toString()
+                    conversaciones.update { l -> l.map { if (it.id == id) it.copy(actualizadoEn = ahora) else it }.sortedByDescending { it.actualizadoEn } }
+                }
+            }
+        }
+    }
+
+    fun abrirHistorial() { historialAbierto.value = true }
+    fun cerrarHistorial() { historialAbierto.value = false }
+
+    fun abrirConversacion(c: ClienteAsesor.Conversacion) {
+        if (cargandoConversacion.value) return
+        cargandoConversacion.value = true
+        viewModelScope.launch {
+            val guardados = cliente.mensajes(c.id)
+            if (guardados == null) aviso.value = "No pudimos abrir esa conversación."
+            else {
+                consulta?.cancel(); pensando.value = false; limpiarEstado()
+                mensajes.value = guardados.map { MensajeAsesor(it.id, it.rol != "assistant", it.texto, proveedor = it.proveedor) }
+                conversacionId.value = c.id; recordar = c.recordar; contexto = AsesorContext(); historialAbierto.value = false
+            }
+            cargandoConversacion.value = false
+        }
+    }
 
     fun verificar() {
         conexion.value = ConexionIA.DESPERTANDO
@@ -58,8 +113,11 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     /** «Reintentar con IA»: quita el respaldo local anterior y vuelve a preguntar. */
     fun reintentar(vista: VistaInicio) { ultimoTexto?.let { procesar(it, vista, esReintento = true) } }
 
-    private fun agregarBot(texto: String, sugerencias: List<String> = emptyList()) =
-        mensajes.update { it + MensajeAsesor(nuevoId(), false, texto, sugerencias) }
+    private fun agregarBot(texto: String, sugerencias: List<String> = emptyList(), proveedor: String? = null) {
+        val m = MensajeAsesor(nuevoId(), false, texto, sugerencias, proveedor)
+        mensajes.update { it + m }
+        guardar(m)
+    }
 
     private fun limpiarEstado() { error.value = null; ultimoTexto = null }
 
@@ -68,9 +126,9 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
         // El historial que ve la IA es el anterior a esta pregunta, como `messages.slice(-5)` en la web.
         val historial = mensajes.value.map { TurnoChat(it.id, if (it.esUsuario) "user" else "bot", it.texto) }
         if (esReintento) mensajes.update { if (it.lastOrNull()?.esUsuario == false) it.dropLast(1) else it }
-        else mensajes.update { it + MensajeAsesor(nuevoId(), true, t) }
+        else MensajeAsesor(nuevoId(), true, t).let { u -> mensajes.update { it + u }; guardar(u) }
 
-        responderAyudaLukApp(t)?.let { agregarBot(it); limpiarEstado(); return }
+        responderAyudaLukApp(t)?.let { agregarBot(it, proveedor = "Guía de LukApp"); limpiarEstado(); return }
 
         pensando.value = true
         consulta = viewModelScope.launch {
@@ -83,19 +141,19 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                 }
                 val simulacion = withContext(Dispatchers.Default) { simularPregunta(t, EntradaMotorFinanciero(libro, vista.hoy, vista.ajustes.periodo)) }
                 if (simulacion != null) {
-                    agregarBot(simulacion.respuesta); conexion.value = ConexionIA.LOCAL; limpiarEstado(); return@launch
+                    agregarBot(simulacion.respuesta, proveedor = "Luki"); conexion.value = ConexionIA.LOCAL; limpiarEstado(); return@launch
                 }
                 if (!esReintento) {
                     val rapida = local()
                     if (!esRespuestaFallbackAsesor(rapida)) {
                         contexto = rapida.newContext
-                        agregarBot(rapida.text, rapida.suggestions.orEmpty())
+                        agregarBot(rapida.text, rapida.suggestions.orEmpty(), "Luki")
                         conexion.value = ConexionIA.LOCAL; limpiarEstado(); return@launch
                     }
                 }
                 error.value = null; ultimoTexto = null
-                when (val r = cliente.consultar(t, historial, "asesor-${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}")) {
-                    is ClienteAsesor.Respuesta.Texto -> { agregarBot(r.texto); conexion.value = ConexionIA.EN_LINEA }
+                when (val r = cliente.consultar(t, historial, "asesor-${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}", if (recordar) memoria.map { "${it.clave}: ${it.valor}" } else emptyList())) {
+                    is ClienteAsesor.Respuesta.Texto -> { agregarBot(r.texto, proveedor = r.proveedor); conexion.value = ConexionIA.EN_LINEA }
                     is ClienteAsesor.Respuesta.Error -> {
                         conexion.value = ConexionIA.LOCAL
                         error.value = r.mensaje; ultimoTexto = t
@@ -111,5 +169,6 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     fun nuevaConversacion() {
         consulta?.cancel()
         mensajes.value = emptyList(); limpiarEstado(); pensando.value = false; contexto = AsesorContext()
+        conversacionId.value = null; historialAbierto.value = false
     }
 }
