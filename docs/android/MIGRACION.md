@@ -264,3 +264,8 @@ y BotonAnotar (con el intérprete ya portado), Dinero y Mes, en ese orden de pri
 ### v10.21.0 — Copiar y compartir en el Asesor
 
 Debajo de cada respuesta de Luki hay dos botones: copiar al portapapeles (con confirmación «Copiado») y compartir por la hoja del sistema (solo el texto). Sin prueba propia ni verificación en emulador (sin sesión). Siguen pendientes 👍👎, leer en voz alta y regenerar.
+
+
+### v10.22.0 — Regenerar y 👍👎 en el Asesor
+
+Cada respuesta de Luki suma 👍, 👎 y regenerar. Igual que en la web, la valoración solo vive en pantalla (no se guarda ni se envía) y regenerar vuelve a mandar la pregunta anterior como un mensaje nuevo (no reemplaza la respuesta). Sin prueba propia ni verificación en emulador. Pendiente: leer en voz alta.

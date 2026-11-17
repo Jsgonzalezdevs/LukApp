@@ -30,7 +30,7 @@ import kotlinx.coroutines.delay
 
 /** Copiar y compartir una respuesta de Luki. Compartir manda solo el texto, sin datos de la cuenta. */
 @Composable
-fun AccionesMensaje(texto: String) {
+fun AccionesMensaje(texto: String, valoracion: Boolean?, pensando: Boolean, alValorar: (Boolean) -> Unit, alRegenerar: () -> Unit) {
     val c = LukApp.colores
     val contexto = LocalContext.current
     var copiado by remember { mutableStateOf(false) }
@@ -51,6 +51,17 @@ fun AccionesMensaje(texto: String) {
             }),
             contentAlignment = Alignment.Center,
         ) { Icono(Lucide.Share2, tamano = 16.dp, grosor = 2f, color = c.inkSoft) }
+        for ((util, icono, desc) in listOf(Triple(true, Lucide.ThumbsUp, "Útil"), Triple(false, Lucide.ThumbsDown, "No fue útil"))) {
+            val marcado = valoracion == util
+            Box(
+                Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = desc }.pulsable(alPulsar = { alValorar(util) }),
+                contentAlignment = Alignment.Center,
+            ) { Icono(icono, tamano = 16.dp, grosor = if (marcado) 2.75f else 2f, color = if (marcado) c.ink else c.inkSoft) }
+        }
+        Box(
+            Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Regenerar" }.pulsable(habilitado = !pensando, alPulsar = alRegenerar),
+            contentAlignment = Alignment.Center,
+        ) { Icono(Lucide.RotateCcw, tamano = 16.dp, grosor = 2f, color = c.inkSoft.copy(alpha = if (pensando) 0.4f else 1f)) }
         if (copiado) Text("Copiado", style = LukApp.tipo.xs, color = c.inkSoft)
     }
 }

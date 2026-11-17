@@ -66,6 +66,7 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
     val pensando by modelo.pensando.collectAsState()
     val conexion by modelo.conexion.collectAsState()
     val error by modelo.error.collectAsState()
+    val valoraciones by modelo.valoraciones.collectAsState()
     var entrada by remember { mutableStateOf("") }
     val lista = rememberLazyListState()
     LaunchedEffect(mensajes.size, pensando) { if (mensajes.isNotEmpty()) lista.animateScrollToItem(mensajes.size + (if (pensando) 0 else -1)) }
@@ -114,7 +115,7 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
                             m.texto, Modifier.clip(forma).background(if (m.esUsuario) c.accent else c.soft).padding(12.dp),
                             style = LukApp.tipo.de(15, if (m.esUsuario) 500 else 400, 1.6f), color = if (m.esUsuario) c.onAccent else c.ink,
                         )
-                        if (!m.esUsuario && m.texto.isNotBlank()) AccionesMensaje(m.texto)
+                        if (!m.esUsuario && m.texto.isNotBlank()) AccionesMensaje(m.texto, valoraciones[m.id], pensando, { u -> modelo.valorar(m.id, u) }, { modelo.regenerar(m.id, vista) })
                         m.accion?.let { EfectoMovimiento(it, "Revisar y editar movimiento", vista) { alRevisarMovimiento(it) } }
                         m.acciones.forEachIndexed { i, a -> EfectoMovimiento(a, "Revisar y editar movimiento ${i + 1}", vista) { alRevisarMovimiento(a) } }
                         if (m.propuesta != null) TarjetaPropuesta(m, vista, vista.catalogo, alEditar = { f -> modelo.editarPropuesta(m.id, f) }, alConfirmar = { modelo.confirmarPropuesta(m.id, alFijarPresupuesto, alCrearMeta) })

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.22.0', fecha: '2026-11-17', texto: 'En la app de Android ya puedes marcar si una respuesta de Luki te sirvió (👍 o 👎) y pedirle que la regenere si no te convenció. 🔄' },
   { version: '10.21.0', fecha: '2026-11-17', texto: 'Ahora puedes copiar o compartir lo que te responde Luki en la app de Android, con un toque debajo de cada respuesta. 📋' },
   { version: '10.20.0', fecha: '2026-11-17', texto: 'Si le cuentas un gasto a Luki («pagué 70 mil en comida»), te muestra cómo quedaría tu cuenta y tu tope, y te deja revisarlo y guardarlo con un toque. 🧾' },
   { version: '10.19.0', fecha: '2026-11-17', texto: 'Dile a Luki «quiero un presupuesto de 300 mil para comida» o «quiero una meta de 2 millones para viajar» y te arma una propuesta para que la revises, la ajustes y la confirmes. 💡' },

@@ -115,6 +115,20 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
         viewModelScope.launch { conexion.value = if (cliente.disponible()) ConexionIA.EN_LINEA else ConexionIA.LOCAL }
     }
 
+    /** Útil (true) / no útil (false) por mensaje. Como en la web, vive solo en pantalla: no se guarda ni se envía. */
+    val valoraciones = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+
+    fun valorar(id: String, util: Boolean) = valoraciones.update { if (it[id] == util) it - id else it + (id to util) }
+
+    /** Como `handleRegenerar`: vuelve a mandar la pregunta anterior a esa respuesta, o un resumen si no hay. */
+    fun regenerar(idRespuesta: String, vista: VistaInicio) {
+        val l = mensajes.value
+        val i = l.indexOfFirst { it.id == idRespuesta }
+        if (i == -1) return
+        val pregunta = l.subList(0, i).lastOrNull { it.esUsuario }?.texto ?: "Dame un resumen de mis finanzas"
+        enviar(pregunta, vista)
+    }
+
     fun enviar(texto: String, vista: VistaInicio) = procesar(texto.trim(), vista, esReintento = false)
 
     /** «Reintentar con IA»: quita el respaldo local anterior y vuelve a preguntar. */
