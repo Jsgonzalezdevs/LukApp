@@ -85,6 +85,8 @@ class AccionesPasivo(
     val comprar: suspend (id: String, monto: Long, categoria: String, cuotas: Int?, cuota: Long?, interes: Double?, manejo: Long?) -> Boolean,
     val abonar: suspend (deudaId: String, cuentaId: String, monto: Long) -> Boolean,
     val eliminar: suspend (id: String) -> Boolean,
+    val crear: suspend (nombre: String, icono: String, tipo: String, saldoInicial: Long) -> Boolean,
+    val actualizar: suspend (Cajita) -> Boolean,
 )
 
 private enum class Accion(val etiqueta: String) { COMPRA("Registrar compra"), ABONO("Abonar"), SALDO("Actualizar saldo") }
@@ -92,7 +94,7 @@ private enum class Accion(val etiqueta: String) { COMPRA("Registrar compra"), AB
 /**
  * HojaPanel + DeudasView.tsx (`soloTipo`). Hecho: el total, y por cada tarjeta o deuda su saldo, «Para pagar
  * este mes», cupo, registrar compra (con cuotas), abonar, actualizar saldo, historial, compras y eliminar.
- * Pendiente (sin botones vacíos): crear tarjeta o deuda y editar su nombre, cupo, corte y pago.
+ * Además: crear tarjeta o deuda (nombre, deuda actual, ícono) y editar nombre, cupo, pago mínimo, corte y pago.
  */
 @Composable
 fun PantallaPasivos(tipo: String, vista: VistaInicio, acciones: AccionesPasivo, alCerrar: () -> Unit) {
@@ -133,6 +135,7 @@ fun PantallaPasivos(tipo: String, vista: VistaInicio, acciones: AccionesPasivo, 
                     )
                 }
             }
+            FormularioNuevaDeuda(tipo, acciones)
             filas.forEach { fila -> TarjetaDeuda(fila.cajita, fila.saldoCop, vista, acciones) }
         }
     }
@@ -153,6 +156,7 @@ private fun TarjetaDeuda(cajita: Cajita, saldo: Long, vista: VistaInicio, accion
     var interes by remember { mutableStateOf("") }
     var manejo by remember { mutableStateOf("") }
     var confirmando by remember { mutableStateOf(false) }
+    var editando by remember { mutableStateOf(false) }
     var ocupado by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -196,10 +200,14 @@ private fun TarjetaDeuda(cajita: Cajita, saldo: Long, vista: VistaInicio, accion
                 Text(formatCop(saldo), Modifier.padding(top = 4.dp), style = LukApp.tipo.de(28, 600, 1.2f).copy(fontFeatureSettings = CIFRAS_TABULARES), color = c.salio)
                 Text(if (cajita.tipo == TipoCajita.TARJETA) "saldo usado" else "debes", style = LukApp.tipo.de(13, 400, 1.3f), color = c.inkFaint)
             }
+            Box(Modifier.size(40.dp).clip(Medidas.formaControl).semantics { contentDescription = "Editar ${nombreVisibleCuenta(cajita)}" }.pulsable { editando = !editando }, contentAlignment = Alignment.Center) {
+                Icono(Lucide.Pencil, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
+            }
             Box(Modifier.size(40.dp).clip(Medidas.formaControl).semantics { contentDescription = "Eliminar ${nombreVisibleCuenta(cajita)}" }.pulsable { confirmando = !confirmando }, contentAlignment = Alignment.Center) {
                 Icono(Lucide.Trash2, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
             }
         }
+        if (editando) FormularioEditarPasivo(cajita, acciones) { editando = false }
         if (pagoDelMes > 0) {
             Column(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaCard).background(c.salioBg).padding(12.dp)) {
                 Text("Para pagar este mes", style = LukApp.tipo.de(13, 600, 1.3f), color = c.salioInk)
@@ -351,5 +359,104 @@ private fun CampoEtiquetado(etiqueta: String, valor: String, alCambiar: (String)
     Column(modifier) {
         Text(etiqueta, style = LukApp.tipo.de(13, 600, 1.3f), color = c.inkSoft)
         Campo(valor, alCambiar, marcador, Modifier.padding(top = 4.dp).fillMaxWidth().clip(Medidas.formaControl).border(2.dp, c.line, Medidas.formaControl).background(c.sobreFondo(c.card)).padding(horizontal = 12.dp, vertical = 8.dp), decimal = decimal)
+    }
+}
+
+
+/** «Nueva tarjeta de crédito» / «Nueva deuda» de DeudasView.tsx: nombre, cuánto debes ahora e ícono. */
+@Composable
+private fun FormularioNuevaDeuda(tipo: String, acciones: AccionesPasivo) {
+    val c = LukApp.colores
+    val ambito = rememberCoroutineScope()
+    val esTarjeta = tipo == TipoCajita.TARJETA
+    var abierto by remember { mutableStateOf(false) }
+    var nombre by remember { mutableStateOf("") }
+    var saldo by remember { mutableStateOf("") }
+    var icono by remember { mutableStateOf("Wallet") }
+    var ocupado by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    fun cerrar() { abierto = false; nombre = ""; saldo = ""; icono = "Wallet"; error = null }
+    if (!abierto) {
+        Row(
+            Modifier.fillMaxWidth().clip(Medidas.formaCard).border(2.dp, c.line, Medidas.formaCard).pulsable { abierto = true }.padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icono(Lucide.Plus, tamano = 16.dp, grosor = 3f, color = c.inkSoft)
+            Text(if (esTarjeta) "Agregar tarjeta de crédito" else "Agregar deuda", style = LukApp.tipo.de(17, 600, 1.3f), color = c.inkSoft)
+        }
+        return
+    }
+    val valido = nombre.isNotBlank() && !ocupado
+    Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text(if (esTarjeta) "Nueva tarjeta de crédito" else "Nueva deuda", style = LukApp.tipo.de(15, 600, 1.4f), color = c.inkSoft)
+        CampoEtiquetado("Nombre", nombre, { nombre = it }, if (esTarjeta) "Ej: Visa Davivienda" else "Ej: Préstamo a mi mamá", Modifier.fillMaxWidth())
+        CampoEtiquetado("¿Cuánto debes ahora?", saldo, { saldo = conPuntos(it) }, "0", Modifier.fillMaxWidth())
+        Text("Ícono", style = LukApp.tipo.de(15, 600, 1.4f), color = c.inkSoft)
+        androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Wallet", "PiggyBank", "Tent", "Car", "Home", "GraduationCap", "Laptop", "Gift", "LifeBuoy", "Gem", "Plane").forEach { n ->
+                Box(
+                    Modifier.size(40.dp).clip(Medidas.formaCard).border(2.dp, if (icono == n) c.ink else c.line, Medidas.formaCard).background(if (icono == n) c.soft else c.card)
+                        .semantics { contentDescription = "Ícono $n" }.pulsable(escala = 1f, alPulsar = { icono = n }),
+                    contentAlignment = Alignment.Center,
+                ) { Icono(Lucide.porNombre[n] ?: Lucide.Wallet, tamano = 20.dp, color = if (icono == n) c.ink else c.inkSoft) }
+            }
+        }
+        error?.let { Text(it, style = LukApp.tipo.xs, color = c.salio) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                if (ocupado) "Creando…" else "Crear",
+                Modifier.weight(1f).clip(Medidas.formaPildora).background(c.accent.copy(alpha = if (valido) 1f else 0.3f)).pulsable(habilitado = valido, alPulsar = {
+                    ocupado = true; error = null
+                    ambito.launch { if (acciones.crear(nombre, icono, tipo, parseAmountInput(saldo) ?: 0L)) cerrar() else error = "No se pudo guardar. Inténtalo de nuevo."; ocupado = false }
+                }).padding(vertical = 16.dp),
+                style = LukApp.tipo.de(17, 600, 1.3f), color = c.onAccent, textAlign = TextAlign.Center,
+            )
+            Text("Cancelar", Modifier.clip(Medidas.formaPildora).background(c.soft).pulsable(habilitado = !ocupado, alPulsar = ::cerrar).padding(horizontal = 24.dp, vertical = 16.dp), style = LukApp.tipo.de(17, 600, 1.3f), color = c.inkSoft)
+        }
+    }
+}
+
+/** Editar una tarjeta o deuda: nombre y, en tarjetas, cupo, pago mínimo y días de corte y pago (1..31). */
+@Composable
+private fun FormularioEditarPasivo(cajita: Cajita, acciones: AccionesPasivo, alCerrar: () -> Unit) {
+    val c = LukApp.colores
+    val ambito = rememberCoroutineScope()
+    var nombre by remember { mutableStateOf(cajita.nombre) }
+    var cupo by remember { mutableStateOf(cajita.limiteCreditoCop?.let { conPuntos(it.toString()) } ?: "") }
+    var minimo by remember { mutableStateOf(cajita.pagoMinimoCop?.let { conPuntos(it.toString()) } ?: "") }
+    var corte by remember { mutableStateOf(cajita.diaCorte?.toString() ?: "") }
+    var pago by remember { mutableStateOf(cajita.diaPago?.toString() ?: "") }
+    var ocupado by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val esTarjeta = cajita.tipo == TipoCajita.TARJETA
+    // Un día fuera de 1..31 se guarda como «no configurado», igual que la web.
+    fun dia(t: String) = t.toIntOrNull()?.takeIf { it in 1..31 }
+    Column(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaCard).background(c.soft).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        CampoEtiquetado(if (esTarjeta) "Nombre de la tarjeta" else "Nombre de la deuda", nombre, { nombre = it }, "", Modifier.fillMaxWidth())
+        if (esTarjeta) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CampoEtiquetado("Cupo", cupo, { cupo = conPuntos(it) }, "No configurado", Modifier.weight(1f))
+                CampoEtiquetado("Pago mínimo", minimo, { minimo = conPuntos(it) }, "No configurado", Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CampoEtiquetado("Día de corte", corte, { corte = it.filter(Char::isDigit) }, "No configurado", Modifier.weight(1f))
+                CampoEtiquetado("Día de pago", pago, { pago = it.filter(Char::isDigit) }, "No configurado", Modifier.weight(1f))
+            }
+        }
+        error?.let { Text(it, style = LukApp.tipo.xs, color = c.salio) }
+        val valido = nombre.isNotBlank() && !ocupado
+        Text(
+            if (ocupado) "Guardando…" else "Guardar cambios",
+            Modifier.padding(top = 4.dp).clip(Medidas.formaPildora).background(c.accent.copy(alpha = if (valido) 1f else 0.4f)).pulsable(habilitado = valido, alPulsar = {
+                ocupado = true; error = null
+                ambito.launch {
+                    val nueva = if (esTarjeta) cajita.copy(nombre = nombre.trim(), limiteCreditoCop = parseAmountInput(cupo), diaCorte = dia(corte), diaPago = dia(pago), pagoMinimoCop = parseAmountInput(minimo))
+                    else cajita.copy(nombre = nombre.trim())
+                    if (acciones.actualizar(nueva)) alCerrar() else error = "No se pudo guardar. Inténtalo de nuevo."
+                    ocupado = false
+                }
+            }).padding(horizontal = 16.dp, vertical = 12.dp),
+            style = LukApp.tipo.de(15, 600, 1.3f), color = c.onAccent,
+        )
     }
 }

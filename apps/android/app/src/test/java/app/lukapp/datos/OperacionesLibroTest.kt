@@ -192,4 +192,17 @@ class OperacionesLibroTest {
         assertNull(OperacionesLibro.transferir(libro, "a", "a", 100))
         assertNull(OperacionesLibro.transferir(libro, "a", "b", 0))
     }
+
+    @Test fun crearTarjetaOuDeudaGuardaLaDeudaActualYNoTocaCupoNiClase() {
+        val c = OperacionesLibro.crearCajita(Libro(), "Visa Davivienda", "Wallet", app.lukapp.dominio.TipoCajita.TARJETA, null, null, null, false, "COP", 450_000)
+        val t = c.guardar.cajitas.single()
+        assertEquals(null, t.claseCuenta); assertEquals(null, t.limiteCreditoCop); assertEquals("COP", t.moneda)
+        assertEquals(450_000L, c.guardar.movimientos.single().deltaCop)
+        assertTrue(OperacionesLibro.crearCajita(Libro(), "Préstamo", "Wallet", app.lukapp.dominio.TipoCajita.DEUDA, null, null, null, false, "COP", 0).guardar.movimientos.isEmpty())
+    }
+
+    @Test fun actualizarCajitaReemplazaLaFilaEntera() {
+        val t = cuentaDe("t", "Visa").copy(tipo = app.lukapp.dominio.TipoCajita.TARJETA, limiteCreditoCop = 5_000_000, diaCorte = 15, diaPago = 30)
+        assertEquals(t, OperacionesLibro.actualizarCajita(t).guardar.cajitas.single())
+    }
 }

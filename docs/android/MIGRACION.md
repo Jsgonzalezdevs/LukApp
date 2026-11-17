@@ -311,3 +311,8 @@ En Mes, el bloque de topes ya escribe: interruptor de alertas y umbral (10–100
 - Dinero: «Agregar cuenta» (también en el estado vacío) y «🐷 Crear ahorro». El formulario sigue a `CajitasView`: la clase de cuenta se ajusta sola al reconocer el banco, ahorro o inversión (con moneda), saldo inicial, ícono, meta y tasa de rendimientos (la coma vale como decimal). El nombre se vuelve único sin importar mayúsculas («Nequi (2)»); el saldo inicial es un movimiento de apertura (una cuenta con saldo en blanco queda pendiente de confirmar; un ahorro en 0 no abre movimiento).
 - Detalle de cuenta: «Enviar dinero a otra cuenta» → par de movimientos (retiro/depósito) y una fila de transferencia neutral (ni gasto ni ingreso). Con menos de dos cuentas muestra el aviso de la web.
 - 5 pruebas nuevas (22 en `OperacionesLibroTest`). Sin ver en emulador. Falta: editar nombre/tipo de una cuenta, tarjetas de crédito (cupo, corte, pago) y deudas, cuyo formulario es el de «Tarjetas y deudas».
+
+
+### v10.29.0 — Crear y editar tarjetas y deudas
+
+En el panel de tarjetas y deudas: «Agregar tarjeta de crédito» / «Agregar deuda» (nombre, «¿Cuánto debes ahora?» e ícono; la deuda actual entra como movimiento de apertura, como en la web) y un lápiz en cada tarjeta para editar nombre y, en tarjetas, cupo, pago mínimo y días de corte y pago (fuera de 1..31 queda «no configurado»). Misma `crearCajita`/`actualizarCajita` de las cuentas. 2 pruebas nuevas. Sin ver en emulador. Con esto queda cerrado el bloque «Tarjetas y deudas»; falta solo editar nombre/tipo de una cuenta normal.

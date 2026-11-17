@@ -150,6 +150,9 @@ object OperacionesLibro {
         return Cambios(guardar = Libro(movimientos = par, transacciones = listOf(tx)))
     }
 
+    /** `almacen.actualizarCajita`: reemplaza la fila entera (lo usa editar una tarjeta o deuda). */
+    fun actualizarCajita(c: app.lukapp.dominio.Cajita): Cambios = Cambios(guardar = Libro(cajitas = listOf(c)))
+
     /** `almacen.crearMeta`: la meta nueva empieza sin completar. */
     fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0): Cambios =
         Cambios(guardar = Libro(metas = listOf(Meta(nuevoId(), nombre, icon, objetivoCop, fechaObjetivo, null, ahorradoCop, Instant.now().toString(), null))))

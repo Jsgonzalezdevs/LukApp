@@ -114,6 +114,7 @@ class ModeloApp(
 
     suspend fun crearCajita(nombre: String, icon: String, tipo: String, clase: String?, meta: Long?, tasa: Double?, inversion: Boolean, moneda: String, saldoInicial: Long?) =
         aplicarCambios { OperacionesLibro.crearCajita(finanzas.libro.value, nombre, icon, tipo, clase, meta, tasa, inversion, moneda, saldoInicial) }
+    suspend fun actualizarCajita(c: app.lukapp.dominio.Cajita) = aplicarCambios { OperacionesLibro.actualizarCajita(c) }
     suspend fun transferir(origen: String, destino: String, monto: Long) =
         aplicarCambios { OperacionesLibro.transferir(finanzas.libro.value, origen, destino, monto) }
 

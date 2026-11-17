@@ -172,6 +172,8 @@ fun ShellLukApp(
                     acciones = app.lukapp.ui.pasivos.AccionesPasivo(
                         fijarSaldo = modelo::fijarSaldo, comprar = modelo::comprar, abonar = modelo::abonar,
                         eliminar = { modelo.eliminarCuenta(it) },
+                        crear = { nombre, icono, t, saldo -> modelo.crearCajita(nombre, icono, t, null, null, null, false, "COP", saldo) },
+                        actualizar = modelo::actualizarCajita,
                     ),
                 )
             }
