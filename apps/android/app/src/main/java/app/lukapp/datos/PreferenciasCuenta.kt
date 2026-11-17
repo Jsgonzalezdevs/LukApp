@@ -70,6 +70,19 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
         guardar("finanzas:resumen:ahorro", JsonPrimitive(valor))
     }
 
+    /** `setAlertasActivas`. */
+    suspend fun alertasPresupuesto(valor: Boolean) {
+        _ajustes.update { it.copy(alertasPresupuesto = valor) }
+        guardar("finanzas:presupuestos:alertas-activas", JsonPrimitive(valor))
+    }
+
+    /** `setUmbralAlertaPct`: acota a 1..100 y guarda un entero, como la web. */
+    suspend fun umbralAlerta(pct: Int) {
+        val v = pct.coerceIn(1, 100)
+        _ajustes.update { it.copy(umbralAlertaPct = v) }
+        guardar("finanzas:presupuestos:umbral-alerta", JsonPrimitive(v))
+    }
+
     /** `setCuentaFavorita`: marcar o desmarcar la cuenta principal (null se guarda como null, igual que la web). */
     suspend fun cuentaFavorita(id: String?) {
         _ajustes.update { it.copy(cuentaFavoritaId = id) }

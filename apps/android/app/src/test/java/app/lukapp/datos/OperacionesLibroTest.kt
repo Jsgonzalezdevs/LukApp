@@ -133,4 +133,10 @@ class OperacionesLibroTest {
         val m = OperacionesLibro.crearMeta(Libro(), "Viaje", 2_000_000, null).guardar.metas.single()
         assertEquals("Viaje", m.nombre); assertEquals("Target", m.icon); assertEquals(0L, m.ahorradoCop); assertEquals(null, m.completedAt)
     }
+
+    @Test fun quitarPresupuestoBorraPorCategoriaYNoTocaNadaMas() {
+        val c = OperacionesLibro.quitarPresupuesto("comida")
+        assertEquals(mapOf("presupuestos" to listOf("comida")), c.borrar)
+        assertEquals(Libro(), c.guardar)
+    }
 }

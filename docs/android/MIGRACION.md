@@ -294,3 +294,8 @@ El encabezado del Asesor muestra «✦ Premium» cuando `GET /api/mi-plan` (con 
 ### v10.25.1 — Cierre al abrir sin sesión
 
 Al probar en emulador, la app se cerraba al abrir sin sesión (NPE en `ModeloAsesor`): `premium`, añadida en v10.24.0, estaba declarada después del `init`, y sin sesión la consulta de plan termina sin suspender y la escribe antes de existir. Se movió antes del `init`. Estuvo así de v10.24.0 a v10.25.0; con sesión no se notaba. Verificado: abre y muestra el acceso, 0 `FATAL EXCEPTION`. Lección: en los ViewModels, todo `StateFlow` va antes del `init`.
+
+
+### v10.26.0 — Topes: crear, editar, quitar y alertas
+
+En Mes, el bloque de topes ya escribe: interruptor de alertas y umbral (10–100 de 5 en 5, se guarda al soltar, en `user_metadata` con las mismas claves de la web), crear un tope tocando una categoría sin tope («Sueles gastar…»), editar y quitar desde el menú de cada fila. Quitar usa `borrar: {presupuestos: [categoria]}` (la tabla se clava por categoría en la RPC). Una prueba nueva de `quitarPresupuesto`. Sin ver en emulador. Falta el atajo «Nueva transacción» del menú.

@@ -69,7 +69,7 @@ import kotlin.math.max
  * y exportar a Excel; todos abren pantallas que aún no existen.
  */
 @Composable
-fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCalendario: () -> Unit) {
+fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCalendario: () -> Unit, topes: AccionesTopes) {
     val c = LukApp.colores
     val config = vista.ajustes.periodo
     val clave = vista.clavePeriodo
@@ -116,7 +116,7 @@ fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCa
             )
         }
 
-        Topes(vista)
+        Topes(vista, topes)
 
         val gastos = remember(vista.delPeriodo) { byCategory(vista.delPeriodo, "gasto") }
         val ingresos = remember(vista.delPeriodo) { byCategory(vista.delPeriodo, "ingreso") }

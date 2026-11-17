@@ -108,6 +108,14 @@ class ModeloApp(
         true
     }.getOrDefault(false)
 
+    suspend fun quitarPresupuesto(categoria: String): Boolean = runCatching {
+        finanzas.aplicar(OperacionesLibro.quitarPresupuesto(categoria))
+        true
+    }.getOrDefault(false)
+
+    fun alertasPresupuesto(valor: Boolean) { viewModelScope.launch { preferencias.alertasPresupuesto(valor) } }
+    fun umbralAlerta(pct: Int) { viewModelScope.launch { preferencias.umbralAlerta(pct) } }
+
     suspend fun crearMeta(nombre: String, objetivo: Long, fecha: String?): Boolean = runCatching {
         finanzas.aplicar(OperacionesLibro.crearMeta(finanzas.libro.value, nombre, objetivo, fecha))
         true

@@ -83,6 +83,9 @@ object OperacionesLibro {
         return Cambios(guardar = Libro(presupuestos = listOf(Presupuesto(categoria, montoCop, previo?.createdAt ?: Instant.now().toString()))))
     }
 
+    /** `quitarPresupuesto`: el tope se borra por su categoría (la RPC usa `categoria` como clave de esa tabla). */
+    fun quitarPresupuesto(categoria: String): Cambios = Cambios(borrar = mapOf("presupuestos" to listOf(categoria)))
+
     /** `almacen.crearMeta`: la meta nueva empieza sin completar. */
     fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0): Cambios =
         Cambios(guardar = Libro(metas = listOf(Meta(nuevoId(), nombre, icon, objetivoCop, fechaObjetivo, null, ahorradoCop, Instant.now().toString(), null))))

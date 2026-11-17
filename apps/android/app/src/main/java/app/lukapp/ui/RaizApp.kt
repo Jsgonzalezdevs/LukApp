@@ -134,7 +134,8 @@ fun ShellLukApp(
                                     alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
                                     alAbrirPasivos = { modelo.panelPasivos.value = it },
                                 )
-                                Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true })
+                                Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
+                                    topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta))
                                 Seccion.AJUSTES -> app.lukapp.ui.mas.PantallaMas(
                                     contarAhorros = actual.ajustes.contarAhorros, alContarAhorros = modelo::contarAhorros,
                                     tema = tema, alCambiarTema = alCambiarTema,
