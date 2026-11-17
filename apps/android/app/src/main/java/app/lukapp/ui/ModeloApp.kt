@@ -103,6 +103,16 @@ class ModeloApp(
     val panelPasivos = MutableStateFlow<String?>(null)
     val calendarioAbierto = MutableStateFlow(false)
 
+    suspend fun fijarPresupuesto(categoria: String, monto: Long): Boolean = runCatching {
+        OperacionesLibro.fijarPresupuesto(finanzas.libro.value, categoria, monto)?.let { finanzas.aplicar(it) }
+        true
+    }.getOrDefault(false)
+
+    suspend fun crearMeta(nombre: String, objetivo: Long, fecha: String?): Boolean = runCatching {
+        finanzas.aplicar(OperacionesLibro.crearMeta(finanzas.libro.value, nombre, objetivo, fecha))
+        true
+    }.getOrDefault(false)
+
     suspend fun abonar(deudaId: String, cuentaId: String, monto: Long): Boolean = runCatching {
         OperacionesLibro.abonarDeuda(finanzas.libro.value, deudaId, cuentaId, monto)?.let { finanzas.aplicar(it) }
         true

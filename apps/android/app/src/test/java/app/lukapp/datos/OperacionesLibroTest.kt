@@ -121,4 +121,16 @@ class OperacionesLibroTest {
         val c = OperacionesLibro.registrarCompra(Libro(cajitas = cuentas), "visa", 10_000, "comida", cuotasTotal = 1, cuotaCop = 10_000)
         assertEquals(null, c.guardar.transacciones.single().cuotasTotal); assertEquals(null, c.guardar.movimientos.single().cuotaCop)
     }
+
+    @Test fun fijarPresupuestoConservaLaFechaOriginalYRechazaCero() {
+        val libro = Libro(presupuestos = listOf(app.lukapp.dominio.Presupuesto("comida", 100_000, "2026-01-01T00:00:00.000Z")))
+        val c = OperacionesLibro.fijarPresupuesto(libro, "comida", 300_000)!!
+        assertEquals(listOf(app.lukapp.dominio.Presupuesto("comida", 300_000, "2026-01-01T00:00:00.000Z")), c.guardar.presupuestos)
+        assertEquals(null, OperacionesLibro.fijarPresupuesto(libro, "comida", 0))
+    }
+
+    @Test fun crearMetaEmpiezaSinCompletarYSinAhorro() {
+        val m = OperacionesLibro.crearMeta(Libro(), "Viaje", 2_000_000, null).guardar.metas.single()
+        assertEquals("Viaje", m.nombre); assertEquals("Target", m.icon); assertEquals(0L, m.ahorradoCop); assertEquals(null, m.completedAt)
+    }
 }

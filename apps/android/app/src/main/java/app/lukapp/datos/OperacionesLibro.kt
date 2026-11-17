@@ -9,6 +9,8 @@ import app.lukapp.dominio.saldoDeCajita
 import app.lukapp.dominio.tieneSaldoConfirmado
 import java.time.Instant
 import app.lukapp.dominio.Libro
+import app.lukapp.dominio.Meta
+import app.lukapp.dominio.Presupuesto
 import app.lukapp.dominio.TipoTx
 import app.lukapp.dominio.Transaccion
 import app.lukapp.dominio.emparejarComprasTarjeta
@@ -74,6 +76,17 @@ object OperacionesLibro {
      * escritura: baja la deuda y baja la cuenta. No es un gasto del libro porque no es consumo nuevo: mueve
      * plata que ya se contó, y anotarlo como gasto inflaría el mes cada vez que se paga una tarjeta.
      */
+    /** `almacen.fijarPresupuesto`: un tope de cero o menos no es presupuesto, y al reajustar se conserva la fecha original. */
+    fun fijarPresupuesto(libro: Libro, categoria: String, montoCop: Long): Cambios? {
+        if (montoCop <= 0) return null
+        val previo = libro.presupuestos.firstOrNull { it.categoria == categoria }
+        return Cambios(guardar = Libro(presupuestos = listOf(Presupuesto(categoria, montoCop, previo?.createdAt ?: Instant.now().toString()))))
+    }
+
+    /** `almacen.crearMeta`: la meta nueva empieza sin completar. */
+    fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0): Cambios =
+        Cambios(guardar = Libro(metas = listOf(Meta(nuevoId(), nombre, icon, objetivoCop, fechaObjetivo, null, ahorradoCop, Instant.now().toString(), null))))
+
     fun abonarDeuda(libro: Libro, deudaId: String, cuentaId: String, montoCop: Long, fecha: String = bogotaDate()): Cambios? {
         val monto = abs(montoCop)
         if (monto == 0L) return null

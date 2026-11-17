@@ -147,8 +147,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   disponibilidad (`GET /api/asesor-ia/disponibilidad`), chat contra `POST /api/asesor-ia` (historial de 5, 60 s,
   mensajes de error de la web), «Reintentar con IA», Nueva conversación y el aviso de IA. Compila y pasa 2 pruebas
   nuevas (pose y limpieza de `<think>`); **no se vio en emulador ni se probó contra el servidor** (sin sesión).
-  **Falta:** movimiento detectado, propuestas
-  de presupuesto/meta, copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
+  **Falta:** movimiento detectado, copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
   Inicio.
 
 - **Asesor, motor local (v10.17.0):** `dominio/AsesorBot.kt`, `AlcanceAsesor`, `ContextoProductoIA`, `ConversacionDeuda`,
@@ -165,6 +164,12 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   (`/api/asesor/memoria`) viaja a la IA. Compila; **no se vio en emulador ni se probó contra el servidor** (sin sesión). La fecha
   de cada chat usa `d MMM yyyy, h:mm a` de Java, no `Intl`, así que el formato puede diferir en detalle. Falta: telemetría
   del respaldo local, olvidar datos de memoria desde la UI y el interruptor `recordar` por conversación.
+
+- **Asesor, propuestas (v10.19.0):** `detectarPropuestaAsesor` portado con los 3 casos de `propuestasAsesor.test.ts`; tarjeta
+  «💡 Propuesta para revisar» editable (categoría, tope, nombre, objetivo, fecha) que solo guarda al pulsar Confirmar,
+  por `OperacionesLibro.fijarPresupuesto` (conserva la fecha original; ≤ 0 se rechaza) y `crearMeta`, con 2 pruebas nuevas.
+  Compila; **no se vio en emulador** (sin sesión). Diferencia: la fecha objetivo se escribe como `AAAA-MM-DD` (la web usa un
+  selector de fecha). Se muestra en respuestas de la IA y del respaldo local, no en guía ni simulación, como la web.
 
 ## Sin verificar todavía
 

@@ -7,6 +7,8 @@ import app.lukapp.datos.TurnoChat
 import app.lukapp.dominio.AsesorContext
 import app.lukapp.dominio.ConexionIA
 import app.lukapp.dominio.EntradaMotorFinanciero
+import app.lukapp.dominio.PropuestaAsesor
+import app.lukapp.dominio.detectarPropuestaAsesor
 import app.lukapp.dominio.voz.aprenderDe
 import app.lukapp.dominio.elegirIndiceImagenLuki
 import app.lukapp.dominio.esRespuestaFallbackAsesor
@@ -25,7 +27,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-data class MensajeAsesor(val id: String, val esUsuario: Boolean, val texto: String, val sugerencias: List<String> = emptyList(), val proveedor: String? = null)
+data class MensajeAsesor(
+    val id: String, val esUsuario: Boolean, val texto: String, val sugerencias: List<String> = emptyList(), val proveedor: String? = null,
+    val propuesta: PropuestaAsesor? = null, val propuestaGuardando: Boolean = false, val propuestaConfirmada: Boolean = false, val propuestaError: String? = null,
+)
 
 /**
  * Estado del chat del Asesor, con el orden de resolución de AsesorView.handleSend:
@@ -113,8 +118,8 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     /** «Reintentar con IA»: quita el respaldo local anterior y vuelve a preguntar. */
     fun reintentar(vista: VistaInicio) { ultimoTexto?.let { procesar(it, vista, esReintento = true) } }
 
-    private fun agregarBot(texto: String, sugerencias: List<String> = emptyList(), proveedor: String? = null) {
-        val m = MensajeAsesor(nuevoId(), false, texto, sugerencias, proveedor)
+    private fun agregarBot(texto: String, sugerencias: List<String> = emptyList(), proveedor: String? = null, propuesta: PropuestaAsesor? = null) {
+        val m = MensajeAsesor(nuevoId(), false, texto, sugerencias, proveedor, propuesta)
         mensajes.update { it + m }
         guardar(m)
     }
@@ -136,6 +141,7 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                 val libro = vista.libro
                 val saldos = saldosPorCajita(libro.movimientos, libro.transacciones, idsPasivos(libro.cajitas))
                 val lexico = aprenderDe(libro.transacciones)
+                val propuesta = detectarPropuestaAsesor(t, libro.categorias, lexico)
                 suspend fun local() = withContext(Dispatchers.Default) {
                     responderAsesor(t, libro.transacciones, libro.cajitas, saldos, libro.categorias, lexico, contexto, vista.contexto.liquidez.disponibleDiarioCop)
                 }
@@ -143,7 +149,7 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                 if (simulacion != null) {
                     agregarBot(simulacion.respuesta, proveedor = "Luki"); conexion.value = ConexionIA.LOCAL; limpiarEstado(); return@launch
                 }
-                if (!esReintento) {
+                if (!esReintento && propuesta == null) {
                     val rapida = local()
                     if (!esRespuestaFallbackAsesor(rapida)) {
                         contexto = rapida.newContext
@@ -153,16 +159,37 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                 }
                 error.value = null; ultimoTexto = null
                 when (val r = cliente.consultar(t, historial, "asesor-${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}", if (recordar) memoria.map { "${it.clave}: ${it.valor}" } else emptyList())) {
-                    is ClienteAsesor.Respuesta.Texto -> { agregarBot(r.texto, proveedor = r.proveedor); conexion.value = ConexionIA.EN_LINEA }
+                    is ClienteAsesor.Respuesta.Texto -> { agregarBot(r.texto, proveedor = r.proveedor, propuesta = propuesta); conexion.value = ConexionIA.EN_LINEA }
                     is ClienteAsesor.Respuesta.Error -> {
                         conexion.value = ConexionIA.LOCAL
                         error.value = r.mensaje; ultimoTexto = t
                         val respaldo = local()
                         contexto = respaldo.newContext
-                        agregarBot(respaldo.text, respaldo.suggestions.orEmpty())
+                        agregarBot(respaldo.text, respaldo.suggestions.orEmpty(), propuesta = propuesta)
                     }
                 }
             } finally { pensando.value = false }
+        }
+    }
+
+    private fun cambiar(id: String, f: (MensajeAsesor) -> MensajeAsesor) = mensajes.update { l -> l.map { if (it.id == id) f(it) else it } }
+
+    /** `actualizarPropuesta`: el monto nunca baja de 1, como en la web. */
+    fun editarPropuesta(id: String, f: (PropuestaAsesor) -> PropuestaAsesor) =
+        cambiar(id) { m -> if (m.propuesta == null || m.propuestaConfirmada) m else m.copy(propuesta = f(m.propuesta)) }
+
+    /** `confirmarPropuesta`: guarda por la misma puerta que el resto de la app y nunca sin que la persona pulse el botón. */
+    fun confirmarPropuesta(id: String, fijarPresupuesto: suspend (String, Long) -> Boolean, crearMeta: suspend (String, Long, String?) -> Boolean) {
+        val p = mensajes.value.firstOrNull { it.id == id }?.propuesta ?: return
+        cambiar(id) { it.copy(propuestaGuardando = true, propuestaError = null) }
+        viewModelScope.launch {
+            val ok = runCatching {
+                when (p) {
+                    is PropuestaAsesor.Presupuesto -> fijarPresupuesto(p.categoria, p.montoCop)
+                    is PropuestaAsesor.Meta -> crearMeta(p.nombre, p.objetivoCop, p.fechaObjetivo)
+                }
+            }.getOrDefault(false)
+            cambiar(id) { it.copy(propuestaGuardando = false, propuestaConfirmada = ok, propuestaError = if (ok) null else "No se pudo guardar; revisa tu conexión e inténtalo otra vez.") }
         }
     }
 
