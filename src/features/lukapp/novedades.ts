@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.15.0', fecha: '2026-11-17', texto: 'Ya puedes ver tu calendario financiero en la app de Android: qué entra, qué sale y qué tan seguro es, por día, semana o mes. 📅' },
   { version: '10.14.14', fecha: '2026-11-17', texto: 'La app de Android ahora abre con tus datos guardados cuando no tienes internet, en vez de pedirte que entres de nuevo. 📶' },
   { version: '10.14.13', fecha: '2026-11-13', texto: 'Preparamos guías claras de LukApp, finanzas personales y extractos para que el Asesor pueda orientarte con pasos más útiles y datos mejor explicados. 📚✨' },
   { version: '10.14.12', fecha: '2026-11-12', texto: 'Por dentro: probamos la pantalla Más de la nueva app de Android y encontramos que sin internet debería abrir con tus datos guardados; lo estamos puliendo. Tu app actual no cambia. 🔧' },

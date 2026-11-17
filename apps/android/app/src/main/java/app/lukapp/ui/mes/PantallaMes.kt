@@ -65,11 +65,11 @@ import kotlin.math.max
 
 /**
  * MesView.tsx. Pendiente (se omite, no se simula): accesos a Pagos fijos y
- * Proyección, el resumen tipo Wrapped, editar topes, el botón de calendario
+ * Proyección, el resumen tipo Wrapped, editar topes
  * y exportar a Excel; todos abren pantallas que aún no existen.
  */
 @Composable
-fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit) {
+fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCalendario: () -> Unit) {
     val c = LukApp.colores
     val config = vista.ajustes.periodo
     val clave = vista.clavePeriodo
@@ -86,11 +86,16 @@ fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(32.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             BotonFlecha(Lucide.ChevronLeft, "Período anterior", !sinNavegacion) { alElegirPeriodo(anterior) }
-            Text(
-                etiquetaDePeriodo(clave, config).replaceFirstChar { it.uppercase() },
-                Modifier.weight(1f).padding(horizontal = 8.dp),
-                style = LukApp.tipo.titulo, color = c.ink, textAlign = TextAlign.Center,
-            )
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    etiquetaDePeriodo(clave, config).replaceFirstChar { it.uppercase() },
+                    Modifier.weight(1f, fill = false),
+                    style = LukApp.tipo.titulo, color = c.ink, textAlign = TextAlign.Center,
+                )
+                Box(Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Abrir calendario financiero" }.pulsable(alPulsar = alAbrirCalendario), contentAlignment = Alignment.Center) {
+                    Icono(Lucide.CalendarDays, tamano = 16.dp, grosor = 2.2f, color = c.inkSoft)
+                }
+            }
             BotonFlecha(Lucide.ChevronRight, "Período siguiente", haySiguiente) { alElegirPeriodo(siguiente) }
         }
 

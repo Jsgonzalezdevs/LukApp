@@ -127,7 +127,7 @@ fun ShellLukApp(
                                     alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
                                     alAbrirPasivos = { modelo.panelPasivos.value = it },
                                 )
-                                Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo)
+                                Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true })
                                 Seccion.AJUSTES -> app.lukapp.ui.mas.PantallaMas(
                                     contarAhorros = actual.ajustes.contarAhorros, alContarAhorros = modelo::contarAhorros,
                                     tema = tema, alCambiarTema = alCambiarTema,
@@ -165,6 +165,8 @@ fun ShellLukApp(
                     ),
                 )
             }
+            val calendario by modelo.calendarioAbierto.collectAsState()
+            if (calendario) app.lukapp.ui.calendario.PantallaCalendario(actual, alCerrar = { modelo.calendarioAbierto.value = false })
             val abierta by modelo.cuentaAbierta.collectAsState()
             actual.libro.cajitas.firstOrNull { it.id == abierta && it.archivedAt == null }?.let { cuenta ->
                 app.lukapp.ui.cuenta.PantallaDetalleCuenta(

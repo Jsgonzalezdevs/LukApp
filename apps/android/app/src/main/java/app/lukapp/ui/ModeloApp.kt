@@ -101,6 +101,7 @@ class ModeloApp(
 
     /** La vista de tarjetas y deudas abierta (`panelDinero = 'tarjeta' | 'deuda'`). */
     val panelPasivos = MutableStateFlow<String?>(null)
+    val calendarioAbierto = MutableStateFlow(false)
 
     suspend fun abonar(deudaId: String, cuentaId: String, monto: Long): Boolean = runCatching {
         OperacionesLibro.abonarDeuda(finanzas.libro.value, deudaId, cuentaId, monto)?.let { finanzas.aplicar(it) }
