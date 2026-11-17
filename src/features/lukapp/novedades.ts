@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.24.0', fecha: '2026-11-17', texto: 'Si tienes Premium con el Asesor incluido, la app de Android ahora te lo marca con una insignia junto al estado de la IA. ✨' },
   { version: '10.23.0', fecha: '2026-11-17', texto: 'Luki ahora puede leerte sus respuestas en voz alta en la app de Android: toca el parlante debajo de la respuesta, y otra vez para detenerlo. 🔊' },
   { version: '10.22.0', fecha: '2026-11-17', texto: 'En la app de Android ya puedes marcar si una respuesta de Luki te sirvió (👍 o 👎) y pedirle que la regenere si no te convenció. 🔄' },
   { version: '10.21.0', fecha: '2026-11-17', texto: 'Ahora puedes copiar o compartir lo que te responde Luki en la app de Android, con un toque debajo de cada respuesta. 📋' },

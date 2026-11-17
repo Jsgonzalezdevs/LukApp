@@ -1,6 +1,7 @@
 package app.lukapp.ui.asesor
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,6 +68,8 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
     val conexion by modelo.conexion.collectAsState()
     val error by modelo.error.collectAsState()
     val valoraciones by modelo.valoraciones.collectAsState()
+    val premium by modelo.premium.collectAsState()
+    LaunchedEffect(Unit) { modelo.actualizarPlan() }
     val contexto = androidx.compose.ui.platform.LocalContext.current
     val lector = remember { LectorVoz(contexto) }
     androidx.compose.runtime.DisposableEffect(lector) { onDispose { lector.liberar() } }
@@ -88,6 +91,13 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
             ) {
                 Box(Modifier.size(8.dp).clip(CircleShape).background(when (conexion) { ConexionIA.EN_LINEA -> c.accent; ConexionIA.DESPERTANDO -> c.warn; else -> c.inkFaint }))
                 Text(etiquetaConexion(conexion), style = LukApp.tipo.de(13, if (conexion == ConexionIA.EN_LINEA) 600 else 400, 1.4f), color = if (conexion == ConexionIA.EN_LINEA) c.ink else c.inkSoft)
+            }
+            if (premium) Row(
+                Modifier.clip(Medidas.formaPildora).background(c.accent.copy(alpha = 0.1f)).border(1.dp, c.accent.copy(alpha = 0.2f), Medidas.formaPildora).padding(horizontal = 8.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icono(Lucide.Sparkles, tamano = 12.dp, grosor = 2f, color = c.accent)
+                Text("Premium", style = LukApp.tipo.de(10, 700, 1.4f), color = c.accent)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Ver conversaciones anteriores" }.pulsable(alPulsar = modelo::abrirHistorial), contentAlignment = Alignment.Center) {

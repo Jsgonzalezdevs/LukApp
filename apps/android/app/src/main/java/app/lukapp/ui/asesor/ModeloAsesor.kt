@@ -110,7 +110,13 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
         }
     }
 
+    /** Insignia «Premium» del encabezado. */
+    val premium = MutableStateFlow(false)
+
+    fun actualizarPlan() { viewModelScope.launch { premium.value = cliente.marcaPremium() } }
+
     fun verificar() {
+        actualizarPlan()
         conexion.value = ConexionIA.DESPERTANDO
         viewModelScope.launch { conexion.value = if (cliente.disponible()) ConexionIA.EN_LINEA else ConexionIA.LOCAL }
     }

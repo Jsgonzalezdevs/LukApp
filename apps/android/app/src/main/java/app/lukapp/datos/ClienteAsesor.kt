@@ -50,6 +50,23 @@ class ClienteAsesor(private val supabase: SupabaseClient, private val http: Http
         r.status.value in 200..299 && objeto(r.bodyAsText())?.get("ia")?.let { (it as? JsonPrimitive)?.booleanOrNull } == true
     } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
 
+    /**
+     * Como `useAiInsights`: la marca solo sale con plan «premium» Y el beneficio `asesor_ia` activo.
+     * Sin sesión, sin red o con cualquier fallo es false: no se muestra una marca que no se pudo comprobar.
+     */
+    suspend fun marcaPremium(): Boolean = try {
+        val token = supabase.auth.currentAccessTokenOrNull()
+        if (token == null) false else {
+            val r = http.get("${BuildConfig.API_URL}/api/mi-plan") { header("Authorization", "Bearer $token") }
+            val plan = objeto(r.bodyAsText())
+            val activo = (plan?.get("beneficios") as? kotlinx.serialization.json.JsonArray)?.any { b ->
+                val o = b as? JsonObject
+                (o?.get("clave") as? JsonPrimitive)?.contentOrNull == "asesor_ia" && (o["activo"] as? JsonPrimitive)?.booleanOrNull == true
+            } == true
+            r.status.value in 200..299 && (plan?.get("codigo") as? JsonPrimitive)?.contentOrNull == "premium" && activo
+        }
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
+
     suspend fun consultar(prompt: String, historial: List<TurnoChat>, idConsulta: String, memoria: List<String> = emptyList()): Respuesta {
         val token = supabase.auth.currentAccessTokenOrNull()
         return try {

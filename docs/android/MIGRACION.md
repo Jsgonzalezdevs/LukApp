@@ -274,3 +274,8 @@ Cada respuesta de Luki suma 👍, 👎 y regenerar. Igual que en la web, la valo
 ### v10.23.0 — Leer en voz alta en el Asesor
 
 Botón de parlante en cada respuesta de Luki con `TextToSpeech` de Android (voz es-ES), una lectura a la vez; tocar la que suena la detiene. Lee, copia y comparte el texto limpio (`limpiarTextoChat`), como la web (antes copiar/compartir mandaban el texto crudo). Sin prueba propia ni verificación en emulador/teléfono: depende de que el equipo tenga voz en español instalada, y si no, avisa. Diferencia: la web comparte con formato de LukApp; aquí va solo el texto.
+
+
+### v10.24.0 — Insignia Premium en el Asesor
+
+El encabezado del Asesor muestra «✦ Premium» cuando `GET /api/mi-plan` (con la sesión) devuelve `codigo == "premium"` y el beneficio `asesor_ia` activo, igual que `esPremium && tieneAsesorIa` en la web. Se consulta al abrir la pestaña y al tocar el indicador de conexión; la web además sondea cada 30 s y al volver a enfocar, aquí no. Cualquier fallo oculta la insignia. Sin prueba propia ni verificación con una cuenta Premium real.
