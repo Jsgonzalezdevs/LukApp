@@ -124,6 +124,7 @@ fun ShellLukApp(
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
                                     alAbrirMovimiento = anotar::abrirDetalle,
                                     insights = insights,
+                                    alBuscar = { modelo.buscarAbierto.value = true },
                                     alVerPagos = { modelo.calendarioAbierto.value = true },
                                     // Como `promptInicial`: pasa al Asesor y la pregunta sale sola.
                                     alConsultarAsesor = { pregunta -> modelo.seccion.value = Seccion.ASESOR; asesor.enviar(pregunta, actual) },
@@ -164,6 +165,20 @@ fun ShellLukApp(
                 actual = seccion,
                 alElegir = { modelo.seccion.value = it },
                 modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 16.dp),
+            )
+            val buscar by modelo.buscarAbierto.collectAsState()
+            if (buscar) app.lukapp.ui.inicio.PantallaBuscar(
+                actual, alAbrirMovimiento = anotar::abrirDetalle, alCerrar = { modelo.buscarAbierto.value = false },
+                alAbrirFuncion = { id ->
+                    modelo.buscarAbierto.value = false
+                    when (id) {
+                        "topes" -> modelo.seccion.value = Seccion.MES
+                        "dinero" -> modelo.seccion.value = Seccion.DINERO
+                        "asesor" -> modelo.seccion.value = Seccion.ASESOR
+                        "calendario" -> modelo.calendarioAbierto.value = true
+                        "recurrentes" -> modelo.pagosFijosAbierto.value = true
+                    }
+                },
             )
             CapaAnotar(anotar, actual, seccion, estadoGuardado = if (estado == EstadoSincronizacion.SIN_CONEXION) "Guardado en este dispositivo · pendiente de sincronizar" else "Sincronizado con tu cuenta", alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
             val pasivos by modelo.panelPasivos.collectAsState()

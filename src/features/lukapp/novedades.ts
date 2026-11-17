@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.31.0', fecha: '2026-11-17', texto: 'Ya puedes buscar en la app de Android: por quién, en qué o cuánto, en todo tu historial, con filtros y el total de lo que encuentras. También te lleva directo a funciones como Pagos fijos o el Calendario. 🔎' },
   { version: '10.30.0', fecha: '2026-11-17', texto: 'Inicio en Android ahora te muestra tus próximos pagos, cuánto puedes gastar hoy, qué pasa si haces una compra y tus categorías para filtrar los movimientos. 📅' },
   { version: '10.29.0', fecha: '2026-11-17', texto: 'En la app de Android ya puedes agregar tarjetas de crédito y deudas, y editar el nombre, el cupo, el pago mínimo y los días de corte y pago de una tarjeta. 💳' },
   { version: '10.28.0', fecha: '2026-11-17', texto: 'En la app de Android ya puedes agregar cuentas y ahorros desde Dinero, y enviar plata de una cuenta a otra desde su detalle. 💸' },

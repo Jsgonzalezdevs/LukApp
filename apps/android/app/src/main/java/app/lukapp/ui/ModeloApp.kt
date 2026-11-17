@@ -109,6 +109,7 @@ class ModeloApp(
     }.getOrDefault(false)
 
     val pagosFijosAbierto = MutableStateFlow(false)
+    val buscarAbierto = MutableStateFlow(false)
     /** «cuenta» o «cajita» mientras el formulario de nuevo está abierto. */
     val nuevaCajitaTipo = MutableStateFlow<String?>(null)
 
