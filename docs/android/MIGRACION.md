@@ -142,6 +142,16 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   Compila; **no se vio en emulador ni tiene prueba unitaria** (la sesión de prueba fue revocada y no tengo la
   contraseña). Falta el botón «Añadir» (abre Pagos fijos, aún sin migrar).
 
+- **Asesor, primer corte (v10.16.0):** pestaña Asesor con Luki (decisión: el avatar vigente en la web es Luki, no la
+  Estrella), pose al azar con los pesos de la web, 6 chips, burbujas, «Analizando tus finanzas...», píldora de
+  disponibilidad (`GET /api/asesor-ia/disponibilidad`), chat contra `POST /api/asesor-ia` (historial de 5, 60 s,
+  mensajes de error de la web), «Reintentar con IA», Nueva conversación y el aviso de IA. Compila y pasa 2 pruebas
+  nuevas (pose y limpieza de `<think>`); **no se vio en emulador ni se probó contra el servidor** (sin sesión).
+  **Falta:** motor local de respaldo (`responderAyudaLukApp`/`simularPregunta`/`responderAsesor`; hoy un fallo de la IA
+  muestra el error en vez de responder en local), historial y memoria guardados, movimiento detectado, propuestas
+  de presupuesto/meta, copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
+  Inicio.
+
 ## Sin verificar todavía
 
 - Que las cifras de Inicio coincidan con la web para la misma cuenta (falta compararlas lado a lado).
@@ -162,7 +172,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
 | Mes | Parcial, probado con datos reales: período ‹ ›, balance, «En qué se te va» / «De dónde entra», días, gastos más grandes, contrapartes y entradas. «Cómo vienes» (gráfica 3M/6M/12M, promedio y comparativo con el mes pasado) y los topes de gasto (lectura). Falta: resumen tipo Wrapped, crear/editar/quitar topes y sus alertas, botón de calendario, Pagos fijos, Proyección y exportar a Excel |
 | Barra de anotar, Captura y dictado | Parcial. Hecho: barra flotante (teclado + micrófono), Captura completa (tipo, cuenta, monto con teclado propio, descripción que detecta categoría, «Como la última vez», pregunta de cuenta, guardado por la RPC) y dictado (permiso al tocar, grabación AAC, `/api/transcribir`, intérprete). Además: detalle de un movimiento (tocar la fila), Editar, Borrar y aviso de guardado con Deshacer. Falta: escanear con cámara (OCR), Buscar, Analizar con IA, selector de fecha al editar, deslizar para repetir/editar, varios movimientos en un dictado y comandos de voz (transferir, abonar, saldo, rendimiento) |
 | Más | Parcial, probado en emulador: título «Ajustes» y el bloque «La app» con Contar los ahorros (lo guarda en `user_metadata` y cambia el total de Dinero), Desbloquear con huella o rostro (propio de Android), Apariencia, Cuenta (correo) y Cerrar sesión. Falta: Preferencias, Tus datos y Comunidad (abren paneles sin migrar), Próximos pagos, decisiones, efectivo por separado, recordatorio de racha, guía y Premium |
-| Asesor, Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
+| Captura/BotonAnotar, dictado, paneles (18), onboarding, buscar, modales | **Pendiente** |
 | Notificaciones, archivos/respaldo/Excel, compartir, OCR | **Pendiente** |
 | Firma de publicación | **Bloqueado** (ver abajo) |
 

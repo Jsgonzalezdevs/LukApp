@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
@@ -63,6 +64,7 @@ import kotlinx.coroutines.launch
 fun ShellLukApp(
     modelo: ModeloApp,
     anotar: app.lukapp.ui.anotar.ModeloAnotar,
+    asesor: app.lukapp.ui.asesor.ModeloAsesor,
     alCerrarSesion: () -> Unit,
     desbloqueoActivo: Boolean,
     biometriaDisponible: Boolean,
@@ -105,11 +107,12 @@ fun ShellLukApp(
                             // La barra de estado queda fuera del desplazamiento: en la app actual el
                             // contenido empieza debajo de ella y nunca pasa por detrás.
                             .windowInsetsPadding(WindowInsets.statusBars)
-                            .verticalScroll(rememberScrollState())
+                            // El chat se desplaza por dentro y deja la caja de texto fija abajo.
+                            .then(if (s == Seccion.ASESOR) Modifier else Modifier.verticalScroll(rememberScrollState()))
                             .padding(top = margenSuperior),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Column(Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(horizontal = 16.dp)) {
+                        Column(Modifier.widthIn(max = 720.dp).fillMaxWidth().then(if (s == Seccion.ASESOR) Modifier.fillMaxHeight() else Modifier).padding(horizontal = 16.dp)) {
                             AvisoSincronizacion(estado, error)
                             when (s) {
                                 Seccion.INICIO -> PantallaInicio(
@@ -134,6 +137,7 @@ fun ShellLukApp(
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
                                 )
+                                Seccion.ASESOR -> app.lukapp.ui.asesor.PantallaAsesor(asesor, Modifier.weight(1f))
                                 else -> PantallaSinMigrar(s)
                             }
                             Box(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))

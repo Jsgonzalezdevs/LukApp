@@ -88,12 +88,17 @@ android {
     sourceSets["main"].assets.directories.add(layout.buildDirectory.dir("generated/assetsMarca").get().asFile.path)
 }
 
+// Luki, la mascota del Asesor: los mismos archivos de public/brand que usa la web.
+val copiarMascota by tasks.registering(Sync::class) {
+    from(rootDir.resolve("../../public/brand")) { include("luki-*.webp", "luki-nutria-saludo-transparente.png") }
+    into(layout.buildDirectory.dir("generated/assetsMarca/brand"))
+}
 val copiarLogosBancos by tasks.registering(Sync::class) {
     from(rootDir.resolve("../../public/bancos")) { include("*.svg", "*.png") }
     into(layout.buildDirectory.dir("generated/assetsMarca/bancos"))
 }
-tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos) }
-tasks.matching { it.name.contains("generate") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos) }
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos, copiarMascota) }
+tasks.matching { it.name.contains("generate") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos, copiarMascota) }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
