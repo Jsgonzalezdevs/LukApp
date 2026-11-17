@@ -60,7 +60,7 @@ private fun Luki(archivo: String, descripcion: String, tamano: androidx.compose.
 
 /** AsesorView.tsx (primer corte): chat con la IA del servidor, sin motor local ni historial guardado. */
 @Composable
-fun PantallaAsesor(modelo: ModeloAsesor, modifier: Modifier = Modifier) {
+fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, modifier: Modifier = Modifier) {
     val c = LukApp.colores
     val mensajes by modelo.mensajes.collectAsState()
     val pensando by modelo.pensando.collectAsState()
@@ -69,7 +69,7 @@ fun PantallaAsesor(modelo: ModeloAsesor, modifier: Modifier = Modifier) {
     var entrada by remember { mutableStateOf("") }
     val lista = rememberLazyListState()
     LaunchedEffect(mensajes.size, pensando) { if (mensajes.isNotEmpty()) lista.animateScrollToItem(mensajes.size + (if (pensando) 0 else -1)) }
-    fun enviar(t: String) { modelo.enviar(t); entrada = "" }
+    fun enviar(t: String) { modelo.enviar(t, vista); entrada = "" }
 
     Column(modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -104,10 +104,15 @@ fun PantallaAsesor(modelo: ModeloAsesor, modifier: Modifier = Modifier) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, if (m.esUsuario) Alignment.End else Alignment.Start), verticalAlignment = Alignment.Bottom) {
                         if (!m.esUsuario) Luki("luki-nutria-saludo-transparente.png", "Luki, mascota del asesor", 40.dp)
                         val forma = RoundedCornerShape(20.dp, 20.dp, if (m.esUsuario) 0.dp else 20.dp, if (m.esUsuario) 20.dp else 0.dp)
+                        Column(Modifier.widthIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            m.texto, Modifier.widthIn(max = 280.dp).clip(forma).background(if (m.esUsuario) c.accent else c.soft).padding(12.dp),
+                            m.texto, Modifier.clip(forma).background(if (m.esUsuario) c.accent else c.soft).padding(12.dp),
                             style = LukApp.tipo.de(15, if (m.esUsuario) 500 else 400, 1.6f), color = if (m.esUsuario) c.onAccent else c.ink,
                         )
+                        if (m.sugerencias.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            m.sugerencias.forEach { s -> Text(s, Modifier.clip(Medidas.formaPildora).background(c.soft).pulsable(habilitado = !pensando, alPulsar = { enviar(s) }).padding(horizontal = 12.dp, vertical = 8.dp), style = LukApp.tipo.de(13, 600, 1.4f), color = c.ink) }
+                        }
+                        }
                     }
                 }
                 if (pensando) item {
@@ -122,7 +127,7 @@ fun PantallaAsesor(modelo: ModeloAsesor, modifier: Modifier = Modifier) {
         error?.let { e ->
             Row(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaControl).background(c.soft).padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(e, Modifier.weight(1f), style = LukApp.tipo.xs, color = c.inkSoft)
-                Text("Reintentar con IA", Modifier.clip(Medidas.formaPildora).background(c.accent).pulsable(habilitado = !pensando, alPulsar = modelo::reintentar).padding(horizontal = 12.dp, vertical = 8.dp), style = LukApp.tipo.de(13, 600, 1.4f), color = c.onAccent)
+                Text("Reintentar con IA", Modifier.clip(Medidas.formaPildora).background(c.accent).pulsable(habilitado = !pensando, alPulsar = { modelo.reintentar(vista) }).padding(horizontal = 12.dp, vertical = 8.dp), style = LukApp.tipo.de(13, 600, 1.4f), color = c.onAccent)
             }
         }
         Row(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaPildora).background(c.soft).padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

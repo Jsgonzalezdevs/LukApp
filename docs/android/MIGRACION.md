@@ -147,10 +147,17 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   disponibilidad (`GET /api/asesor-ia/disponibilidad`), chat contra `POST /api/asesor-ia` (historial de 5, 60 s,
   mensajes de error de la web), «Reintentar con IA», Nueva conversación y el aviso de IA. Compila y pasa 2 pruebas
   nuevas (pose y limpieza de `<think>`); **no se vio en emulador ni se probó contra el servidor** (sin sesión).
-  **Falta:** motor local de respaldo (`responderAyudaLukApp`/`simularPregunta`/`responderAsesor`; hoy un fallo de la IA
-  muestra el error en vez de responder en local), historial y memoria guardados, movimiento detectado, propuestas
+  **Falta:** historial y memoria guardados, movimiento detectado, propuestas
   de presupuesto/meta, copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
   Inicio.
+
+- **Asesor, motor local (v10.17.0):** `dominio/AsesorBot.kt`, `AlcanceAsesor`, `ContextoProductoIA`, `ConversacionDeuda`,
+  `SimulacionConversacional`, `SimuladorFinanciero` y `TributarioColombia` (solo `analizarTopesRenta`), portados de la web
+  con 35 casos de `asesorBot.test.ts` uno a uno y el resto de sus pruebas (371 JUnit en total, todas verdes; sin Node no se
+  pudieron correr las de TS). El chat resuelve como `handleSend`: guía → simulación → motor local si sabe → IA → respaldo
+  local con «Reintentar con IA». Se replicaron a propósito dos rarezas de la web: el mes pasado desbordado
+  (`setMonth(-1)` el día 31) y el mes UTC en la alerta de promedio. **No se vio en emulador** (sin sesión). Falta: telemetría
+  `/respaldo-local`, `detectarPropuestaAsesor`, y que «Revisar y editar movimiento» abra Captura.
 
 ## Sin verificar todavía
 

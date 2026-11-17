@@ -137,7 +137,7 @@ fun ShellLukApp(
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
                                 )
-                                Seccion.ASESOR -> app.lukapp.ui.asesor.PantallaAsesor(asesor, Modifier.weight(1f))
+                                Seccion.ASESOR -> app.lukapp.ui.asesor.PantallaAsesor(asesor, actual, Modifier.weight(1f))
                                 else -> PantallaSinMigrar(s)
                             }
                             Box(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
