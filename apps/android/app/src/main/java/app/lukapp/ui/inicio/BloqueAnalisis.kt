@@ -41,14 +41,17 @@ import app.lukapp.ui.tema.Medidas
 import kotlinx.coroutines.delay
 
 /**
- * El desplegable «Análisis y categorías del período» de InicioView.tsx, con lo que ya existe en nativo:
- * el Pulso Premium y la franja de «Para ti». Faltan dentro de él la decisión financiera y el carrusel de categorías.
+ * El desplegable «Análisis y categorías del período» de InicioView.tsx, en su orden: la decisión financiera,
+ * el carrusel de categorías, el Pulso Premium y la franja de «Para ti».
  * Tocar un insight o el Pulso manda la pregunta al Asesor (`handleConsultarTipEnAsesor`).
  */
 @Composable
 fun BloqueAnalisis(
     vista: VistaInicio,
     insights: List<Insight>,
+    decision: Boolean,
+    filtro: String?,
+    alFiltrar: (String?) -> Unit,
     pulsoPremium: Boolean,
     cargandoIa: Boolean,
     alRefrescar: () -> Unit,
@@ -72,6 +75,9 @@ fun BloqueAnalisis(
         LaunchedEffect(insights.size) { while (insights.size > 1) { delay(45_000); indice = (indice + 1) % insights.size } }
         val actual = insights.getOrNull(if (insights.size > 1) indice % insights.size else 0)
         val privacidad = vista.ajustes.privacidad
+
+        if (decision) DecisionFinanciera(vista)
+        CarruselCategorias(vista, filtro, alFiltrar)
 
         if (pulsoPremium) {
             val l = vista.contexto.liquidez

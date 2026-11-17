@@ -94,6 +94,7 @@ fun PantallaInicio(
     alVerRacha: (() -> Unit)? = null,
     insights: ModeloInsights? = null,
     alConsultarAsesor: ((String) -> Unit)? = null,
+    alVerPagos: (() -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val privacidad = vista.ajustes.privacidad
@@ -156,28 +157,8 @@ fun PantallaInicio(
             }
         }
 
-        // ── 4/2. Análisis del período: Pulso Premium y «Para ti» (solo con datos que lo respalden, como la web) ──
-        if (insights != null && alConsultarAsesor != null && vista.preparacion.primerMovimiento) {
-            val prest by insights.prestaciones.collectAsState()
-            val ia by insights.insightsIa.collectAsState()
-            val cargando by insights.cargandoIa.collectAsState()
-            val descartes by insights.descartados.collectAsState()
-            // Anclado al mes calendario salvo con período mensual, como `mesCalendarioActivo` de LukAppApp.
-            val mes = if (vista.ajustes.periodo.frecuencia == app.lukapp.dominio.FrecuenciaPeriodo.MENSUAL)
-                app.lukapp.dominio.monthKey(if (vista.clavePeriodo.length > 7) vista.clavePeriodo else vista.clavePeriodo + "-01")
-            else app.lukapp.dominio.monthKey(vista.hoy)
-            val locales = remember(vista.libro.transacciones, vista.libro.presupuestos, mes, vista.hoy, vista.catalogo, vista.ajustes.periodo, vista.ajustes.umbralAlertaPct) {
-                app.lukapp.dominio.insightsDelMes(vista.libro.transacciones, vista.libro.presupuestos, mes, vista.hoy, { vista.catalogo.de(it).nombre }, vista.ajustes.periodo, vista.ajustes.umbralAlertaPct)
-            }
-            val n = vista.libro.transacciones.size
-            androidx.compose.runtime.LaunchedEffect(mes, n) { insights.actualizarPlan(mes, n) }
-            val visibles = (if (ia.isNotEmpty()) ia else locales).filter { it.id !in descartes }
-            BloqueAnalisis(
-                vista, if (vista.preparacion.saldosCompletos) visibles else emptyList(),
-                pulsoPremium = prest.pulsoPremium && vista.preparacion.saldosCompletos, cargandoIa = cargando,
-                alRefrescar = { insights.refrescar(mes, n) }, alDescartar = insights::descartar, alConsultar = alConsultarAsesor,
-            )
-        }
+        // ── 2b. Próximos pagos (se apaga desde Más → «Próximos pagos») ──
+        if (vista.ajustes.proximosPagos) ProximosPagosInicio(vista, alVerPagos ?: alVerMes)
 
         // ── 6. Filtro por categoría ──
         val filtro = categoriaFiltro
@@ -223,6 +204,40 @@ fun PantallaInicio(
             } else {
                 ListaMovimientos(historial, vista.catalogo, privacidad, vista.hoy, alAbrirMovimiento)
             }
+        }
+
+        // ── 4. Análisis del período (debajo de la lista, como en la web): decisión, categorías, Pulso Premium y «Para ti» ──
+        if (vista.preparacion.primerMovimiento) {
+            val completos = vista.preparacion.saldosCompletos
+            var visibles = emptyList<app.lukapp.dominio.Insight>()
+            var pulso = false
+            var cargando = false
+            var refrescar: () -> Unit = {}
+            if (insights != null) {
+                val prest by insights.prestaciones.collectAsState()
+                val ia by insights.insightsIa.collectAsState()
+                val enCarga by insights.cargandoIa.collectAsState()
+                val descartes by insights.descartados.collectAsState()
+                // Anclado al mes calendario salvo con período mensual, como `mesCalendarioActivo` de LukAppApp.
+                val mes = if (vista.ajustes.periodo.frecuencia == app.lukapp.dominio.FrecuenciaPeriodo.MENSUAL)
+                    app.lukapp.dominio.monthKey(if (vista.clavePeriodo.length > 7) vista.clavePeriodo else vista.clavePeriodo + "-01")
+                else app.lukapp.dominio.monthKey(vista.hoy)
+                val locales = remember(vista.libro.transacciones, vista.libro.presupuestos, mes, vista.hoy, vista.catalogo, vista.ajustes.periodo, vista.ajustes.umbralAlertaPct) {
+                    app.lukapp.dominio.insightsDelMes(vista.libro.transacciones, vista.libro.presupuestos, mes, vista.hoy, { vista.catalogo.de(it).nombre }, vista.ajustes.periodo, vista.ajustes.umbralAlertaPct)
+                }
+                val n = vista.libro.transacciones.size
+                androidx.compose.runtime.LaunchedEffect(mes, n) { insights.actualizarPlan(mes, n) }
+                visibles = (if (ia.isNotEmpty()) ia else locales).filter { it.id !in descartes }
+                pulso = prest.pulsoPremium
+                cargando = enCarga
+                refrescar = { insights.refrescar(mes, n) }
+            }
+            BloqueAnalisis(
+                vista, if (completos) visibles else emptyList(),
+                decision = completos && vista.ajustes.decisiones, filtro = categoriaFiltro, alFiltrar = { categoriaFiltro = it },
+                pulsoPremium = pulso && completos, cargandoIa = cargando,
+                alRefrescar = refrescar, alDescartar = { insights?.descartar(it) }, alConsultar = { alConsultarAsesor?.invoke(it) },
+            )
         }
     }
 }
@@ -333,6 +348,7 @@ private fun SelectorPeriodo(vista: VistaInicio, alElegir: (String) -> Unit) {
                 }
             }
         }
+
     }
 }
 

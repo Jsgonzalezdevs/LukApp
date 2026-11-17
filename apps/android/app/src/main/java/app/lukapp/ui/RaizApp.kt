@@ -124,6 +124,7 @@ fun ShellLukApp(
                                     alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
                                     alAbrirMovimiento = anotar::abrirDetalle,
                                     insights = insights,
+                                    alVerPagos = { modelo.calendarioAbierto.value = true },
                                     // Como `promptInicial`: pasa al Asesor y la pregunta sale sola.
                                     alConsultarAsesor = { pregunta -> modelo.seccion.value = Seccion.ASESOR; asesor.enviar(pregunta, actual) },
                                 )

@@ -316,3 +316,10 @@ En Mes, el bloque de topes ya escribe: interruptor de alertas y umbral (10–100
 ### v10.29.0 — Crear y editar tarjetas y deudas
 
 En el panel de tarjetas y deudas: «Agregar tarjeta de crédito» / «Agregar deuda» (nombre, «¿Cuánto debes ahora?» e ícono; la deuda actual entra como movimiento de apertura, como en la web) y un lápiz en cada tarjeta para editar nombre y, en tarjetas, cupo, pago mínimo y días de corte y pago (fuera de 1..31 queda «no configurado»). Misma `crearCajita`/`actualizarCajita` de las cuentas. 2 pruebas nuevas. Sin ver en emulador. Con esto queda cerrado el bloque «Tarjetas y deudas»; falta solo editar nombre/tipo de una cuenta normal.
+
+
+### v10.30.0 — Inicio completo: próximos pagos, decisión financiera y categorías
+
+- **Próximos pagos** (tras la pastilla de gastos/ingresos, se apaga con el ajuste «Próximos pagos»): obligaciones de 90 días sin las confirmadas, hasta tres con fecha, aviso de las sin fecha y la nota de que no registra nada. «Ver calendario» abre el Calendario.
+- **Desplegable «Análisis y categorías del período»** (ahora **debajo de la lista**, como en la web; en v10.25.0 lo había puesto arriba): `DecisionFinanciera` («Puedes gastar hoy», «¿Qué pasa si compro?» con la simulación de gasto extraordinario, aviso de gasto fuera de lo habitual con `detectarAnomalias` portado), el carrusel de categorías (tarjetas de 112 a 196 de alto; tocar filtra la lista y otra vez quita el filtro), Pulso Premium y «Para ti».
+- 4 pruebas de `detectarAnomalias` (incluye el caso 0/0 que en la web da NaN). Sin ver en emulador. Diferencias: el carrusel no trae la barrita indicadora de scroll; la banda de «novedad» sigue sin existir.
