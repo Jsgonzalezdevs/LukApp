@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import app.lukapp.dominio.limpiarTextoChat
 import app.lukapp.ui.comun.pulsable
 import app.lukapp.ui.iconos.Icono
 import app.lukapp.ui.iconos.Lucide
@@ -30,7 +31,7 @@ import kotlinx.coroutines.delay
 
 /** Copiar y compartir una respuesta de Luki. Compartir manda solo el texto, sin datos de la cuenta. */
 @Composable
-fun AccionesMensaje(texto: String, valoracion: Boolean?, pensando: Boolean, alValorar: (Boolean) -> Unit, alRegenerar: () -> Unit) {
+fun AccionesMensaje(texto: String, valoracion: Boolean?, pensando: Boolean, alValorar: (Boolean) -> Unit, alRegenerar: () -> Unit, hablando: Boolean, alLeer: () -> Unit) {
     val c = LukApp.colores
     val contexto = LocalContext.current
     var copiado by remember { mutableStateOf(false) }
@@ -39,14 +40,19 @@ fun AccionesMensaje(texto: String, valoracion: Boolean?, pensando: Boolean, alVa
         Box(
             Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Copiar respuesta" }.pulsable(alPulsar = {
                 val cm = contexto.getSystemService(android.content.ClipboardManager::class.java)
-                cm?.setPrimaryClip(ClipData.newPlainText("Respuesta de Luki", texto))
+                cm?.setPrimaryClip(ClipData.newPlainText("Respuesta de Luki", limpiarTextoChat(texto)))
                 copiado = true
             }),
             contentAlignment = Alignment.Center,
         ) { Icono(if (copiado) Lucide.Check else Lucide.Copy, tamano = 16.dp, grosor = 2f, color = if (copiado) c.accent else c.inkSoft) }
         Box(
+            Modifier.size(32.dp).clip(CircleShape).background(if (hablando) c.accent.copy(alpha = 0.2f) else c.soft)
+                .semantics { contentDescription = if (hablando) "Detener lectura" else "Leer en voz alta" }.pulsable(alPulsar = alLeer),
+            contentAlignment = Alignment.Center,
+        ) { Icono(if (hablando) Lucide.VolumeX else Lucide.Volume2, tamano = 16.dp, grosor = 2f, color = if (hablando) c.accent else c.inkSoft) }
+        Box(
             Modifier.size(32.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Compartir respuesta" }.pulsable(alPulsar = {
-                val envio = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, texto) }
+                val envio = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, limpiarTextoChat(texto)) }
                 contexto.startActivity(Intent.createChooser(envio, "Compartir respuesta").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }),
             contentAlignment = Alignment.Center,

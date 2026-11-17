@@ -269,3 +269,8 @@ Debajo de cada respuesta de Luki hay dos botones: copiar al portapapeles (con co
 ### v10.22.0 — Regenerar y 👍👎 en el Asesor
 
 Cada respuesta de Luki suma 👍, 👎 y regenerar. Igual que en la web, la valoración solo vive en pantalla (no se guarda ni se envía) y regenerar vuelve a mandar la pregunta anterior como un mensaje nuevo (no reemplaza la respuesta). Sin prueba propia ni verificación en emulador. Pendiente: leer en voz alta.
+
+
+### v10.23.0 — Leer en voz alta en el Asesor
+
+Botón de parlante en cada respuesta de Luki con `TextToSpeech` de Android (voz es-ES), una lectura a la vez; tocar la que suena la detiene. Lee, copia y comparte el texto limpio (`limpiarTextoChat`), como la web (antes copiar/compartir mandaban el texto crudo). Sin prueba propia ni verificación en emulador/teléfono: depende de que el equipo tenga voz en español instalada, y si no, avisa. Diferencia: la web comparte con formato de LukApp; aquí va solo el texto.
