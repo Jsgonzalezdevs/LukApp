@@ -39,7 +39,7 @@ import app.lukapp.ui.tema.Medidas
 import kotlin.math.ceil
 
 /** `toLocaleString('es-CO')` de un entero, con signo (los puntos de conPuntos no lo llevan). */
-private fun miles(n: Long) = (if (n < 0) "-" else "") + conPuntos(kotlin.math.abs(n).toString())
+internal fun miles(n: Long) = (if (n < 0) "-" else "") + conPuntos(kotlin.math.abs(n).toString())
 
 private val FECHA = Regex("""^\d{4}-\d{2}-\d{2}$""")
 

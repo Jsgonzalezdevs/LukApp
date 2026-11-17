@@ -147,7 +147,7 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   disponibilidad (`GET /api/asesor-ia/disponibilidad`), chat contra `POST /api/asesor-ia` (historial de 5, 60 s,
   mensajes de error de la web), «Reintentar con IA», Nueva conversación y el aviso de IA. Compila y pasa 2 pruebas
   nuevas (pose y limpieza de `<think>`); **no se vio en emulador ni se probó contra el servidor** (sin sesión).
-  **Falta:** movimiento detectado, copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
+  **Falta:** copiar/compartir/regenerar/leer en voz alta, insignia Premium, dictado y `promptInicial` desde
   Inicio.
 
 - **Asesor, motor local (v10.17.0):** `dominio/AsesorBot.kt`, `AlcanceAsesor`, `ContextoProductoIA`, `ConversacionDeuda`,
@@ -170,6 +170,12 @@ de estado oscuros en el tema oscuro y la tarjeta sin centrar en vertical.
   por `OperacionesLibro.fijarPresupuesto` (conserva la fecha original; ≤ 0 se rechaza) y `crearMeta`, con 2 pruebas nuevas.
   Compila; **no se vio en emulador** (sin sesión). Diferencia: la fecha objetivo se escribe como `AAAA-MM-DD` (la web usa un
   selector de fecha). Se muestra en respuestas de la IA y del respaldo local, no en guía ni simulación, como la web.
+
+- **Asesor, movimiento detectado (v10.20.0):** las respuestas del motor local, del respaldo y de la IA (esta última pasando
+  por `detectarMovimiento`, que corre el parser: si el modelo inventa un monto no hay botón) muestran «🧾 …», el saldo antes y
+  después y el tope del período, y «Revisar y editar movimiento» lleva a Inicio con Captura abierta y el movimiento cargado
+  (`ModeloAnotar.abrirMovimiento`); nunca guarda directo. Compila; **no se vio en emulador** (sin sesión) y no hay prueba
+  propia de la tarjeta (la lógica de detección ya la cubren las 37 de `AsesorBotTest`).
 
 ## Sin verificar todavía
 

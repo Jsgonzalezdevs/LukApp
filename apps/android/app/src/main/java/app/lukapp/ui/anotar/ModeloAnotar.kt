@@ -107,6 +107,8 @@ class ModeloAnotar(
     private val libro: Libro get() = finanzas.libro.value
 
     fun abrirManual() { _pendiente.value = movimientoEnBlanco() }
+    /** `onCrearTransaccion` del Asesor: abre Captura con el movimiento detectado, sin guardarlo. */
+    fun abrirMovimiento(tx: ParsedTransaction) { _pendiente.value = tx }
     fun cerrarCaptura() { _pendiente.value = null }
     fun cerrarAviso() { _aviso.value = null }
     fun microfonoBloqueado(bloqueado: Boolean) = _dictado.update { it.copy(microfonoBloqueado = bloqueado) }

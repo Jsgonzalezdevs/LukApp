@@ -60,7 +60,7 @@ private fun Luki(archivo: String, descripcion: String, tamano: androidx.compose.
 
 /** AsesorView.tsx (primer corte): chat con la IA del servidor, sin motor local ni historial guardado. */
 @Composable
-fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFijarPresupuesto: suspend (String, Long) -> Boolean, alCrearMeta: suspend (String, Long, String?) -> Boolean, modifier: Modifier = Modifier) {
+fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFijarPresupuesto: suspend (String, Long) -> Boolean, alCrearMeta: suspend (String, Long, String?) -> Boolean, alRevisarMovimiento: (app.lukapp.dominio.voz.ParsedTransaction) -> Unit, modifier: Modifier = Modifier) {
     val c = LukApp.colores
     val mensajes by modelo.mensajes.collectAsState()
     val pensando by modelo.pensando.collectAsState()
@@ -114,6 +114,8 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
                             m.texto, Modifier.clip(forma).background(if (m.esUsuario) c.accent else c.soft).padding(12.dp),
                             style = LukApp.tipo.de(15, if (m.esUsuario) 500 else 400, 1.6f), color = if (m.esUsuario) c.onAccent else c.ink,
                         )
+                        m.accion?.let { EfectoMovimiento(it, "Revisar y editar movimiento", vista) { alRevisarMovimiento(it) } }
+                        m.acciones.forEachIndexed { i, a -> EfectoMovimiento(a, "Revisar y editar movimiento ${i + 1}", vista) { alRevisarMovimiento(a) } }
                         if (m.propuesta != null) TarjetaPropuesta(m, vista, vista.catalogo, alEditar = { f -> modelo.editarPropuesta(m.id, f) }, alConfirmar = { modelo.confirmarPropuesta(m.id, alFijarPresupuesto, alCrearMeta) })
                         if (m.sugerencias.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             m.sugerencias.forEach { s -> Text(s, Modifier.clip(Medidas.formaPildora).background(c.soft).pulsable(habilitado = !pensando, alPulsar = { enviar(s) }).padding(horizontal = 12.dp, vertical = 8.dp), style = LukApp.tipo.de(13, 600, 1.4f), color = c.ink) }

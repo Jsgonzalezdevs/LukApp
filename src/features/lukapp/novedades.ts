@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.20.0', fecha: '2026-11-17', texto: 'Si le cuentas un gasto a Luki («pagué 70 mil en comida»), te muestra cómo quedaría tu cuenta y tu tope, y te deja revisarlo y guardarlo con un toque. 🧾' },
   { version: '10.19.0', fecha: '2026-11-17', texto: 'Dile a Luki «quiero un presupuesto de 300 mil para comida» o «quiero una meta de 2 millones para viajar» y te arma una propuesta para que la revises, la ajustes y la confirmes. 💡' },
   { version: '10.18.0', fecha: '2026-11-17', texto: 'Tus conversaciones con Luki ahora se guardan: puedes volver a leerlas desde el historial y él recuerda lo que le pediste tener presente. 🗂️' },
   { version: '10.17.0', fecha: '2026-11-17', texto: 'Luki ahora responde en tu celular sin esperar a la IA: tu resumen, cuánto puedes gastar, simulaciones y ayuda para usar LukApp. Y si la IA falla, te contesta igual. 💬' },

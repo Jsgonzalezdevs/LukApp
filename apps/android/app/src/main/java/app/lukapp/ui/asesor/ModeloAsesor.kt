@@ -8,7 +8,9 @@ import app.lukapp.dominio.AsesorContext
 import app.lukapp.dominio.ConexionIA
 import app.lukapp.dominio.EntradaMotorFinanciero
 import app.lukapp.dominio.PropuestaAsesor
+import app.lukapp.dominio.detectarMovimiento
 import app.lukapp.dominio.detectarPropuestaAsesor
+import app.lukapp.dominio.voz.ParsedTransaction
 import app.lukapp.dominio.voz.aprenderDe
 import app.lukapp.dominio.elegirIndiceImagenLuki
 import app.lukapp.dominio.esRespuestaFallbackAsesor
@@ -29,7 +31,7 @@ import kotlinx.coroutines.withContext
 
 data class MensajeAsesor(
     val id: String, val esUsuario: Boolean, val texto: String, val sugerencias: List<String> = emptyList(), val proveedor: String? = null,
-    val propuesta: PropuestaAsesor? = null, val propuestaGuardando: Boolean = false, val propuestaConfirmada: Boolean = false, val propuestaError: String? = null,
+    val propuesta: PropuestaAsesor? = null, val accion: ParsedTransaction? = null, val acciones: List<ParsedTransaction> = emptyList(), val propuestaGuardando: Boolean = false, val propuestaConfirmada: Boolean = false, val propuestaError: String? = null,
 )
 
 /**
@@ -118,8 +120,8 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     /** «Reintentar con IA»: quita el respaldo local anterior y vuelve a preguntar. */
     fun reintentar(vista: VistaInicio) { ultimoTexto?.let { procesar(it, vista, esReintento = true) } }
 
-    private fun agregarBot(texto: String, sugerencias: List<String> = emptyList(), proveedor: String? = null, propuesta: PropuestaAsesor? = null) {
-        val m = MensajeAsesor(nuevoId(), false, texto, sugerencias, proveedor, propuesta)
+    private fun agregarBot(texto: String, sugerencias: List<String> = emptyList(), proveedor: String? = null, propuesta: PropuestaAsesor? = null, accion: ParsedTransaction? = null, acciones: List<ParsedTransaction>? = null) {
+        val m = MensajeAsesor(nuevoId(), false, texto, sugerencias, proveedor, propuesta, accion, acciones.orEmpty())
         mensajes.update { it + m }
         guardar(m)
     }
@@ -153,19 +155,23 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                     val rapida = local()
                     if (!esRespuestaFallbackAsesor(rapida)) {
                         contexto = rapida.newContext
-                        agregarBot(rapida.text, rapida.suggestions.orEmpty(), "Luki")
+                        agregarBot(rapida.text, rapida.suggestions.orEmpty(), "Luki", accion = rapida.action, acciones = rapida.actions)
                         conexion.value = ConexionIA.LOCAL; limpiarEstado(); return@launch
                     }
                 }
                 error.value = null; ultimoTexto = null
                 when (val r = cliente.consultar(t, historial, "asesor-${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}", if (recordar) memoria.map { "${it.clave}: ${it.valor}" } else emptyList())) {
-                    is ClienteAsesor.Respuesta.Texto -> { agregarBot(r.texto, proveedor = r.proveedor, propuesta = propuesta); conexion.value = ConexionIA.EN_LINEA }
+                    is ClienteAsesor.Respuesta.Texto -> {
+                        // El modelo redacta, pero lo que se puede guardar lo decide el parser: sin movimiento real no hay botón.
+                        val deteccion = withContext(Dispatchers.Default) { detectarMovimiento(t, libro.transacciones, libro.cajitas, libro.categorias, lexico, contexto) }
+                        contexto = deteccion.newContext
+                        agregarBot(r.texto, proveedor = r.proveedor, propuesta = propuesta, accion = if (propuesta != null) null else deteccion.propuesta?.action, acciones = if (propuesta != null) null else deteccion.propuesta?.actions); conexion.value = ConexionIA.EN_LINEA }
                     is ClienteAsesor.Respuesta.Error -> {
                         conexion.value = ConexionIA.LOCAL
                         error.value = r.mensaje; ultimoTexto = t
                         val respaldo = local()
                         contexto = respaldo.newContext
-                        agregarBot(respaldo.text, respaldo.suggestions.orEmpty(), propuesta = propuesta)
+                        agregarBot(respaldo.text, respaldo.suggestions.orEmpty(), propuesta = propuesta, accion = if (propuesta != null) null else respaldo.action, acciones = if (propuesta != null) null else respaldo.actions)
                     }
                 }
             } finally { pensando.value = false }
