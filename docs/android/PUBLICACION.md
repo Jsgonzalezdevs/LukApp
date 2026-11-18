@@ -1,6 +1,6 @@
 # Publicación de la app Android nativa
 
-Estado al **v10.52.0** (ya existen en la nativa las **Metas de ahorro**, el **Impuesto 4x1000**, **Dividir cuenta y propina**, las **Vaquitas** y **Finanzas en Pareja / Compartidas**). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
+Estado al **v10.53.0** (ya existen en la nativa las **Metas de ahorro**, el **Impuesto 4x1000**, **Dividir cuenta y propina**, las **Vaquitas**, **Finanzas en Pareja / Compartidas** y **Importar extractos en PDF**). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
 en el mensaje, etiquetas `v10.14.1` … `v10.47.1`, **nada enviado al remoto** (la rama no tiene upstream).
 Este documento no publica nada: dice en qué punto está, qué falta y qué decisiones son del dueño.
 
@@ -12,7 +12,7 @@ la reemplaza**. Quien actualice perdería esto, que hoy sí puede hacer:
 
 | Falta en la nativa | Dónde está en la web |
 |---|---|
-| **Importar extractos** (PDF del banco, y desde foto) | Ajustes → Importar extractos (`AnalistaView`) |
+| **Importar extractos desde foto, Excel y CSV** (el PDF ya está desde v10.53.0) y el **buzón de correo de comprobantes** | Ajustes → Importar extractos (`AnalistaView`, `BandejaCorreo`) |
 | **Informe PDF** y **Exportar a Excel (.xls)** | Copia de seguridad, Mes |
 | Registro automático (Apple Pay) | Solo iOS: no aplica a Android |
 

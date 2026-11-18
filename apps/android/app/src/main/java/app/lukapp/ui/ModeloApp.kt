@@ -140,6 +140,12 @@ class ModeloApp(
     val divisionAbierta = MutableStateFlow(false)
     val vaquitasAbierto = MutableStateFlow(false)
     val espaciosAbierto = MutableStateFlow(false)
+    val extractosAbierto = MutableStateFlow(false)
+    /** Importar extractos: los movimientos nuevos y lo que quedó para revisar entran juntos, en una sola operación. */
+    suspend fun importarExtracto(txs: List<app.lukapp.dominio.Transaccion>, revisiones: List<app.lukapp.dominio.RevisionDudosa>) =
+        aplicarCambios { app.lukapp.datos.Cambios(guardar = app.lukapp.dominio.Libro(transacciones = txs, revisiones = revisiones)) }
+    /** «Completar este movimiento»: el que ya tenías toma el texto y la categoría del extracto. */
+    suspend fun completarMovimiento(tx: app.lukapp.dominio.Transaccion) = aplicarCambios { OperacionesLibro.actualizarTransaccion(finanzas.libro.value, tx) }
     fun cambiarUvt(v: app.lukapp.dominio.ValorUvt) { viewModelScope.launch { preferencias.uvt(v) } }
     fun cambiarCuentasGmf(ids: List<String>) { viewModelScope.launch { preferencias.cuentasGmf(ids) } }
     fun cambiarRegimenGmf(r: String) { viewModelScope.launch { preferencias.regimenGmf(r) } }
@@ -246,7 +252,7 @@ class ModeloApp(
     val hayPanelAbierto: StateFlow<Boolean> = combine(
         listOf(
             calendarioAbierto, pagosFijosAbierto, buscarAbierto, proyeccionAbierta, periodoAbierto, categoriasAbierto, revisionesAbierto,
-            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta, vaquitasAbierto, espaciosAbierto,
+            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta, vaquitasAbierto, espaciosAbierto, extractosAbierto,
             resumenMes.map { it != null }, nuevaCajitaTipo.map { it != null }, cuentaAbierta.map { it != null }, panelPasivos.map { it != null },
         ),
     ) { estados -> estados.any { it } }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)

@@ -68,6 +68,7 @@ fun ShellLukApp(
     insights: app.lukapp.ui.inicio.ModeloInsights,
     funciones: app.lukapp.ui.mas.ModeloFunciones,
     espacios: app.lukapp.ui.dinero.ModeloEspacios,
+    extractos: app.lukapp.ui.dinero.ModeloExtractos,
     cuenta: app.lukapp.ui.mas.ModeloCuenta,
     alCerrarSesion: () -> Unit,
     desbloqueoActivo: Boolean,
@@ -155,6 +156,7 @@ fun ShellLukApp(
                                     alAbrirDivision = { modelo.divisionAbierta.value = true },
                                     alAbrirVaquitas = { modelo.vaquitasAbierto.value = true },
                                     alAbrirEspacios = { modelo.espaciosAbierto.value = true },
+                                    alAbrirExtractos = { modelo.extractosAbierto.value = true },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
                                     topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
@@ -247,6 +249,11 @@ fun ShellLukApp(
             if (metasPanel) app.lukapp.ui.dinero.PantallaMetas(
                 actual, app.lukapp.ui.dinero.AccionesMetas(modelo::crearMetaCompleta, modelo::actualizarMeta, modelo::borrarMeta),
                 alCerrar = { modelo.metasAbierto.value = false },
+            )
+            val extractosPanel by modelo.extractosAbierto.collectAsState()
+            if (extractosPanel) app.lukapp.ui.dinero.PantallaExtractos(
+                actual, extractos, app.lukapp.ui.dinero.AccionesExtractos(modelo::importarExtracto, modelo::completarMovimiento),
+                alCerrar = { modelo.extractosAbierto.value = false },
             )
             val espaciosPanel by modelo.espaciosAbierto.collectAsState()
             if (espaciosPanel) app.lukapp.ui.dinero.PantallaEspacios(
