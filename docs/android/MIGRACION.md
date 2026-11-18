@@ -362,3 +362,8 @@ La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el 
 ### v10.37.0 — Más: Copia de seguridad
 
 `PantallaRespaldo` porta `PanelRespaldo.tsx` y `dominio/Respaldo.kt` porta `lib/respaldo.ts`. «Descargar respaldo completo» escribe `{version, generado, datos}` con el formato de la web (los modelos pasan a `@Serializable`; `movimientos` se llama `cajitaMovimientos` en el archivo): al escribir van todos los campos, también los nulos, porque la web distingue `null` de ausente; al leer se acepta lo que la web omita. «Movimientos en CSV» separa con punto y coma. «Restaurar» valida el archivo, dice qué trae y cuánto reemplaza, pide una confirmación aparte y envía el libro con `reemplazar` por la RPC. Los archivos se eligen y guardan con el selector del sistema (sin permisos de almacenamiento). 7 pruebas nuevas. Sin ver en emulador ni restaurar contra Supabase. Fuera, por no existir aún: «Generar informe / PDF» y «Exportar a Excel (.xls)». Pendiente probar con un respaldo real hecho en la web.
+
+
+### v10.38.0 — Más: Funciones solicitadas
+
+`PantallaFunciones` + `ModeloFunciones` + `ClienteFunciones` portan `FuncionesSolicitadasView.tsx`: lista por votos (y a igual voto la más reciente), votar y quitar voto con cambio optimista que se revierte si falla, y «¿Otras ideas?» para proponer (título obligatorio, descripción opcional). Lee y escribe directo en `funciones_solicitadas` y `funciones_solicitadas_votos` con las mismas columnas que la web; el conteo es del trigger de la base. 3 pruebas nuevas del voto optimista. Sin ver en emulador ni probar contra la base (las políticas de la tabla deciden qué puede cada quien). Con esto el bloque Comunidad de la web queda completo.

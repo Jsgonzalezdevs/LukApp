@@ -4,6 +4,7 @@ import android.content.Context
 import app.lukapp.datos.Preferencias
 import app.lukapp.datos.PreferenciasCuenta
 import app.lukapp.datos.ClienteAsesor
+import app.lukapp.datos.ClienteFunciones
 import app.lukapp.datos.Transcripcion
 import app.lukapp.datos.RepositorioFinanzas
 import app.lukapp.seguridad.AccesoGoogle
@@ -55,4 +56,5 @@ class Contenedor(contexto: Context) {
     val preferenciasCuenta = PreferenciasCuenta(supabase)
     val transcripcion = Transcripcion(supabase, http)
     val asesor = ClienteAsesor(supabase, http)
+    val funciones = ClienteFunciones(supabase)
 }

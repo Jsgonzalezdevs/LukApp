@@ -33,7 +33,7 @@ import app.lukapp.ui.tema.PreferenciaTema
 /**
  * AjustesView.tsx. Solo están las filas que funcionan de verdad: Período, Próximos pagos, Contar los ahorros,
  * decisiones financieras, Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
- * Pendiente (sin filas muertas): Registro automático, Tus datos y Comunidad (abren paneles sin migrar),
+ * Pendiente (sin filas muertas): Registro automático (Apple Pay no existe en Android),
  * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha, volver a ver la guía y Premium.
  */
 @Composable
@@ -49,6 +49,7 @@ fun PantallaMas(
     alAbrirRevisiones: () -> Unit,
     alAbrirNombres: () -> Unit,
     alAbrirRespaldo: () -> Unit,
+    alAbrirFunciones: () -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -81,6 +82,14 @@ fun PantallaMas(
                     Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
                 }
                 Fila("💾", "Copia de seguridad", "Descarga todo, o vuelve a un respaldo", linea = false, alPulsar = alAbrirRespaldo) {
+                    Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
+                }
+            }
+        }
+        Column {
+            Text("Comunidad", Modifier.padding(horizontal = 4.dp).padding(bottom = 8.dp), style = LukApp.tipo.xs, color = c.inkFaint)
+            Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card)) {
+                Fila("🔧", "Funciones solicitadas", "Propón una idea y vota las de los demás", linea = false, alPulsar = alAbrirFunciones) {
                     Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
                 }
             }

@@ -66,6 +66,7 @@ fun ShellLukApp(
     anotar: app.lukapp.ui.anotar.ModeloAnotar,
     asesor: app.lukapp.ui.asesor.ModeloAsesor,
     insights: app.lukapp.ui.inicio.ModeloInsights,
+    funciones: app.lukapp.ui.mas.ModeloFunciones,
     alCerrarSesion: () -> Unit,
     desbloqueoActivo: Boolean,
     biometriaDisponible: Boolean,
@@ -150,6 +151,7 @@ fun ShellLukApp(
                                     alAbrirRevisiones = { modelo.revisionesAbierto.value = true },
                                     alAbrirNombres = { modelo.nombresAbierto.value = true },
                                     alAbrirRespaldo = { modelo.respaldoAbierto.value = true },
+                                    alAbrirFunciones = { modelo.funcionesAbierto.value = true },
                                     tema = tema, alCambiarTema = alCambiarTema,
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
@@ -210,6 +212,8 @@ fun ShellLukApp(
             nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
             val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
             if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
+            val funcionesPanel by modelo.funcionesAbierto.collectAsState()
+            if (funcionesPanel) app.lukapp.ui.mas.PantallaFunciones(funciones, alCerrar = { modelo.funcionesAbierto.value = false })
             val respaldoPanel by modelo.respaldoAbierto.collectAsState()
             if (respaldoPanel) app.lukapp.ui.mas.PantallaRespaldo(actual.libro, actual.hoy, modelo::restaurarLibro, alCerrar = { modelo.respaldoAbierto.value = false })
             val nombresPanel by modelo.nombresAbierto.collectAsState()

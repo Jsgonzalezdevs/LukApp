@@ -127,6 +127,7 @@ class ModeloApp(
 
     val categoriasAbierto = MutableStateFlow(false)
     val respaldoAbierto = MutableStateFlow(false)
+    val funcionesAbierto = MutableStateFlow(false)
     /** `almacen.restaurar`: REEMPLAZA todo el libro (la RPC borra lo que no venga en el respaldo). */
     suspend fun restaurarLibro(nuevo: app.lukapp.dominio.Libro) = aplicarCambios { app.lukapp.datos.Cambios(guardar = nuevo, reemplazar = true) }
     val nombresAbierto = MutableStateFlow(false)
