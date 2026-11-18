@@ -133,7 +133,7 @@ fun PantallaMes(
                         Text("Tu resumen de ${monthKeyLabel(mesCalendario)}", Modifier.weight(1f, fill = false), style = LukApp.tipo.de(15, 600, 1.4f), color = c.inkSoft)
                         Text(
                             "PRÓXIMAMENTE", Modifier.clip(CircleShape).border(1.dp, c.line, CircleShape).background(c.card).padding(horizontal = 8.dp, vertical = 4.dp),
-                            style = LukApp.tipo.de(13, 600, 1.2f, 0.4f), color = c.inkFaint,
+                            style = LukApp.tipo.de(13, 600, 1.2f, 0.025f), color = c.inkFaint,
                         )
                     }
                     Text(

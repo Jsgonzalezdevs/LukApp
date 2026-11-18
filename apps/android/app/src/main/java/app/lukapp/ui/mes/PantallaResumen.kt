@@ -75,7 +75,7 @@ private fun Marco(icono: IconoLucide, etiqueta: String, color: Color = BLANCO, d
         Box(Modifier.size(64.dp).clip(CircleShape).background(color.copy(alpha = 0.16f)), contentAlignment = Alignment.Center) {
             Icono(icono, tamano = 28.dp, grosor = 2f, color = color)
         }
-        Text(etiqueta.uppercase(), style = LukApp.tipo.de(15, 600, 1.4f, 0.4f), color = Color.White.copy(alpha = 0.6f), textAlign = TextAlign.Center)
+        Text(etiqueta.uppercase(), style = LukApp.tipo.de(15, 600, 1.4f, 0.025f), color = Color.White.copy(alpha = 0.6f), textAlign = TextAlign.Center)
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) { contenido() }
         if (detalle != null) Text(detalle, style = LukApp.tipo.de(15, 400, 1.6f), color = Color.White.copy(alpha = 0.7f), textAlign = TextAlign.Center)
     }

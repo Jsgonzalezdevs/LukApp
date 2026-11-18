@@ -196,7 +196,7 @@ private fun DudaCard(d: Duda, alUnir: () -> Unit, alSeparar: () -> Unit) {
     Column(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaCard).border(1.dp, c.line, Medidas.formaCard).background(c.bg).padding(horizontal = 16.dp, vertical = 12.dp).semantics { contentDescription = "Contactos parecidos" }) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icono(Lucide.Users, tamano = 12.dp, grosor = 3f, color = c.inkFaint)
-            Text("¿SON LA MISMA PERSONA?", style = LukApp.tipo.de(13, 600, 1.3f, 0.8f), color = c.inkFaint)
+            Text("¿SON LA MISMA PERSONA?", style = LukApp.tipo.de(13, 600, 1.3f, 0.05f), color = c.inkFaint)
         }
         Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf(d.a, d.b).forEach { p ->
@@ -257,7 +257,7 @@ private fun DetalleContacto(
             Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card).padding(horizontal = 16.dp, vertical = 12.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icono(Lucide.Tag, tamano = 12.dp, grosor = 3f, color = c.inkFaint)
-                    Text("CÓMO LE DICES", style = LukApp.tipo.de(13, 600, 1.3f, 0.8f), color = c.inkFaint)
+                    Text("CÓMO LE DICES", style = LukApp.tipo.de(13, 600, 1.3f, 0.05f), color = c.inkFaint)
                 }
                 if (apodos.isNotEmpty()) FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     apodos.forEach { a ->

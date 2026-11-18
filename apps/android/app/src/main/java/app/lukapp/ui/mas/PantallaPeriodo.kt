@@ -176,7 +176,7 @@ fun PantallaPeriodo(periodo: ConfigPeriodo, alCambiar: (ConfigPeriodo) -> Unit, 
                         Column(Modifier.fillMaxWidth().clip(Medidas.formaControl).background(c.soft).padding(16.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
                                 Column(Modifier.weight(1f)) {
-                                    Text("VISTA PREVIA DE TU CICLO", style = LukApp.tipo.de(10, 700, 1.3f, 1.2f), color = c.inkFaint)
+                                    Text("VISTA PREVIA DE TU CICLO", style = LukApp.tipo.de(10, 700, 1.3f, 0.12f), color = c.inkFaint)
                                     Text(etiquetaActual, Modifier.padding(top = 4.dp), style = LukApp.tipo.de(19, 700, 1.3f), color = c.ink)
                                 }
                                 Text("${pasados ?: 0} de ${delCiclo ?: dias} días", Modifier.clip(CircleShape).background(c.card).padding(horizontal = 12.dp, vertical = 6.dp), style = LukApp.tipo.de(11, 600, 1.2f), color = c.accent)
