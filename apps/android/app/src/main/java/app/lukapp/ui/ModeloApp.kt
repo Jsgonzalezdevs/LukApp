@@ -126,6 +126,9 @@ class ModeloApp(
     private suspend fun aplicarCambios(c: () -> app.lukapp.datos.Cambios?): Boolean = runCatching { c()?.let { finanzas.aplicar(it) }; true }.getOrDefault(false)
 
     val categoriasAbierto = MutableStateFlow(false)
+    val respaldoAbierto = MutableStateFlow(false)
+    /** `almacen.restaurar`: REEMPLAZA todo el libro (la RPC borra lo que no venga en el respaldo). */
+    suspend fun restaurarLibro(nuevo: app.lukapp.dominio.Libro) = aplicarCambios { app.lukapp.datos.Cambios(guardar = nuevo, reemplazar = true) }
     val nombresAbierto = MutableStateFlow(false)
     suspend fun unirContactos(a: String, b: String, nombre: String) = aplicarCambios { OperacionesLibro.unirContactos(finanzas.libro.value, a, b, nombre) }
     suspend fun separarContactos(a: String, b: String, nombre: String) = aplicarCambios { OperacionesLibro.separarContactos(finanzas.libro.value, a, b, nombre) }

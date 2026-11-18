@@ -1,5 +1,8 @@
 package app.lukapp.dominio
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /**
  * Modelos del libro financiero, campo por campo iguales a los de la web
  * (`src/features/lukapp/types.ts` y `data/modelos.ts`).
@@ -16,6 +19,7 @@ object TipoTx {
     const val TRANSFERENCIA = "transferencia"
 }
 
+@Serializable
 data class Transaccion(
     val id: String,
     val kind: String,
@@ -59,6 +63,7 @@ object ClaseCuenta {
     )
 }
 
+@Serializable
 data class Cajita(
     val id: String,
     val nombre: String,
@@ -98,6 +103,7 @@ object TipoMovimiento {
     )
 }
 
+@Serializable
 data class CajitaMovimiento(
     val id: String,
     val cajitaId: String,
@@ -116,6 +122,7 @@ data class CajitaMovimiento(
     val tasaCambioCop: Double? = null,
 )
 
+@Serializable
 data class Meta(
     val id: String,
     val nombre: String,
@@ -128,6 +135,7 @@ data class Meta(
     val completedAt: String?,
 )
 
+@Serializable
 data class CategoriaPersonal(
     val id: String,
     val nombre: String,
@@ -138,6 +146,7 @@ data class CategoriaPersonal(
     val createdAt: String,
 )
 
+@Serializable
 data class Contacto(
     val id: String,
     val nombre: String,
@@ -148,12 +157,14 @@ data class Contacto(
     val archivedAt: String? = null,
 )
 
+@Serializable
 data class Presupuesto(
     val categoria: String,
     val montoCop: Long,
     val createdAt: String,
 )
 
+@Serializable
 data class Recurrente(
     val id: String,
     val nombre: String,
@@ -166,6 +177,7 @@ data class Recurrente(
     val archivedAt: String? = null,
 )
 
+@Serializable
 data class RevisionDudosa(
     val id: String,
     val tipo: String,
@@ -180,10 +192,12 @@ data class RevisionDudosa(
 )
 
 /** Todo lo que el usuario tiene guardado: lo que la web llama el "almacén". */
+@Serializable
 data class Libro(
     val transacciones: List<Transaccion> = emptyList(),
     val cajitas: List<Cajita> = emptyList(),
-    val movimientos: List<CajitaMovimiento> = emptyList(),
+    // Con el nombre de la web: un respaldo hecho aquí lo lee la web y al revés.
+    @SerialName("cajitaMovimientos") val movimientos: List<CajitaMovimiento> = emptyList(),
     val metas: List<Meta> = emptyList(),
     val categorias: List<CategoriaPersonal> = emptyList(),
     val contactos: List<Contacto> = emptyList(),
