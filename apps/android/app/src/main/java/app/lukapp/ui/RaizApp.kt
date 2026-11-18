@@ -147,6 +147,7 @@ fun ShellLukApp(
                                     decisiones = actual.ajustes.decisiones, alDecisiones = modelo::decisiones,
                                     alAbrirPeriodo = { modelo.periodoAbierto.value = true },
                                     alAbrirCategorias = { modelo.categoriasAbierto.value = true },
+                                    alAbrirRevisiones = { modelo.revisionesAbierto.value = true },
                                     tema = tema, alCambiarTema = alCambiarTema,
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
@@ -207,6 +208,11 @@ fun ShellLukApp(
             nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
             val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
             if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
+            val revisionesPanel by modelo.revisionesAbierto.collectAsState()
+            if (revisionesPanel) app.lukapp.ui.mas.PantallaRevisiones(
+                actual, modelo::guardarRevision, alAbrirMovimiento = { modelo.revisionesAbierto.value = false; anotar.abrirDetalle(it) },
+                alCerrar = { modelo.revisionesAbierto.value = false },
+            )
             val categoriasPanel by modelo.categoriasAbierto.collectAsState()
             if (categoriasPanel) app.lukapp.ui.mas.PantallaCategorias(
                 actual, app.lukapp.ui.mas.AccionesCategorias(modelo::crearCategoria, modelo::actualizarCategoria, modelo::archivarCategoria, modelo::borrarCategoria),

@@ -347,3 +347,8 @@ La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el 
 ### v10.34.0 — Más: Categorías propias
 
 `PantallaCategorias` porta `CategoriasEditor.tsx`: crear (nombre de hasta 28 letras; el emoji y el ícono siguen al nombre mientras no los toques), editar, archivar y reactivar, y eliminar solo si ninguna transacción la usa (con movimientos el botón archiva, como en la web). Selector de emoji con campo propio, íconos y doce colores; lista de las categorías del sistema, sin editar. Escribe por la RPC en `categorias` (clave nueva `p-…`, `nuevaClaveCategoria`). 2 pruebas nuevas. Sin ver en emulador.
+
+
+### v10.35.0 — Más: Revisar movimientos
+
+`PantallaRevisiones` porta `BandejaRevision.tsx` y `dominio/BandejaRevision.kt` porta `bandejaRevision.ts`. De `senales.ts` solo se llevaron las dos señales que la bandeja usa, «duplicado» (mismo día, monto y contraparte) e «inusual» (3 veces la mediana de la categoría, con 5 muestras mínimo); las otras cuatro solo se leen en el detalle de un movimiento y siguen sin portarse. Avisos pendientes de a 5 con «Mostrar más», «Ver movimiento» (abre el detalle), «Marcar revisado» y «Descartar aviso» (guardan la decisión en `revisiones_dudosas`, sin tocar saldos) y la lista plegable de decisiones. 5 pruebas nuevas. Sin ver en emulador. Diferencia: la fecha de cada decisión usa la parte de fecha en UTC del instante guardado, no la hora local.

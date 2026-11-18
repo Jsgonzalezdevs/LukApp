@@ -89,6 +89,9 @@ object OperacionesLibro {
     }
 
     /** `quitarPresupuesto`: el tope se borra por su categoría (la RPC usa `categoria` como clave de esa tabla). */
+    /** `almacen.guardarRevision`: inserta o reemplaza la decisión por su id. */
+    fun guardarRevision(r: app.lukapp.dominio.RevisionDudosa): Cambios = Cambios(guardar = Libro(revisiones = listOf(r)))
+
     /** `almacen.crearCategoria`: clave nueva con prefijo `p-`, sin archivar. */
     fun crearCategoria(nombre: String, icon: String, emoji: String, color: String): Cambios =
         Cambios(guardar = Libro(categorias = listOf(CategoriaPersonal(nuevaClaveCategoria(), nombre, icon, emoji, color, null, Instant.now().toString()))))

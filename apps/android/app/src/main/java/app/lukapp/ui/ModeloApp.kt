@@ -126,6 +126,8 @@ class ModeloApp(
     private suspend fun aplicarCambios(c: () -> app.lukapp.datos.Cambios?): Boolean = runCatching { c()?.let { finanzas.aplicar(it) }; true }.getOrDefault(false)
 
     val categoriasAbierto = MutableStateFlow(false)
+    val revisionesAbierto = MutableStateFlow(false)
+    suspend fun guardarRevision(r: app.lukapp.dominio.RevisionDudosa) = aplicarCambios { OperacionesLibro.guardarRevision(r) }
     suspend fun crearCategoria(nombre: String, icon: String, emoji: String, color: String) = aplicarCambios { OperacionesLibro.crearCategoria(nombre, icon, emoji, color) }
     suspend fun actualizarCategoria(c: app.lukapp.dominio.CategoriaPersonal) = aplicarCambios { OperacionesLibro.actualizarCategoria(c) }
     suspend fun archivarCategoria(c: app.lukapp.dominio.CategoriaPersonal) = aplicarCambios { OperacionesLibro.archivarCategoria(c) }
