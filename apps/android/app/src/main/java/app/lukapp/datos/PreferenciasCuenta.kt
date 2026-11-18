@@ -29,6 +29,8 @@ data class AjustesCuenta(
     val cuentaFavoritaId: String? = null,
     val alertasPresupuesto: Boolean = true,
     val umbralAlertaPct: Int = 80,
+    val onboardingTerminado: Boolean = false,
+    val nombre: String = "",
 )
 
 /**
@@ -55,6 +57,8 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             alertasPresupuesto = bool("finanzas:presupuestos:alertas-activas", true),
             // `setUmbralAlertaPct` acota a 1..100 y guarda un entero.
             umbralAlertaPct = ((meta["finanzas:presupuestos:umbral-alerta"] as? JsonPrimitive)?.doubleOrNull ?: 80.0).let { Math.round(it).toInt().coerceIn(1, 100) },
+            onboardingTerminado = bool("finanzas:onboarding:terminado", false),
+            nombre = (meta["finanzas:onboarding:nombre"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "",
             cuentaFavoritaId = (meta["finanzas:cuenta-favorita"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.ifBlank { null },
         )
     }
@@ -91,6 +95,18 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             valor.diasPersonalizados?.let { put("diasPersonalizados", JsonPrimitive(it.toLong())) }
             valor.fechaAnclaPersonalizada?.let { put("fechaAnclaPersonalizada", JsonPrimitive(it)) }
         })
+    }
+
+    /** `useOnboarding.guardarNombre`. */
+    suspend fun nombre(valor: String) {
+        _ajustes.update { it.copy(nombre = valor) }
+        guardar("finanzas:onboarding:nombre", JsonPrimitive(valor))
+    }
+
+    /** `useOnboarding.terminar`: se queda pegado, haber pasado por la bienvenida es un hecho sobre la persona, no sobre su plata. */
+    suspend fun terminarOnboarding() {
+        _ajustes.update { it.copy(onboardingTerminado = true) }
+        guardar("finanzas:onboarding:terminado", JsonPrimitive(true))
     }
 
     /** `setAlertasActivas`. */

@@ -219,6 +219,10 @@ fun ShellLukApp(
                 cuenta, estado, modelo.errorSincronizacion.collectAsState().value, modelo.cambiosPendientes,
                 alSincronizar = modelo::sincronizarYEsperar, alCerrarSesion = alCerrarSesion, alCerrar = { modelo.cuentaAbiertaPanel.value = false },
             )
+            // Un libro con movimientos nunca vuelve a pasar por la bienvenida, aunque la bandera no haya llegado de la cuenta.
+            if (!actual.ajustes.onboardingTerminado && actual.libro.transacciones.isEmpty() && estado != app.lukapp.datos.EstadoSincronizacion.CARGANDO) {
+                app.lukapp.ui.inicio.PantallaBienvenida(modelo::terminarBienvenida)
+            }
             val funcionesPanel by modelo.funcionesAbierto.collectAsState()
             if (funcionesPanel) app.lukapp.ui.mas.PantallaFunciones(funciones, alCerrar = { modelo.funcionesAbierto.value = false })
             val respaldoPanel by modelo.respaldoAbierto.collectAsState()

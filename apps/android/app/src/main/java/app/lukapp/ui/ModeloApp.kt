@@ -128,6 +128,16 @@ class ModeloApp(
     val categoriasAbierto = MutableStateFlow(false)
     val respaldoAbierto = MutableStateFlow(false)
     val funcionesAbierto = MutableStateFlow(false)
+    /**
+     * Cierra la bienvenida: guarda el nombre, crea la cuenta elegida (con su saldo inicial) y marca la bienvenida
+     * como terminada. Si la cuenta no se pudo crear devuelve false y NO la marca, para que se pueda reintentar.
+     */
+    suspend fun terminarBienvenida(nombre: String, banco: String?, clase: String?, saldo: Long?): Boolean {
+        if (nombre.isNotEmpty()) preferencias.nombre(nombre)
+        if (banco != null && !crearCajita(banco, "Wallet", app.lukapp.dominio.TipoCajita.CUENTA, clase, null, null, false, "COP", saldo)) return false
+        preferencias.terminarOnboarding()
+        return true
+    }
     val cuentaAbiertaPanel = MutableStateFlow(false)
     /** Cambios hechos sin conexión que todavía no suben. */
     val cambiosPendientes: Int get() = finanzas.pendientes

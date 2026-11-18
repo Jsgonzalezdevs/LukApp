@@ -530,9 +530,9 @@ private fun OpcionCuenta(cuenta: Cajita, activa: Boolean, principal: Boolean, al
     }
 }
 
-/** TecladoNumerico.tsx (compacto): 3 columnas de teclas de 48dp, con "000" y borrar. */
+/** TecladoNumerico.tsx: 3 columnas de teclas con "000" y borrar; 48dp compacto (Captura) o 56dp (bienvenida). */
 @Composable
-private fun TecladoNumerico(alDigito: (String) -> Unit, alBorrar: () -> Unit) {
+internal fun TecladoNumerico(alDigito: (String) -> Unit, alBorrar: () -> Unit, alto: androidx.compose.ui.unit.Dp = 48.dp) {
     val c = LukApp.colores
     val teclas = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "000", "0", "⌫")
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.semantics { contentDescription = "Teclado de números" }) {
@@ -540,7 +540,7 @@ private fun TecladoNumerico(alDigito: (String) -> Unit, alBorrar: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 fila.forEach { t ->
                     Box(
-                        Modifier.weight(1f).height(48.dp).clip(Medidas.formaControl).background(c.soft)
+                        Modifier.weight(1f).height(alto).clip(Medidas.formaControl).background(c.soft)
                             .then(if (t == "⌫") Modifier.semantics { contentDescription = "Borrar el último número" } else Modifier)
                             .pulsable(escala = 0.95f) { if (t == "⌫") alBorrar() else alDigito(t) },
                         contentAlignment = Alignment.Center,
