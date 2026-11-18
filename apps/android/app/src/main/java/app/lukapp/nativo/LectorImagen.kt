@@ -36,13 +36,17 @@ sealed class LecturaImagen {
 object LectorImagen {
     private const val LADO_MAXIMO = 2000
 
-    suspend fun leer(contexto: Context, uri: Uri): LecturaImagen = withContext(Dispatchers.Default) {
+    /**
+     * `conLineas`: para un extracto, donde cada fila es una línea. El comprobante se junta en una sola línea (es lo que
+     * espera el intérprete de voz); el extracto necesita los saltos para separar un movimiento de otro.
+     */
+    suspend fun leer(contexto: Context, uri: Uri, conLineas: Boolean = false): LecturaImagen = withContext(Dispatchers.Default) {
         try {
             val original = decodificar(contexto, uri, null) ?: return@withContext LecturaImagen.Fallo
             val mejorada = realzar(original)
-            var texto = reconocer(mejorada)
-            if (!textoOcrUtil(texto)) texto = reconocer(original)
-            if (!textoOcrUtil(texto)) LecturaImagen.SinTexto else LecturaImagen.Texto("[OCR] $texto")
+            var texto = reconocer(mejorada, conLineas)
+            if (!textoOcrUtil(texto)) texto = reconocer(original, conLineas)
+            if (!textoOcrUtil(texto)) LecturaImagen.SinTexto else LecturaImagen.Texto(if (conLineas) texto else "[OCR] $texto")
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (_: Exception) { LecturaImagen.Fallo }
     }
 
@@ -73,10 +77,10 @@ object LectorImagen {
         return salida
     }
 
-    private suspend fun reconocer(imagen: Bitmap): String = suspendCancellableCoroutine { k ->
+    private suspend fun reconocer(imagen: Bitmap, conLineas: Boolean): String = suspendCancellableCoroutine { k ->
         val reconocedor = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
         reconocedor.process(InputImage.fromBitmap(imagen, 0))
-            .addOnSuccessListener { k.resume(limpiarTextoOcr(it.text)); reconocedor.close() }
+            .addOnSuccessListener { k.resume(if (conLineas) it.text.replace('|', 'I').trim() else limpiarTextoOcr(it.text)); reconocedor.close() }
             .addOnFailureListener { k.resumeWithException(it); reconocedor.close() }
     }
 }

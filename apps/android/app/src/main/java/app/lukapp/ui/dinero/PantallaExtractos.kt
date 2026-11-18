@@ -99,7 +99,7 @@ fun PantallaExtractos(vista: VistaInicio, modelo: ModeloExtractos, acciones: Acc
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Importar extractos", style = LukApp.tipo.titulo, color = c.ink)
-                Text("Sube el PDF que te manda el banco", style = LukApp.tipo.xs, color = c.inkSoft)
+                Text("Sube el PDF, la foto o la hoja que te manda el banco", style = LukApp.tipo.xs, color = c.inkSoft)
             }
             Box(Modifier.size(36.dp).clip(CircleShape).background(c.soft).semantics { contentDescription = "Cerrar" }.pulsable(alPulsar = alCerrar), contentAlignment = Alignment.Center) {
                 Icono(Lucide.X, tamano = 20.dp, grosor = 2.5f, color = c.inkSoft)
@@ -109,16 +109,16 @@ fun PantallaExtractos(vista: VistaInicio, modelo: ModeloExtractos, acciones: Acc
             Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).border(2.dp, c.line, Medidas.formaCard).background(c.card).padding(horizontal = 24.dp, vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icono(Lucide.FileText, tamano = 36.dp, color = c.inkFaint)
                 Text("Sube tus extractos", Modifier.padding(top = 12.dp), style = LukApp.tipo.de(20, 600, 1.3f), color = c.ink)
-                Text("Elige uno o varios PDF. Hasta 4 MB cada archivo.", Modifier.padding(top = 8.dp), style = LukApp.tipo.de(13, 400, 1.5f), color = c.inkSoft, textAlign = TextAlign.Center)
+                Text("Elige PDF, fotos, Excel .xlsx o CSV; puedes elegir varios. Hasta 4 MB cada archivo.", Modifier.padding(top = 8.dp), style = LukApp.tipo.de(13, 400, 1.5f), color = c.inkSoft, textAlign = TextAlign.Center)
                 Row(
-                    Modifier.padding(top = 20.dp).clip(CircleShape).background(c.accent).semantics { contentDescription = "Elegir archivos" }.pulsable(alPulsar = { selector.launch(arrayOf("application/pdf")) }).padding(horizontal = 28.dp, vertical = 16.dp),
+                    Modifier.padding(top = 20.dp).clip(CircleShape).background(c.accent).semantics { contentDescription = "Elegir archivos" }.pulsable(alPulsar = { selector.launch(arrayOf("*/*")) }).padding(horizontal = 28.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icono(Lucide.FileUp, tamano = 16.dp, grosor = 3f, color = c.onAccent)
                     Text("Elegir archivos", style = LukApp.tipo.de(17, 600, 1.2f), color = c.onAccent)
                 }
                 Text(
-                    "Los PDF se leen en el servidor de LukApp y descuentan de tu plan. Revisa cada fila y sus posibles duplicados antes de guardar. Si un PDF tiene contraseña, te la pedimos aquí mismo y no la guardamos. Las fotos, Excel y CSV de la web todavía no están en Android.",
+                    "Los PDF se leen en el servidor de LukApp y descuentan de tu plan; las fotos, hojas Excel y CSV se leen en este teléfono y no se envían a ningún lado. Revisa cada fila y sus posibles duplicados antes de guardar. Si un PDF tiene contraseña, te la pedimos aquí mismo y no la guardamos.",
                     Modifier.padding(top = 16.dp), style = LukApp.tipo.de(13, 400, 1.5f), color = c.inkFaint,
                 )
             }
@@ -155,7 +155,7 @@ fun PantallaExtractos(vista: VistaInicio, modelo: ModeloExtractos, acciones: Acc
                         Text(t.nombre, style = LukApp.tipo.de(13, 600, 1.4f), color = c.salio, maxLines = 1)
                         Text(t.mensaje.orEmpty(), Modifier.padding(top = 4.dp), style = LukApp.tipo.de(15, 400, 1.5f), color = c.salio)
                         Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (t.bytes != null) Boton("Reintentar", c.card, c.salio) { modelo.reintentar(t.id) }
+                            if (t.reintentable) Boton("Reintentar", c.card, c.salio) { modelo.reintentar(t.id) }
                             Boton("Quitar", Color.Transparent, c.inkSoft) { modelo.quitar(t.id) }
                         }
                     }
@@ -276,7 +276,7 @@ private fun TrabajoListo(t: TrabajoExtracto, vista: VistaInicio, cuentaId: Strin
 
                 if (dudosos.isNotEmpty() && importado == 0) Column(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaCard).background(c.salioBg).padding(12.dp)) {
                     Text(
-                        "El lector marcó ${dudosos.size} fila${if (dudosos.size == 1) "" else "s"} con confianza media o baja. Comprueba fecha, detalle y monto en cada una antes de importar.",
+                        "El lector marcó ${dudosos.size} fila${if (dudosos.size == 1) "" else "s"} con confianza media o baja (una foto puede confundir cifras). Comprueba fecha, detalle y monto en cada una antes de importar.",
                         style = LukApp.tipo.de(13, 400, 1.5f), color = c.salio,
                     )
                     Row(Modifier.padding(top = 12.dp).fillMaxWidth().pulsable(escala = 1f, alPulsar = { confirmarDudosos = !confirmarDudosos }), verticalAlignment = Alignment.Top) {

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.54.0', fecha: '2026-11-18', texto: 'En Android ya puedes importar extractos desde una foto, una hoja de Excel o un CSV: se leen en tu teléfono, sin enviarlos a ningún lado. 📸' },
   { version: '10.53.0', fecha: '2026-11-18', texto: 'En Android ya puedes importar el PDF de tu extracto: revisa qué es nuevo, qué ya estaba y qué quizá repetiste a mano, y guárdalo en tu historial. 📄' },
   { version: '10.52.1', fecha: '2026-11-18', texto: 'En Android, los avisos de error al compartir gastos y en otros paneles ahora dicen solo lo que pasó, sin textos técnicos. 🛠️' },
   { version: '10.52.0', fecha: '2026-11-18', texto: 'En Android ya tienes Finanzas en Pareja y Compartidas: crea un espacio, invita a alguien con su cuenta, anoten los gastos juntos y mira quién le debe a quién. 💌' },
