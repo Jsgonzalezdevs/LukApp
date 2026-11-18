@@ -104,6 +104,44 @@ class ModeloAnotar(
     /** Dictados que la app nativa todavía no sabe confirmar (varios movimientos, comandos). */
     val aviso: StateFlow<String?> = _aviso.asStateFlow()
 
+    private val _comando = MutableStateFlow<app.lukapp.dominio.voz.ComandoVoz?>(null)
+    /** Una orden por voz (transferir, abonar, saldo, rendimiento) esperando que la revises y confirmes. */
+    val comando: StateFlow<app.lukapp.dominio.voz.ComandoVoz?> = _comando.asStateFlow()
+    fun cerrarComando() { _comando.value = null }
+
+    /**
+     * `confirmarComandoVoz` de LukAppApp.tsx. Nada se aplica sin pasar por la confirmación; si no se pudo guardar, la
+     * pantalla sigue abierta con lo escrito. Estas operaciones no se deshacen desde el aviso.
+     */
+    suspend fun confirmarComando(orden: app.lukapp.dominio.OrdenConfirmada): Boolean {
+        fun nombre(id: String) = libro.cajitas.firstOrNull { it.id == id }?.nombre.orEmpty()
+        val hoy = app.lukapp.dominio.bogotaDate()
+        val texto: String; val aviso: String?
+        val cambios = when (orden) {
+            is app.lukapp.dominio.OrdenConfirmada.Transferencia -> {
+                texto = "Transferiste ${formatCop(orden.montoCop)}"; aviso = "${nombre(orden.origenId)} → ${nombre(orden.destinoId)}"
+                OperacionesLibro.transferir(libro, orden.origenId, orden.destinoId, orden.montoCop, orden.occurredOn ?: hoy)
+            }
+            is app.lukapp.dominio.OrdenConfirmada.Abono -> {
+                texto = "Abonaste ${formatCop(orden.montoCop)}"; aviso = "${nombre(orden.cuentaId)} → ${nombre(orden.deudaId)}"
+                OperacionesLibro.abonarDeuda(libro, orden.deudaId, orden.cuentaId, orden.montoCop, orden.occurredOn ?: hoy)
+            }
+            is app.lukapp.dominio.OrdenConfirmada.Saldo -> {
+                texto = "${nombre(orden.cajitaId)} quedó en ${formatCop(orden.saldoCop)}"; aviso = null
+                OperacionesLibro.fijarSaldo(libro, orden.cajitaId, orden.saldoCop, "Saldo actualizado por voz")
+            }
+            is app.lukapp.dominio.OrdenConfirmada.Rendimiento -> {
+                texto = "Rendimiento de ${formatCop(orden.montoCop)}"; aviso = nombre(orden.cajitaId)
+                OperacionesLibro.registrarRendimiento(orden.cajitaId, orden.montoCop, orden.occurredOn ?: hoy)
+            }
+        }
+        val ok = runCatching { cambios?.let { finanzas.aplicar(it) }; true }.getOrDefault(false)
+        if (!ok) return false
+        _guardado.value = Guardado("operacion-voz", texto, aviso = aviso, permitirDeshacer = false)
+        _comando.value = null
+        return true
+    }
+
     private val libro: Libro get() = finanzas.libro.value
 
     fun abrirManual() { _pendiente.value = movimientoEnBlanco() }
@@ -158,10 +196,7 @@ class ModeloAnotar(
 
     fun interpretar(texto: String) {
         val l = libro
-        if (parseComandoVoz(texto, l.cajitas.map { it.comoEntidadVoz() }) != null) {
-            _aviso.value = "Transferencias, abonos, saldos y rendimientos por voz todavía no están en la app nueva. Anótalo a mano o usa la app publicada."
-            return
-        }
+        parseComandoVoz(texto, l.cajitas.map { it.comoEntidadVoz() })?.let { _comando.value = it; return }
         val cuentas = l.cajitas.filter { it.archivedAt == null && (it.tipo == "cuenta" || it.tipo == "tarjeta") }.map { CuentaConocida(it.id, it.nombre) }
         val parseados = parseMultipleTransactions(texto, cuentas, l.categorias, aprenderDe(l.transacciones), l.transacciones)
         when {

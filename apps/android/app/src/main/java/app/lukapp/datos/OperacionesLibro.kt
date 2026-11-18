@@ -215,6 +215,10 @@ object OperacionesLibro {
         return Cambios(guardar = Libro(movimientos = par, transacciones = listOf(tx)))
     }
 
+    /** `almacen.registrarMovimiento` con `kind = rendimiento`: intereses que entran a una cajita, sin tocar el libro de gastos. */
+    fun registrarRendimiento(cajitaId: String, montoCop: Long, fecha: String = bogotaDate(), nota: String = "Rendimiento registrado por voz"): Cambios =
+        Cambios(guardar = Libro(movimientos = listOf(CajitaMovimiento(nuevoId(), cajitaId, app.lukapp.dominio.TipoMovimiento.RENDIMIENTO, montoCop, null, fecha, nota, Instant.now().toString()))))
+
     /** `almacen.actualizarCajita`: reemplaza la fila entera (lo usa editar una tarjeta o deuda). */
     fun actualizarCajita(c: app.lukapp.dominio.Cajita): Cambios = Cambios(guardar = Libro(cajitas = listOf(c)))
 

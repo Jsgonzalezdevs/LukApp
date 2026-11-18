@@ -346,6 +346,7 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
     val detalle by anotar.detalle.collectAsState()
     val editando by anotar.editando.collectAsState()
     val guardado by anotar.guardado.collectAsState()
+    val comando by anotar.comando.collectAsState()
     val contexto = androidx.compose.ui.platform.LocalContext.current
     val hapticos = rememberHapticos()
     val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -363,7 +364,7 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             else -> pedirMicrofono.launch(android.Manifest.permission.RECORD_AUDIO)
         }
     }
-    val hayCapa = dictado.abierto || pendiente != null || aviso != null || detalle != null || editando != null
+    val hayCapa = dictado.abierto || pendiente != null || aviso != null || detalle != null || editando != null || comando != null
     if (!hayCapa && seccion != Seccion.ASESOR && seccion != Seccion.AJUSTES) {
         app.lukapp.ui.anotar.BarraAnotar(
             escuchando = false,
@@ -398,6 +399,15 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             },
             alCancelar = anotar::cerrarCaptura,
             alReintentarVoz = if (p.raw.isNotBlank()) ({ anotar.cerrarCaptura(); alMicrofono() }) else null,
+        )
+    }
+    val orden = comando
+    if (orden != null) {
+        app.lukapp.ui.anotar.ConfirmarComandoVoz(
+            comando = orden, cajitas = vista.libro.cajitas,
+            saldos = remember(vista.libro) { app.lukapp.dominio.saldosPorCajita(vista.libro.movimientos, vista.libro.transacciones, app.lukapp.dominio.idsPasivos(vista.libro.cajitas)) },
+            alConfirmar = anotar::confirmarComando, alCancelar = anotar::cerrarComando,
+            alRepetir = { anotar.cerrarComando(); alMicrofono() },
         )
     }
     val d = detalle
