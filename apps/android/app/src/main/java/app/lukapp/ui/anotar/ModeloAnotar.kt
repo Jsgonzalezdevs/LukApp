@@ -166,6 +166,27 @@ class ModeloAnotar(
         return true
     }
 
+    private val _escaneando = MutableStateFlow(false)
+    /** Leyendo la foto de un comprobante: la barra se bloquea mientras tanto. */
+    val escaneando: StateFlow<Boolean> = _escaneando.asStateFlow()
+
+    /**
+     * `useImageOCR` + `onDictado`: el texto de la foto entra al mismo intérprete que lo dictado (por eso un comprobante con
+     * varios movimientos o una orden de voz también se confirma antes de guardar). Los mensajes son los de la web.
+     */
+    fun escanear(contexto: android.content.Context, uri: android.net.Uri) {
+        if (_escaneando.value) return
+        _escaneando.value = true
+        viewModelScope.launch {
+            when (val r = app.lukapp.nativo.LectorImagen.leer(contexto, uri)) {
+                is app.lukapp.nativo.LecturaImagen.Texto -> interpretar(r.texto)
+                app.lukapp.nativo.LecturaImagen.SinTexto -> _aviso.value = "No encontramos texto en la imagen. Sube el comprobante completo o inténtalo de nuevo."
+                app.lukapp.nativo.LecturaImagen.Fallo -> _aviso.value = "No pudimos leer el archivo en este momento. Tu foto puede estar bien; inténtalo otra vez."
+            }
+            _escaneando.value = false
+        }
+    }
+
     private val libro: Libro get() = finanzas.libro.value
 
     fun abrirManual() { _pendiente.value = movimientoEnBlanco() }

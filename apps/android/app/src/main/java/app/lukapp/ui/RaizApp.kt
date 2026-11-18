@@ -358,8 +358,18 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
     val editando by anotar.editando.collectAsState()
     val guardado by anotar.guardado.collectAsState()
     val comando by anotar.comando.collectAsState()
-    val multiples by anotar.multiples.collectAsState()
     val contexto = androidx.compose.ui.platform.LocalContext.current
+    val multiples by anotar.multiples.collectAsState()
+    val escaneando by anotar.escaneando.collectAsState()
+    var eligiendoFoto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    // Foto del comprobante: cámara del sistema (sin pedir permiso de cámara) o galería con el selector de fotos del sistema.
+    var fotoPendiente by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<android.net.Uri?>(null) }
+    val tomarFoto = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { listo ->
+        if (listo) fotoPendiente?.let { anotar.escanear(contexto, it) }
+    }
+    val elegirFoto = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) anotar.escanear(contexto, uri)
+    }
     val hapticos = rememberHapticos()
     val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
@@ -384,8 +394,32 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             bloqueado = dictado.microfonoBloqueado,
             alManual = anotar::abrirManual,
             alMicrofono = alMicrofono,
+            alCamara = { eligiendoFoto = true },
+            escaneando = escaneando,
             // 12dp sobre la barra inferior de 60dp (`--fin-nav-h + 0.75rem`).
             modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 72.dp),
+        )
+    }
+    if (eligiendoFoto) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { eligiendoFoto = false },
+            title = { Text("Escanear comprobante") },
+            text = { Text("Lee el texto de la foto en tu teléfono y lo interpreta como un movimiento. Antes de guardar, lo revisas.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    eligiendoFoto = false
+                    val carpeta = java.io.File(contexto.cacheDir, "compartidos").apply { mkdirs() }
+                    val uri = androidx.core.content.FileProvider.getUriForFile(contexto, "${contexto.packageName}.archivos", java.io.File(carpeta, "comprobante.jpg"))
+                    fotoPendiente = uri
+                    tomarFoto.launch(uri)
+                }) { Text("Tomar foto") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    eligiendoFoto = false
+                    elegirFoto.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) { Text("Elegir de la galería") }
+            },
         )
     }
     if (dictado.abierto) {

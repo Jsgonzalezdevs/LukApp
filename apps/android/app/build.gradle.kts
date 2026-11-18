@@ -131,6 +131,8 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
+    // Reconocimiento de texto en el aparato (modelo latino incluido en la app): la foto del comprobante no sale del teléfono.
+    implementation(libs.mlkit.text)
 
     testImplementation(libs.junit)
 }

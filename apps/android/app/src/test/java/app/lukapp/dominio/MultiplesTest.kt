@@ -26,3 +26,12 @@ class MultiplesTest {
         assertEquals(0L to 0L, totalesMultiples(listOf(sinMonto)))
     }
 }
+
+class LimpiezaOcrTest {
+    @Test fun unaSolaLineaSinBarrasNiComillasCurvas() {
+        assertEquals("Pago a \"Juan\" por \$45.000 Ref I23", limpiarTextoOcr("Pago a “Juan”\npor  \$45.000\n\n Ref |23 "))
+    }
+    @Test fun menosDeTresCaracteresNoAlcanza() {
+        assertEquals(false, textoOcrUtil("ab")); assertEquals(true, textoOcrUtil("abc")); assertEquals(false, textoOcrUtil(limpiarTextoOcr("  \n ")))
+    }
+}

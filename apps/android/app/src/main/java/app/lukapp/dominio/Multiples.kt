@@ -23,3 +23,14 @@ fun movimientosDeMultiples(items: List<ParsedTransaction>, cuentaPorDefecto: Str
 /** Origen: `MultiCapturaModal.tsx`. «Total a registrar»: lo que sale y lo que entra, cada uno aparte. */
 fun totalesMultiples(items: List<ParsedTransaction>): Pair<Long, Long> =
     items.filter { it.kind == "gasto" }.sumOf { it.amount ?: 0L } to items.filter { it.kind == "ingreso" }.sumOf { it.amount ?: 0L }
+
+/**
+ * Origen: `hooks/useImageOCR.ts` (`limpiarTextoOCR`). El reconocedor confunde la barra con la I mayúscula y deja
+ * comillas curvas y saltos de línea; el intérprete trabaja con una sola línea.
+ */
+fun limpiarTextoOcr(texto: String): String =
+    texto.replace('|', 'I').replace('“', '"').replace('”', '"')
+        .replace(Regex("\\n+"), " ").replace(Regex("\\s{2,}"), " ").trim()
+
+/** Menos de 3 caracteres no es un comprobante legible (`cleanText.length < 3`). */
+fun textoOcrUtil(limpio: String): Boolean = limpio.length >= 3

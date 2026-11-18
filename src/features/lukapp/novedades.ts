@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.45.0', fecha: '2026-11-17', texto: 'En Android ya puedes escanear un comprobante o una factura: toma la foto (o elígela de la galería) y LukApp lee el texto en tu teléfono y arma el movimiento para que lo revises. 📷' },
   { version: '10.44.1', fecha: '2026-11-17', texto: 'Inicio de la app de Android abre mucho más rápido con un historial largo: los movimientos se muestran por tandas, con un botón para ver más. ⚡' },
   { version: '10.44.0', fecha: '2026-11-17', texto: 'En Android, Más tiene el recordatorio diario de racha: eliges la hora y te avisamos si aún no has anotado gastos ese día. 🔔' },
   { version: '10.43.0', fecha: '2026-11-17', texto: 'En Android ya puedes dictar varios movimientos en una sola frase, como «almuerzo 20 mil y taxi 12 mil»: los ves todos juntos, quitas los que no son y guardas de una vez. 🎙️' },

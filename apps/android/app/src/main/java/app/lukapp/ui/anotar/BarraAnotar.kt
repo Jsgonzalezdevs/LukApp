@@ -50,6 +50,8 @@ fun BarraAnotar(
     alManual: () -> Unit,
     alMicrofono: () -> Unit,
     modifier: Modifier = Modifier,
+    alCamara: (() -> Unit)? = null,
+    escaneando: Boolean = false,
 ) {
     val c = LukApp.colores
     val hapticos = rememberHapticos()
@@ -70,6 +72,16 @@ fun BarraAnotar(
                     .pulsable(escala = 0.9f) { hapticos.disparar(Haptico.LIGHT); alManual() },
                 contentAlignment = Alignment.Center,
             ) { Icono(Lucide.Keyboard, tamano = 20.dp, grosor = 2.5f, color = c.ink) }
+            // «Escanear comprobante o foto»: el texto de la foto entra al mismo intérprete que lo dictado.
+            if (alCamara != null) Box(
+                Modifier.size(width = 56.dp, height = 48.dp).clip(CircleShape)
+                    .semantics { contentDescription = if (escaneando) "Leyendo la foto" else "Escanear comprobante o foto" }
+                    .pulsable(habilitado = !escaneando, escala = 0.9f) { hapticos.disparar(Haptico.LIGHT); alCamara() },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (escaneando) app.lukapp.ui.acceso.Girando(Lucide.Loader2, 20.dp, c.ink)
+                else Icono(Lucide.Camera, tamano = 20.dp, grosor = 2.5f, color = c.ink)
+            }
         }
         Box {
             // `animate-pulse` mientras escucha: opacidad 1 → .5 → 1 cada 2 s.
