@@ -88,6 +88,7 @@ fun PantallaDinero(
     alAbrirGmf: (() -> Unit)? = null,
     alAbrirDivision: (() -> Unit)? = null,
     alAbrirVaquitas: (() -> Unit)? = null,
+    alAbrirEspacios: (() -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val libro = vista.libro
@@ -138,6 +139,7 @@ fun PantallaDinero(
         if (alAbrirMetas != null) app.lukapp.ui.mes.AccesoFuncion("Metas de ahorro", "Ponte un objetivo y mira cuánto te falta", alAbrirMetas)
         if (alAbrirGmf != null) app.lukapp.ui.mes.AccesoFuncion("Impuesto 4x1000", "Cuánto te está costando y en qué cuenta", alAbrirGmf)
         if (alAbrirDivision != null) app.lukapp.ui.mes.AccesoFuncion("Dividir cuenta y propina", "Calcula cuánto le toca a cada uno en salidas y anota tu parte", alAbrirDivision)
+        if (alAbrirEspacios != null) app.lukapp.ui.mes.AccesoFuncion("Finanzas en Pareja / Compartidas", "Cuentas claras con tu pareja, viajes y gastos del hogar", alAbrirEspacios)
         if (alAbrirVaquitas != null) app.lukapp.ui.mes.AccesoFuncion("Vaquitas y Gastos Compartidos", "Arma vacas para paseos, asados o salidas y salda deudas", alAbrirVaquitas)
 
         if (vivas.isEmpty()) {

@@ -482,3 +482,15 @@ Probado en el emulador: $120.000 + $12.000 de propina entre 3 = $44.000 y entre 
 
 Probado en el emulador: crear «Asado» ($300.000 con Ana y Beto → tres cuotas de $100.000), marcar pagados, anotar un gasto de $150.000 pagado por Yo («Beto le debe transferir $100.000 a Yo») y eliminar la vaquita con su diálogo. Los datos de prueba se borraron; no se tocó la cuenta.
 
+### v10.52.0 — Finanzas en Pareja y Compartidas
+
+`PantallaEspacios` + `ModeloEspacios` + `ClienteEspacios` portan `EspaciosCompartidosView.tsx` y `useEspaciosCompartidos.ts`. Se abre desde la tarjeta «Finanzas en Pareja / Compartidas» de Dinero. A diferencia de las Vaquitas, **esto es real y compartido**: usa las tablas y funciones de la migración `0020_espacios_compartidos_reales.sql` (`espacios_compartidos`, `espacios_integrantes`, `gastos_compartidos`, `invitaciones_compartidas`; RPC `crear_espacio_compartido`, `crear_invitacion_compartida`, `aceptar_invitacion_compartida`), así que lo que se anota aquí lo ve la otra persona en la web o en su teléfono. Crear espacio (nombre + 8 íconos), selector de espacios, tarjeta con el estado de cuentas (te deben / debes / a mano, mitad redondeada hacia afuera), anotar gasto compartido (quién pagó y «anotar mi mitad en mis gastos personales», que abre la captura con «Mi mitad: … (espacio)»), lista de gastos, «Vincular pareja» (crea la invitación y abre la hoja de compartir), «WhatsApp» (hoja de compartir con el resumen) y «Saldar a $0». 11 pruebas nuevas (506 en total).
+
+Decisiones y diferencias con la web, a propósito:
+- **Aceptar una invitación**: la web lo hace sola al abrir `?invitacion=<token>` con el panel abierto; la nativa no tiene enlaces de aplicación verificados, así que hay un botón «Tengo un enlace de invitación» donde se pega el enlace (o el token) y se acepta con la cuenta de quien lo pega. El enlace que se genera apunta a `https://mi.lukapp.app/?invitacion=<token>` (la web). **No se comprobó que la web lo acepte cuando el panel no está abierto.**
+- **Borrar un gasto** pide confirmación (la web borra al instante, y borra para los dos); «Saldar a $0» conserva su confirmación y ahora dice que borra los gastos para ambos.
+- **El mensaje de WhatsApp** va en primera persona («Pagué yo», «Ana me debe», «Le debo a Ana») porque lo manda quien lo escribe; la web dice «Pagó Tú» y «le debe a Tú».
+- **Sin tiempo real ni caché**: la web escucha cambios de `gastos_compartidos` y guarda una copia local; aquí se recarga al abrir y tras cada acción, y sin conexión no se ve nada (se muestra el error). Pendiente.
+
+Probado en el emulador **solo lectura** con la cuenta demo: el panel carga contra Supabase sin error (la cuenta no tiene espacios), muestra el estado vacío, el formulario de «Nuevo espacio» (con «Crear espacio» desactivado sin nombre) y el de «Tengo un enlace». **No se creó ningún espacio, gasto ni invitación**: crear, anotar, borrar, saldar, invitar y aceptar solo están probados en su lógica pura (balance, mensaje, token, mapeo de filas), no contra la base ni entre dos cuentas.
+

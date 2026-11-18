@@ -67,6 +67,7 @@ fun ShellLukApp(
     asesor: app.lukapp.ui.asesor.ModeloAsesor,
     insights: app.lukapp.ui.inicio.ModeloInsights,
     funciones: app.lukapp.ui.mas.ModeloFunciones,
+    espacios: app.lukapp.ui.dinero.ModeloEspacios,
     cuenta: app.lukapp.ui.mas.ModeloCuenta,
     alCerrarSesion: () -> Unit,
     desbloqueoActivo: Boolean,
@@ -153,6 +154,7 @@ fun ShellLukApp(
                                     alAbrirGmf = { modelo.gmfAbierto.value = true },
                                     alAbrirDivision = { modelo.divisionAbierta.value = true },
                                     alAbrirVaquitas = { modelo.vaquitasAbierto.value = true },
+                                    alAbrirEspacios = { modelo.espaciosAbierto.value = true },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
                                     topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
@@ -245,6 +247,15 @@ fun ShellLukApp(
             if (metasPanel) app.lukapp.ui.dinero.PantallaMetas(
                 actual, app.lukapp.ui.dinero.AccionesMetas(modelo::crearMetaCompleta, modelo::actualizarMeta, modelo::borrarMeta),
                 alCerrar = { modelo.metasAbierto.value = false },
+            )
+            val espaciosPanel by modelo.espaciosAbierto.collectAsState()
+            if (espaciosPanel) app.lukapp.ui.dinero.PantallaEspacios(
+                espacios,
+                alAnotarEnLukApp = { monto, descripcion, categoria ->
+                    modelo.espaciosAbierto.value = false
+                    anotar.abrirMovimiento(app.lukapp.dominio.voz.movimientoEnBlanco().copy(kind = "gasto", amount = monto, category = categoria, description = descripcion))
+                },
+                alCerrar = { modelo.espaciosAbierto.value = false },
             )
             val vaquitasPanel by modelo.vaquitasAbierto.collectAsState()
             if (vaquitasPanel) {
