@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.55.1', fecha: '2026-11-18', texto: 'Dejamos al día la guía para publicar y probar la app de Android, con lo que ya está listo y lo que falta comprobar. 📋' },
   { version: '10.55.0', fecha: '2026-11-18', texto: 'En Android ya puedes exportar tus movimientos a Excel y guardar el informe del mes en PDF, directo desde tu teléfono. 📊' },
   { version: '10.54.0', fecha: '2026-11-18', texto: 'En Android ya puedes importar extractos desde una foto, una hoja de Excel o un CSV: se leen en tu teléfono, sin enviarlos a ningún lado. 📸' },
   { version: '10.53.0', fecha: '2026-11-18', texto: 'En Android ya puedes importar el PDF de tu extracto: revisa qué es nuevo, qué ya estaba y qué quizá repetiste a mano, y guárdalo en tu historial. 📄' },
