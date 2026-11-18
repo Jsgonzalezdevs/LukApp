@@ -166,3 +166,15 @@ val NOTAS_GMF: List<NotaLegal> = listOf(
 /** Origen: `lib/gmf.ts` (`ADVERTENCIA_GMF`). La línea entre informar y asesorar, visible en el código. */
 const val ADVERTENCIA_GMF =
     "Esto es informativo y son estimaciones. Quien liquida y cobra el 4x1000 es tu banco, y quien interpreta la norma es la DIAN. Si algo no te cuadra, revisa con tu banco antes de dar por buena una cifra de aquí."
+
+/** Una cuenta tal como la ofrece el panel del 4x1000 (`cuentasParaElegir` de LukAppApp.tsx). */
+data class CuentaGmf(val id: String, val nombre: String, val etiqueta: String, val esBajoMonto: Boolean, val esFinanciera: Boolean)
+
+/**
+ * Origen: `cuentasParaElegir` de LukAppApp.tsx. Solo cuentas vivas: ni ahorros ni tarjetas ni deudas son
+ * un lugar del que «sale» plata. El efectivo no está en una entidad financiera, así que no consume cupo.
+ */
+fun cuentasParaGmf(cajitas: List<Cajita>): List<CuentaGmf> =
+    cajitas.filter { it.archivedAt == null && it.tipo == TipoCajita.CUENTA }.map {
+        CuentaGmf(it.id, it.nombre, "${it.nombre} · ${etiquetaTipoCajita(it)}", it.esBajoMonto, claseDeCuenta(it) != ClaseCuenta.EFECTIVO)
+    }

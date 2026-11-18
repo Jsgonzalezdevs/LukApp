@@ -1,6 +1,6 @@
 # Publicación de la app Android nativa
 
-Estado al **v10.48.0** (desde v10.48.0 las **Metas de ahorro** ya existen en la nativa). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
+Estado al **v10.49.0** (desde v10.48.0 las **Metas de ahorro** y desde v10.49.0 el **Impuesto 4x1000** ya existen en la nativa). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
 en el mensaje, etiquetas `v10.14.1` … `v10.47.1`, **nada enviado al remoto** (la rama no tiene upstream).
 Este documento no publica nada: dice en qué punto está, qué falta y qué decisiones son del dueño.
 
@@ -15,7 +15,6 @@ la reemplaza**. Quien actualice perdería esto, que hoy sí puede hacer:
 | **Importar extractos** (PDF del banco, y desde foto) | Ajustes → Importar extractos (`AnalistaView`) |
 | **Finanzas en Pareja / Compartidas** y **Vaquitas** | Ajustes → paneles `compartido` y `vaquitas` |
 | **Dividir cuenta y propina** | Ajustes → `dividir-cuenta` |
-| **Impuesto 4x1000** (panel: cuánto cuesta, cuenta exenta, UVT) | Ajustes → `gmf` |
 | **Informe PDF** y **Exportar a Excel (.xls)** | Copia de seguridad, Mes |
 | Registro automático (Apple Pay) | Solo iOS: no aplica a Android |
 

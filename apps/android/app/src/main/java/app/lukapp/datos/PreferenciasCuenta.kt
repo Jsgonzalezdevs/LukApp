@@ -2,6 +2,9 @@ package app.lukapp.datos
 
 import app.lukapp.dominio.ConfigPeriodo
 import app.lukapp.dominio.PERIODO_POR_DEFECTO
+import app.lukapp.dominio.RegimenGmf
+import app.lukapp.dominio.UVT_POR_DEFECTO
+import app.lukapp.dominio.ValorUvt
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +38,31 @@ data class AjustesCuenta(
     val recordatorioHora: String = "20:30",
     val guiaBasicaVista: Boolean = false,
     val guiaSecciones: List<String> = emptyList(),
+    val uvt: ValorUvt = UVT_POR_DEFECTO,
+    /** `null` distingue la selección automática (las cuentas financieras) de haber desmarcado todo. */
+    val cuentasGmf: List<String>? = null,
+    val regimenGmf: String = RegimenGmf.DISTRIBUIDO,
+    val cuentaExentaGmf: String? = null,
 )
+
+/** `leerUvt` de usePreferencias.ts: un valor guardado a mano puede venir roto y con él se calcula un tope en pesos. */
+internal fun uvtDe(e: JsonElement?): ValorUvt {
+    val o = e as? JsonObject ?: return UVT_POR_DEFECTO
+    val anio = (o["anio"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return UVT_POR_DEFECTO
+    val pesos = (o["pesos"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return UVT_POR_DEFECTO
+    if (!pesos.isFinite() || pesos <= 0) return UVT_POR_DEFECTO
+    val fuente = (o["fuente"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: ""
+    return ValorUvt(anio.toInt(), Math.round(pesos), fuente)
+}
+
+/** `leerRegimen`: cualquier cosa distinta de «marcada» es el régimen vigente desde el 13 de diciembre de 2024. */
+internal fun regimenDe(e: JsonElement?): String =
+    if ((e as? JsonPrimitive)?.takeIf { it.isString }?.content == RegimenGmf.MARCADA) RegimenGmf.MARCADA else RegimenGmf.DISTRIBUIDO
+
+/** `leerListaOpcional`: sin la clave o con algo que no es lista, `null` y la app elige sola. */
+internal fun listaOpcionalDe(e: JsonElement?): List<String>? =
+    (e as? kotlinx.serialization.json.JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content }
+
 
 /**
  * Lee los ajustes desde `user_metadata` y escribe con `updateUser`, igual que
@@ -67,6 +94,10 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             guiaBasicaVista = bool("finanzas:guia:basica", false),
             guiaSecciones = (meta["finanzas:guia:secciones"] as? kotlinx.serialization.json.JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content } ?: emptyList(),
             nombre = (meta["finanzas:onboarding:nombre"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "",
+            uvt = uvtDe(meta["finanzas:gmf:uvt"]),
+            cuentasGmf = listaOpcionalDe(meta["finanzas:gmf:cuentas"]),
+            regimenGmf = regimenDe(meta["finanzas:gmf:regimen"]),
+            cuentaExentaGmf = (meta["finanzas:gmf:cuenta-exenta"] as? JsonPrimitive)?.takeIf { it.isString }?.content,
             cuentaFavoritaId = (meta["finanzas:cuenta-favorita"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.ifBlank { null },
         )
     }
@@ -167,6 +198,35 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
     suspend fun cuentaFavorita(id: String?) {
         _ajustes.update { it.copy(cuentaFavoritaId = id) }
         guardar("finanzas:cuenta-favorita", if (id == null) kotlinx.serialization.json.JsonNull else JsonPrimitive(id))
+    }
+
+    /** `useAjustesGmf.setUvt`: el objeto con las claves que lee `leerUvt`. */
+    suspend fun uvt(valor: ValorUvt) {
+        _ajustes.update { it.copy(uvt = valor) }
+        guardar("finanzas:gmf:uvt", buildJsonObject {
+            put("anio", JsonPrimitive(valor.anio))
+            put("pesos", JsonPrimitive(valor.pesos))
+            put("fuente", JsonPrimitive(valor.fuente))
+        })
+    }
+
+    /** `useAjustesGmf.setCuentasGmf`: sin repetidos. */
+    suspend fun cuentasGmf(ids: List<String>) {
+        val lista = ids.distinct()
+        _ajustes.update { it.copy(cuentasGmf = lista) }
+        guardar("finanzas:gmf:cuentas", kotlinx.serialization.json.JsonArray(lista.map { JsonPrimitive(it) }))
+    }
+
+    /** `useAjustesGmf.setRegimen`. */
+    suspend fun regimenGmf(valor: String) {
+        _ajustes.update { it.copy(regimenGmf = valor) }
+        guardar("finanzas:gmf:regimen", JsonPrimitive(valor))
+    }
+
+    /** `useAjustesGmf.setCuentaExentaId`: «Ninguna» se guarda como null, igual que la web. */
+    suspend fun cuentaExentaGmf(id: String?) {
+        _ajustes.update { it.copy(cuentaExentaGmf = id) }
+        guardar("finanzas:gmf:cuenta-exenta", if (id == null) kotlinx.serialization.json.JsonNull else JsonPrimitive(id))
     }
 
     private suspend fun guardar(clave: String, valor: JsonElement) {

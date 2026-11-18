@@ -85,6 +85,7 @@ fun PantallaDinero(
     alAbrirPasivos: ((String) -> Unit)? = null,
     alCrear: ((String) -> Unit)? = null,
     alAbrirMetas: (() -> Unit)? = null,
+    alAbrirGmf: (() -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val libro = vista.libro
@@ -131,8 +132,9 @@ fun PantallaDinero(
             )
         }
 
-        // AccesosFunciones de DineroView: lo que se abre desde aquí (Metas; los demás paneles llegan con su versión).
+        // AccesosFunciones de DineroView: lo que se abre desde aquí (Metas y 4x1000; los demás paneles llegan con su versión).
         if (alAbrirMetas != null) app.lukapp.ui.mes.AccesoFuncion("Metas de ahorro", "Ponte un objetivo y mira cuánto te falta", alAbrirMetas)
+        if (alAbrirGmf != null) app.lukapp.ui.mes.AccesoFuncion("Impuesto 4x1000", "Cuánto te está costando y en qué cuenta", alAbrirGmf)
 
         if (vivas.isEmpty()) {
             Column(
