@@ -65,6 +65,7 @@ class ActividadPrincipal : FragmentActivity() {
             initializer { ModeloApp(contenedor.finanzas, contenedor.preferenciasCuenta) }
             initializer { app.lukapp.ui.asesor.ModeloAsesor(contenedor.asesor) }
             initializer { app.lukapp.ui.mas.ModeloFunciones(contenedor.funciones) }
+            initializer { app.lukapp.ui.mas.ModeloCuenta(contenedor.cuenta, contenedor.sesion) }
             initializer { app.lukapp.ui.inicio.ModeloInsights(contenedor.asesor, contenedor.preferencias) }
             initializer { app.lukapp.ui.anotar.ModeloAnotar(application, contenedor.finanzas, contenedor.transcripcion) }
         }
@@ -90,6 +91,7 @@ class ActividadPrincipal : FragmentActivity() {
         val modeloAsesor = proveedor[app.lukapp.ui.asesor.ModeloAsesor::class.java]
         val modeloInsights = proveedor[app.lukapp.ui.inicio.ModeloInsights::class.java]
         val modeloFunciones = proveedor[app.lukapp.ui.mas.ModeloFunciones::class.java]
+        val modeloCuenta = proveedor[app.lukapp.ui.mas.ModeloCuenta::class.java]
 
         setContent {
             val temaGuardado by contenedor.preferencias.tema.collectAsState(initial = null)
@@ -135,6 +137,7 @@ class ActividadPrincipal : FragmentActivity() {
                                 asesor = modeloAsesor,
                                 insights = modeloInsights,
                                 funciones = modeloFunciones,
+                                cuenta = modeloCuenta,
                                 alCerrarSesion = {
                                     alcance.launch {
                                         uid?.let(contenedor.finanzas::olvidarLocal)

@@ -67,6 +67,13 @@ class ServicioSesion(private val supabase: SupabaseClient, private val http: Htt
         supabase.auth.updateUser { password = nueva }
     }
 
+    /** Cambio de contraseña desde Cuenta: como la web, después de guardarla se avisa al servidor (que manda el correo de aviso). */
+    suspend fun cambiarContrasena(nueva: String): String? {
+        val error = actualizarContrasena(nueva)
+        if (error == null) avisarContrasenaCambiada()
+        return error
+    }
+
     /** Ante un fallo de red devuelve true: el índice único de la base es quien manda (useSesion.ts). */
     suspend fun usuarioDisponible(usuario: String): Boolean = runCatching {
         supabase.postgrest.rpc("usuario_disponible", buildJsonObject { put("nombre", usuario.trim()) })

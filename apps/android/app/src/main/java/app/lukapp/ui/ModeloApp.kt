@@ -128,6 +128,11 @@ class ModeloApp(
     val categoriasAbierto = MutableStateFlow(false)
     val respaldoAbierto = MutableStateFlow(false)
     val funcionesAbierto = MutableStateFlow(false)
+    val cuentaAbiertaPanel = MutableStateFlow(false)
+    /** Cambios hechos sin conexión que todavía no suben. */
+    val cambiosPendientes: Int get() = finanzas.pendientes
+    /** Como `sincronizar`, pero espera a que termine para que la pantalla Cuenta pueda enseñar el giro. */
+    suspend fun sincronizarYEsperar() { preferencias.recargar(); finanzas.sincronizar() }
     /** `almacen.restaurar`: REEMPLAZA todo el libro (la RPC borra lo que no venga en el respaldo). */
     suspend fun restaurarLibro(nuevo: app.lukapp.dominio.Libro) = aplicarCambios { app.lukapp.datos.Cambios(guardar = nuevo, reemplazar = true) }
     val nombresAbierto = MutableStateFlow(false)

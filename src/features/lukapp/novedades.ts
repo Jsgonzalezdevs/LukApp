@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.39.0', fecha: '2026-11-17', texto: 'En Android, «Cuenta y Premium» ya abre tu cuenta: tu perfil, tu plan, el estado de la sincronización, cambiar la contraseña y eliminar la cuenta. 👤' },
   { version: '10.38.0', fecha: '2026-11-17', texto: 'En Android, Más ahora tiene «Funciones solicitadas»: vota las ideas que quieres ver o propón una nueva. 🔧' },
   { version: '10.37.0', fecha: '2026-11-17', texto: 'En Android, Más ahora tiene «Copia de seguridad»: guarda todo en un archivo que también lee la web, saca tus movimientos en CSV y restaura un respaldo viendo antes qué trae. 💾' },
   { version: '10.36.0', fecha: '2026-11-17', texto: 'En Android, Más ahora tiene «Nombres repetidos»: une a la misma persona escrita de dos formas, ponle apodos y mira cuánto has movido con cada quien. 👥' },

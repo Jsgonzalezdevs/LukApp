@@ -50,6 +50,7 @@ fun PantallaMas(
     alAbrirNombres: () -> Unit,
     alAbrirRespaldo: () -> Unit,
     alAbrirFunciones: () -> Unit,
+    alAbrirCuenta: () -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -123,7 +124,9 @@ fun PantallaMas(
                     )
                 }
                 Fila("🌗", "Apariencia", null, linea = true, alPulsar = null) { SelectorTema(tema, alCambiarTema) }
-                Fila("☁️", "Cuenta y Premium", correo, linea = true, alPulsar = null) {}
+                Fila("☁️", "Cuenta y Premium", correo, linea = true, alPulsar = alAbrirCuenta) {
+                    Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
+                }
                 Fila("👋", "Cerrar sesión", null, linea = false, colorTitulo = c.salio, alPulsar = alCerrarSesion) {}
             }
         }

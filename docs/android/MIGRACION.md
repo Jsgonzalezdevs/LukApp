@@ -367,3 +367,10 @@ La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el 
 ### v10.38.0 — Más: Funciones solicitadas
 
 `PantallaFunciones` + `ModeloFunciones` + `ClienteFunciones` portan `FuncionesSolicitadasView.tsx`: lista por votos (y a igual voto la más reciente), votar y quitar voto con cambio optimista que se revierte si falla, y «¿Otras ideas?» para proponer (título obligatorio, descripción opcional). Lee y escribe directo en `funciones_solicitadas` y `funciones_solicitadas_votos` con las mismas columnas que la web; el conteo es del trigger de la base. 3 pruebas nuevas del voto optimista. Sin ver en emulador ni probar contra la base (las políticas de la tabla deciden qué puede cada quien). Con esto el bloque Comunidad de la web queda completo.
+
+
+### v10.39.0 — Más: Cuenta
+
+`PantallaCuenta` + `ModeloCuenta` + `ClienteCuenta` portan `CuentaView.tsx`: perfil (apodo de `perfiles`, o el correo), ID de cuenta (sha256 del id de usuario, 20 caracteres, con «Copiar»), plan (`GET /api/mi-plan`: Premium hasta la fecha, o Normal, con las prestaciones activas y «Reintentar»), sincronización (Todo bien / N cambios por subir / problema, con «Sincronizar» que gira hasta terminar), cerrar sesión, restablecer contraseña (misma validación de contraseña segura; al guardar avisa a `/api/mi-cuenta/contrasena-cambiada` como la web) y la zona de riesgo (eliminar cuenta con confirmación aparte vía `POST /api/mi-cuenta/eliminar`, después cierra la sesión). La versión va al pie. 3 pruebas nuevas (id, fecha en hora de Bogotá, estado de sincronización).
+
+Decisiones y diferencias: **sin botones de compra de Premium** (la web paga con Wompi; en Android la compra de funciones digitales tiene sus propias reglas de la tienda y no se decide aquí), y en su lugar un aviso de que se hace desde la web. El plan se lee al abrir y con «Reintentar», no cada 30 s ni al volver a la ventana. **«Eliminar cuenta» no se ejecutó** (borra de verdad): solo está comprobado que compila y que pide la doble confirmación. Sin ver en emulador.

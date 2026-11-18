@@ -40,7 +40,7 @@
  *
  * El detalle completo está en CLAUDE.md, en la raíz del repo.
  */
-export const VERSION = '10.38.0';
+export const VERSION = '10.39.0';
 
 /** Con la V delante, para enseñarla en pantalla. */
 export const VERSION_ETIQUETA = `v${VERSION}`;
