@@ -152,6 +152,7 @@ fun ShellLukApp(
                                     alAbrirMetas = { modelo.metasAbierto.value = true },
                                     alAbrirGmf = { modelo.gmfAbierto.value = true },
                                     alAbrirDivision = { modelo.divisionAbierta.value = true },
+                                    alAbrirVaquitas = { modelo.vaquitasAbierto.value = true },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
                                     topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
@@ -245,6 +246,12 @@ fun ShellLukApp(
                 actual, app.lukapp.ui.dinero.AccionesMetas(modelo::crearMetaCompleta, modelo::actualizarMeta, modelo::borrarMeta),
                 alCerrar = { modelo.metasAbierto.value = false },
             )
+            val vaquitasPanel by modelo.vaquitasAbierto.collectAsState()
+            if (vaquitasPanel) {
+                val contextoVaquitas = androidx.compose.ui.platform.LocalContext.current
+                val almacenVaquitas = remember(modelo.usuarioId) { app.lukapp.datos.AlmacenVaquitas(contextoVaquitas, modelo.usuarioId) }
+                app.lukapp.ui.dinero.PantallaVaquitas(almacenVaquitas, alCerrar = { modelo.vaquitasAbierto.value = false })
+            }
             val divisionPanel by modelo.divisionAbierta.collectAsState()
             if (divisionPanel) app.lukapp.ui.dinero.PantallaDivision(
                 alAnotarMiParte = { monto, descripcion ->

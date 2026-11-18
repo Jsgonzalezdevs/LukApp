@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.51.0', fecha: '2026-11-18', texto: 'En Android ya tienes las Vaquitas: arma una vaca para un paseo o un asado, marca quién ya pagó, anota los gastos y mira quién le transfiere a quién para quedar a mano. 🐮' },
   { version: '10.50.0', fecha: '2026-11-18', texto: 'En Android ya puedes dividir la cuenta con propina: mira la cuota por persona, marca quién ya pagó, envía el cobro y anota tu parte. 🧾' },
   { version: '10.49.0', fecha: '2026-11-18', texto: 'En Android ya tienes el panel del Impuesto 4x1000: mira cuánto cupo exento te queda este mes, cuánto pagarías de más y con qué UVT se calcula. 🏛️' },
   { version: '10.48.0', fecha: '2026-11-18', texto: 'En Android ya tienes las Metas de ahorro: ponte un objetivo, enlázalo a una cajita o llévalo a mano, y mira cuánto te falta y cuánto apartar por quincena. 🎯' },

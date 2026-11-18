@@ -89,7 +89,12 @@ class ModeloApp(
         )
     }.flowOn(Dispatchers.Default).stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    /** El usuario con sesión: las vaquitas, que viven en el teléfono, se guardan por usuario. */
+    var usuarioId: String? = null
+        private set
+
     fun abrir(usuario: String) {
+        usuarioId = usuario
         preferencias.recargar()
         viewModelScope.launch { finanzas.abrir(usuario) }
     }
@@ -133,6 +138,7 @@ class ModeloApp(
     val metasAbierto = MutableStateFlow(false)
     val gmfAbierto = MutableStateFlow(false)
     val divisionAbierta = MutableStateFlow(false)
+    val vaquitasAbierto = MutableStateFlow(false)
     fun cambiarUvt(v: app.lukapp.dominio.ValorUvt) { viewModelScope.launch { preferencias.uvt(v) } }
     fun cambiarCuentasGmf(ids: List<String>) { viewModelScope.launch { preferencias.cuentasGmf(ids) } }
     fun cambiarRegimenGmf(r: String) { viewModelScope.launch { preferencias.regimenGmf(r) } }
@@ -239,7 +245,7 @@ class ModeloApp(
     val hayPanelAbierto: StateFlow<Boolean> = combine(
         listOf(
             calendarioAbierto, pagosFijosAbierto, buscarAbierto, proyeccionAbierta, periodoAbierto, categoriasAbierto, revisionesAbierto,
-            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta,
+            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta, vaquitasAbierto,
             resumenMes.map { it != null }, nuevaCajitaTipo.map { it != null }, cuentaAbierta.map { it != null }, panelPasivos.map { it != null },
         ),
     ) { estados -> estados.any { it } }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)

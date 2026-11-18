@@ -474,3 +474,11 @@ Probado en el emulador con la cuenta demo, solo lectura: cupo $18.318.900 libres
 
 Probado en el emulador: $120.000 + $12.000 de propina entre 3 = $44.000 y entre 2 = $66.000; marcar pagado, sumar persona y la captura prellenada, cerrada **sin guardar**. Diferencia a propósito: la web pasa `raw = "<monto> de <descripción>"` a la captura; aquí se deja vacío porque la captura lo muestra como «Tu dictado» con un aviso falso («No escuché un monto…») aunque nada se dictó. «Enviar cobro» abre el selector de compartir pero no lo envié a ninguna app.
 
+### v10.51.0 — Vaquitas y Gastos Compartidos
+
+`PantallaVaquitas` porta `VaquitasModal.tsx` y se abre desde la tarjeta «Vaquitas y Gastos Compartidos» de Dinero. Armar una vaca (para qué, meta, amigos separados por coma; «Yo» va siempre primero y la meta se reparte con `repartirCuota`, que no pierde pesos), selector si hay varias, barra y cifras (presupuesto, recolectado, gastado, disponible), gastos del proyecto (anotar con quién pagó y eliminar con confirmación), participantes con «Marcar pagado» / «Al día», «Para quedar a mano» (quién le transfiere a quién) y eliminar la vaquita con confirmación. El cálculo vive en `Vaquitas.kt`, copia del algoritmo de `vaquitasColombia.ts` (balance por nombre, deudores y acreedores emparejados en orden). 8 pruebas nuevas (495 en total).
+
+**Como la web, todo vive solo en el teléfono**: SharedPreferences `vaquitas`, clave `lukapp_vaquitas_v1:<usuario>` con el mismo JSON. No pasa por la cuenta, ni por la copia de seguridad, ni se sincroniza con la web ni con otro teléfono; desinstalar la app las borra. Diferencias menores: la fecha de un gasto usa el día de Bogotá (la web usa el día UTC) y el monto se escribe con puntos de miles. Se conservan dos rarezas de la web: «1 gastos registrados» y que dos participantes con el mismo nombre se funden en uno al liquidar.
+
+Probado en el emulador: crear «Asado» ($300.000 con Ana y Beto → tres cuotas de $100.000), marcar pagados, anotar un gasto de $150.000 pagado por Yo («Beto le debe transferir $100.000 a Yo») y eliminar la vaquita con su diálogo. Los datos de prueba se borraron; no se tocó la cuenta.
+
