@@ -140,6 +140,7 @@ class ActividadPrincipal : FragmentActivity() {
                                 cuenta = modeloCuenta,
                                 alCerrarSesion = {
                                     alcance.launch {
+                                        app.lukapp.nativo.RecordatorioRacha.olvidar(this@ActividadPrincipal)
                                         uid?.let(contenedor.finanzas::olvidarLocal)
                                         contenedor.ultimoUsuario.borrar("uid")
                                         contenedor.finanzas.cerrar()

@@ -1,6 +1,11 @@
 package app.lukapp.ui.mas
 
 import androidx.compose.foundation.background
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,7 +39,7 @@ import app.lukapp.ui.tema.PreferenciaTema
  * AjustesView.tsx. Solo están las filas que funcionan de verdad: Período, Próximos pagos, Contar los ahorros,
  * decisiones financieras, Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
  * Pendiente (sin filas muertas): Registro automático (Apple Pay no existe en Android),
- * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha y los botones de compra de Premium.
+ * efectivo por separado (Dinero aún no lo desglosa) y los botones de compra de Premium.
  */
 @Composable
 fun PantallaMas(
@@ -52,6 +57,10 @@ fun PantallaMas(
     alAbrirFunciones: () -> Unit,
     alAbrirCuenta: () -> Unit,
     alVolverAVerGuia: () -> Unit,
+    recordatorioActivo: Boolean,
+    recordatorioHora: String,
+    alRecordatorio: (Boolean) -> Unit,
+    alHoraRecordatorio: (String) -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -117,6 +126,7 @@ fun PantallaMas(
                         colors = CheckboxDefaults.colors(checkedColor = c.entro, checkmarkColor = c.onIn, uncheckedColor = c.inkFaint),
                     )
                 }
+                FilaRecordatorio(recordatorioActivo, recordatorioHora, alRecordatorio, alHoraRecordatorio)
                 Fila("✈️", "Volver a ver la guía", "Te vuelve a señalar cómo funciona la app", linea = true, alPulsar = alVolverAVerGuia) {
                     Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
                 }
@@ -164,5 +174,54 @@ private fun Fila(
         }
         // `inset 0 -1px 0 0 var(--fin-line)`.
         if (linea) Box(Modifier.fillMaxWidth().height(1.dp).background(c.line))
+    }
+}
+
+/**
+ * AjustesView.tsx, «Recordatorio diario de racha»: aviso si aún no has anotado gastos hoy, a la hora elegida. Se
+ * enciende solo con permiso de notificaciones (Android 13+ lo pide aquí, nunca al abrir la app).
+ */
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun FilaRecordatorio(activo: Boolean, hora: String, alCambiar: (Boolean) -> Unit, alHora: (String) -> Unit) {
+    val c = LukApp.colores
+    val contexto = androidx.compose.ui.platform.LocalContext.current
+    var sinPermiso by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var eligiendo by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val pedir = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { concedido ->
+        sinPermiso = !concedido
+        if (concedido) alCambiar(true)
+    }
+    Fila(
+        "🔔", "Recordatorio diario de racha",
+        if (sinPermiso) "Activa las notificaciones de LukApp en los ajustes del teléfono para recibir el aviso" else "Notificación si aún no has anotado gastos hoy",
+        linea = true,
+        alPulsar = {
+            if (activo) alCambiar(false)
+            else if (app.lukapp.nativo.RecordatorioRacha.hayPermiso(contexto)) { sinPermiso = false; alCambiar(true) }
+            else pedir.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        },
+    ) {
+        Checkbox(checked = activo, onCheckedChange = null, colors = CheckboxDefaults.colors(checkedColor = c.warn, checkmarkColor = c.onAccent, uncheckedColor = c.inkFaint))
+    }
+    if (activo) {
+        val (h, m) = app.lukapp.dominio.horaDeRecordatorio(hora)
+        Row(Modifier.fillMaxWidth().padding(start = 68.dp, end = 16.dp, bottom = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("Hora de aviso:", style = LukApp.tipo.de(13, 500, 1.3f), color = c.inkSoft)
+            Text(
+                "%02d:%02d".format(h, m),
+                Modifier.clip(Medidas.formaControl).background(c.bg).border(1.dp, c.line, Medidas.formaControl).semantics { contentDescription = "Hora de aviso" }.pulsable(escala = 1f, alPulsar = { eligiendo = true }).padding(horizontal = 12.dp, vertical = 4.dp),
+                style = LukApp.tipo.de(17, 700, 1.3f).copy(fontFeatureSettings = "tnum"), color = c.ink,
+            )
+        }
+        if (eligiendo) {
+            val estado = androidx.compose.material3.rememberTimePickerState(initialHour = h, initialMinute = m, is24Hour = false)
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { eligiendo = false },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { eligiendo = false; alHora("%02d:%02d".format(estado.hour, estado.minute)) }) { Text("Listo") } },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { eligiendo = false }) { Text("Cancelar") } },
+                text = { androidx.compose.material3.TimePicker(state = estado) },
+            )
+        }
     }
 }

@@ -31,6 +31,8 @@ data class AjustesCuenta(
     val umbralAlertaPct: Int = 80,
     val onboardingTerminado: Boolean = false,
     val nombre: String = "",
+    val recordatorioActivo: Boolean = false,
+    val recordatorioHora: String = "20:30",
     val guiaBasicaVista: Boolean = false,
     val guiaSecciones: List<String> = emptyList(),
 )
@@ -60,6 +62,8 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             // `setUmbralAlertaPct` acota a 1..100 y guarda un entero.
             umbralAlertaPct = ((meta["finanzas:presupuestos:umbral-alerta"] as? JsonPrimitive)?.doubleOrNull ?: 80.0).let { Math.round(it).toInt().coerceIn(1, 100) },
             onboardingTerminado = bool("finanzas:onboarding:terminado", false),
+            recordatorioActivo = bool("finanzas:recordatorio-racha:activo", false),
+            recordatorioHora = (meta["finanzas:recordatorio-racha:hora"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "20:30",
             guiaBasicaVista = bool("finanzas:guia:basica", false),
             guiaSecciones = (meta["finanzas:guia:secciones"] as? kotlinx.serialization.json.JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content } ?: emptyList(),
             nombre = (meta["finanzas:onboarding:nombre"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "",
@@ -111,6 +115,18 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
     suspend fun terminarOnboarding() {
         _ajustes.update { it.copy(onboardingTerminado = true) }
         guardar("finanzas:onboarding:terminado", JsonPrimitive(true))
+    }
+
+    /** `activarRecordatorio` / `desactivarRecordatorio`. */
+    suspend fun recordatorioActivo(valor: Boolean) {
+        _ajustes.update { it.copy(recordatorioActivo = valor) }
+        guardar("finanzas:recordatorio-racha:activo", JsonPrimitive(valor))
+    }
+
+    /** `cambiarHora`. */
+    suspend fun recordatorioHora(hora: String) {
+        _ajustes.update { it.copy(recordatorioHora = hora) }
+        guardar("finanzas:recordatorio-racha:hora", JsonPrimitive(hora))
     }
 
     /** `useGuiaApp.terminarBasica`. */

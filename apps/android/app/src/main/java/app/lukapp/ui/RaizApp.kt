@@ -92,6 +92,15 @@ fun ShellLukApp(
     val margenSuperior = (altoPantalla * 0.03f).coerceIn(20f, 28f).dp
 
     val anclasGuia = remember { app.lukapp.ui.guia.AnclasGuia() }
+    // El aviso de racha vive en una alarma del sistema: aquí se mantiene al día con lo que dice la cuenta y con si hoy ya se anotó.
+    val contextoApp = androidx.compose.ui.platform.LocalContext.current
+    val ajustesRecordatorio = vista?.ajustes
+    LaunchedEffect(ajustesRecordatorio?.recordatorioActivo, ajustesRecordatorio?.recordatorioHora) {
+        ajustesRecordatorio?.let { app.lukapp.nativo.RecordatorioRacha.aplicar(contextoApp, it.recordatorioActivo, it.recordatorioHora) }
+    }
+    LaunchedEffect(vista?.racha?.anotadoHoy, vista?.hoy) {
+        vista?.let { app.lukapp.nativo.RecordatorioRacha.marcarAnotadoHoy(contextoApp, it.racha.anotadoHoy, it.hoy) }
+    }
     androidx.compose.runtime.CompositionLocalProvider(app.lukapp.ui.guia.LocalAnclasGuia provides anclasGuia) {
     Box(Modifier.fillMaxSize().background(c.bg)) {
         val actual = vista
@@ -157,6 +166,8 @@ fun ShellLukApp(
                                     alAbrirFunciones = { modelo.funcionesAbierto.value = true },
                                     alAbrirCuenta = { modelo.cuentaAbiertaPanel.value = true },
                                     alVolverAVerGuia = { modelo.reiniciarGuia(); modelo.seccion.value = Seccion.INICIO },
+                                    recordatorioActivo = actual.ajustes.recordatorioActivo, recordatorioHora = actual.ajustes.recordatorioHora,
+                                    alRecordatorio = modelo::recordatorioActivo, alHoraRecordatorio = modelo::recordatorioHora,
                                     tema = tema, alCambiarTema = alCambiarTema,
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,

@@ -130,6 +130,8 @@ class ModeloApp(
     val categoriasAbierto = MutableStateFlow(false)
     val respaldoAbierto = MutableStateFlow(false)
     val funcionesAbierto = MutableStateFlow(false)
+    fun recordatorioActivo(valor: Boolean) { viewModelScope.launch { preferencias.recordatorioActivo(valor) } }
+    fun recordatorioHora(hora: String) { viewModelScope.launch { preferencias.recordatorioHora(hora) } }
     fun terminarGuiaBasica() { viewModelScope.launch { preferencias.terminarGuiaBasica() } }
     fun marcarSeccionGuia(id: String) { viewModelScope.launch { preferencias.marcarSeccionGuia(id) } }
     fun reiniciarGuia() { viewModelScope.launch { preferencias.reiniciarGuia() } }
