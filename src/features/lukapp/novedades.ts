@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.47.1', fecha: '2026-11-17', texto: 'Dejamos lista la compilación de lanzamiento de la app de Android, que antes no se podía generar. 🚀' },
   { version: '10.47.0', fecha: '2026-11-17', texto: 'En Android ya puedes cambiar la fecha de un movimiento al editarlo, por si lo anotaste tarde o cayó en otro día. 📅' },
   { version: '10.46.0', fecha: '2026-11-17', texto: 'En Android ya puedes hacerle la pregunta al Asesor hablando: toca el micrófono, di tu pregunta y revisa el texto antes de enviarla. 🎙️' },
   { version: '10.45.0', fecha: '2026-11-17', texto: 'En Android ya puedes escanear un comprobante o una factura: toma la foto (o elígela de la galería) y LukApp lee el texto en tu teléfono y arma el movimiento para que lo revises. 📷' },

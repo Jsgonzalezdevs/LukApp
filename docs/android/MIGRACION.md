@@ -205,6 +205,8 @@ Las secciones que faltan se ven en la compilación de debug con un aviso que dic
 están migradas. No hay datos simulados ni botones que finjan funcionar: los que llevan a pantallas
 sin migrar (Buscar, BotonAnotar, abrir un movimiento) no se muestran.
 
+> **Nota (v10.47.1):** la tabla de estado de arriba quedó de versiones anteriores y está desactualizada. El estado vigente, lo que falta y cómo publicar están en [`PUBLICACION.md`](PUBLICACION.md).
+
 ## Bloqueos externos (los resuelve el dueño)
 
 1. **Google Sign-In:** falta `GOOGLE_WEB_CLIENT_ID`, el client id **web** que ya usa el proveedor
@@ -440,3 +442,8 @@ Probado en el emulador (cuenta demo): el micrófono sale en la caja, al tocarlo 
 `HojaEditar` suma el campo «Fecha» (ConfirmSheet.tsx: `fechaInicial` / `fechaMax`): muestra el día del movimiento («9 nov 2026», `fechaLarga`), abre el selector de fechas del sistema ya posicionado en ese día y no admite fechas futuras. Al guardar viaja en el borrador y `actualizar` ya sabía usarla (si el día cambia de período, Inicio salta a donde quedó el movimiento). La web solo muestra el selector al editar o cuando el intérprete sacó una fecha («ayer»); aquí solo al editar, que es el caso que faltaba. 1 prueba (`fechaLarga`).
 
 Probado en el emulador: el campo sale con la fecha real, el selector abre en el 9 con hoy marcado. **No se guardó ningún cambio de fecha** (habría tocado datos de la cuenta); el viaje de la fecha por `actualizar` se comprobó solo leyendo el código. El selector sale en el idioma del sistema (en el emulador, inglés).
+
+
+### v10.47.1 — Compilación de lanzamiento
+
+`assembleRelease` fallaba desde antes: `lintVitalAnalyzeRelease` y `generateReleaseLintVitalReportModel` leen la carpeta de recursos de marca (`assetsMarca`) sin declarar que dependen de `copiarLogosBancos` y `copiarMascota`. Ahora todas las tareas de lint declaran esa dependencia. Resultado: APK de lanzamiento sin firmar de 47,9 MB y AAB de 28,2 MB; la de lanzamiento (R8 + reducción de recursos) arranca y muestra el acceso. Ver `PUBLICACION.md`.

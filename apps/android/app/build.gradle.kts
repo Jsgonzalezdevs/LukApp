@@ -99,6 +99,8 @@ val copiarLogosBancos by tasks.registering(Sync::class) {
 }
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos, copiarMascota) }
 tasks.matching { it.name.contains("generate") && it.name.endsWith("Assets") }.configureEach { dependsOn(copiarLogosBancos, copiarMascota) }
+// Lint lee la misma carpeta de recursos de marca: sin declararlo, la compilación de lanzamiento (que corre lintVital) falla.
+tasks.matching { it.name.contains("lint", ignoreCase = true) }.configureEach { dependsOn(copiarLogosBancos, copiarMascota) }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
