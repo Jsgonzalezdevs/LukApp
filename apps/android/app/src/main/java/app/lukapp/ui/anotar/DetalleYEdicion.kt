@@ -172,6 +172,8 @@ fun HojaEditar(tx: Transaccion, libro: Libro, catalogo: Catalogo, alGuardar: sus
     var categoria by rememberSaveable { mutableStateOf(tx.category) }
     var descripcion by rememberSaveable { mutableStateOf(tx.description) }
     var cuentaId by rememberSaveable { mutableStateOf(tx.cuentaId) }
+    var fecha by rememberSaveable { mutableStateOf(tx.occurredOn) }
+    var eligiendoFecha by remember { mutableStateOf(false) }
     var guardando by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf(false) }
     val cuentas = remember(libro.cajitas) { libro.cajitas.filter { it.archivedAt == null && it.tipo == "cuenta" } }
@@ -255,6 +257,31 @@ fun HojaEditar(tx: Transaccion, libro: Libro, catalogo: Catalogo, alGuardar: sus
                 textStyle = LukApp.tipo.de(17, 400, 1.3f).copy(color = c.ink), cursorBrush = SolidColor(c.accent),
                 modifier = Modifier.padding(top = 8.dp).fillMaxWidth().clip(Medidas.formaCard).border(2.dp, c.line, Medidas.formaCard).background(c.sobreFondo(c.card)).padding(horizontal = 16.dp, vertical = 12.dp),
             )
+            // «Fecha», solo al editar: corregir el día de uno viejo (lo registré tarde, cayó en otra fecha). Sin fechas futuras.
+            Etiqueta("Fecha", Modifier.padding(top = 20.dp))
+            Row(
+                Modifier.padding(top = 8.dp).fillMaxWidth().clip(Medidas.formaCard).border(2.dp, c.line, Medidas.formaCard).background(c.sobreFondo(c.card))
+                    .semantics { contentDescription = "Fecha del movimiento" }.pulsable(habilitado = !guardando, escala = 1f) { eligiendoFecha = true }.padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(app.lukapp.dominio.fechaLarga(fecha), style = LukApp.tipo.de(17, 400, 1.3f), color = c.ink)
+                Icono(Lucide.CalendarDays, tamano = 16.dp, color = c.inkFaint)
+            }
+            if (eligiendoFecha) {
+                val hoy = remember { app.lukapp.dominio.bogotaDate() }
+                val estado = androidx.compose.material3.rememberDatePickerState(initialSelectedDateMillis = java.time.LocalDate.parse(fecha).atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli())
+                androidx.compose.material3.DatePickerDialog(
+                    onDismissRequest = { eligiendoFecha = false },
+                    confirmButton = {
+                        androidx.compose.material3.TextButton(onClick = {
+                            eligiendoFecha = false
+                            val ms = estado.selectedDateMillis ?: return@TextButton
+                            fecha = java.time.Instant.ofEpochMilli(ms).atZone(java.time.ZoneOffset.UTC).toLocalDate().toString().let { if (it > hoy) hoy else it }
+                        }) { Text("Listo") }
+                    },
+                    dismissButton = { androidx.compose.material3.TextButton(onClick = { eligiendoFecha = false }) { Text("Cancelar") } },
+                ) { androidx.compose.material3.DatePicker(state = estado) }
+            }
             if (error) Text("No se pudo guardar. Tus datos siguen aquí para que puedas intentarlo de nuevo.", Modifier.padding(top = 16.dp), style = LukApp.tipo.de(14, 400), color = c.salio)
             val habilitado = !guardando && cantidad != null
             Row(
@@ -262,7 +289,7 @@ fun HojaEditar(tx: Transaccion, libro: Libro, catalogo: Catalogo, alGuardar: sus
                     .pulsable(habilitado = habilitado, escala = 0.98f) {
                         guardando = true; error = false
                         alcance.launch {
-                            val ok = alGuardar(Borrador(kind, cantidad!!, categoria, descripcion.trim().ifEmpty { catalogo.de(categoria).nombre }, cuentaId, tx.rawTranscript, null, tx.cuotasTotal, tx.cuotaCop))
+                            val ok = alGuardar(Borrador(kind, cantidad!!, categoria, descripcion.trim().ifEmpty { catalogo.de(categoria).nombre }, cuentaId, tx.rawTranscript, fecha, tx.cuotasTotal, tx.cuotaCop))
                             hapticos.disparar(if (ok) Haptico.SUCCESS else Haptico.ERROR)
                             error = !ok; guardando = false
                         }

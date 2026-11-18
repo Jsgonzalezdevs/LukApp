@@ -66,3 +66,10 @@ class FechasTest {
         assertFalse(asesorEnHorario(i("2026-08-19T05:00:00Z")))
     }
 }
+
+class FechaLargaTest {
+    @org.junit.Test fun diaMesCortoYAnio() {
+        org.junit.Assert.assertEquals("17 nov 2026", fechaLarga("2026-11-17"))
+        org.junit.Assert.assertEquals("5 ene 2027", fechaLarga("2027-01-05"))
+    }
+}

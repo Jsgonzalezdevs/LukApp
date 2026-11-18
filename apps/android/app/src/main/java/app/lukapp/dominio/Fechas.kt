@@ -104,3 +104,6 @@ fun monthKeyLabel(mes: String): String = monthLabel(mes)
 
 /** Origen: `lib/localDate.ts` (`monthKeyShort`). */
 fun monthKeyShort(mes: String): String = mesCorto(mes.split("-")[1].toInt())
+
+/** «17 nov 2026»: el día completo, para campos de fecha. */
+fun fechaLarga(isoDate: String): String = partesFecha(isoDate).let { (y, m, d) -> "$d ${mesCorto(m)} $y" }

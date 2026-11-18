@@ -433,3 +433,10 @@ Diferencias: falta el botón de escanear DENTRO de Captura (rellena el formulari
 - Lo que la lista decía «olvidar memoria» e «interruptor recordar» **no existe en la web**: allí `recordar` solo se lee de la conversación y la memoria solo se lee (el endpoint `DELETE /api/asesor/memoria/:id` existe pero ninguna pantalla lo usa). Android ya lee ambos igual que la web, así que no hay nada que portar.
 
 Probado en el emulador (cuenta demo): el micrófono sale en la caja, al tocarlo pasa a «Te escucho…», al terminar transcribe y deja el texto en la caja con Enviar activo. Con silencio el servidor devolvió «Subtitulado por Jnkoil», la alucinación típica de Whisper ante audio vacío; es del servidor y la web tiene el mismo comportamiento (posible mejora: descartar transcripciones conocidas de silencio). **La telemetría solo está comprobada hasta compilar**: no se forzó una caída de la IA.
+
+
+### v10.47.0 — Fecha al editar un movimiento
+
+`HojaEditar` suma el campo «Fecha» (ConfirmSheet.tsx: `fechaInicial` / `fechaMax`): muestra el día del movimiento («9 nov 2026», `fechaLarga`), abre el selector de fechas del sistema ya posicionado en ese día y no admite fechas futuras. Al guardar viaja en el borrador y `actualizar` ya sabía usarla (si el día cambia de período, Inicio salta a donde quedó el movimiento). La web solo muestra el selector al editar o cuando el intérprete sacó una fecha («ayer»); aquí solo al editar, que es el caso que faltaba. 1 prueba (`fechaLarga`).
+
+Probado en el emulador: el campo sale con la fecha real, el selector abre en el 9 con hoy marcado. **No se guardó ningún cambio de fecha** (habría tocado datos de la cuenta); el viaje de la fecha por `actualizar` se comprobó solo leyendo el código. El selector sale en el idioma del sistema (en el emulador, inglés).
