@@ -70,6 +70,29 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
         guardar("finanzas:resumen:ahorro", JsonPrimitive(valor))
     }
 
+    /** `useMostrarProximosPagosInicio`. */
+    suspend fun proximosPagos(valor: Boolean) {
+        _ajustes.update { it.copy(proximosPagos = valor) }
+        guardar("finanzas:inicio:proximos-pagos", JsonPrimitive(valor))
+    }
+
+    /** `useMostrarDecisiones`. */
+    suspend fun decisiones(valor: Boolean) {
+        _ajustes.update { it.copy(decisiones = valor) }
+        guardar("finanzas:resumen:decisiones", JsonPrimitive(valor))
+    }
+
+    /** `setPeriodo`: guarda el objeto con las mismas claves que lee `leerPeriodo` (las opcionales solo si existen). */
+    suspend fun periodo(valor: ConfigPeriodo) {
+        _ajustes.update { it.copy(periodo = valor) }
+        guardar("finanzas:periodo", buildJsonObject {
+            put("frecuencia", JsonPrimitive(valor.frecuencia))
+            put("desfaseDiasMensual", JsonPrimitive(valor.desfaseDiasMensual))
+            valor.diasPersonalizados?.let { put("diasPersonalizados", JsonPrimitive(it.toLong())) }
+            valor.fechaAnclaPersonalizada?.let { put("fechaAnclaPersonalizada", JsonPrimitive(it)) }
+        })
+    }
+
     /** `setAlertasActivas`. */
     suspend fun alertasPresupuesto(valor: Boolean) {
         _ajustes.update { it.copy(alertasPresupuesto = valor) }

@@ -335,3 +335,10 @@ La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el 
 - **Tu resumen** (`PantallaResumen`, `dominio/ResumenMes.kt` portan `ResumenWrapped.tsx` y `resumenMes.ts`): hasta nueve tarjetas a pantalla completa con fondo oscuro fijo, un toque avanza y el 30 % izquierdo retrocede; en la última, Compartir (hoja del sistema) y Cerrar. Las tarjetas sin datos se omiten. Antes de tiempo aparece bloqueado con «Próximamente» y el día de desbloqueo (2 días antes de fin de mes). 9 pruebas nuevas.
 - **Proyección financiera** (`PantallaProyeccion`, porta `ForecastResumen.tsx`): liquidez, disponible diario y flujo neto a 7/30/90 días del escenario base; conservador y favorable dicen «no disponible» como en la web.
 - Mes trae los dos accesos de `AccesosFunciones` (Pagos fijos y Proyección). Sin ver en emulador. Diferencias: compartir usa la hoja de Android (la web cae al portapapeles); sin animación de deslizamiento entre tarjetas, solo fundido. Sigue faltando exportar a Excel.
+
+
+### v10.33.0 — Más: Período y interruptores de Inicio
+
+- **Período** (`PantallaPeriodo`, porta `PanelPeriodo.tsx`): las seis frecuencias, día de inicio del mes (1..28, se guarda día-1), y en personalizado vista previa del ciclo, duración 1..90 (se guarda al soltar) y fecha de inicio con selector (no admite fechas futuras). Se guarda como objeto en `finanzas:periodo` de `user_metadata`, el mismo formato que lee la web; al cambiar se vuelve al período de hoy.
+- Filas nuevas en Más: «Próximos pagos en Inicio» y «Mostrar decisiones financieras», que ya leía Inicio pero no se podían cambiar.
+- Sin ver en emulador ni probar el guardado contra Supabase (`PreferenciasCuenta` no tiene pruebas unitarias: depende del cliente). Sigue fuera «Mostrar efectivo por separado» porque Dinero aún no desglosa el efectivo, y el resto de paneles de Más.

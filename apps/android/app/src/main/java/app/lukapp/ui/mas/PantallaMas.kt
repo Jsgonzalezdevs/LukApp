@@ -24,20 +24,27 @@ import androidx.compose.ui.unit.dp
 import app.lukapp.ui.acceso.SelectorTema
 import app.lukapp.ui.comun.Emoji
 import app.lukapp.ui.comun.pulsable
+import app.lukapp.ui.iconos.Icono
+import app.lukapp.ui.iconos.Lucide
 import app.lukapp.ui.tema.LukApp
 import app.lukapp.ui.tema.Medidas
 import app.lukapp.ui.tema.PreferenciaTema
 
 /**
- * AjustesView.tsx, «La app». Están las filas que ya funcionan de verdad: Contar los ahorros (cambia el total de
- * Dinero), Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
- * Pendiente (sin filas muertas): Preferencias, Tus datos y Comunidad (abren paneles sin migrar), Próximos pagos,
- * decisiones financieras, efectivo por separado, recordatorio de racha, volver a ver la guía y Premium.
+ * AjustesView.tsx. Solo están las filas que funcionan de verdad: Período, Próximos pagos, Contar los ahorros,
+ * decisiones financieras, Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
+ * Pendiente (sin filas muertas): Categorías, Registro automático, Tus datos y Comunidad (abren paneles sin migrar),
+ * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha, volver a ver la guía y Premium.
  */
 @Composable
 fun PantallaMas(
     contarAhorros: Boolean,
     alContarAhorros: (Boolean) -> Unit,
+    proximosPagos: Boolean,
+    alProximosPagos: (Boolean) -> Unit,
+    decisiones: Boolean,
+    alDecisiones: (Boolean) -> Unit,
+    alAbrirPeriodo: () -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -50,11 +57,31 @@ fun PantallaMas(
     Column(Modifier.fillMaxWidth().padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
         Text("Ajustes", Modifier.padding(horizontal = 4.dp), style = LukApp.tipo.tituloXl, color = c.ink)
         Column {
+            Text("Preferencias", Modifier.padding(horizontal = 4.dp).padding(bottom = 8.dp), style = LukApp.tipo.xs, color = c.inkFaint)
+            Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card)) {
+                Fila("🗓️", "Período", "Cada cuánto se reinicia lo que ves", linea = false, alPulsar = alAbrirPeriodo) {
+                    Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
+                }
+            }
+        }
+        Column {
             Text("La app", Modifier.padding(horizontal = 4.dp).padding(bottom = 8.dp), style = LukApp.tipo.xs, color = c.inkFaint)
             Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card)) {
+                Fila("📅", "Próximos pagos en Inicio", "Mostrar u ocultar esta sección", linea = true, alPulsar = { alProximosPagos(!proximosPagos) }) {
+                    Checkbox(
+                        checked = proximosPagos, onCheckedChange = null,
+                        colors = CheckboxDefaults.colors(checkedColor = c.entro, checkmarkColor = c.onIn, uncheckedColor = c.inkFaint),
+                    )
+                }
                 Fila("🐷", "Contar los ahorros", "Suma lo que tienes guardado al total de arriba", linea = true, alPulsar = { alContarAhorros(!contarAhorros) }) {
                     Checkbox(
                         checked = contarAhorros, onCheckedChange = null,
+                        colors = CheckboxDefaults.colors(checkedColor = c.entro, checkmarkColor = c.onIn, uncheckedColor = c.inkFaint),
+                    )
+                }
+                Fila("📈", "Mostrar decisiones financieras", "Ver cuánto puedes gastar y simular compras", linea = true, alPulsar = { alDecisiones(!decisiones) }) {
+                    Checkbox(
+                        checked = decisiones, onCheckedChange = null,
                         colors = CheckboxDefaults.colors(checkedColor = c.entro, checkmarkColor = c.onIn, uncheckedColor = c.inkFaint),
                     )
                 }

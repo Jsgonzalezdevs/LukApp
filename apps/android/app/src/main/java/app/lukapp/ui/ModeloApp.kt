@@ -17,6 +17,7 @@ import app.lukapp.dominio.Transaccion
 import app.lukapp.dominio.bogotaDate
 import app.lukapp.dominio.calcularRacha
 import app.lukapp.dominio.claveDePeriodo
+import app.lukapp.dominio.ConfigPeriodo
 import app.lukapp.dominio.construirContextoFinanciero
 import app.lukapp.dominio.forPeriod
 import app.lukapp.dominio.hacerCatalogo
@@ -172,6 +173,11 @@ class ModeloApp(
 
     fun elegirPeriodo(clave: String) { periodoElegido.value = clave }
 
+    val periodoAbierto = MutableStateFlow(false)
+    fun proximosPagos(valor: Boolean) { viewModelScope.launch { preferencias.proximosPagos(valor) } }
+    fun decisiones(valor: Boolean) { viewModelScope.launch { preferencias.decisiones(valor) } }
+    /** Al cambiar de frecuencia la clave elegida deja de existir, así que se vuelve al período de hoy. */
+    fun cambiarPeriodo(config: ConfigPeriodo) { periodoElegido.value = null; viewModelScope.launch { preferencias.periodo(config) } }
     fun contarAhorros(valor: Boolean) { viewModelScope.launch { preferencias.contarAhorros(valor) } }
 
     fun alternarPrivacidad() {

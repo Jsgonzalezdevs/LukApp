@@ -143,6 +143,9 @@ fun ShellLukApp(
                                     alAbrirResumen = { modelo.resumenMes.value = it })
                                 Seccion.AJUSTES -> app.lukapp.ui.mas.PantallaMas(
                                     contarAhorros = actual.ajustes.contarAhorros, alContarAhorros = modelo::contarAhorros,
+                                    proximosPagos = actual.ajustes.proximosPagos, alProximosPagos = modelo::proximosPagos,
+                                    decisiones = actual.ajustes.decisiones, alDecisiones = modelo::decisiones,
+                                    alAbrirPeriodo = { modelo.periodoAbierto.value = true },
                                     tema = tema, alCambiarTema = alCambiarTema,
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
@@ -203,6 +206,8 @@ fun ShellLukApp(
             nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
             val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
             if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
+            val periodoPanel by modelo.periodoAbierto.collectAsState()
+            if (periodoPanel) app.lukapp.ui.mas.PantallaPeriodo(actual.ajustes.periodo, modelo::cambiarPeriodo, alCerrar = { modelo.periodoAbierto.value = false })
             val proyeccion by modelo.proyeccionAbierta.collectAsState()
             if (proyeccion) app.lukapp.ui.mes.PantallaProyeccion(actual.contexto.forecast, alCerrar = { modelo.proyeccionAbierta.value = false })
             val resumen by modelo.resumenMes.collectAsState()
