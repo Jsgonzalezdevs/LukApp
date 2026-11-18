@@ -34,7 +34,7 @@ import app.lukapp.ui.tema.PreferenciaTema
  * AjustesView.tsx. Solo están las filas que funcionan de verdad: Período, Próximos pagos, Contar los ahorros,
  * decisiones financieras, Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
  * Pendiente (sin filas muertas): Registro automático (Apple Pay no existe en Android),
- * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha, volver a ver la guía y Premium.
+ * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha y los botones de compra de Premium.
  */
 @Composable
 fun PantallaMas(
@@ -51,6 +51,7 @@ fun PantallaMas(
     alAbrirRespaldo: () -> Unit,
     alAbrirFunciones: () -> Unit,
     alAbrirCuenta: () -> Unit,
+    alVolverAVerGuia: () -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -115,6 +116,9 @@ fun PantallaMas(
                         checked = decisiones, onCheckedChange = null,
                         colors = CheckboxDefaults.colors(checkedColor = c.entro, checkmarkColor = c.onIn, uncheckedColor = c.inkFaint),
                     )
+                }
+                Fila("✈️", "Volver a ver la guía", "Te vuelve a señalar cómo funciona la app", linea = true, alPulsar = alVolverAVerGuia) {
+                    Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
                 }
                 Fila("🔐", "Desbloquear con huella o rostro", if (biometriaDisponible) "Pide tu huella, rostro o PIN al abrir LukApp" else "Configura una huella, rostro o PIN en los ajustes del teléfono", linea = true,
                     habilitada = biometriaDisponible, alPulsar = { alCambiarDesbloqueo(!desbloqueoActivo) }) {

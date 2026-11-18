@@ -91,6 +91,8 @@ fun ShellLukApp(
     val altoPantalla = LocalConfiguration.current.screenHeightDp
     val margenSuperior = (altoPantalla * 0.03f).coerceIn(20f, 28f).dp
 
+    val anclasGuia = remember { app.lukapp.ui.guia.AnclasGuia() }
+    androidx.compose.runtime.CompositionLocalProvider(app.lukapp.ui.guia.LocalAnclasGuia provides anclasGuia) {
     Box(Modifier.fillMaxSize().background(c.bg)) {
         val actual = vista
         if (actual == null || (estado == EstadoSincronizacion.CARGANDO && actual.libro == app.lukapp.dominio.Libro())) {
@@ -154,6 +156,7 @@ fun ShellLukApp(
                                     alAbrirRespaldo = { modelo.respaldoAbierto.value = true },
                                     alAbrirFunciones = { modelo.funcionesAbierto.value = true },
                                     alAbrirCuenta = { modelo.cuentaAbiertaPanel.value = true },
+                                    alVolverAVerGuia = { modelo.reiniciarGuia(); modelo.seccion.value = Seccion.INICIO },
                                     tema = tema, alCambiarTema = alCambiarTema,
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
@@ -262,7 +265,18 @@ fun ShellLukApp(
                     alTransferir = { destino, monto -> modelo.transferir(cuenta.id, destino, monto) },
                 )
             }
+            // La guía va al final: encima de todo, señalando lo que hay debajo.
+            val hayPanel by modelo.hayPanelAbierto.collectAsState()
+            val ajustesGuia = actual.ajustes
+            when (app.lukapp.dominio.guiaPendiente(ajustesGuia.onboardingTerminado, ajustesGuia.guiaBasicaVista, ajustesGuia.guiaSecciones, seccion.name.lowercase(), hayPanel)) {
+                app.lukapp.dominio.GuiaPendiente.BASICA -> app.lukapp.ui.guia.GuiaApp(app.lukapp.ui.guia.PASOS_BASICOS, alCerrar = modelo::terminarGuiaBasica)
+                app.lukapp.dominio.GuiaPendiente.SECCION -> app.lukapp.ui.guia.PASOS_POR_SECCION[seccion]?.let { pasos ->
+                    app.lukapp.ui.guia.GuiaApp(pasos, alCerrar = { modelo.marcarSeccionGuia(seccion.name.lowercase()) })
+                }
+                app.lukapp.dominio.GuiaPendiente.NINGUNA -> Unit
+            }
         }
+    }
     }
 }
 

@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import app.lukapp.ui.guia.anclaGuia
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -57,6 +58,7 @@ fun BarraNavegacion(actual: Seccion, alElegir: (Seccion) -> Unit, modifier: Modi
     val marcada = if (actual == Seccion.CALENDARIO) Seccion.MES else actual
     Row(
         modifier
+            .anclaGuia("nav")
             .widthIn(max = 320.dp)
             .shadow(28.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.12f), spotColor = Color.Black.copy(alpha = 0.12f))
             .clip(CircleShape)
@@ -73,6 +75,7 @@ fun BarraNavegacion(actual: Seccion, alElegir: (Seccion) -> Unit, modifier: Modi
             )
             Box(
                 Modifier
+                    .anclaGuia("nav-${seccion.name.lowercase()}")
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(fondo)

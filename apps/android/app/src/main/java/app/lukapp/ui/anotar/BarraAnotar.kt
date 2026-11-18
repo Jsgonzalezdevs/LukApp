@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import app.lukapp.ui.guia.anclaGuia
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -55,6 +56,7 @@ fun BarraAnotar(
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(
             Modifier
+                .anclaGuia("anotar")
                 .shadow(20.dp, CircleShape, ambientColor = Color.Black.copy(.28f), spotColor = Color.Black.copy(.28f))
                 .clip(CircleShape)
                 .background(c.sobreFondo(c.glassBg))

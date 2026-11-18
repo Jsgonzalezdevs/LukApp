@@ -29,6 +29,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -128,6 +130,9 @@ class ModeloApp(
     val categoriasAbierto = MutableStateFlow(false)
     val respaldoAbierto = MutableStateFlow(false)
     val funcionesAbierto = MutableStateFlow(false)
+    fun terminarGuiaBasica() { viewModelScope.launch { preferencias.terminarGuiaBasica() } }
+    fun marcarSeccionGuia(id: String) { viewModelScope.launch { preferencias.marcarSeccionGuia(id) } }
+    fun reiniciarGuia() { viewModelScope.launch { preferencias.reiniciarGuia() } }
     /**
      * Cierra la bienvenida: guarda el nombre, crea la cuenta elegida (con su saldo inicial) y marca la bienvenida
      * como terminada. Si la cuenta no se pudo crear devuelve false y NO la marca, para que se pueda reintentar.
@@ -216,4 +221,13 @@ class ModeloApp(
     fun alternarPrivacidad() {
         viewModelScope.launch { preferencias.privacidad(!preferencias.ajustes.value.privacidad) }
     }
+
+    /** Hay alguna pantalla o panel encima de las secciones: la guía no se enseña entonces, no señalaría nada. */
+    val hayPanelAbierto: StateFlow<Boolean> = combine(
+        listOf(
+            calendarioAbierto, pagosFijosAbierto, buscarAbierto, proyeccionAbierta, periodoAbierto, categoriasAbierto, revisionesAbierto,
+            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel,
+            resumenMes.map { it != null }, nuevaCajitaTipo.map { it != null }, cuentaAbierta.map { it != null }, panelPasivos.map { it != null },
+        ),
+    ) { estados -> estados.any { it } }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
 }

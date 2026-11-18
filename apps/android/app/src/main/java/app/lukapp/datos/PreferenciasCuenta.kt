@@ -31,6 +31,8 @@ data class AjustesCuenta(
     val umbralAlertaPct: Int = 80,
     val onboardingTerminado: Boolean = false,
     val nombre: String = "",
+    val guiaBasicaVista: Boolean = false,
+    val guiaSecciones: List<String> = emptyList(),
 )
 
 /**
@@ -58,6 +60,8 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
             // `setUmbralAlertaPct` acota a 1..100 y guarda un entero.
             umbralAlertaPct = ((meta["finanzas:presupuestos:umbral-alerta"] as? JsonPrimitive)?.doubleOrNull ?: 80.0).let { Math.round(it).toInt().coerceIn(1, 100) },
             onboardingTerminado = bool("finanzas:onboarding:terminado", false),
+            guiaBasicaVista = bool("finanzas:guia:basica", false),
+            guiaSecciones = (meta["finanzas:guia:secciones"] as? kotlinx.serialization.json.JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content } ?: emptyList(),
             nombre = (meta["finanzas:onboarding:nombre"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "",
             cuentaFavoritaId = (meta["finanzas:cuenta-favorita"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.ifBlank { null },
         )
@@ -107,6 +111,27 @@ class PreferenciasCuenta(private val supabase: SupabaseClient) {
     suspend fun terminarOnboarding() {
         _ajustes.update { it.copy(onboardingTerminado = true) }
         guardar("finanzas:onboarding:terminado", JsonPrimitive(true))
+    }
+
+    /** `useGuiaApp.terminarBasica`. */
+    suspend fun terminarGuiaBasica() {
+        _ajustes.update { it.copy(guiaBasicaVista = true) }
+        guardar("finanzas:guia:basica", JsonPrimitive(true))
+    }
+
+    /** `useGuiaApp.marcarSeccion`: sin repetir, y el estado local manda aunque no se pueda guardar. */
+    suspend fun marcarSeccionGuia(id: String) {
+        if (id in _ajustes.value.guiaSecciones) return
+        val lista = _ajustes.value.guiaSecciones + id
+        _ajustes.update { it.copy(guiaSecciones = lista) }
+        guardar("finanzas:guia:secciones", kotlinx.serialization.json.JsonArray(lista.map { JsonPrimitive(it) }))
+    }
+
+    /** `useGuiaApp.reiniciar`: «Volver a ver la guía» borra las dos marcas, quien la pide quiere el recorrido entero. */
+    suspend fun reiniciarGuia() {
+        _ajustes.update { it.copy(guiaBasicaVista = false, guiaSecciones = emptyList()) }
+        guardar("finanzas:guia:basica", JsonPrimitive(false))
+        guardar("finanzas:guia:secciones", kotlinx.serialization.json.JsonArray(emptyList()))
     }
 
     /** `setAlertasActivas`. */

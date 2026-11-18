@@ -57,6 +57,7 @@ import app.lukapp.ui.comun.BotonRedondo
 import app.lukapp.ui.comun.Emoji
 import app.lukapp.ui.comun.Pildora
 import app.lukapp.ui.comun.pulsable
+import app.lukapp.ui.guia.anclaGuia
 import app.lukapp.ui.iconos.Icono
 import app.lukapp.ui.iconos.Lucide
 import app.lukapp.ui.tema.LukApp
@@ -119,7 +120,7 @@ fun PantallaInicio(
         }
 
         // ── 3. Dinero disponible ──
-        Column(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 8.dp).anclaGuia("saldo"), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 "DINERO DISPONIBLE",
                 Modifier.clip(CircleShape).background(c.soft.copy(alpha = 0.75f)).padding(horizontal = 12.dp, vertical = 4.dp),
