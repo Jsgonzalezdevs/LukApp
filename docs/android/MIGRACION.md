@@ -468,3 +468,9 @@ Los cuatro ajustes viven en `user_metadata` con las claves de la web (`finanzas:
 
 Probado en el emulador con la cuenta demo, solo lectura: cupo $18.318.900 libres de $18.330.900 (350 UVT × $52.374), $1.693.891 salidos en noviembre, las seis cuentas con efectivo sin marcar, UVT 2026 y una nota desplegada. **No se cambió el régimen, las cuentas ni la UVT** (habría tocado la cuenta); sus escrituras tienen pruebas de lectura pero no se ejercitaron contra Supabase. Sin icono de advertencia en el aviso de UVT vieja (la web lo trae): pendiente menor.
 
+### v10.50.0 — Dividir cuenta y propina
+
+`PantallaDivision` porta `DivisionCuentasModal.tsx` y se abre desde la tarjeta «Dividir cuenta y propina» de Dinero. Monto con puntos, lugar opcional, propina (sin propina / 10 % (CO) / 15 % / 20 %), de 1 a 50 personas con nombres editables y «Marcar pagado», cuota por persona, «Enviar cobro» (hoja de compartir de Android con el mismo texto de la web) y «Anotar mi parte», que abre la captura ya llena (gasto, comida, «Mi parte en …» o «Mi parte de cuenta (N personas)»). El cálculo vive en `DivisionCuenta.kt` (propina con `Math.round`, cuota con `Math.ceil`: nadie queda debiendo). 6 pruebas nuevas (487 en total).
+
+Probado en el emulador: $120.000 + $12.000 de propina entre 3 = $44.000 y entre 2 = $66.000; marcar pagado, sumar persona y la captura prellenada, cerrada **sin guardar**. Diferencia a propósito: la web pasa `raw = "<monto> de <descripción>"` a la captura; aquí se deja vacío porque la captura lo muestra como «Tu dictado» con un aviso falso («No escuché un monto…») aunque nada se dictó. «Enviar cobro» abre el selector de compartir pero no lo envié a ninguna app.
+

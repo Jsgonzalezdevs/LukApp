@@ -132,6 +132,7 @@ class ModeloApp(
     val funcionesAbierto = MutableStateFlow(false)
     val metasAbierto = MutableStateFlow(false)
     val gmfAbierto = MutableStateFlow(false)
+    val divisionAbierta = MutableStateFlow(false)
     fun cambiarUvt(v: app.lukapp.dominio.ValorUvt) { viewModelScope.launch { preferencias.uvt(v) } }
     fun cambiarCuentasGmf(ids: List<String>) { viewModelScope.launch { preferencias.cuentasGmf(ids) } }
     fun cambiarRegimenGmf(r: String) { viewModelScope.launch { preferencias.regimenGmf(r) } }
@@ -238,7 +239,7 @@ class ModeloApp(
     val hayPanelAbierto: StateFlow<Boolean> = combine(
         listOf(
             calendarioAbierto, pagosFijosAbierto, buscarAbierto, proyeccionAbierta, periodoAbierto, categoriasAbierto, revisionesAbierto,
-            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto,
+            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta,
             resumenMes.map { it != null }, nuevaCajitaTipo.map { it != null }, cuentaAbierta.map { it != null }, panelPasivos.map { it != null },
         ),
     ) { estados -> estados.any { it } }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)

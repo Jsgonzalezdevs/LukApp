@@ -151,6 +151,7 @@ fun ShellLukApp(
                                     alCrear = { modelo.nuevaCajitaTipo.value = it },
                                     alAbrirMetas = { modelo.metasAbierto.value = true },
                                     alAbrirGmf = { modelo.gmfAbierto.value = true },
+                                    alAbrirDivision = { modelo.divisionAbierta.value = true },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
                                     topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
@@ -243,6 +244,14 @@ fun ShellLukApp(
             if (metasPanel) app.lukapp.ui.dinero.PantallaMetas(
                 actual, app.lukapp.ui.dinero.AccionesMetas(modelo::crearMetaCompleta, modelo::actualizarMeta, modelo::borrarMeta),
                 alCerrar = { modelo.metasAbierto.value = false },
+            )
+            val divisionPanel by modelo.divisionAbierta.collectAsState()
+            if (divisionPanel) app.lukapp.ui.dinero.PantallaDivision(
+                alAnotarMiParte = { monto, descripcion ->
+                    modelo.divisionAbierta.value = false
+                    anotar.abrirMovimiento(app.lukapp.dominio.voz.movimientoEnBlanco().copy(kind = "gasto", amount = monto, category = "comida", description = descripcion))
+                },
+                alCerrar = { modelo.divisionAbierta.value = false },
             )
             val gmfPanel by modelo.gmfAbierto.collectAsState()
             if (gmfPanel) app.lukapp.ui.dinero.PantallaGmf(
