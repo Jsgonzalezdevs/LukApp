@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.43.0', fecha: '2026-11-17', texto: 'En Android ya puedes dictar varios movimientos en una sola frase, como «almuerzo 20 mil y taxi 12 mil»: los ves todos juntos, quitas los que no son y guardas de una vez. 🎙️' },
   { version: '10.42.0', fecha: '2026-11-17', texto: 'En Android ya puedes mover tu plata hablando: «pasa 50 mil de Nequi a mi ahorro», «abono 80 mil a la tarjeta», «mi cuenta quedó en 2 millones» o «me rindieron 10 mil». Revisas todo antes de aplicarlo. 🎙️' },
   { version: '10.41.1', fecha: '2026-11-17', texto: 'Arreglamos el espaciado de las etiquetas en mayúscula de la app de Android, como «Próximamente» en tu resumen del mes. ✨' },
   { version: '10.41.0', fecha: '2026-11-17', texto: 'En Android, después de la bienvenida te señalamos cómo funciona la app con unos globos: lo que tienes, cómo anotar hablando y los cinco sitios. Puedes volver a verlos desde Más. ✈️' },

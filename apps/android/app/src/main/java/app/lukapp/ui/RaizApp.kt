@@ -347,6 +347,7 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
     val editando by anotar.editando.collectAsState()
     val guardado by anotar.guardado.collectAsState()
     val comando by anotar.comando.collectAsState()
+    val multiples by anotar.multiples.collectAsState()
     val contexto = androidx.compose.ui.platform.LocalContext.current
     val hapticos = rememberHapticos()
     val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -364,7 +365,7 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             else -> pedirMicrofono.launch(android.Manifest.permission.RECORD_AUDIO)
         }
     }
-    val hayCapa = dictado.abierto || pendiente != null || aviso != null || detalle != null || editando != null || comando != null
+    val hayCapa = dictado.abierto || pendiente != null || aviso != null || detalle != null || editando != null || comando != null || multiples != null
     if (!hayCapa && seccion != Seccion.ASESOR && seccion != Seccion.AJUSTES) {
         app.lukapp.ui.anotar.BarraAnotar(
             escuchando = false,
@@ -399,6 +400,18 @@ private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
             },
             alCancelar = anotar::cerrarCaptura,
             alReintentarVoz = if (p.raw.isNotBlank()) ({ anotar.cerrarCaptura(); alMicrofono() }) else null,
+        )
+    }
+    val varios = multiples
+    if (varios != null) {
+        app.lukapp.ui.anotar.MultiCapturaModal(
+            detectados = varios, cajitas = vista.libro.cajitas, catalogo = vista.catalogo,
+            alGuardar = { lista ->
+                val ok = anotar.guardarMultiples(lista, vista.ajustes.cuentaFavoritaId)
+                if (ok) alGuardado(app.lukapp.dominio.bogotaDate())
+                ok
+            },
+            alCancelar = anotar::cerrarMultiples,
         )
     }
     val orden = comando

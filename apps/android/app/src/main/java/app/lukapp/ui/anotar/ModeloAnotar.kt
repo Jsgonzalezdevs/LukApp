@@ -142,6 +142,30 @@ class ModeloAnotar(
         return true
     }
 
+    private val _multiples = MutableStateFlow<List<app.lukapp.dominio.voz.ParsedTransaction>?>(null)
+    /** Varios movimientos dictados de una vez, esperando que los revises (`multiPending`). */
+    val multiples: StateFlow<List<app.lukapp.dominio.voz.ParsedTransaction>?> = _multiples.asStateFlow()
+    fun cerrarMultiples() { _multiples.value = null }
+
+    /**
+     * `onSaveAll` de LukAppApp.tsx: se guardan todos juntos en una sola operación (o ninguno) y el aviso no ofrece
+     * Deshacer. Si falla, la lista sigue abierta para intentarlo de nuevo.
+     */
+    suspend fun guardarMultiples(items: List<app.lukapp.dominio.voz.ParsedTransaction>, cuentaPorDefecto: String?): Boolean {
+        val ahora = Instant.now().toString()
+        val txs = app.lukapp.dominio.movimientosDeMultiples(items, cuentaPorDefecto).map {
+            Transaccion(nuevoId(), it.kind, it.amountCop, it.category, it.description, it.occurredOn ?: bogotaDate(), it.cuentaId, true, it.rawTranscript, null, null, ahora)
+        }
+        val ok = runCatching { finanzas.aplicar(Cambios(guardar = Libro(transacciones = txs))); true }.getOrDefault(false)
+        if (!ok) {
+            _guardado.value = Guardado("error", "No se pudieron guardar los movimientos", aviso = "Revisa la conexión e inténtalo de nuevo.", permitirDeshacer = false, esError = true)
+            return false
+        }
+        _multiples.value = null
+        _guardado.value = Guardado("multi", "Se guardaron ${txs.size} movimientos", permitirDeshacer = false)
+        return true
+    }
+
     private val libro: Libro get() = finanzas.libro.value
 
     fun abrirManual() { _pendiente.value = movimientoEnBlanco() }
@@ -200,7 +224,7 @@ class ModeloAnotar(
         val cuentas = l.cajitas.filter { it.archivedAt == null && (it.tipo == "cuenta" || it.tipo == "tarjeta") }.map { CuentaConocida(it.id, it.nombre) }
         val parseados = parseMultipleTransactions(texto, cuentas, l.categorias, aprenderDe(l.transacciones), l.transacciones)
         when {
-            parseados.size > 1 -> _aviso.value = "Dictaste varios movimientos a la vez; eso todavía no está en la app nueva. Dicta uno por uno."
+            parseados.size > 1 -> _multiples.value = parseados
             parseados.size == 1 -> {
                 val p = parseados[0]
                 val quien = contactoPorApodo(texto, l.contactos)
