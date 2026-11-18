@@ -77,6 +77,16 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
     val avisoLector by lector.aviso.collectAsState()
     LaunchedEffect(avisoLector) { avisoLector?.let { android.widget.Toast.makeText(contexto, it, android.widget.Toast.LENGTH_SHORT).show(); lector.aviso.value = null } }
     var entrada by remember { mutableStateOf("") }
+    val fase by modelo.faseDictado.collectAsState()
+    val errorDictado by modelo.errorDictado.collectAsState()
+    val textoDictado by modelo.textoDictado.collectAsState()
+    // `manejarDictadoFinal`: lo dictado se suma a lo que ya había escrito y NO se envía solo.
+    LaunchedEffect(textoDictado) { textoDictado?.let { entrada = listOf(entrada.trim(), it).filter(String::isNotEmpty).joinToString(" "); modelo.consumirTextoDictado() } }
+    val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { concedido -> if (concedido) modelo.alternarDictado() }
+    val alternarDictado = {
+        if (fase != ModeloAsesor.FaseDictadoAsesor.REPOSO || androidx.core.content.ContextCompat.checkSelfPermission(contexto, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) modelo.alternarDictado()
+        else pedirMicrofono.launch(android.Manifest.permission.RECORD_AUDIO)
+    }
     val lista = rememberLazyListState()
     LaunchedEffect(mensajes.size, pensando) { if (mensajes.isNotEmpty()) lista.animateScrollToItem(mensajes.size + (if (pensando) 0 else -1)) }
     fun enviar(t: String) { modelo.enviar(t, vista); entrada = "" }
@@ -156,15 +166,32 @@ fun PantallaAsesor(modelo: ModeloAsesor, vista: app.lukapp.ui.VistaInicio, alFij
                 Text("Reintentar con IA", Modifier.clip(Medidas.formaPildora).background(c.accent).pulsable(habilitado = !pensando, alPulsar = { modelo.reintentar(vista) }).padding(horizontal = 12.dp, vertical = 8.dp), style = LukApp.tipo.de(13, 600, 1.4f), color = c.onAccent)
             }
         }
+        if (fase != ModeloAsesor.FaseDictadoAsesor.REPOSO || errorDictado != null) Text(
+            errorDictado ?: if (fase == ModeloAsesor.FaseDictadoAsesor.PROCESANDO) "Transcribiendo tu pregunta…" else "Te escucho… toca el botón para terminar",
+            Modifier.padding(top = 12.dp).fillMaxWidth(), style = LukApp.tipo.de(13, 500, 1.4f), color = if (errorDictado != null) c.salio else c.inkSoft, textAlign = TextAlign.Center,
+        )
         Row(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaPildora).background(c.soft).padding(8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(Modifier.weight(1f).padding(horizontal = 12.dp, vertical = 8.dp)) {
-                if (entrada.isEmpty()) Text("Pregúntale a tu asesor...", style = LukApp.tipo.cuerpo, color = c.inkFaint)
+                if (entrada.isEmpty()) Text(if (fase == ModeloAsesor.FaseDictadoAsesor.ESCUCHANDO) "Te escucho…" else "Pregúntale a tu asesor...", style = LukApp.tipo.cuerpo, color = c.inkFaint)
                 BasicTextField(
                     entrada, { entrada = it }, Modifier.fillMaxWidth(), textStyle = LukApp.tipo.cuerpo.copy(color = c.ink), cursorBrush = SolidColor(c.ink),
+                    enabled = fase == ModeloAsesor.FaseDictadoAsesor.REPOSO,
                     singleLine = true, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { enviar(entrada) }),
                 )
             }
-            val puede = entrada.isNotBlank() && !pensando
+            Box(
+                Modifier.size(40.dp).clip(CircleShape).background(if (fase == ModeloAsesor.FaseDictadoAsesor.ESCUCHANDO) c.salio else androidx.compose.ui.graphics.Color.Transparent)
+                    .semantics { contentDescription = when (fase) { ModeloAsesor.FaseDictadoAsesor.PROCESANDO -> "Transcribiendo"; ModeloAsesor.FaseDictadoAsesor.ESCUCHANDO -> "Dejar de escuchar"; else -> "Preguntar hablando" } }
+                    .pulsable(habilitado = fase != ModeloAsesor.FaseDictadoAsesor.PROCESANDO, alPulsar = alternarDictado),
+                contentAlignment = Alignment.Center,
+            ) {
+                when (fase) {
+                    ModeloAsesor.FaseDictadoAsesor.PROCESANDO -> app.lukapp.ui.acceso.Girando(Lucide.Loader2, 20.dp, c.inkSoft)
+                    ModeloAsesor.FaseDictadoAsesor.ESCUCHANDO -> Icono(Lucide.Square, tamano = 16.dp, grosor = 3f, color = c.onOut)
+                    else -> Icono(Lucide.Mic, tamano = 20.dp, grosor = 2.5f, color = c.inkSoft)
+                }
+            }
+            val puede = entrada.isNotBlank() && !pensando && fase == ModeloAsesor.FaseDictadoAsesor.REPOSO
             Box(
                 Modifier.size(40.dp).clip(CircleShape).background(c.accent.copy(alpha = if (puede) 1f else 0.3f)).semantics { contentDescription = "Enviar pregunta" }.pulsable(habilitado = puede, alPulsar = { enviar(entrada) }),
                 contentAlignment = Alignment.Center,

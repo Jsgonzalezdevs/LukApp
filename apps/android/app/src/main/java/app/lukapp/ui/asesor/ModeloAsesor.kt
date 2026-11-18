@@ -20,6 +20,8 @@ import app.lukapp.dominio.responderAyudaLukApp
 import app.lukapp.dominio.saldosPorCajita
 import app.lukapp.dominio.simularPregunta
 import app.lukapp.ui.VistaInicio
+import app.lukapp.datos.Transcripcion
+import app.lukapp.nativo.GrabadoraVoz
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,9 +41,13 @@ data class MensajeAsesor(
  * guía de LukApp, simulación, motor local si sabe responder, IA del servidor y,
  * si la IA falla, el motor local como respaldo con «Reintentar con IA».
  * Guarda cada mensaje en la conversación del servidor (como la web) y deja leer las anteriores.
- * Pendiente (no se simula): propuestas de presupuesto/meta, «Revisar y editar movimiento», telemetría del respaldo y dictado.
+ * Pendiente (no se simula): «Revisar y editar movimiento».
  */
-class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
+class ModeloAsesor(
+    aplicacion: android.app.Application,
+    private val cliente: ClienteAsesor,
+    private val transcripcion: Transcripcion,
+) : androidx.lifecycle.AndroidViewModel(aplicacion) {
     val mensajes = MutableStateFlow<List<MensajeAsesor>>(emptyList())
     val pensando = MutableStateFlow(false)
     val conexion = MutableStateFlow(ConexionIA.DESPERTANDO)
@@ -54,6 +60,41 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
     private var contexto = AsesorContext()
     private var contador = 0
     private fun nuevoId() = "msg-${System.currentTimeMillis()}-${contador++}"
+
+    /** Dictado de la pregunta (`useDictation` de AsesorView): graba, transcribe y deja el texto en la caja, sin enviar. */
+    enum class FaseDictadoAsesor { REPOSO, ESCUCHANDO, PROCESANDO }
+    val faseDictado = MutableStateFlow(FaseDictadoAsesor.REPOSO)
+    val errorDictado = MutableStateFlow<String?>(null)
+    /** Lo transcrito, hasta que la pantalla lo agregue a la caja (`manejarDictadoFinal`) y lo consuma. */
+    val textoDictado = MutableStateFlow<String?>(null)
+    fun consumirTextoDictado() { textoDictado.value = null }
+    private val grabadora = GrabadoraVoz(aplicacion)
+
+    /** `alternarDictado`: empieza a escuchar, o termina y transcribe. Con el permiso ya concedido (la pantalla lo pide). */
+    fun alternarDictado() {
+        when (faseDictado.value) {
+            FaseDictadoAsesor.PROCESANDO -> return
+            FaseDictadoAsesor.ESCUCHANDO -> {
+                val audio = grabadora.terminar()
+                if (audio == null) { faseDictado.value = FaseDictadoAsesor.REPOSO; errorDictado.value = "No se grabó nada. Mantén la app abierta mientras hablas."; return }
+                faseDictado.value = FaseDictadoAsesor.PROCESANDO
+                viewModelScope.launch {
+                    when (val r = transcripcion.transcribir(audio, emptyList())) {
+                        is Transcripcion.Resultado.Texto -> { if (r.texto.isNotBlank()) textoDictado.value = r.texto.trim() }
+                        is Transcripcion.Resultado.Error -> errorDictado.value = r.mensaje
+                    }
+                    faseDictado.value = FaseDictadoAsesor.REPOSO
+                }
+            }
+            FaseDictadoAsesor.REPOSO -> {
+                errorDictado.value = null
+                runCatching { grabadora.iniciar() }.onSuccess { faseDictado.value = FaseDictadoAsesor.ESCUCHANDO }
+                    .onFailure { errorDictado.value = "No se pudo usar el micrófono. Escríbelo a mano." }
+            }
+        }
+    }
+
+    override fun onCleared() { grabadora.cancelar() }
 
     val conversaciones = MutableStateFlow<List<ClienteAsesor.Conversacion>>(emptyList())
     val conversacionId = MutableStateFlow<String?>(null)
@@ -179,7 +220,8 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                     }
                 }
                 error.value = null; ultimoTexto = null
-                when (val r = cliente.consultar(t, historial, "asesor-${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}", if (recordar) memoria.map { "${it.clave}: ${it.valor}" } else emptyList())) {
+                val idConsulta = "asesor-${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}"
+                when (val r = cliente.consultar(t, historial, idConsulta, if (recordar) memoria.map { "${it.clave}: ${it.valor}" } else emptyList())) {
                     is ClienteAsesor.Respuesta.Texto -> {
                         // El modelo redacta, pero lo que se puede guardar lo decide el parser: sin movimiento real no hay botón.
                         val deteccion = withContext(Dispatchers.Default) { detectarMovimiento(t, libro.transacciones, libro.cajitas, libro.categorias, lexico, contexto) }
@@ -191,6 +233,8 @@ class ModeloAsesor(private val cliente: ClienteAsesor) : ViewModel() {
                         val respaldo = local()
                         contexto = respaldo.newContext
                         agregarBot(respaldo.text, respaldo.suggestions.orEmpty(), propuesta = propuesta, accion = if (propuesta != null) null else respaldo.action, acciones = if (propuesta != null) null else respaldo.actions)
+                        // Para que Superadmin explique qué recibió la persona cuando la IA no estuvo disponible (telemetría de la web).
+                        viewModelScope.launch { cliente.respaldoLocal(idConsulta, t, respaldo.text, r.mensaje) }
                     }
                 }
             } finally { pensando.value = false }

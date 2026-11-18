@@ -63,7 +63,7 @@ class ActividadPrincipal : FragmentActivity() {
         viewModelFactory {
             initializer { ModeloAcceso(contenedor.sesion, contenedor.accesoGoogle, contenedor.preferencias) }
             initializer { ModeloApp(contenedor.finanzas, contenedor.preferenciasCuenta) }
-            initializer { app.lukapp.ui.asesor.ModeloAsesor(contenedor.asesor) }
+            initializer { app.lukapp.ui.asesor.ModeloAsesor(application, contenedor.asesor, contenedor.transcripcion) }
             initializer { app.lukapp.ui.mas.ModeloFunciones(contenedor.funciones) }
             initializer { app.lukapp.ui.mas.ModeloCuenta(contenedor.cuenta, contenedor.sesion) }
             initializer { app.lukapp.ui.inicio.ModeloInsights(contenedor.asesor, contenedor.preferencias) }

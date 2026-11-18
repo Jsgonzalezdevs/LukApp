@@ -50,6 +50,25 @@ class ClienteAsesor(private val supabase: SupabaseClient, private val http: Http
         r.status.value in 200..299 && objeto(r.bodyAsText())?.get("ia")?.let { (it as? JsonPrimitive)?.booleanOrNull } == true
     } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
 
+    /**
+     * `POST /api/asesor-ia/respaldo-local`: cuando la IA falla y contesta el motor local, se le cuenta al servidor qué
+     * recibió la persona para que el historial de Superadmin explique el fallo. Comparte `idConsulta` con la petición
+     * principal (así la telemetría es idempotente). Mejor esfuerzo: si falla, no pasa nada.
+     */
+    suspend fun respaldoLocal(idConsulta: String, prompt: String, respuestaTexto: String, motivo: String) {
+        try {
+            val token = supabase.auth.currentAccessTokenOrNull()
+            http.post("${BuildConfig.API_URL}/api/asesor-ia/respaldo-local") {
+                contentType(ContentType.Application.Json)
+                if (token != null) header("Authorization", "Bearer $token")
+                setBody(buildJsonObject {
+                    put("idConsulta", JsonPrimitive(idConsulta)); put("prompt", JsonPrimitive(prompt))
+                    put("respuestaTexto", JsonPrimitive(respuestaTexto)); put("motivo", JsonPrimitive(motivo))
+                }.toString())
+            }
+        } catch (e: CancellationException) { throw e } catch (_: Exception) { }
+    }
+
     /** Lo que incluye el plan, como `prestaciones` de `useAiInsights`. Todo false si no se pudo comprobar. */
     data class Prestaciones(val asesorIa: Boolean = false, val insightsIa: Boolean = false, val pulsoPremium: Boolean = false, val esPremium: Boolean = false)
 
