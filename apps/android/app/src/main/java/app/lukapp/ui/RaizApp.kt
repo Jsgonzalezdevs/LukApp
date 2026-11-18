@@ -138,7 +138,9 @@ fun ShellLukApp(
                                     alCrear = { modelo.nuevaCajitaTipo.value = it },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
-                                    topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta))
+                                    topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
+                                    alAbrirPagosFijos = { modelo.pagosFijosAbierto.value = true }, alAbrirProyeccion = { modelo.proyeccionAbierta.value = true },
+                                    alAbrirResumen = { modelo.resumenMes.value = it })
                                 Seccion.AJUSTES -> app.lukapp.ui.mas.PantallaMas(
                                     contarAhorros = actual.ajustes.contarAhorros, alContarAhorros = modelo::contarAhorros,
                                     tema = tema, alCambiarTema = alCambiarTema,
@@ -201,6 +203,13 @@ fun ShellLukApp(
             nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
             val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
             if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
+            val proyeccion by modelo.proyeccionAbierta.collectAsState()
+            if (proyeccion) app.lukapp.ui.mes.PantallaProyeccion(actual.contexto.forecast, alCerrar = { modelo.proyeccionAbierta.value = false })
+            val resumen by modelo.resumenMes.collectAsState()
+            resumen?.let { mes ->
+                val tarjetas = remember(actual.libro.transacciones, mes, actual.hoy) { app.lukapp.dominio.resumenDelMes(actual.libro.transacciones, mes, actual.hoy) }
+                app.lukapp.ui.mes.PantallaResumen(tarjetas, actual.catalogo, actual.hoy, alCerrar = { modelo.resumenMes.value = null })
+            }
             val abierta by modelo.cuentaAbierta.collectAsState()
             actual.libro.cajitas.firstOrNull { it.id == abierta && it.archivedAt == null }?.let { cuenta ->
                 app.lukapp.ui.cuenta.PantallaDetalleCuenta(

@@ -328,3 +328,10 @@ En el panel de tarjetas y deudas: «Agregar tarjeta de crédito» / «Agregar de
 ### v10.31.0 — Buscar
 
 La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el mes visible) por descripción, contraparte, categoría o monto (por dígitos: «45.000» = «$45,000»), y entiende frases con el intérprete de movimientos («ingresos», «de ayer», una categoría clara). Filtros de tipo, categoría y cuenta; con algo filtrado dice cuántos movimientos son y cuánto sale y entra, con «Limpiar». Si lo escrito coincide con una función (Topes, Pagos fijos, Calendario, Cuentas, Asesor) la propone y salta a ella. `dominio/Filtros.kt` porta `lib/filtros.ts` y `buscarFunciones`; 6 pruebas nuevas. Sin ver en emulador. Diferencia: la web también busca entre los paneles de Más y Preferencias, que aún no existen en nativo, así que aquí solo aparecen las funciones que sí se pueden abrir; los filtros por fecha existen en el dominio pero la pantalla no los pide (la web tampoco).
+
+
+### v10.32.0 — Resumen tipo historia y Proyección en Mes
+
+- **Tu resumen** (`PantallaResumen`, `dominio/ResumenMes.kt` portan `ResumenWrapped.tsx` y `resumenMes.ts`): hasta nueve tarjetas a pantalla completa con fondo oscuro fijo, un toque avanza y el 30 % izquierdo retrocede; en la última, Compartir (hoja del sistema) y Cerrar. Las tarjetas sin datos se omiten. Antes de tiempo aparece bloqueado con «Próximamente» y el día de desbloqueo (2 días antes de fin de mes). 9 pruebas nuevas.
+- **Proyección financiera** (`PantallaProyeccion`, porta `ForecastResumen.tsx`): liquidez, disponible diario y flujo neto a 7/30/90 días del escenario base; conservador y favorable dicen «no disponible» como en la web.
+- Mes trae los dos accesos de `AccesosFunciones` (Pagos fijos y Proyección). Sin ver en emulador. Diferencias: compartir usa la hoja de Android (la web cae al portapapeles); sin animación de deslizamiento entre tarjetas, solo fundido. Sigue faltando exportar a Excel.

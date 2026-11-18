@@ -43,6 +43,9 @@ import app.lukapp.dominio.FrecuenciaPeriodo
 import app.lukapp.dominio.Transaccion
 import app.lukapp.dominio.byCategory
 import app.lukapp.dominio.dayLabel
+import app.lukapp.dominio.diaDesbloqueoResumen
+import app.lukapp.dominio.esResumenMesHabilitado
+import app.lukapp.dominio.monthKeyLabel
 import app.lukapp.dominio.etiquetaDePeriodo
 import app.lukapp.dominio.formatCop
 import app.lukapp.dominio.mayoresMovimientos
@@ -64,12 +67,13 @@ import kotlin.math.ceil
 import kotlin.math.max
 
 /**
- * MesView.tsx. Pendiente (se omite, no se simula): accesos a Pagos fijos y
- * Proyección, el resumen tipo Wrapped, editar topes
- * y exportar a Excel; todos abren pantallas que aún no existen.
+ * MesView.tsx. Pendiente (se omite, no se simula): exportar a Excel.
  */
 @Composable
-fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCalendario: () -> Unit, topes: AccionesTopes) {
+fun PantallaMes(
+    vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCalendario: () -> Unit, topes: AccionesTopes,
+    alAbrirPagosFijos: () -> Unit, alAbrirProyeccion: () -> Unit, alAbrirResumen: (String) -> Unit,
+) {
     val c = LukApp.colores
     val config = vista.ajustes.periodo
     val clave = vista.clavePeriodo
@@ -97,6 +101,48 @@ fun PantallaMes(vista: VistaInicio, alElegirPeriodo: (String) -> Unit, alAbrirCa
                 }
             }
             BotonFlecha(Lucide.ChevronRight, "Período siguiente", haySiguiente) { alElegirPeriodo(siguiente) }
+        }
+
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            AccesoFuncion("Pagos fijos", "Lo que te cobran todos los meses", alAbrirPagosFijos)
+            AccesoFuncion("Proyección financiera", "Mira cómo podría verse tu liquidez", alAbrirProyeccion)
+        }
+
+        val habilitado = esResumenMesHabilitado(mesCalendario, vista.hoy)
+        if (habilitado) {
+            Row(
+                Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.accent).pulsable(alPulsar = { alAbrirResumen(mesCalendario) }).padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icono(Lucide.Sparkles, tamano = 20.dp, grosor = 2f, color = c.onAccent)
+                Column(Modifier.weight(1f)) {
+                    Text("Tu resumen de ${monthKeyLabel(mesCalendario)}", style = LukApp.tipo.de(15, 600, 1.4f), color = c.onAccent)
+                    Text("Lo mejor y lo raro del mes, en una historia", Modifier.padding(top = 4.dp).graphicsLayer { alpha = 0.7f }, style = LukApp.tipo.xs, color = c.onAccent)
+                }
+                Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.onAccent.copy(alpha = 0.6f))
+            }
+        } else {
+            val dia = diaDesbloqueoResumen(mesCalendario)
+            Row(
+                Modifier.fillMaxWidth().graphicsLayer { alpha = 0.8f }.clip(Medidas.formaCard).border(1.dp, c.line, Medidas.formaCard).background(c.soft).padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icono(Lucide.Sparkles, tamano = 20.dp, grosor = 2f, color = c.inkGhost.copy(alpha = 0.3f))
+                Column(Modifier.weight(1f)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Tu resumen de ${monthKeyLabel(mesCalendario)}", Modifier.weight(1f, fill = false), style = LukApp.tipo.de(15, 600, 1.4f), color = c.inkSoft)
+                        Text(
+                            "PRÓXIMAMENTE", Modifier.clip(CircleShape).border(1.dp, c.line, CircleShape).background(c.card).padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = LukApp.tipo.de(13, 600, 1.2f, 0.4f), color = c.inkFaint,
+                        )
+                    }
+                    Text(
+                        "Se habilita el $dia de ${monthKeyLabel(mesCalendario).split(" ")[0]} (2 días antes de fin de mes)",
+                        Modifier.padding(top = 4.dp), style = LukApp.tipo.xs, color = c.inkFaint,
+                    )
+                }
+                Icono(Lucide.Lock, tamano = 16.dp, grosor = 2f, color = c.inkGhost.copy(alpha = 0.4f))
+            }
         }
 
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -350,5 +396,21 @@ private fun Entradas(delMes: List<Transaccion>, hoy: String) {
         Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             ingresos.forEach { tx -> FilaMovimientoMes(tx.description, dayLabel(tx.occurredOn, hoy), formatCop(tx.amountCop), LukApp.colores.entro) }
         }
+    }
+}
+
+/** AccesosFunciones.tsx: tarjeta con borde, título, ayuda y flecha. */
+@Composable
+private fun AccesoFuncion(titulo: String, ayuda: String, alPulsar: () -> Unit) {
+    val c = LukApp.colores
+    Row(
+        Modifier.fillMaxWidth().clip(Medidas.formaCard).border(1.dp, c.line, Medidas.formaCard).background(c.card).pulsable(alPulsar = alPulsar).padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(titulo, style = LukApp.tipo.de(16, 600, 1.4f), color = c.ink)
+            Text(ayuda, Modifier.padding(top = 4.dp), style = LukApp.tipo.de(12, 400, 1.4f), color = c.inkSoft)
+        }
+        Icono(Lucide.ChevronRight, tamano = 18.dp, color = c.ink)
     }
 }

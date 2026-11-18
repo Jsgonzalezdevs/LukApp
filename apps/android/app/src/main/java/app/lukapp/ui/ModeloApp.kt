@@ -110,6 +110,9 @@ class ModeloApp(
 
     val pagosFijosAbierto = MutableStateFlow(false)
     val buscarAbierto = MutableStateFlow(false)
+    val proyeccionAbierta = MutableStateFlow(false)
+    /** Clave 'YYYY-MM' del mes cuyo resumen tipo historia está abierto, o null. */
+    val resumenMes = MutableStateFlow<String?>(null)
     /** «cuenta» o «cajita» mientras el formulario de nuevo está abierto. */
     val nuevaCajitaTipo = MutableStateFlow<String?>(null)
 
