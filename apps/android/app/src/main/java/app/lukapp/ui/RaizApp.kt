@@ -286,8 +286,14 @@ fun ShellLukApp(
             )
             val funcionesPanel by modelo.funcionesAbierto.collectAsState()
             if (funcionesPanel) app.lukapp.ui.mas.PantallaFunciones(funciones, alCerrar = { modelo.funcionesAbierto.value = false })
+            val reportePanel by modelo.reporteAbierto.collectAsState()
+            if (reportePanel) {
+                // `mesCalendarioActivo` de LukAppApp.tsx: con período mensual el mes del período; con otro, el mes de hoy.
+                val mesInforme = if (actual.ajustes.periodo.frecuencia == app.lukapp.dominio.FrecuenciaPeriodo.MENSUAL) app.lukapp.dominio.monthKey(if (actual.clavePeriodo.length > 7) actual.clavePeriodo else "${actual.clavePeriodo}-01") else actual.hoy.take(7)
+                app.lukapp.ui.mas.PantallaReporte(actual, mesInforme, correo, alCerrar = { modelo.reporteAbierto.value = false })
+            }
             val respaldoPanel by modelo.respaldoAbierto.collectAsState()
-            if (respaldoPanel) app.lukapp.ui.mas.PantallaRespaldo(actual.libro, actual.hoy, modelo::restaurarLibro, alCerrar = { modelo.respaldoAbierto.value = false })
+            if (respaldoPanel) app.lukapp.ui.mas.PantallaRespaldo(actual.libro, actual.hoy, modelo::restaurarLibro, alGenerarInforme = { modelo.respaldoAbierto.value = false; modelo.reporteAbierto.value = true }, alCerrar = { modelo.respaldoAbierto.value = false })
             val nombresPanel by modelo.nombresAbierto.collectAsState()
             if (nombresPanel) app.lukapp.ui.mas.PantallaNombres(
                 actual, app.lukapp.ui.mas.AccionesNombres(modelo::unirContactos, modelo::separarContactos, modelo::renombrarContacto, modelo::deshacerContacto, modelo::apodarParte),

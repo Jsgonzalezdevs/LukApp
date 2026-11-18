@@ -1,6 +1,6 @@
 # Publicación de la app Android nativa
 
-Estado al **v10.54.0** (ya existen en la nativa las **Metas de ahorro**, el **Impuesto 4x1000**, **Dividir cuenta y propina**, las **Vaquitas**, **Finanzas en Pareja / Compartidas** y **Importar extractos** desde PDF, foto, Excel y CSV). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
+Estado al **v10.55.0** (ya existen en la nativa las **Metas de ahorro**, el **Impuesto 4x1000**, **Dividir cuenta y propina**, las **Vaquitas**, **Finanzas en Pareja / Compartidas** **Importar extractos** desde PDF, foto, Excel y CSV, y la exportación a **Excel (.xls)** y el **informe PDF**). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
 en el mensaje, etiquetas `v10.14.1` … `v10.47.1`, **nada enviado al remoto** (la rama no tiene upstream).
 Este documento no publica nada: dice en qué punto está, qué falta y qué decisiones son del dueño.
 
@@ -13,7 +13,6 @@ la reemplaza**. Quien actualice perdería esto, que hoy sí puede hacer:
 | Falta en la nativa | Dónde está en la web |
 |---|---|
 | El **buzón de correo de comprobantes** de Importar extractos | `BandejaCorreo` de `AnalistaView` |
-| **Informe PDF** y **Exportar a Excel (.xls)** | Copia de seguridad, Mes |
 | Registro automático (Apple Pay) | Solo iOS: no aplica a Android |
 
 Además el plan Premium anuncia «Extractos PDF» y «Espacios compartidos» (se ven en Cuenta), y **ninguna de las dos

@@ -63,11 +63,14 @@ import app.lukapp.ui.iconos.Lucide
 import app.lukapp.ui.inicio.CIFRAS_TABULARES
 import app.lukapp.ui.tema.LukApp
 import app.lukapp.ui.tema.Medidas
+import app.lukapp.dominio.generarExcelFinanciero
+import app.lukapp.dominio.nombreArchivoExcel
+import kotlinx.coroutines.launch
 import kotlin.math.ceil
 import kotlin.math.max
 
 /**
- * MesView.tsx. Pendiente (se omite, no se simula): exportar a Excel.
+ * MesView.tsx.
  */
 @Composable
 fun PantallaMes(
@@ -178,6 +181,37 @@ fun PantallaMes(
         }
 
         Tendencias(vista.libro.transacciones, mesCalendario, vista.catalogo)
+
+        if (vista.delPeriodo.isNotEmpty()) BotonExportarExcel(vista, clave, etiquetaDePeriodo(clave, config))
+    }
+}
+
+/**
+ * «Exportar {período} a Excel (.xls)» de MesView.tsx. Va con lo que se ve (`delPeriodo`, ya recortado al período activo,
+ * sea o no un mes calendario); como en la web, la hoja de cuentas queda vacía: aquí se exportan movimientos.
+ */
+@Composable
+private fun BotonExportarExcel(vista: VistaInicio, clave: String, etiqueta: String) {
+    val c = LukApp.colores
+    val contexto = androidx.compose.ui.platform.LocalContext.current
+    val ambito = androidx.compose.runtime.rememberCoroutineScope()
+    var aviso by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    val guardar = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/vnd.ms-excel")) { uri ->
+        if (uri != null) ambito.launch {
+            val xml = generarExcelFinanciero(vista.delPeriodo, emptyList(), emptyMap(), null)
+            aviso = if (app.lukapp.ui.mas.guardarBytes(contexto, uri, xml.toByteArray(Charsets.UTF_8))) "Archivo guardado." else "No se pudo guardar el archivo."
+        }
+    }
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.clip(CircleShape).border(1.dp, c.line, CircleShape).background(c.card).semantics { contentDescription = "Exportar a Excel" }
+                .pulsable(alPulsar = { guardar.launch(nombreArchivoExcel(null, clave)) }).padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icono(Lucide.Download, tamano = 16.dp, grosor = 2.25f, color = c.inkSoft)
+            Text("Exportar $etiqueta a Excel (.xls)", style = LukApp.tipo.de(13, 600, 1.4f), color = c.inkSoft)
+        }
+        aviso?.let { Text(it, style = LukApp.tipo.xs, color = if (it.startsWith("Archivo")) c.entro else c.salio) }
     }
 }
 

@@ -36,6 +36,10 @@ import androidx.compose.ui.unit.dp
 import app.lukapp.dominio.Libro
 import app.lukapp.dominio.aCsv
 import app.lukapp.dominio.armarRespaldoJson
+import app.lukapp.dominio.generarExcelFinanciero
+import app.lukapp.dominio.idsPasivos
+import app.lukapp.dominio.nombreArchivoExcel
+import app.lukapp.dominio.saldosPorCajita
 import app.lukapp.dominio.leerRespaldo
 import app.lukapp.dominio.nombreDeArchivoRespaldo
 import app.lukapp.dominio.pesoAproximado
@@ -53,10 +57,10 @@ import java.time.Instant
 
 /**
  * PanelRespaldo.tsx: sacar los datos y volverlos a meter. Restaurar REEMPLAZA todo, así que antes de tocar nada
- * dice qué trae el archivo y pide una confirmación aparte. Pendiente: informe PDF y Excel (.xls).
+ * dice qué trae el archivo y pide una confirmación aparte. También saca el informe del mes (PDF) y todo en Excel (.xls).
  */
 @Composable
-fun PantallaRespaldo(libro: Libro, hoy: String, alRestaurar: suspend (Libro) -> Boolean, alCerrar: () -> Unit) {
+fun PantallaRespaldo(libro: Libro, hoy: String, alRestaurar: suspend (Libro) -> Boolean, alGenerarInforme: () -> Unit, alCerrar: () -> Unit) {
     val c = LukApp.colores
     BackHandler(onBack = alCerrar)
     val contexto = LocalContext.current
@@ -78,6 +82,9 @@ fun PantallaRespaldo(libro: Libro, hoy: String, alRestaurar: suspend (Libro) -> 
     }
     val guardarRespaldo = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { escribir(it, json) }
     val guardarCsv = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { escribir(it, aCsv(libro, ::nombreDeCuenta)) }
+    val guardarExcel = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/vnd.ms-excel")) {
+        escribir(it, generarExcelFinanciero(libro.transacciones, libro.cajitas, saldosPorCajita(libro.movimientos, libro.transacciones, idsPasivos(libro.cajitas))))
+    }
     val elegir = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         error = null; aviso = null; porRestaurar = null
@@ -107,8 +114,12 @@ fun PantallaRespaldo(libro: Libro, hoy: String, alRestaurar: suspend (Libro) -> 
             aviso?.let { Text(it, style = LukApp.tipo.xs, color = c.entro) }
 
             Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card).padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Boton("Generar informe / PDF", Lucide.FileText, alPulsar = alGenerarInforme)
+                Nota("Un reporte del mes, listo para guardar como PDF.")
                 Boton("Descargar respaldo completo", Lucide.Download, relleno = true) { guardarRespaldo.launch(nombreDeArchivoRespaldo(hoy)) }
                 Nota("Un archivo con todo, que esta misma app puede volver a leer. Guárdalo donde no dependa de esta cuenta.")
+                Boton("Exportar a Excel (.xls)", Lucide.Download) { guardarExcel.launch(nombreArchivoExcel()) }
+                Nota("Incluye hojas separadas de movimientos formateados y saldos de cuentas para Excel y Google Sheets.")
                 Boton("Movimientos en CSV", Lucide.Download) { guardarCsv.launch("movimientos-$hoy.csv") }
                 Nota("Para abrirlos en cualquier hoja de cálculo o importar en otro software contable.")
             }

@@ -141,6 +141,7 @@ class ModeloApp(
     val vaquitasAbierto = MutableStateFlow(false)
     val espaciosAbierto = MutableStateFlow(false)
     val extractosAbierto = MutableStateFlow(false)
+    val reporteAbierto = MutableStateFlow(false)
     /** Importar extractos: los movimientos nuevos y lo que quedó para revisar entran juntos, en una sola operación. */
     suspend fun importarExtracto(txs: List<app.lukapp.dominio.Transaccion>, revisiones: List<app.lukapp.dominio.RevisionDudosa>) =
         aplicarCambios { app.lukapp.datos.Cambios(guardar = app.lukapp.dominio.Libro(transacciones = txs, revisiones = revisiones)) }
@@ -252,7 +253,7 @@ class ModeloApp(
     val hayPanelAbierto: StateFlow<Boolean> = combine(
         listOf(
             calendarioAbierto, pagosFijosAbierto, buscarAbierto, proyeccionAbierta, periodoAbierto, categoriasAbierto, revisionesAbierto,
-            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta, vaquitasAbierto, espaciosAbierto, extractosAbierto,
+            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto, gmfAbierto, divisionAbierta, vaquitasAbierto, espaciosAbierto, extractosAbierto, reporteAbierto,
             resumenMes.map { it != null }, nuevaCajitaTipo.map { it != null }, cuentaAbierta.map { it != null }, panelPasivos.map { it != null },
         ),
     ) { estados -> estados.any { it } }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)
