@@ -247,4 +247,15 @@ class OperacionesLibroTest {
         assertNull(OperacionesLibro.apodarParte(Libro(), "papa", "Papá", "  "))
         assertEquals(mapOf("contactos" to listOf("c9")), OperacionesLibro.borrarContacto("c9").borrar)
     }
+
+    @Test fun crearMetaGuardaIconoYCajitaYNaceSinCompletar() {
+        val m = OperacionesLibro.crearMeta(Libro(), "Viaje", 3_000_000, "2027-06-01", "Plane", 0, "caja1").guardar.metas.single()
+        assertEquals("Plane", m.icon); assertEquals("caja1", m.cajitaId); assertEquals(0L, m.ahorradoCop); assertNull(m.completedAt)
+        assertNull(OperacionesLibro.crearMeta(Libro(), "Moto", 1_000, null).guardar.metas.single().cajitaId)
+    }
+    @Test fun actualizarYBorrarMeta() {
+        val m = OperacionesLibro.crearMeta(Libro(), "Viaje", 3_000_000, null).guardar.metas.single()
+        assertEquals(500_000L, OperacionesLibro.actualizarMeta(m.copy(ahorradoCop = 500_000)).guardar.metas.single().ahorradoCop)
+        assertEquals(mapOf("metas" to listOf(m.id)), OperacionesLibro.borrarMeta(m.id).borrar)
+    }
 }

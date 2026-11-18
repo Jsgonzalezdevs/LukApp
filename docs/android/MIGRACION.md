@@ -452,3 +452,10 @@ Probado en el emulador: el campo sale con la fecha real, el selector abre en el 
 ### v10.47.2 — Guía de pruebas internas
 
 `docs/android/PRUEBAS_INTERNAS.md`: cómo llevar la nativa a la pista de pruebas internas de Play sin tocar la app pública (firma con la llave de EAS, aviso del `versionCode`, pasos en Play Console, notas de la versión, borrador de «Seguridad de los datos», avisos para probadores y lista de pruebas). Se verificó el manifiesto final de lanzamiento: sin `CAMERA` ni almacenamiento. Solo documentación; el código no cambió.
+
+
+### v10.48.0 — Metas de ahorro
+
+`PantallaMetas` porta `MetasView.tsx` y se abre desde la tarjeta «Metas de ahorro» de Dinero (los `AccesosFunciones` de `DineroView`; `AccesoFuncion` de Mes pasó a ser compartido). Crear (nombre, ícono de los once de `CAJITA_ICONS`, objetivo con puntos, fecha límite opcional con selector sin fechas pasadas, cajita que sigue o «Llevarla a mano»), tarjetas con barra y porcentaje, «Te falta…», «¡Meta lograda!», «Estado: en camino / requiere atención / sin datos suficientes · Fecha estimada: no estimable», el recuadro «💡 Aparta por quincena» con el ritmo mensual y los días restantes, «La fecha ya pasó», «Ahorrado» editable en las metas a mano y eliminar (sin confirmar, como la web). Todo sale de `metasInteligentes` del motor; nada se recalcula en la pantalla. Escribe por la RPC: crear (`crearMeta` ahora recibe la cajita), actualizar y borrar `metas`. 2 pruebas nuevas.
+
+Probado en el emulador con las 3 metas reales de la cuenta demo («Viaje a Cartagena demo» 26,7 %, «Comprar portátil demo»…): tarjetas, ritmos y formulario de nueva meta. **No se creó, editó ni borró ninguna meta** (habría tocado la cuenta). Corregido un doble borde en el campo de monto. Notas: ícono desconocido cae en la alcancía (como `iconoDeCajita`); el arranque en frío del emulador de depuración sigue tardando ~6 s.

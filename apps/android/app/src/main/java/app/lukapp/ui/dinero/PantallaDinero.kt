@@ -84,6 +84,7 @@ fun PantallaDinero(
     alAbrirCuenta: ((Cajita) -> Unit)? = null,
     alAbrirPasivos: ((String) -> Unit)? = null,
     alCrear: ((String) -> Unit)? = null,
+    alAbrirMetas: (() -> Unit)? = null,
 ) {
     val c = LukApp.colores
     val libro = vista.libro
@@ -129,6 +130,9 @@ fun PantallaDinero(
                 Modifier.padding(top = 8.dp), style = LukApp.tipo.xs, color = c.inkFaint, textAlign = TextAlign.Center,
             )
         }
+
+        // AccesosFunciones de DineroView: lo que se abre desde aquí (Metas; los demás paneles llegan con su versión).
+        if (alAbrirMetas != null) app.lukapp.ui.mes.AccesoFuncion("Metas de ahorro", "Ponte un objetivo y mira cuánto te falta", alAbrirMetas)
 
         if (vivas.isEmpty()) {
             Column(

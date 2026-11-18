@@ -1,6 +1,6 @@
 # Publicación de la app Android nativa
 
-Estado al **v10.47.1**. Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
+Estado al **v10.48.0** (desde v10.48.0 las **Metas de ahorro** ya existen en la nativa). Rama local `android-nativo`: 51 commits sobre `main`, todos con `vX.Y.Z`
 en el mensaje, etiquetas `v10.14.1` … `v10.47.1`, **nada enviado al remoto** (la rama no tiene upstream).
 Este documento no publica nada: dice en qué punto está, qué falta y qué decisiones son del dueño.
 
@@ -12,7 +12,6 @@ la reemplaza**. Quien actualice perdería esto, que hoy sí puede hacer:
 
 | Falta en la nativa | Dónde está en la web |
 |---|---|
-| **Metas de ahorro** (crear, seguir, completar) | Ajustes → Metas / Dinero |
 | **Importar extractos** (PDF del banco, y desde foto) | Ajustes → Importar extractos (`AnalistaView`) |
 | **Finanzas en Pareja / Compartidas** y **Vaquitas** | Ajustes → paneles `compartido` y `vaquitas` |
 | **Dividir cuenta y propina** | Ajustes → `dividir-cuenta` |

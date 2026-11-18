@@ -401,7 +401,7 @@ private fun Entradas(delMes: List<Transaccion>, hoy: String) {
 
 /** AccesosFunciones.tsx: tarjeta con borde, título, ayuda y flecha. */
 @Composable
-private fun AccesoFuncion(titulo: String, ayuda: String, alPulsar: () -> Unit) {
+internal fun AccesoFuncion(titulo: String, ayuda: String, alPulsar: () -> Unit) {
     val c = LukApp.colores
     Row(
         Modifier.fillMaxWidth().clip(Medidas.formaCard).border(1.dp, c.line, Medidas.formaCard).background(c.card).pulsable(alPulsar = alPulsar).padding(horizontal = 16.dp, vertical = 12.dp),

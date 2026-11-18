@@ -149,6 +149,7 @@ fun ShellLukApp(
                                     alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
                                     alAbrirPasivos = { modelo.panelPasivos.value = it },
                                     alCrear = { modelo.nuevaCajitaTipo.value = it },
+                                    alAbrirMetas = { modelo.metasAbierto.value = true },
                                 )
                                 Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
                                     topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
@@ -237,6 +238,11 @@ fun ShellLukApp(
             if (!actual.ajustes.onboardingTerminado && actual.libro.transacciones.isEmpty() && estado != app.lukapp.datos.EstadoSincronizacion.CARGANDO) {
                 app.lukapp.ui.inicio.PantallaBienvenida(modelo::terminarBienvenida)
             }
+            val metasPanel by modelo.metasAbierto.collectAsState()
+            if (metasPanel) app.lukapp.ui.dinero.PantallaMetas(
+                actual, app.lukapp.ui.dinero.AccionesMetas(modelo::crearMetaCompleta, modelo::actualizarMeta, modelo::borrarMeta),
+                alCerrar = { modelo.metasAbierto.value = false },
+            )
             val funcionesPanel by modelo.funcionesAbierto.collectAsState()
             if (funcionesPanel) app.lukapp.ui.mas.PantallaFunciones(funciones, alCerrar = { modelo.funcionesAbierto.value = false })
             val respaldoPanel by modelo.respaldoAbierto.collectAsState()

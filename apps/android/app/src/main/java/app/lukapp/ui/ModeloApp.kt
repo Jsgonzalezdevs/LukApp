@@ -130,6 +130,11 @@ class ModeloApp(
     val categoriasAbierto = MutableStateFlow(false)
     val respaldoAbierto = MutableStateFlow(false)
     val funcionesAbierto = MutableStateFlow(false)
+    val metasAbierto = MutableStateFlow(false)
+    suspend fun crearMetaCompleta(nombre: String, icon: String, objetivo: Long, fecha: String?, cajitaId: String?) =
+        aplicarCambios { OperacionesLibro.crearMeta(finanzas.libro.value, nombre, objetivo, fecha, icon, 0, cajitaId) }
+    suspend fun actualizarMeta(m: app.lukapp.dominio.Meta) = aplicarCambios { OperacionesLibro.actualizarMeta(m) }
+    suspend fun borrarMeta(id: String) = aplicarCambios { OperacionesLibro.borrarMeta(id) }
     fun recordatorioActivo(valor: Boolean) { viewModelScope.launch { preferencias.recordatorioActivo(valor) } }
     fun recordatorioHora(hora: String) { viewModelScope.launch { preferencias.recordatorioHora(hora) } }
     fun terminarGuiaBasica() { viewModelScope.launch { preferencias.terminarGuiaBasica() } }
@@ -228,7 +233,7 @@ class ModeloApp(
     val hayPanelAbierto: StateFlow<Boolean> = combine(
         listOf(
             calendarioAbierto, pagosFijosAbierto, buscarAbierto, proyeccionAbierta, periodoAbierto, categoriasAbierto, revisionesAbierto,
-            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel,
+            nombresAbierto, respaldoAbierto, funcionesAbierto, cuentaAbiertaPanel, metasAbierto,
             resumenMes.map { it != null }, nuevaCajitaTipo.map { it != null }, cuentaAbierta.map { it != null }, panelPasivos.map { it != null },
         ),
     ) { estados -> estados.any { it } }.stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly, false)

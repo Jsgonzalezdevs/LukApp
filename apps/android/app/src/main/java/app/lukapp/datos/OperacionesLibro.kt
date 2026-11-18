@@ -223,8 +223,14 @@ object OperacionesLibro {
     fun actualizarCajita(c: app.lukapp.dominio.Cajita): Cambios = Cambios(guardar = Libro(cajitas = listOf(c)))
 
     /** `almacen.crearMeta`: la meta nueva empieza sin completar. */
-    fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0): Cambios =
-        Cambios(guardar = Libro(metas = listOf(Meta(nuevoId(), nombre, icon, objetivoCop, fechaObjetivo, null, ahorradoCop, Instant.now().toString(), null))))
+    fun crearMeta(libro: Libro, nombre: String, objetivoCop: Long, fechaObjetivo: String?, icon: String = "Target", ahorradoCop: Long = 0, cajitaId: String? = null): Cambios =
+        Cambios(guardar = Libro(metas = listOf(Meta(nuevoId(), nombre, icon, objetivoCop, fechaObjetivo, cajitaId, ahorradoCop, Instant.now().toString(), null))))
+
+    /** `almacen.actualizarMeta` (lo usa «Ahorrado» de una meta llevada a mano). */
+    fun actualizarMeta(m: Meta): Cambios = Cambios(guardar = Libro(metas = listOf(m)))
+
+    /** `almacen.borrarMeta`. */
+    fun borrarMeta(id: String): Cambios = Cambios(borrar = mapOf("metas" to listOf(id)))
 
     fun abonarDeuda(libro: Libro, deudaId: String, cuentaId: String, montoCop: Long, fecha: String = bogotaDate()): Cambios? {
         val monto = abs(montoCop)
