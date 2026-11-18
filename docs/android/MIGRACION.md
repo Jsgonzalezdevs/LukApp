@@ -342,3 +342,8 @@ La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el 
 - **Período** (`PantallaPeriodo`, porta `PanelPeriodo.tsx`): las seis frecuencias, día de inicio del mes (1..28, se guarda día-1), y en personalizado vista previa del ciclo, duración 1..90 (se guarda al soltar) y fecha de inicio con selector (no admite fechas futuras). Se guarda como objeto en `finanzas:periodo` de `user_metadata`, el mismo formato que lee la web; al cambiar se vuelve al período de hoy.
 - Filas nuevas en Más: «Próximos pagos en Inicio» y «Mostrar decisiones financieras», que ya leía Inicio pero no se podían cambiar.
 - Sin ver en emulador ni probar el guardado contra Supabase (`PreferenciasCuenta` no tiene pruebas unitarias: depende del cliente). Sigue fuera «Mostrar efectivo por separado» porque Dinero aún no desglosa el efectivo, y el resto de paneles de Más.
+
+
+### v10.34.0 — Más: Categorías propias
+
+`PantallaCategorias` porta `CategoriasEditor.tsx`: crear (nombre de hasta 28 letras; el emoji y el ícono siguen al nombre mientras no los toques), editar, archivar y reactivar, y eliminar solo si ninguna transacción la usa (con movimientos el botón archiva, como en la web). Selector de emoji con campo propio, íconos y doce colores; lista de las categorías del sistema, sin editar. Escribe por la RPC en `categorias` (clave nueva `p-…`, `nuevaClaveCategoria`). 2 pruebas nuevas. Sin ver en emulador.

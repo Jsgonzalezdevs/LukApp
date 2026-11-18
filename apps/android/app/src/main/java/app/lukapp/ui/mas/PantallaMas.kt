@@ -33,7 +33,7 @@ import app.lukapp.ui.tema.PreferenciaTema
 /**
  * AjustesView.tsx. Solo están las filas que funcionan de verdad: Período, Próximos pagos, Contar los ahorros,
  * decisiones financieras, Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
- * Pendiente (sin filas muertas): Categorías, Registro automático, Tus datos y Comunidad (abren paneles sin migrar),
+ * Pendiente (sin filas muertas): Registro automático, Tus datos y Comunidad (abren paneles sin migrar),
  * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha, volver a ver la guía y Premium.
  */
 @Composable
@@ -45,6 +45,7 @@ fun PantallaMas(
     decisiones: Boolean,
     alDecisiones: (Boolean) -> Unit,
     alAbrirPeriodo: () -> Unit,
+    alAbrirCategorias: () -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -59,6 +60,9 @@ fun PantallaMas(
         Column {
             Text("Preferencias", Modifier.padding(horizontal = 4.dp).padding(bottom = 8.dp), style = LukApp.tipo.xs, color = c.inkFaint)
             Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card)) {
+                Fila("🏷️", "Categorías", "Crea las tuyas o cambia las que hay", linea = true, alPulsar = alAbrirCategorias) {
+                    Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
+                }
                 Fila("🗓️", "Período", "Cada cuánto se reinicia lo que ves", linea = false, alPulsar = alAbrirPeriodo) {
                     Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
                 }

@@ -205,4 +205,17 @@ class OperacionesLibroTest {
         val t = cuentaDe("t", "Visa").copy(tipo = app.lukapp.dominio.TipoCajita.TARJETA, limiteCreditoCop = 5_000_000, diaCorte = 15, diaPago = 30)
         assertEquals(t, OperacionesLibro.actualizarCajita(t).guardar.cajitas.single())
     }
+
+    @Test fun crearCategoriaLlevaClavePropiaYNoNace_archivada() {
+        val c = OperacionesLibro.crearCategoria("Mascotas", "PawPrint", "🐶", "#F59E0B").guardar.categorias.single()
+        assertTrue(c.id.startsWith("p-")); assertEquals("Mascotas", c.nombre); assertNull(c.archivedAt)
+        val otra = OperacionesLibro.crearCategoria("Mascotas", "PawPrint", "🐶", "#F59E0B").guardar.categorias.single()
+        assertTrue(c.id != otra.id)
+    }
+    @Test fun archivarMarcaLaFechaYBorrarUsaLaTablaCategorias() {
+        val c = OperacionesLibro.crearCategoria("Viajes", "Plane", "✈️", "#3B82F6").guardar.categorias.single()
+        assertTrue(OperacionesLibro.archivarCategoria(c).guardar.categorias.single().archivedAt != null)
+        assertEquals(mapOf("categorias" to listOf(c.id)), OperacionesLibro.borrarCategoria(c.id).borrar)
+        assertNull(OperacionesLibro.actualizarCategoria(c.copy(archivedAt = null)).guardar.categorias.single().archivedAt)
+    }
 }

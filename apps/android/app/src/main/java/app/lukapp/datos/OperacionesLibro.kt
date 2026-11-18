@@ -4,6 +4,8 @@ import app.lukapp.dominio.CATEGORIES
 import app.lukapp.dominio.CajitaMovimiento
 import app.lukapp.dominio.ajusteHacia
 import app.lukapp.dominio.bogotaDate
+import app.lukapp.dominio.CategoriaPersonal
+import app.lukapp.dominio.nuevaClaveCategoria
 import app.lukapp.dominio.nuevoId
 import app.lukapp.dominio.saldoDeCajita
 import app.lukapp.dominio.tieneSaldoConfirmado
@@ -87,6 +89,19 @@ object OperacionesLibro {
     }
 
     /** `quitarPresupuesto`: el tope se borra por su categoría (la RPC usa `categoria` como clave de esa tabla). */
+    /** `almacen.crearCategoria`: clave nueva con prefijo `p-`, sin archivar. */
+    fun crearCategoria(nombre: String, icon: String, emoji: String, color: String): Cambios =
+        Cambios(guardar = Libro(categorias = listOf(CategoriaPersonal(nuevaClaveCategoria(), nombre, icon, emoji, color, null, Instant.now().toString()))))
+
+    /** `almacen.actualizarCategoria` (editar, y también reactivar con `archivedAt = null`). */
+    fun actualizarCategoria(c: CategoriaPersonal): Cambios = Cambios(guardar = Libro(categorias = listOf(c)))
+
+    /** `almacen.archivarCategoria`: los movimientos que ya tenía siguen apuntándole. */
+    fun archivarCategoria(c: CategoriaPersonal): Cambios = Cambios(guardar = Libro(categorias = listOf(c.copy(archivedAt = Instant.now().toString()))))
+
+    /** `almacen.borrarCategoria`: solo se ofrece cuando nada la usa; con movimientos lo honesto es archivar. */
+    fun borrarCategoria(id: String): Cambios = Cambios(borrar = mapOf("categorias" to listOf(id)))
+
     fun quitarPresupuesto(categoria: String): Cambios = Cambios(borrar = mapOf("presupuestos" to listOf(categoria)))
 
     /** `almacen.crearRecurrente`: el día se acota a 1..31 en el formulario; `archivedAt` empieza vacío. */
