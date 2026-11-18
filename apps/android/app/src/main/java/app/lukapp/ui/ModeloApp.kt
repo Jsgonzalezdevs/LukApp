@@ -126,6 +126,12 @@ class ModeloApp(
     private suspend fun aplicarCambios(c: () -> app.lukapp.datos.Cambios?): Boolean = runCatching { c()?.let { finanzas.aplicar(it) }; true }.getOrDefault(false)
 
     val categoriasAbierto = MutableStateFlow(false)
+    val nombresAbierto = MutableStateFlow(false)
+    suspend fun unirContactos(a: String, b: String, nombre: String) = aplicarCambios { OperacionesLibro.unirContactos(finanzas.libro.value, a, b, nombre) }
+    suspend fun separarContactos(a: String, b: String, nombre: String) = aplicarCambios { OperacionesLibro.separarContactos(finanzas.libro.value, a, b, nombre) }
+    suspend fun renombrarContacto(c: app.lukapp.dominio.Contacto) = aplicarCambios { OperacionesLibro.actualizarContacto(c) }
+    suspend fun deshacerContacto(id: String) = aplicarCambios { OperacionesLibro.borrarContacto(id) }
+    suspend fun apodarParte(clave: String, nombre: String, apodo: String, quitar: Boolean) = aplicarCambios { OperacionesLibro.apodarParte(finanzas.libro.value, clave, nombre, apodo, quitar) }
     val revisionesAbierto = MutableStateFlow(false)
     suspend fun guardarRevision(r: app.lukapp.dominio.RevisionDudosa) = aplicarCambios { OperacionesLibro.guardarRevision(r) }
     suspend fun crearCategoria(nombre: String, icon: String, emoji: String, color: String) = aplicarCambios { OperacionesLibro.crearCategoria(nombre, icon, emoji, color) }

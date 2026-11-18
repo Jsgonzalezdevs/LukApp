@@ -148,6 +148,7 @@ fun ShellLukApp(
                                     alAbrirPeriodo = { modelo.periodoAbierto.value = true },
                                     alAbrirCategorias = { modelo.categoriasAbierto.value = true },
                                     alAbrirRevisiones = { modelo.revisionesAbierto.value = true },
+                                    alAbrirNombres = { modelo.nombresAbierto.value = true },
                                     tema = tema, alCambiarTema = alCambiarTema,
                                     desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
                                     correo = correo, alCerrarSesion = alCerrarSesion,
@@ -208,6 +209,11 @@ fun ShellLukApp(
             nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
             val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
             if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
+            val nombresPanel by modelo.nombresAbierto.collectAsState()
+            if (nombresPanel) app.lukapp.ui.mas.PantallaNombres(
+                actual, app.lukapp.ui.mas.AccionesNombres(modelo::unirContactos, modelo::separarContactos, modelo::renombrarContacto, modelo::deshacerContacto, modelo::apodarParte),
+                alCerrar = { modelo.nombresAbierto.value = false },
+            )
             val revisionesPanel by modelo.revisionesAbierto.collectAsState()
             if (revisionesPanel) app.lukapp.ui.mas.PantallaRevisiones(
                 actual, modelo::guardarRevision, alAbrirMovimiento = { modelo.revisionesAbierto.value = false; anotar.abrirDetalle(it) },

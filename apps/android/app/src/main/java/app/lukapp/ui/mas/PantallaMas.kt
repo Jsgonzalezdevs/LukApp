@@ -33,7 +33,7 @@ import app.lukapp.ui.tema.PreferenciaTema
 /**
  * AjustesView.tsx. Solo están las filas que funcionan de verdad: Período, Próximos pagos, Contar los ahorros,
  * decisiones financieras, Apariencia, la cuenta y cerrar sesión; más el desbloqueo biométrico, propio de Android.
- * Pendiente (sin filas muertas): Registro automático, Nombres repetidos, Copia de seguridad, Tus datos y Comunidad (abren paneles sin migrar),
+ * Pendiente (sin filas muertas): Registro automático, Copia de seguridad, Tus datos y Comunidad (abren paneles sin migrar),
  * efectivo por separado (Dinero aún no lo desglosa), recordatorio de racha, volver a ver la guía y Premium.
  */
 @Composable
@@ -47,6 +47,7 @@ fun PantallaMas(
     alAbrirPeriodo: () -> Unit,
     alAbrirCategorias: () -> Unit,
     alAbrirRevisiones: () -> Unit,
+    alAbrirNombres: () -> Unit,
     tema: PreferenciaTema,
     alCambiarTema: (PreferenciaTema) -> Unit,
     desbloqueoActivo: Boolean,
@@ -72,7 +73,10 @@ fun PantallaMas(
         Column {
             Text("Tus datos", Modifier.padding(horizontal = 4.dp).padding(bottom = 8.dp), style = LukApp.tipo.xs, color = c.inkFaint)
             Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card)) {
-                Fila("🧭", "Revisar movimientos", "Confirma avisos y conserva el motivo de cada decisión", linea = false, alPulsar = alAbrirRevisiones) {
+                Fila("🧭", "Revisar movimientos", "Confirma avisos y conserva el motivo de cada decisión", linea = true, alPulsar = alAbrirRevisiones) {
+                    Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
+                }
+                Fila("👥", "Nombres repetidos", "Une a la misma persona escrita de dos formas", linea = false, alPulsar = alAbrirNombres) {
                     Icono(Lucide.ChevronRight, tamano = 16.dp, grosor = 2.5f, color = c.inkGhost)
                 }
             }

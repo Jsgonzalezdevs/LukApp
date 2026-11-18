@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.36.0', fecha: '2026-11-17', texto: 'En Android, Más ahora tiene «Nombres repetidos»: une a la misma persona escrita de dos formas, ponle apodos y mira cuánto has movido con cada quien. 👥' },
   { version: '10.35.0', fecha: '2026-11-17', texto: 'En Android, Más ahora tiene «Revisar movimientos»: te avisa de cobros dobles y de montos fuera de lo normal, y guardas tu decisión sin tocar los saldos. 🧭' },
   { version: '10.34.0', fecha: '2026-11-17', texto: 'En Android ya puedes crear tus propias categorías (con emoji, ícono y color), editarlas, archivarlas o eliminarlas desde Más. 🏷️' },
   { version: '10.33.0', fecha: '2026-11-17', texto: 'En Android, Más ahora te deja cambiar el período (semanal, quincenal, mensual con día de inicio, personalizado o sin reinicio) y apagar los próximos pagos y las decisiones financieras en Inicio. 🗓️' },

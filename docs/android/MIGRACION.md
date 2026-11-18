@@ -352,3 +352,8 @@ La lupa de Inicio abre `PantallaBuscar`: busca en TODO el historial (no solo el 
 ### v10.35.0 — Más: Revisar movimientos
 
 `PantallaRevisiones` porta `BandejaRevision.tsx` y `dominio/BandejaRevision.kt` porta `bandejaRevision.ts`. De `senales.ts` solo se llevaron las dos señales que la bandeja usa, «duplicado» (mismo día, monto y contraparte) e «inusual» (3 veces la mediana de la categoría, con 5 muestras mínimo); las otras cuatro solo se leen en el detalle de un movimiento y siguen sin portarse. Avisos pendientes de a 5 con «Mostrar más», «Ver movimiento» (abre el detalle), «Marcar revisado» y «Descartar aviso» (guardan la decisión en `revisiones_dudosas`, sin tocar saldos) y la lista plegable de decisiones. 5 pruebas nuevas. Sin ver en emulador. Diferencia: la fecha de cada decisión usa la parte de fecha en UTC del instante guardado, no la hora local.
+
+
+### v10.36.0 — Más: Nombres repetidos
+
+`PantallaNombres` porta `ContactosView`, `DudaContacto` y `DetalleContacto`; el dominio (`parecido`, `partesDelLibro`, `dudasDeUnion`, `movimientosDeAlias`, `balanceConAlias`, filas) completa `Contactos.kt` desde `lib/contactos.ts`. Cuenta de contrapartes, «Agregar persona» (con cómo aparece en el extracto), UNA pregunta a la vez («¿Son la misma persona?» → «Sí, únelos» absorbe contactos previos y conserva sus apodos; «No, son distintos» se guarda para no volver a preguntar), renombrar, deshacer unión y la hoja de detalle con «Le mandaste / Te mandó», el neto y los apodos (los que usa el dictado). Escribe `contactos` por la RPC. 14 pruebas nuevas (parecido, dudas, partes, balance, filas y las tres operaciones). Sin ver en emulador. Diferencia: la hoja de detalle ocupa toda la pantalla en vez de subir desde abajo.

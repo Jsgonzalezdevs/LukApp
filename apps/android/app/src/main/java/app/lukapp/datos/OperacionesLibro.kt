@@ -5,6 +5,7 @@ import app.lukapp.dominio.CajitaMovimiento
 import app.lukapp.dominio.ajusteHacia
 import app.lukapp.dominio.bogotaDate
 import app.lukapp.dominio.CategoriaPersonal
+import app.lukapp.dominio.Contacto
 import app.lukapp.dominio.nuevaClaveCategoria
 import app.lukapp.dominio.nuevoId
 import app.lukapp.dominio.saldoDeCajita
@@ -89,6 +90,52 @@ object OperacionesLibro {
     }
 
     /** `quitarPresupuesto`: el tope se borra por su categoría (la RPC usa `categoria` como clave de esa tabla). */
+    /**
+     * `almacen.unirContactos`: dice que dos grafías son una persona. Cualquier contacto que ya tuviera alguna de las
+     * dos se absorbe (si no, la misma persona quedaría partida por la acción que debía unirla) y los apodos
+     * de todos sobreviven. `null` si alguna clave queda vacía o son la misma.
+     */
+    fun unirContactos(libro: Libro, a: String, b: String, nombre: String): Cambios? {
+        val claveA = app.lukapp.dominio.normalizarNombre(a); val claveB = app.lukapp.dominio.normalizarNombre(b)
+        if (claveA.isEmpty() || claveB.isEmpty() || claveA == claveB) return null
+        val tocados = libro.contactos.filter { claveA in it.alias || claveB in it.alias }
+        val unido = Contacto(
+            id = tocados.firstOrNull()?.id ?: nuevoId(), nombre = nombre,
+            alias = (listOf(claveA, claveB) + tocados.flatMap { it.alias }).distinct(),
+            separadoDe = tocados.flatMap { it.separadoDe }.distinct().filter { it != claveA && it != claveB },
+            apodos = tocados.flatMap { it.apodos }.distinct(),
+            createdAt = tocados.firstOrNull()?.createdAt ?: Instant.now().toString(), archivedAt = null,
+        )
+        return Cambios(guardar = Libro(contactos = listOf(unido)), borrar = tocados.drop(1).map { it.id }.takeIf { it.isNotEmpty() }?.let { mapOf("contactos" to it) } ?: emptyMap())
+    }
+
+    /** `almacen.separarContactos`: «no son la misma persona» se guarda en el contacto de A para que no se vuelva a preguntar. */
+    fun separarContactos(libro: Libro, a: String, b: String, nombre: String): Cambios? {
+        val claveA = app.lukapp.dominio.normalizarNombre(a); val claveB = app.lukapp.dominio.normalizarNombre(b)
+        if (claveA.isEmpty() || claveB.isEmpty() || claveA == claveB) return null
+        val existente = libro.contactos.firstOrNull { claveA in it.alias }
+        // `nombre` es la grafía para mostrar, nunca la clave normalizada.
+        val contacto = existente?.copy(separadoDe = (existente.separadoDe + claveB).distinct())
+            ?: Contacto(nuevoId(), nombre, listOf(claveA), listOf(claveB), emptyList(), Instant.now().toString(), null)
+        return Cambios(guardar = Libro(contactos = listOf(contacto)))
+    }
+
+    /** `almacen.apodarParte`: pone o quita un apodo; el primero CREA el contacto. `null` si el apodo queda vacío. */
+    fun apodarParte(libro: Libro, clave: String, nombre: String, apodo: String, quitar: Boolean = false): Cambios? {
+        val limpio = app.lukapp.dominio.normalizarNombre(apodo)
+        if (limpio.isEmpty()) return null
+        val base = libro.contactos.firstOrNull { clave in it.alias }
+            ?: Contacto(nuevoId(), nombre, listOf(clave), emptyList(), emptyList(), Instant.now().toString(), null)
+        val apodos = if (quitar) base.apodos.filter { it != limpio } else (base.apodos + limpio).distinct()
+        return Cambios(guardar = Libro(contactos = listOf(base.copy(apodos = apodos))))
+    }
+
+    /** `almacen.actualizarContacto` (renombrar). */
+    fun actualizarContacto(c: Contacto): Cambios = Cambios(guardar = Libro(contactos = listOf(c)))
+
+    /** `almacen.borrarContacto`: deshace una unión; las grafías vuelven a quedar solas. */
+    fun borrarContacto(id: String): Cambios = Cambios(borrar = mapOf("contactos" to listOf(id)))
+
     /** `almacen.guardarRevision`: inserta o reemplaza la decisión por su id. */
     fun guardarRevision(r: app.lukapp.dominio.RevisionDudosa): Cambios = Cambios(guardar = Libro(revisiones = listOf(r)))
 

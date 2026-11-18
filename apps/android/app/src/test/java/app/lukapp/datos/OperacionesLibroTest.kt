@@ -218,4 +218,33 @@ class OperacionesLibroTest {
         assertEquals(mapOf("categorias" to listOf(c.id)), OperacionesLibro.borrarCategoria(c.id).borrar)
         assertNull(OperacionesLibro.actualizarCategoria(c.copy(archivedAt = null)).guardar.categorias.single().archivedAt)
     }
+
+    private fun cont(id: String, alias: List<String>, apodos: List<String> = emptyList(), sep: List<String> = emptyList()) =
+        app.lukapp.dominio.Contacto(id, id, alias, sep, apodos, "2026-01-01T00:00:00.000Z")
+
+    @Test fun unirAbsorbeLosContactosQueYaTeniaYConservaApodosYCreatedAt() {
+        val libro = Libro(contactos = listOf(cont("c1", listOf("juan perez"), listOf("pa")), cont("c2", listOf("juan p"), listOf("jp"), listOf("otro"))))
+        val c = OperacionesLibro.unirContactos(libro, "Juan Perez", "Juan P", "Juan Perez")!!
+        val unido = c.guardar.contactos.single()
+        assertEquals("c1", unido.id); assertEquals(setOf("juan perez", "juan p"), unido.alias.toSet())
+        assertEquals(setOf("pa", "jp"), unido.apodos.toSet()); assertEquals(listOf("otro"), unido.separadoDe)
+        assertEquals(mapOf("contactos" to listOf("c2")), c.borrar)
+        assertNull(OperacionesLibro.unirContactos(libro, "Juan", "JUAN", "Juan"))
+        assertNull(OperacionesLibro.unirContactos(libro, "...", "Juan", "Juan"))
+    }
+    @Test fun separarGuardaElRechazoEnElContactoDeALoCreaConLaGrafiaVisible() {
+        val nuevo = OperacionesLibro.separarContactos(Libro(), "juan perez", "juan carlos perez", "Juan Perez")!!.guardar.contactos.single()
+        assertEquals("Juan Perez", nuevo.nombre); assertEquals(listOf("juan perez"), nuevo.alias); assertEquals(listOf("juan carlos perez"), nuevo.separadoDe)
+        val existente = cont("c1", listOf("juan perez"), sep = listOf("x"))
+        val c = OperacionesLibro.separarContactos(Libro(contactos = listOf(existente)), "juan perez", "otro", "Juan")!!.guardar.contactos.single()
+        assertEquals("c1", c.id); assertEquals(listOf("x", "otro"), c.separadoDe)
+    }
+    @Test fun apodarCreaElContactoPonePoneYQuitaYIgnoraElVacio() {
+        val c = OperacionesLibro.apodarParte(Libro(), "papa", "Papá", "Mi Pá!")!!.guardar.contactos.single()
+        assertEquals(listOf("mi pa"), c.apodos); assertEquals(listOf("papa"), c.alias)
+        val sin = OperacionesLibro.apodarParte(Libro(contactos = listOf(c)), "papa", "Papá", "mi pa", quitar = true)!!.guardar.contactos.single()
+        assertEquals(emptyList<String>(), sin.apodos); assertEquals(c.id, sin.id)
+        assertNull(OperacionesLibro.apodarParte(Libro(), "papa", "Papá", "  "))
+        assertEquals(mapOf("contactos" to listOf("c9")), OperacionesLibro.borrarContacto("c9").borrar)
+    }
 }
