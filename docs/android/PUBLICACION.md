@@ -70,6 +70,8 @@ en la pista de **pruebas internas o cerradas**, con un nombre de paquete aparte 
 
 ## 5. Pasos cuando se decida publicar
 
+Para la pista de pruebas internas hay una guía propia, con las notas de la versión, el borrador de seguridad de datos y la lista de pruebas: [`PRUEBAS_INTERNAS.md`](PRUEBAS_INTERNAS.md).
+
 1. Decidir la sección 1 (pista de pruebas o reemplazo) y, si es una app aparte, cambiar `applicationId`.
 2. Resolver los bloqueos 1 y 2 de la sección 4.
 3. `cd apps/android && ./gradlew testDebugUnitTest bundleRelease` y revisar que el código de salida sea 0

@@ -447,3 +447,8 @@ Probado en el emulador: el campo sale con la fecha real, el selector abre en el 
 ### v10.47.1 — Compilación de lanzamiento
 
 `assembleRelease` fallaba desde antes: `lintVitalAnalyzeRelease` y `generateReleaseLintVitalReportModel` leen la carpeta de recursos de marca (`assetsMarca`) sin declarar que dependen de `copiarLogosBancos` y `copiarMascota`. Ahora todas las tareas de lint declaran esa dependencia. Resultado: APK de lanzamiento sin firmar de 47,9 MB y AAB de 28,2 MB; la de lanzamiento (R8 + reducción de recursos) arranca y muestra el acceso. Ver `PUBLICACION.md`.
+
+
+### v10.47.2 — Guía de pruebas internas
+
+`docs/android/PRUEBAS_INTERNAS.md`: cómo llevar la nativa a la pista de pruebas internas de Play sin tocar la app pública (firma con la llave de EAS, aviso del `versionCode`, pasos en Play Console, notas de la versión, borrador de «Seguridad de los datos», avisos para probadores y lista de pruebas). Se verificó el manifiesto final de lanzamiento: sin `CAMERA` ni almacenamiento. Solo documentación; el código no cambió.
