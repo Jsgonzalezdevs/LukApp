@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.44.1', fecha: '2026-11-17', texto: 'Inicio de la app de Android abre mucho más rápido con un historial largo: los movimientos se muestran por tandas, con un botón para ver más. ⚡' },
   { version: '10.44.0', fecha: '2026-11-17', texto: 'En Android, Más tiene el recordatorio diario de racha: eliges la hora y te avisamos si aún no has anotado gastos ese día. 🔔' },
   { version: '10.43.0', fecha: '2026-11-17', texto: 'En Android ya puedes dictar varios movimientos en una sola frase, como «almuerzo 20 mil y taxi 12 mil»: los ves todos juntos, quitas los que no son y guardas de una vez. 🎙️' },
   { version: '10.42.0', fecha: '2026-11-17', texto: 'En Android ya puedes mover tu plata hablando: «pasa 50 mil de Nequi a mi ahorro», «abono 80 mil a la tarjeta», «mi cuenta quedó en 2 millones» o «me rindieron 10 mil». Revisas todo antes de aplicarlo. 🎙️' },

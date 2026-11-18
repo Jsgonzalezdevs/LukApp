@@ -104,3 +104,21 @@ fun buscarFunciones(texto: String): List<FuncionBuscable> {
     if (palabras.isEmpty()) return emptyList()
     return FUNCIONES_BUSCABLES.filter { f -> palabras.all { p -> sinTildesBusqueda("${f.titulo} ${f.ayuda} ${f.alias}").contains(p) } }
 }
+
+/**
+ * Cuántos movimientos de Inicio se dibujan de una vez. Con el historial entero (cientos de filas) la primera
+ * pantalla tardaba unos 5 s en componerse y el sistema llegaba a avisar «no responde»: se muestran por tandas.
+ */
+const val MOVIMIENTOS_POR_TANDA = 60
+
+/**
+ * Los primeros `minimo` movimientos de una lista ya ordenada del más nuevo al más viejo, SIN partir un día por la mitad:
+ * el total de cada día que se muestra tiene que ser el real, no el de las filas que cupieron.
+ */
+fun primerasTandas(ordenados: List<Transaccion>, minimo: Int): List<Transaccion> {
+    if (ordenados.size <= minimo) return ordenados
+    val corte = ordenados[minimo - 1].occurredOn
+    var fin = minimo
+    while (fin < ordenados.size && ordenados[fin].occurredOn == corte) fin++
+    return ordenados.subList(0, fin)
+}

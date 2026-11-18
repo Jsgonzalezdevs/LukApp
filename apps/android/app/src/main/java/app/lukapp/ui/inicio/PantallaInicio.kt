@@ -203,7 +203,18 @@ fun PantallaInicio(
                     style = LukApp.tipo.de(14, 400, 1.43f), color = c.inkSoft, textAlign = TextAlign.Center,
                 )
             } else {
-                ListaMovimientos(historial, vista.catalogo, privacidad, vista.hoy, alAbrirMovimiento)
+                // Por tandas: componer el historial entero de una vez congelaba la pantalla varios segundos al abrir.
+                var minimo by rememberSaveable(filtro) { mutableStateOf(app.lukapp.dominio.MOVIMIENTOS_POR_TANDA) }
+                val mostrados = remember(historial, minimo) { app.lukapp.dominio.primerasTandas(historial, minimo) }
+                ListaMovimientos(mostrados, vista.catalogo, privacidad, vista.hoy, alAbrirMovimiento)
+                if (mostrados.size < historial.size) {
+                    Text(
+                        "Mostrar más movimientos (${historial.size - mostrados.size} más)",
+                        Modifier.padding(top = 16.dp).fillMaxWidth().clip(Medidas.formaControl).background(c.soft)
+                            .semantics { contentDescription = "Mostrar más movimientos" }.pulsable(alPulsar = { minimo += app.lukapp.dominio.MOVIMIENTOS_POR_TANDA }).padding(vertical = 14.dp),
+                        style = LukApp.tipo.de(15, 600, 1.3f), color = c.ink, textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
 
