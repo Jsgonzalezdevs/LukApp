@@ -293,7 +293,7 @@ fun PantallaEspacios(modelo: ModeloEspacios, alAnotarEnLukApp: (Long, String, St
         AlertDialog(
             onDismissRequest = { borrarGasto = null },
             title = { Text("¿Eliminar este gasto del espacio? Se borra para todos los integrantes.") },
-            confirmButton = { TextButton(onClick = { borrarGasto = null; ambito.launch { modelo.borrarGasto(id) } }) { Text("Eliminar") } },
+            confirmButton = { TextButton(onClick = { borrarGasto = null; ambito.launch { if (modelo.borrarGasto(id)) aviso = "" } }) { Text("Eliminar") } },
             dismissButton = { TextButton(onClick = { borrarGasto = null }) { Text("Cancelar") } },
         )
     }
@@ -301,7 +301,7 @@ fun PantallaEspacios(modelo: ModeloEspacios, alAnotarEnLukApp: (Long, String, St
         AlertDialog(
             onDismissRequest = { confirmarSaldo = false },
             title = { Text("¿Confirmas que ya se transfirieron el dinero y están a paz y salvo? Se borran todos los gastos del espacio, para los dos.") },
-            confirmButton = { TextButton(onClick = { confirmarSaldo = false; ambito.launch { modelo.saldar(activo.id) } }) { Text("Saldar") } },
+            confirmButton = { TextButton(onClick = { confirmarSaldo = false; ambito.launch { if (modelo.saldar(activo.id)) aviso = "🤝 Cuentas saldadas." } }) { Text("Saldar") } },
             dismissButton = { TextButton(onClick = { confirmarSaldo = false }) { Text("Cancelar") } },
         )
     }

@@ -34,6 +34,13 @@ internal fun traducirError(contexto: String, error: Throwable): Exception {
         "schema cache" in m || i("relation .* does not exist|column .* does not exist") -> ErrorLukApp(
             "La base de datos de LukApp está incompleta o desactualizada. Ejecuta, en orden, las migraciones de la carpeta supabase/migrations/ en el SQL Editor de Supabase y vuelve a cargar la app.",
         )
-        else -> ErrorLukApp("$contexto: $m")
+        else -> ErrorLukApp("$contexto: ${mensajeDelServidor(m)}")
     }
 }
+
+/**
+ * Las excepciones de la base traen el mensaje en la primera línea y, debajo, el código, la URL y las cabeceras de la
+ * petición (con el token recortado). Eso es para el log, no para la persona: se queda solo con el mensaje.
+ */
+internal fun mensajeDelServidor(m: String): String =
+    m.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() } ?: m
