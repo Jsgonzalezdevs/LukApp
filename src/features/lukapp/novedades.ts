@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.55.2', fecha: '2026-11-19', texto: 'En la pantalla de entrada quitamos el "o demo" del campo del correo: ahora solo dice "Tu correo", más claro. ✉️' },
   { version: '10.55.1', fecha: '2026-11-18', texto: 'Dejamos al día la guía para publicar y probar la app de Android, con lo que ya está listo y lo que falta comprobar. 📋' },
   { version: '10.55.0', fecha: '2026-11-18', texto: 'En Android ya puedes exportar tus movimientos a Excel y guardar el informe del mes en PDF, directo desde tu teléfono. 📊' },
   { version: '10.54.0', fecha: '2026-11-18', texto: 'En Android ya puedes importar extractos desde una foto, una hoja de Excel o un CSV: se leen en tu teléfono, sin enviarlos a ningún lado. 📸' },

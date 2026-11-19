@@ -429,7 +429,7 @@ export const LoginPanel: React.FC<LoginPanelProps> = ({
                         htmlFor="login-identidad"
                         className="mb-2 block text-[13px] font-bold uppercase tracking-wider text-[var(--fin-ink-faint)]"
                       >
-                        {modo === 'entrar' ? 'Tu correo o demo' : 'Tu correo'}
+                        Tu correo
                       </label>
                       <div className="relative">
                         <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--fin-ink-faint)]" />
