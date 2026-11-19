@@ -18,9 +18,9 @@ Console solo la puede hacer el dueño; aquí está todo lo que se pudo dejar lis
 
 ## 1. Un aviso de versiones (importante)
 
-El `versionCode` sale de `src/version.ts` (10.55.1 → `1055001`). Play **no deja subir un `versionCode` menor o igual a uno
+El `versionCode` sale de `src/version.ts` (10.56.0 → `1056000`). Play **no deja subir un `versionCode` menor o igual a uno
 ya subido en cualquier pista**. Al subir la nativa a pruebas internas, **cualquier actualización futura de la app WebView
-de producción tendrá que salir con un `versionCode` mayor que `1055001`** (hoy la de EAS va en `1014000` y EAS puede
+de producción tendrá que salir con un `versionCode` mayor que `1056000`** (hoy la de EAS va en `1014000` y EAS puede
 auto-incrementar de ahí). Si eso no se puede garantizar, usar un `applicationId` distinto para la nativa en pruebas
 (p. ej. `lukApp.App.nativa`): cambia `applicationId` en `app/build.gradle.kts`, y habría que crear los client ids de Google
 para ese paquete.
@@ -32,8 +32,7 @@ para ese paquete.
 3. **Notas de la versión** (en español, máx. 500 caracteres) — sugerencia:
 
    > Primera versión nativa de LukApp para Android (sin WebView): más rápida, con voz, cámara, recordatorios, metas,
-   > extractos, gastos compartidos y exportar a Excel/PDF. Aún no tiene el buzón de correo de comprobantes ni compra de
-   > Premium. Cuéntanos qué falla: en Más → Cuenta, abajo, está el número de versión.
+   > extractos, gastos compartidos y exportar a Excel/PDF. Aún no tiene compra de Premium. Cuéntanos qué falla: en Más → Cuenta, abajo, está el número de versión.
 
 4. **Revisar y lanzar.** Las pruebas internas no pasan por revisión larga: suele estar disponible en minutos.
 5. Compartir con los probadores el **enlace de aceptación** (Pruebas internas → pestaña Probadores → «Copiar enlace»). Solo
@@ -71,8 +70,8 @@ filtra dispositivos por cámara.
   desde Play devuelve la versión pública.
 - **Google Sign-In** no va a funcionar hasta que existan los client ids Android con el SHA-1 de la firma de Play (se ve en
   Play Console → Integridad de la app). Mientras tanto, entrar con correo y contraseña.
-- La nativa **todavía no tiene**: el buzón de correo de comprobantes de Importar extractos ni compra de Premium dentro de la
-  app. Decirlo para que no se reporten como fallos. Las **Vaquitas** viven solo en el teléfono (como en la web): no se
+- La nativa **todavía no tiene** compra de Premium dentro de la app. El **buzón de comprobantes por correo** está, pero el
+  servidor dice que la recepción no está configurada (ver `PUBLICACION.md`, punto 4.7): ahí solo se verá ese aviso. Decirlo para que no se reporten como fallos. Las **Vaquitas** viven solo en el teléfono (como en la web): no se
   sincronizan y se pierden al desinstalar.
 
 ## 4. Qué probar (30 minutos, en orden de riesgo)

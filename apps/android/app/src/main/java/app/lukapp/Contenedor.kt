@@ -5,6 +5,7 @@ import app.lukapp.datos.Preferencias
 import app.lukapp.datos.PreferenciasCuenta
 import app.lukapp.datos.ClienteAsesor
 import app.lukapp.datos.ClienteEspacios
+import app.lukapp.datos.ClienteCorreo
 import app.lukapp.datos.ClienteExtractos
 import app.lukapp.datos.ClienteCuenta
 import app.lukapp.datos.ClienteFunciones
@@ -62,5 +63,6 @@ class Contenedor(contexto: Context) {
     val funciones = ClienteFunciones(supabase)
     val espacios = ClienteEspacios(supabase)
     val extractos = ClienteExtractos(supabase, http)
+    val correo = ClienteCorreo(supabase, http)
     val cuenta = ClienteCuenta(supabase, http)
 }

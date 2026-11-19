@@ -5,8 +5,11 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.lukapp.datos.ClienteCorreo
 import app.lukapp.datos.ClienteExtractos
 import app.lukapp.dominio.AnalisisResultado
+import app.lukapp.dominio.ComprobanteCorreo
+import app.lukapp.dominio.ResultadoCorreo
 import app.lukapp.dominio.ErrorImportacion
 import app.lukapp.dominio.MAX_BYTES_EXTRACTO
 import app.lukapp.dominio.RespuestaExtracto
@@ -50,9 +53,50 @@ class TrabajoExtracto(
  * Estado de Importar extractos (useAnalista.ts). Cada archivo es un trabajo propio y los trabajos son independientes:
  * uno que falla no frena a los demás. PDF → servidor; foto (ML Kit), Excel .xlsx y CSV → en el teléfono, sin enviarlos.
  */
-class ModeloExtractos(aplicacion: Application, private val cliente: ClienteExtractos) : AndroidViewModel(aplicacion) {
+class ModeloExtractos(aplicacion: Application, private val cliente: ClienteExtractos, private val correo: ClienteCorreo) : AndroidViewModel(aplicacion) {
     private val _trabajos = MutableStateFlow<List<TrabajoExtracto>>(emptyList())
     val trabajos: StateFlow<List<TrabajoExtracto>> = _trabajos.asStateFlow()
+
+    /** La bandeja de comprobantes por correo: se carga al abrir el panel y al pulsar «Actualizar bandeja». */
+    data class EstadoBandeja(
+        val cargando: Boolean = true,
+        val direccion: String = "",
+        val comprobantes: List<ComprobanteCorreo> = emptyList(),
+        val mensaje: String = "",
+        val descargando: String = "",
+    )
+    private val _bandeja = MutableStateFlow(EstadoBandeja())
+    val bandeja: StateFlow<EstadoBandeja> = _bandeja.asStateFlow()
+    private var cargaBandeja: kotlinx.coroutines.Job? = null
+
+    fun cargarBandeja() {
+        cargaBandeja?.cancel()
+        _bandeja.update { it.copy(cargando = true, mensaje = "") }
+        cargaBandeja = viewModelScope.launch {
+            // Como la web: sin dirección no se pide la lista; el motivo se dice tal cual.
+            when (val d = correo.direccion()) {
+                is ResultadoCorreo.Falla -> _bandeja.update { it.copy(cargando = false, mensaje = d.mensaje) }
+                is ResultadoCorreo.Ok -> when (val l = correo.comprobantes()) {
+                    is ResultadoCorreo.Falla -> _bandeja.update { it.copy(cargando = false, direccion = d.valor, mensaje = l.mensaje) }
+                    is ResultadoCorreo.Ok -> _bandeja.update { it.copy(cargando = false, direccion = d.valor, comprobantes = l.valor) }
+                }
+            }
+        }
+    }
+
+    /** Pide la URL firmada y se la entrega a `abrir` (el navegador la descarga, como `location.assign` en la web). */
+    fun descargarAdjunto(comprobanteId: String, adjuntoId: String, abrir: (String) -> Unit) {
+        if (_bandeja.value.descargando.isNotEmpty()) return
+        _bandeja.update { it.copy(descargando = adjuntoId, mensaje = "") }
+        viewModelScope.launch {
+            when (val r = correo.urlAdjunto(comprobanteId, adjuntoId)) {
+                is ResultadoCorreo.Ok -> { _bandeja.update { it.copy(descargando = "") }; abrir(r.valor) }
+                is ResultadoCorreo.Falla -> _bandeja.update { it.copy(descargando = "", mensaje = r.mensaje) }
+            }
+        }
+    }
+
+    fun avisarBandeja(mensaje: String) = _bandeja.update { it.copy(mensaje = mensaje) }
 
     private fun cambiar(id: String, f: (TrabajoExtracto) -> TrabajoExtracto) = _trabajos.update { l -> l.map { if (it.id == id) f(it) else it } }
 

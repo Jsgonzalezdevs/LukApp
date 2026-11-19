@@ -90,6 +90,7 @@ fun PantallaExtractos(vista: VistaInicio, modelo: ModeloExtractos, acciones: Acc
     var cuentaId by rememberSaveable { mutableStateOf(if (cuentas.size == 1) cuentas[0].id else "") }
     var historico by rememberSaveable { mutableStateOf(false) }
     var ahora by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) { modelo.cargarBandeja() }
     val selector = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> if (uris.isNotEmpty()) modelo.elegir(uris) }
     // Un solo reloj para todos los «van Ns», en vez de uno por trabajo.
     val hayEnCurso = trabajos.any { it.fase == FaseTrabajo.SUBIENDO }
@@ -138,6 +139,8 @@ fun PantallaExtractos(vista: VistaInicio, modelo: ModeloExtractos, acciones: Acc
                 }
             }
 
+            BandejaCorreo(modelo)
+
             trabajos.forEach { t ->
                 when (t.fase) {
                     FaseTrabajo.SUBIENDO -> {
@@ -164,6 +167,54 @@ fun PantallaExtractos(vista: VistaInicio, modelo: ModeloExtractos, acciones: Acc
             }
             if (trabajos.isNotEmpty()) Text("Puedes seguir eligiendo más extractos mientras estos terminan.", Modifier.fillMaxWidth(), style = LukApp.tipo.de(13, 400, 1.4f), color = c.inkFaint, textAlign = TextAlign.Center)
         }
+    }
+}
+
+/**
+ * BandejaCorreo de AnalistaView.tsx. Reenviar un comprobante a la dirección personal solo lo deja aquí con remitente y fecha:
+ * no crea movimientos. «Descargar para revisar» abre el archivo en el navegador (como la web) y se importa desde «Elegir archivos».
+ */
+@Composable
+private fun BandejaCorreo(modelo: ModeloExtractos) {
+    val c = LukApp.colores
+    val e by modelo.bandeja.collectAsState()
+    val portapapeles = androidx.compose.ui.platform.LocalClipboardManager.current
+    val enlaces = androidx.compose.ui.platform.LocalUriHandler.current
+    Column(Modifier.fillMaxWidth().clip(Medidas.formaCard).background(c.card).padding(20.dp)) {
+        Text("📩 Recibe comprobantes por correo", style = LukApp.tipo.de(17, 600, 1.3f), color = c.ink)
+        Text(
+            "Reenvía facturas o recibos a tu dirección personal; aparecerán aquí con su remitente y fecha. No se crean movimientos ni se cambia tu saldo sin que revises e importes el archivo.",
+            Modifier.padding(top = 4.dp), style = LukApp.tipo.de(13, 400, 1.5f), color = c.inkSoft,
+        )
+        if (e.direccion.isNotEmpty()) Row(Modifier.padding(top = 12.dp).fillMaxWidth().clip(Medidas.formaControl).background(c.soft).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.text.selection.SelectionContainer(Modifier.weight(1f)) { Text(e.direccion, style = LukApp.tipo.de(13, 600, 1.4f), color = c.ink) }
+            Boton("Copiar", c.card, c.ink) { portapapeles.setText(androidx.compose.ui.text.AnnotatedString(e.direccion)); modelo.avisarBandeja("Dirección copiada.") }
+        }
+        if (e.mensaje.isNotEmpty()) Text(e.mensaje, Modifier.padding(top = 12.dp), style = LukApp.tipo.de(13, 400, 1.5f), color = c.inkSoft)
+        if (e.cargando) Text("Cargando tu bandeja…", Modifier.padding(top = 12.dp), style = LukApp.tipo.de(13, 400, 1.4f), color = c.inkFaint)
+        if (!e.cargando) e.comprobantes.forEach { item ->
+            Column(Modifier.padding(top = 8.dp).fillMaxWidth().clip(Medidas.formaControl).background(c.soft).padding(12.dp)) {
+                Text(item.asunto.ifEmpty { "Comprobante recibido" }, style = LukApp.tipo.de(13, 600, 1.4f), color = c.ink)
+                Text("De ${item.remitente} · ${item.fechaLegible}", Modifier.padding(top = 4.dp), style = LukApp.tipo.de(13, 400, 1.4f), color = c.inkSoft)
+                if (item.adjuntos.isEmpty()) Text("Sin archivos adjuntos", Modifier.padding(top = 4.dp), style = LukApp.tipo.de(13, 400, 1.4f), color = c.inkFaint)
+                item.adjuntos.forEach { a ->
+                    Row(Modifier.padding(top = 8.dp).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("📎 ${a.nombre}", Modifier.weight(1f), style = LukApp.tipo.de(13, 400, 1.4f), color = c.inkFaint)
+                        Text(
+                            if (e.descargando == a.id) "Preparando…" else "Descargar para revisar",
+                            Modifier.alpha(if (e.descargando == a.id) 0.5f else 1f).semantics { contentDescription = "Descargar ${a.nombre}" }
+                                .pulsable(escala = 1f, alPulsar = { modelo.descargarAdjunto(item.id, a.id) { url -> enlaces.openUri(url) } }).padding(horizontal = 8.dp, vertical = 8.dp),
+                            style = LukApp.tipo.de(13, 600, 1.4f), color = c.accent,
+                        )
+                    }
+                }
+            }
+        }
+        Text(
+            "Actualizar bandeja", Modifier.padding(top = 8.dp).alpha(if (e.cargando) 0.5f else 1f).semantics { contentDescription = "Actualizar bandeja" }
+                .pulsable(escala = 1f, alPulsar = { if (!e.cargando) modelo.cargarBandeja() }).padding(vertical = 8.dp),
+            style = LukApp.tipo.de(13, 600, 1.4f), color = c.accent,
+        )
     }
 }
 
