@@ -73,3 +73,11 @@ export interface SuperadminPanelProps {
   tema: 'claro' | 'oscuro';
   onCambiarTema: (tema: 'claro' | 'oscuro') => void;
 }
+
+/** Lo que el panel necesita para mostrar y ajustar la racha de alguien. */
+export interface EstadoRacha {
+  rachaActual: number;
+  rachaMaxima: number;
+  anotadoHoy: boolean;
+  diasRegalados: number;
+}

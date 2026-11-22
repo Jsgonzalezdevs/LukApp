@@ -71,6 +71,8 @@ import {
   type UsoTokensIA,
 } from './server_lib/usoProveedorIA.ts';
 import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
+import { calcularRacha, diasParaSumarRacha } from './src/features/lukapp/lib/racha.ts';
+import { bogotaDate } from './src/features/lukapp/lib/localDate.ts';
 import { validarFirmaWebhookResend } from './server_lib/firmaWebhookResend.ts';
 import {
   centavosWompi,
@@ -152,7 +154,7 @@ const rateLimiter = (maxPeticiones = 120, ventanaMs = 60000) => {
 app.use('/api', rateLimiter(120, 60000));
 // Las acciones que alteran cuentas no necesitan el límite amplio del resto de
 // la API. Es una segunda barrera ante automatización y fuerza bruta.
-app.use(['/api/crear-usuario', '/api/editar-usuario', '/api/solicitudes-superadmin', '/api/superadmin/legal/terminos'], rateLimiter(12, 60000));
+app.use(['/api/crear-usuario', '/api/editar-usuario', '/api/solicitudes-superadmin', '/api/superadmin/legal/terminos', '/api/superadmin/racha'], rateLimiter(12, 60000));
 // Estos límites van antes de leer el cuerpo: así una ráfaga no fuerza a
 // deserializar PDFs, audios o prompts costosos antes de ser rechazada.
 app.use('/api/analizar-extracto', rateLimiter(6, 60000));
@@ -1498,6 +1500,122 @@ app.post('/api/solicitudes-superadmin/:id/aprobar', async (req, res) => {
     return res.json({ success: true });
   } catch (error: any) {
     return res.status(500).json({ error: error.message || 'No se pudo aprobar la solicitud.' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Racha regalada (Superadmin)
+// La racha sale de los días con movimientos; el equipo puede sumar días sin
+// tocar el libro de la persona. Se calcula aquí para que el panel muestre el
+// número real sin necesitar acceso a las finanzas de nadie.
+// ----------------------------------------------------------------------
+const MAX_DIAS_RACHA_POR_VEZ = 365;
+
+const leerRachaDe = async (cliente: ClienteAdmin, userId: string) => {
+  const fechasMovimientos: string[] = [];
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await cliente
+      .from('transacciones')
+      .select('occurred_on')
+      .eq('user_id', userId)
+      .order('occurred_on', { ascending: false })
+      .range(desde, desde + 999);
+    if (error) throw new Error(`No se pudieron leer los movimientos: ${error.message}`);
+    fechasMovimientos.push(...(data ?? []).map((f) => String(f.occurred_on)));
+    if (!data || data.length < 1000) break;
+  }
+
+  const { data: regalos, error: errorRegalos } = await cliente
+    .from('racha_dias_regalados')
+    .select('fecha')
+    .eq('user_id', userId);
+  if (errorRegalos) throw new Error(`No se pudieron leer los días regalados: ${errorRegalos.message}`);
+  const diasRegalados = (regalos ?? []).map((f) => String(f.fecha));
+
+  const hoy = bogotaDate();
+  const movimientos = [...new Set(fechasMovimientos)].map((occurredOn) => ({ occurredOn }));
+  const info = calcularRacha(movimientos, hoy, diasRegalados);
+  return { hoy, info, fechasMovimientos, diasRegalados };
+};
+
+const resumenRacha = (r: Awaited<ReturnType<typeof leerRachaDe>>) => ({
+  rachaActual: r.info.rachaActual,
+  rachaMaxima: r.info.rachaMaxima,
+  anotadoHoy: r.info.anotadoHoy,
+  diasRegalados: r.diasRegalados.length,
+});
+
+app.get('/api/superadmin/racha', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+
+  try {
+    const acceso = await exigirPermiso(cliente, token, 'editar_usuario');
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const userId = typeof req.query.userId === 'string' ? req.query.userId : '';
+    if (!userId) return res.status(400).json({ error: 'Falta el usuario.' });
+
+    return res.status(200).json(resumenRacha(await leerRachaDe(cliente, userId)));
+  } catch (error: any) {
+    console.error('Error leyendo la racha:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
+  }
+});
+
+app.post('/api/superadmin/racha', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'No authorization header' });
+
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+
+  try {
+    const acceso = await exigirPermiso(cliente, token, 'editar_usuario');
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+    const { userId, accion, dias } = req.body ?? {};
+    if (typeof userId !== 'string' || userId === '') {
+      return res.status(400).json({ error: 'Falta el usuario.' });
+    }
+
+    const ctx = await contextoDe(cliente, userId);
+    if (!ctx.existe) return res.status(404).json({ error: 'Ese usuario ya no existe.' });
+
+    if (accion === 'quitar') {
+      const { error } = await cliente.from('racha_dias_regalados').delete().eq('user_id', userId);
+      if (error) throw error;
+      await registrarAuditoria(cliente, acceso.email, 'Quitó los días de racha regalados', ctx.objetivoEmail || userId, undefined, acceso.userId);
+      return res.status(200).json(resumenRacha(await leerRachaDe(cliente, userId)));
+    }
+
+    if (accion !== 'sumar' || !Number.isInteger(dias) || dias < 1 || dias > MAX_DIAS_RACHA_POR_VEZ) {
+      return res.status(400).json({ error: `Escribe cuántos días sumar, de 1 a ${MAX_DIAS_RACHA_POR_VEZ}.` });
+    }
+
+    const antes = await leerRachaDe(cliente, userId);
+    const nuevos = diasParaSumarRacha([...antes.fechasMovimientos, ...antes.diasRegalados], antes.hoy, dias);
+    const { error } = await cliente.from('racha_dias_regalados').upsert(
+      nuevos.map((fecha) => ({ user_id: userId, fecha, otorgado_por: acceso.userId })),
+      { onConflict: 'user_id,fecha', ignoreDuplicates: true },
+    );
+    if (error) throw error;
+
+    const despues = await leerRachaDe(cliente, userId);
+    await registrarAuditoria(cliente,
+      acceso.email,
+      'Sumó días de racha',
+      ctx.objetivoEmail || userId,
+      `+${dias} días (racha ${antes.info.rachaActual} → ${despues.info.rachaActual})`,
+      acceso.userId,
+    );
+    return res.status(200).json(resumenRacha(despues));
+  } catch (error: any) {
+    console.error('Error sumando racha:', error);
+    return res.status(500).json({ error: error.message || 'Error interno del servidor' });
   }
 });
 

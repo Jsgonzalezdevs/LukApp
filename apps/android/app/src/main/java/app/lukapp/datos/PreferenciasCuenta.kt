@@ -1,0 +1,255 @@
+package app.lukapp.datos
+
+import app.lukapp.dominio.ConfigPeriodo
+import app.lukapp.dominio.PERIODO_POR_DEFECTO
+import app.lukapp.dominio.RegimenGmf
+import app.lukapp.dominio.UVT_POR_DEFECTO
+import app.lukapp.dominio.ValorUvt
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.auth
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
+
+/** Ajustes de la cuenta que la web sincroniza en `user_metadata` (usePreferencias.ts). */
+data class AjustesCuenta(
+    val contarAhorros: Boolean = true,
+    val efectivoSeparado: Boolean = false,
+    val decisiones: Boolean = true,
+    val proximosPagos: Boolean = true,
+    val privacidad: Boolean = false,
+    val periodo: ConfigPeriodo = PERIODO_POR_DEFECTO,
+    val cuentaFavoritaId: String? = null,
+    val alertasPresupuesto: Boolean = true,
+    val umbralAlertaPct: Int = 80,
+    val onboardingTerminado: Boolean = false,
+    val nombre: String = "",
+    val recordatorioActivo: Boolean = false,
+    val recordatorioHora: String = "20:30",
+    val guiaBasicaVista: Boolean = false,
+    val guiaSecciones: List<String> = emptyList(),
+    val uvt: ValorUvt = UVT_POR_DEFECTO,
+    /** `null` distingue la selección automática (las cuentas financieras) de haber desmarcado todo. */
+    val cuentasGmf: List<String>? = null,
+    val regimenGmf: String = RegimenGmf.DISTRIBUIDO,
+    val cuentaExentaGmf: String? = null,
+)
+
+/** `leerUvt` de usePreferencias.ts: un valor guardado a mano puede venir roto y con él se calcula un tope en pesos. */
+internal fun uvtDe(e: JsonElement?): ValorUvt {
+    val o = e as? JsonObject ?: return UVT_POR_DEFECTO
+    val anio = (o["anio"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return UVT_POR_DEFECTO
+    val pesos = (o["pesos"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return UVT_POR_DEFECTO
+    if (!pesos.isFinite() || pesos <= 0) return UVT_POR_DEFECTO
+    val fuente = (o["fuente"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: ""
+    return ValorUvt(anio.toInt(), Math.round(pesos), fuente)
+}
+
+/** `leerRegimen`: cualquier cosa distinta de «marcada» es el régimen vigente desde el 13 de diciembre de 2024. */
+internal fun regimenDe(e: JsonElement?): String =
+    if ((e as? JsonPrimitive)?.takeIf { it.isString }?.content == RegimenGmf.MARCADA) RegimenGmf.MARCADA else RegimenGmf.DISTRIBUIDO
+
+/** `leerListaOpcional`: sin la clave o con algo que no es lista, `null` y la app elige sola. */
+internal fun listaOpcionalDe(e: JsonElement?): List<String>? =
+    (e as? kotlinx.serialization.json.JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content }
+
+
+/**
+ * Lee los ajustes desde `user_metadata` y escribe con `updateUser`, igual que
+ * `sincronizarDesdeSupabase`/`guardarEnSupabase` de la web. Así un cambio en el
+ * computador aparece en el teléfono y al revés. Los valores por defecto son los
+ * mismos de `leerBooleano(clave, porDefecto)` en usePreferencias.ts.
+ */
+class PreferenciasCuenta(private val supabase: SupabaseClient) {
+    private val _ajustes = MutableStateFlow(AjustesCuenta())
+    val ajustes: StateFlow<AjustesCuenta> = _ajustes.asStateFlow()
+
+    fun recargar() {
+        val meta = supabase.auth.currentUserOrNull()?.userMetadata ?: JsonObject(emptyMap())
+        fun bool(c: String, d: Boolean) = (meta[c] as? JsonPrimitive)?.booleanOrNull ?: d
+        _ajustes.value = AjustesCuenta(
+            contarAhorros = bool("finanzas:resumen:ahorro", true),
+            efectivoSeparado = bool("finanzas:resumen:efectivo-separado", false),
+            decisiones = bool("finanzas:resumen:decisiones", true),
+            proximosPagos = bool("finanzas:inicio:proximos-pagos", true),
+            privacidad = bool("finanzas:modo-privacidad", false),
+            periodo = (meta["finanzas:periodo"] as? JsonObject)?.let(::periodoDe) ?: PERIODO_POR_DEFECTO,
+            // La web guarda el id como texto, o un falso/vacío para "ninguna".
+            alertasPresupuesto = bool("finanzas:presupuestos:alertas-activas", true),
+            // `setUmbralAlertaPct` acota a 1..100 y guarda un entero.
+            umbralAlertaPct = ((meta["finanzas:presupuestos:umbral-alerta"] as? JsonPrimitive)?.doubleOrNull ?: 80.0).let { Math.round(it).toInt().coerceIn(1, 100) },
+            onboardingTerminado = bool("finanzas:onboarding:terminado", false),
+            recordatorioActivo = bool("finanzas:recordatorio-racha:activo", false),
+            recordatorioHora = (meta["finanzas:recordatorio-racha:hora"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "20:30",
+            guiaBasicaVista = bool("finanzas:guia:basica", false),
+            guiaSecciones = (meta["finanzas:guia:secciones"] as? kotlinx.serialization.json.JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.takeIf { p -> p.isString }?.content } ?: emptyList(),
+            nombre = (meta["finanzas:onboarding:nombre"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: "",
+            uvt = uvtDe(meta["finanzas:gmf:uvt"]),
+            cuentasGmf = listaOpcionalDe(meta["finanzas:gmf:cuentas"]),
+            regimenGmf = regimenDe(meta["finanzas:gmf:regimen"]),
+            cuentaExentaGmf = (meta["finanzas:gmf:cuenta-exenta"] as? JsonPrimitive)?.takeIf { it.isString }?.content,
+            cuentaFavoritaId = (meta["finanzas:cuenta-favorita"] as? JsonPrimitive)?.takeIf { it.isString }?.content?.ifBlank { null },
+        )
+    }
+
+    suspend fun privacidad(valor: Boolean) {
+        _ajustes.update { it.copy(privacidad = valor) }
+        guardar("finanzas:modo-privacidad", JsonPrimitive(valor))
+    }
+
+    /** `useMostrarAhorro`: si los ahorros cuentan en el total de Dinero. Se guarda como booleano, igual que la web. */
+    suspend fun contarAhorros(valor: Boolean) {
+        _ajustes.update { it.copy(contarAhorros = valor) }
+        guardar("finanzas:resumen:ahorro", JsonPrimitive(valor))
+    }
+
+    /** `useMostrarProximosPagosInicio`. */
+    suspend fun proximosPagos(valor: Boolean) {
+        _ajustes.update { it.copy(proximosPagos = valor) }
+        guardar("finanzas:inicio:proximos-pagos", JsonPrimitive(valor))
+    }
+
+    /** `useMostrarDecisiones`. */
+    suspend fun decisiones(valor: Boolean) {
+        _ajustes.update { it.copy(decisiones = valor) }
+        guardar("finanzas:resumen:decisiones", JsonPrimitive(valor))
+    }
+
+    /** `setPeriodo`: guarda el objeto con las mismas claves que lee `leerPeriodo` (las opcionales solo si existen). */
+    suspend fun periodo(valor: ConfigPeriodo) {
+        _ajustes.update { it.copy(periodo = valor) }
+        guardar("finanzas:periodo", buildJsonObject {
+            put("frecuencia", JsonPrimitive(valor.frecuencia))
+            put("desfaseDiasMensual", JsonPrimitive(valor.desfaseDiasMensual))
+            valor.diasPersonalizados?.let { put("diasPersonalizados", JsonPrimitive(it.toLong())) }
+            valor.fechaAnclaPersonalizada?.let { put("fechaAnclaPersonalizada", JsonPrimitive(it)) }
+        })
+    }
+
+    /** `useOnboarding.guardarNombre`. */
+    suspend fun nombre(valor: String) {
+        _ajustes.update { it.copy(nombre = valor) }
+        guardar("finanzas:onboarding:nombre", JsonPrimitive(valor))
+    }
+
+    /** `useOnboarding.terminar`: se queda pegado, haber pasado por la bienvenida es un hecho sobre la persona, no sobre su plata. */
+    suspend fun terminarOnboarding() {
+        _ajustes.update { it.copy(onboardingTerminado = true) }
+        guardar("finanzas:onboarding:terminado", JsonPrimitive(true))
+    }
+
+    /** `activarRecordatorio` / `desactivarRecordatorio`. */
+    suspend fun recordatorioActivo(valor: Boolean) {
+        _ajustes.update { it.copy(recordatorioActivo = valor) }
+        guardar("finanzas:recordatorio-racha:activo", JsonPrimitive(valor))
+    }
+
+    /** `cambiarHora`. */
+    suspend fun recordatorioHora(hora: String) {
+        _ajustes.update { it.copy(recordatorioHora = hora) }
+        guardar("finanzas:recordatorio-racha:hora", JsonPrimitive(hora))
+    }
+
+    /** `useGuiaApp.terminarBasica`. */
+    suspend fun terminarGuiaBasica() {
+        _ajustes.update { it.copy(guiaBasicaVista = true) }
+        guardar("finanzas:guia:basica", JsonPrimitive(true))
+    }
+
+    /** `useGuiaApp.marcarSeccion`: sin repetir, y el estado local manda aunque no se pueda guardar. */
+    suspend fun marcarSeccionGuia(id: String) {
+        if (id in _ajustes.value.guiaSecciones) return
+        val lista = _ajustes.value.guiaSecciones + id
+        _ajustes.update { it.copy(guiaSecciones = lista) }
+        guardar("finanzas:guia:secciones", kotlinx.serialization.json.JsonArray(lista.map { JsonPrimitive(it) }))
+    }
+
+    /** `useGuiaApp.reiniciar`: «Volver a ver la guía» borra las dos marcas, quien la pide quiere el recorrido entero. */
+    suspend fun reiniciarGuia() {
+        _ajustes.update { it.copy(guiaBasicaVista = false, guiaSecciones = emptyList()) }
+        guardar("finanzas:guia:basica", JsonPrimitive(false))
+        guardar("finanzas:guia:secciones", kotlinx.serialization.json.JsonArray(emptyList()))
+    }
+
+    /** `setAlertasActivas`. */
+    suspend fun alertasPresupuesto(valor: Boolean) {
+        _ajustes.update { it.copy(alertasPresupuesto = valor) }
+        guardar("finanzas:presupuestos:alertas-activas", JsonPrimitive(valor))
+    }
+
+    /** `setUmbralAlertaPct`: acota a 1..100 y guarda un entero, como la web. */
+    suspend fun umbralAlerta(pct: Int) {
+        val v = pct.coerceIn(1, 100)
+        _ajustes.update { it.copy(umbralAlertaPct = v) }
+        guardar("finanzas:presupuestos:umbral-alerta", JsonPrimitive(v))
+    }
+
+    /** `setCuentaFavorita`: marcar o desmarcar la cuenta principal (null se guarda como null, igual que la web). */
+    suspend fun cuentaFavorita(id: String?) {
+        _ajustes.update { it.copy(cuentaFavoritaId = id) }
+        guardar("finanzas:cuenta-favorita", if (id == null) kotlinx.serialization.json.JsonNull else JsonPrimitive(id))
+    }
+
+    /** `useAjustesGmf.setUvt`: el objeto con las claves que lee `leerUvt`. */
+    suspend fun uvt(valor: ValorUvt) {
+        _ajustes.update { it.copy(uvt = valor) }
+        guardar("finanzas:gmf:uvt", buildJsonObject {
+            put("anio", JsonPrimitive(valor.anio))
+            put("pesos", JsonPrimitive(valor.pesos))
+            put("fuente", JsonPrimitive(valor.fuente))
+        })
+    }
+
+    /** `useAjustesGmf.setCuentasGmf`: sin repetidos. */
+    suspend fun cuentasGmf(ids: List<String>) {
+        val lista = ids.distinct()
+        _ajustes.update { it.copy(cuentasGmf = lista) }
+        guardar("finanzas:gmf:cuentas", kotlinx.serialization.json.JsonArray(lista.map { JsonPrimitive(it) }))
+    }
+
+    /** `useAjustesGmf.setRegimen`. */
+    suspend fun regimenGmf(valor: String) {
+        _ajustes.update { it.copy(regimenGmf = valor) }
+        guardar("finanzas:gmf:regimen", JsonPrimitive(valor))
+    }
+
+    /** `useAjustesGmf.setCuentaExentaId`: «Ninguna» se guarda como null, igual que la web. */
+    suspend fun cuentaExentaGmf(id: String?) {
+        _ajustes.update { it.copy(cuentaExentaGmf = id) }
+        guardar("finanzas:gmf:cuenta-exenta", if (id == null) kotlinx.serialization.json.JsonNull else JsonPrimitive(id))
+    }
+
+    private suspend fun guardar(clave: String, valor: JsonElement) {
+        // Igual que la web: si falla, el interruptor sigue funcionando en este teléfono.
+        runCatching { supabase.auth.updateUser { data = buildJsonObject { put(clave, valor) } } }
+    }
+
+    /** `leerPeriodo` de usePreferencias.ts:669-699, con las mismas validaciones: un valor pisado vuelve al mensual. */
+    private fun periodoDe(o: JsonObject): ConfigPeriodo? {
+        val frecuencia = (o["frecuencia"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
+        if (frecuencia !in FRECUENCIAS_VALIDAS) return null
+        val desfase = (o["desfaseDiasMensual"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return null
+        if (!desfase.isFinite() || desfase < 0 || desfase > 27) return null
+        val dias = (o["diasPersonalizados"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull
+            ?.takeIf { it.isFinite() }?.let { Math.round(it).coerceIn(1, 90).toDouble() }
+        val ancla = (o["fechaAnclaPersonalizada"] as? JsonPrimitive)?.takeIf { it.isString }?.content
+            ?.takeIf { v -> runCatching { java.time.LocalDate.parse(v).toString() == v }.getOrDefault(false) }
+            ?: if (frecuencia == "personalizado") app.lukapp.dominio.bogotaDate() else null
+        return ConfigPeriodo(frecuencia, desfase.toInt(), dias, ancla)
+    }
+
+    private companion object {
+        // FRECUENCIAS_VALIDAS de usePreferencias.ts:652.
+        val FRECUENCIAS_VALIDAS = setOf("semanal", "quincenal", "quincenas-mes", "mensual", "personalizado", "todo-el-tiempo")
+    }
+}

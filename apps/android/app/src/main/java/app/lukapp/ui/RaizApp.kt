@@ -1,0 +1,558 @@
+package app.lukapp.ui
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import app.lukapp.datos.EstadoSincronizacion
+import app.lukapp.nativo.Haptico
+import app.lukapp.nativo.rememberHapticos
+import app.lukapp.ui.acceso.Girando
+import app.lukapp.ui.comun.pulsable
+import app.lukapp.ui.iconos.Icono
+import app.lukapp.ui.iconos.Lucide
+import app.lukapp.ui.inicio.PantallaInicio
+import app.lukapp.ui.shell.BarraNavegacion
+import app.lukapp.ui.shell.Seccion
+import app.lukapp.ui.tema.LukApp
+import app.lukapp.ui.tema.Medidas
+import kotlinx.coroutines.launch
+
+/**
+ * LukAppShell.tsx + LukAppPanel: columna de hasta 720dp con 16dp a los lados,
+ * barra flotante abajo y fundido de 0.18s al cambiar de sección (sin salida).
+ * El margen superior es el de `data-native` (clamp(1.25rem, 3vh, 1.75rem))
+ * sobre la barra de estado, porque así se ve hoy la app Android.
+ */
+@Composable
+fun ShellLukApp(
+    modelo: ModeloApp,
+    anotar: app.lukapp.ui.anotar.ModeloAnotar,
+    asesor: app.lukapp.ui.asesor.ModeloAsesor,
+    insights: app.lukapp.ui.inicio.ModeloInsights,
+    funciones: app.lukapp.ui.mas.ModeloFunciones,
+    espacios: app.lukapp.ui.dinero.ModeloEspacios,
+    extractos: app.lukapp.ui.dinero.ModeloExtractos,
+    cuenta: app.lukapp.ui.mas.ModeloCuenta,
+    alCerrarSesion: () -> Unit,
+    desbloqueoActivo: Boolean,
+    biometriaDisponible: Boolean,
+    alCambiarDesbloqueo: (Boolean) -> Unit,
+    tema: app.lukapp.ui.tema.PreferenciaTema,
+    alCambiarTema: (app.lukapp.ui.tema.PreferenciaTema) -> Unit,
+    correo: String?,
+) {
+    val c = LukApp.colores
+    val seccion by modelo.seccion.collectAsState()
+    val vista by modelo.vista.collectAsState()
+    val estado by modelo.estadoSincronizacion.collectAsState()
+    val error by modelo.errorSincronizacion.collectAsState()
+    val hapticos = rememberHapticos()
+
+    // Atrás por capas (inventario §1.4): Calendario → Mes, sección ≠ Inicio → Inicio, Inicio → salir.
+    BackHandler(enabled = seccion != Seccion.INICIO) {
+        modelo.seccion.value = if (seccion == Seccion.CALENDARIO) Seccion.MES else Seccion.INICIO
+    }
+
+    val altoPantalla = LocalConfiguration.current.screenHeightDp
+    val margenSuperior = (altoPantalla * 0.03f).coerceIn(20f, 28f).dp
+
+    val anclasGuia = remember { app.lukapp.ui.guia.AnclasGuia() }
+    // El aviso de racha vive en una alarma del sistema: aquí se mantiene al día con lo que dice la cuenta y con si hoy ya se anotó.
+    val contextoApp = androidx.compose.ui.platform.LocalContext.current
+    val ajustesRecordatorio = vista?.ajustes
+    LaunchedEffect(ajustesRecordatorio?.recordatorioActivo, ajustesRecordatorio?.recordatorioHora) {
+        ajustesRecordatorio?.let { app.lukapp.nativo.RecordatorioRacha.aplicar(contextoApp, it.recordatorioActivo, it.recordatorioHora) }
+    }
+    LaunchedEffect(vista?.racha?.anotadoHoy, vista?.hoy) {
+        vista?.let { app.lukapp.nativo.RecordatorioRacha.marcarAnotadoHoy(contextoApp, it.racha.anotadoHoy, it.hoy) }
+    }
+    androidx.compose.runtime.CompositionLocalProvider(app.lukapp.ui.guia.LocalAnclasGuia provides anclasGuia) {
+    Box(Modifier.fillMaxSize().background(c.bg)) {
+        val actual = vista
+        if (actual == null || (estado == EstadoSincronizacion.CARGANDO && actual.libro == app.lukapp.dominio.Libro())) {
+            PantallaCarga()
+        } else {
+            var refrescando by remember { mutableStateOf(false) }
+            LaunchedEffect(estado) { if (estado != EstadoSincronizacion.CARGANDO && refrescando) { refrescando = false; hapticos.disparar(Haptico.SELECTION) } }
+            AnimatedContent(
+                targetState = seccion,
+                transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(0)) },
+                label = "seccion",
+            ) { s ->
+                val contenido: @Composable () -> Unit = {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            // La barra de estado queda fuera del desplazamiento: en la app actual el
+                            // contenido empieza debajo de ella y nunca pasa por detrás.
+                            .windowInsetsPadding(WindowInsets.statusBars)
+                            // El chat se desplaza por dentro y deja la caja de texto fija abajo.
+                            .then(if (s == Seccion.ASESOR) Modifier else Modifier.verticalScroll(rememberScrollState()))
+                            .padding(top = margenSuperior),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Column(Modifier.widthIn(max = 720.dp).fillMaxWidth().then(if (s == Seccion.ASESOR) Modifier.fillMaxHeight() else Modifier).padding(horizontal = 16.dp)) {
+                            AvisoSincronizacion(estado, error)
+                            when (s) {
+                                Seccion.INICIO -> PantallaInicio(
+                                    vista = actual,
+                                    alElegirPeriodo = modelo::elegirPeriodo,
+                                    alAlternarPrivacidad = modelo::alternarPrivacidad,
+                                    alVerMes = { modelo.seccion.value = Seccion.MES },
+                                    alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
+                                    alAbrirMovimiento = anotar::abrirDetalle,
+                                    insights = insights,
+                                    alBuscar = { modelo.buscarAbierto.value = true },
+                                    alVerPagos = { modelo.calendarioAbierto.value = true },
+                                    // Como `promptInicial`: pasa al Asesor y la pregunta sale sola.
+                                    alConsultarAsesor = { pregunta -> modelo.seccion.value = Seccion.ASESOR; asesor.enviar(pregunta, actual) },
+                                )
+                                Seccion.DINERO -> app.lukapp.ui.dinero.PantallaDinero(
+                                    vista = actual,
+                                    alElegirPeriodo = modelo::elegirPeriodo,
+                                    alAjustes = { modelo.seccion.value = Seccion.AJUSTES },
+                                    alAbrirCuenta = { modelo.cuentaAbierta.value = it.id },
+                                    alAbrirPasivos = { modelo.panelPasivos.value = it },
+                                    alCrear = { modelo.nuevaCajitaTipo.value = it },
+                                    alAbrirMetas = { modelo.metasAbierto.value = true },
+                                    alAbrirGmf = { modelo.gmfAbierto.value = true },
+                                    alAbrirDivision = { modelo.divisionAbierta.value = true },
+                                    alAbrirVaquitas = { modelo.vaquitasAbierto.value = true },
+                                    alAbrirEspacios = { modelo.espaciosAbierto.value = true },
+                                    alAbrirExtractos = { modelo.extractosAbierto.value = true },
+                                )
+                                Seccion.MES -> app.lukapp.ui.mes.PantallaMes(actual, modelo::elegirPeriodo, alAbrirCalendario = { modelo.calendarioAbierto.value = true },
+                                    topes = app.lukapp.ui.mes.AccionesTopes(modelo::fijarPresupuesto, modelo::quitarPresupuesto, modelo::alertasPresupuesto, modelo::umbralAlerta),
+                                    alAbrirPagosFijos = { modelo.pagosFijosAbierto.value = true }, alAbrirProyeccion = { modelo.proyeccionAbierta.value = true },
+                                    alAbrirResumen = { modelo.resumenMes.value = it })
+                                Seccion.AJUSTES -> app.lukapp.ui.mas.PantallaMas(
+                                    contarAhorros = actual.ajustes.contarAhorros, alContarAhorros = modelo::contarAhorros,
+                                    proximosPagos = actual.ajustes.proximosPagos, alProximosPagos = modelo::proximosPagos,
+                                    decisiones = actual.ajustes.decisiones, alDecisiones = modelo::decisiones,
+                                    alAbrirPeriodo = { modelo.periodoAbierto.value = true },
+                                    alAbrirCategorias = { modelo.categoriasAbierto.value = true },
+                                    alAbrirRevisiones = { modelo.revisionesAbierto.value = true },
+                                    alAbrirNombres = { modelo.nombresAbierto.value = true },
+                                    alAbrirRespaldo = { modelo.respaldoAbierto.value = true },
+                                    alAbrirFunciones = { modelo.funcionesAbierto.value = true },
+                                    alAbrirCuenta = { modelo.cuentaAbiertaPanel.value = true },
+                                    alVolverAVerGuia = { modelo.reiniciarGuia(); modelo.seccion.value = Seccion.INICIO },
+                                    recordatorioActivo = actual.ajustes.recordatorioActivo, recordatorioHora = actual.ajustes.recordatorioHora,
+                                    alRecordatorio = modelo::recordatorioActivo, alHoraRecordatorio = modelo::recordatorioHora,
+                                    tema = tema, alCambiarTema = alCambiarTema,
+                                    desbloqueoActivo = desbloqueoActivo, biometriaDisponible = biometriaDisponible, alCambiarDesbloqueo = alCambiarDesbloqueo,
+                                    correo = correo, alCerrarSesion = alCerrarSesion,
+                                )
+                                Seccion.ASESOR -> app.lukapp.ui.asesor.PantallaAsesor(asesor, actual, modelo::fijarPresupuesto, modelo::crearMeta, { tx -> modelo.seccion.value = Seccion.INICIO; anotar.abrirMovimiento(tx) }, Modifier.weight(1f))
+                                else -> PantallaSinMigrar(s)
+                            }
+                            Box(Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
+                            Box(Modifier.size(136.dp))
+                        }
+                    }
+                }
+                // Pull to refresh solo en Inicio (usePullToRefresh.ts); háptico light al soltar.
+                if (s == Seccion.INICIO) {
+                    PullToRefreshBox(
+                        isRefreshing = refrescando,
+                        onRefresh = { refrescando = true; hapticos.disparar(Haptico.LIGHT); modelo.sincronizar() },
+                    ) { contenido() }
+                } else contenido()
+            }
+            BarraNavegacion(
+                actual = seccion,
+                alElegir = { modelo.seccion.value = it },
+                modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 16.dp),
+            )
+            val buscar by modelo.buscarAbierto.collectAsState()
+            if (buscar) app.lukapp.ui.inicio.PantallaBuscar(
+                actual, alAbrirMovimiento = anotar::abrirDetalle, alCerrar = { modelo.buscarAbierto.value = false },
+                alAbrirFuncion = { id ->
+                    modelo.buscarAbierto.value = false
+                    when (id) {
+                        "topes" -> modelo.seccion.value = Seccion.MES
+                        "dinero" -> modelo.seccion.value = Seccion.DINERO
+                        "asesor" -> modelo.seccion.value = Seccion.ASESOR
+                        "calendario" -> modelo.calendarioAbierto.value = true
+                        "recurrentes" -> modelo.pagosFijosAbierto.value = true
+                    }
+                },
+            )
+            CapaAnotar(anotar, actual, seccion, estadoGuardado = if (estado == EstadoSincronizacion.SIN_CONEXION) "Guardado en este dispositivo · pendiente de sincronizar" else "Sincronizado con tu cuenta", alGuardado = { fecha -> modelo.elegirPeriodo(app.lukapp.dominio.claveDePeriodo(fecha, actual.ajustes.periodo)) })
+            val pasivos by modelo.panelPasivos.collectAsState()
+            pasivos?.let { tipo ->
+                app.lukapp.ui.pasivos.PantallaPasivos(
+                    tipo = tipo, vista = actual, alCerrar = { modelo.panelPasivos.value = null },
+                    acciones = app.lukapp.ui.pasivos.AccionesPasivo(
+                        fijarSaldo = modelo::fijarSaldo, comprar = modelo::comprar, abonar = modelo::abonar,
+                        eliminar = { modelo.eliminarCuenta(it) },
+                        crear = { nombre, icono, t, saldo -> modelo.crearCajita(nombre, icono, t, null, null, null, false, "COP", saldo) },
+                        actualizar = modelo::actualizarCajita,
+                    ),
+                )
+            }
+            val historialAsesor by asesor.historialAbierto.collectAsState()
+            if (historialAsesor && seccion == Seccion.ASESOR) app.lukapp.ui.asesor.HojaHistorial(asesor)
+            val calendario by modelo.calendarioAbierto.collectAsState()
+            if (calendario) app.lukapp.ui.calendario.PantallaCalendario(actual, alCerrar = { modelo.calendarioAbierto.value = false }, alAnadirPagoFijo = { modelo.pagosFijosAbierto.value = true })
+            val nuevaCajita by modelo.nuevaCajitaTipo.collectAsState()
+            nuevaCajita?.let { t -> app.lukapp.ui.dinero.PantallaNuevaCajita(t, actual, app.lukapp.ui.dinero.AccionCrearCajita(modelo::crearCajita), alCerrar = { modelo.nuevaCajitaTipo.value = null }) }
+            val pagosFijos by modelo.pagosFijosAbierto.collectAsState()
+            if (pagosFijos) app.lukapp.ui.calendario.PantallaPagosFijos(actual, app.lukapp.ui.calendario.AccionesPagosFijos(modelo::crearPagoFijo, modelo::actualizarPagoFijo, modelo::borrarPagoFijo, modelo::confirmarPagoFijo), alCerrar = { modelo.pagosFijosAbierto.value = false })
+            val cuentaPanel by modelo.cuentaAbiertaPanel.collectAsState()
+            if (cuentaPanel) app.lukapp.ui.mas.PantallaCuenta(
+                cuenta, estado, modelo.errorSincronizacion.collectAsState().value, modelo.cambiosPendientes,
+                alSincronizar = modelo::sincronizarYEsperar, alCerrarSesion = alCerrarSesion, alCerrar = { modelo.cuentaAbiertaPanel.value = false },
+            )
+            // Un libro con movimientos nunca vuelve a pasar por la bienvenida, aunque la bandera no haya llegado de la cuenta.
+            if (!actual.ajustes.onboardingTerminado && actual.libro.transacciones.isEmpty() && estado != app.lukapp.datos.EstadoSincronizacion.CARGANDO) {
+                app.lukapp.ui.inicio.PantallaBienvenida(modelo::terminarBienvenida)
+            }
+            val metasPanel by modelo.metasAbierto.collectAsState()
+            if (metasPanel) app.lukapp.ui.dinero.PantallaMetas(
+                actual, app.lukapp.ui.dinero.AccionesMetas(modelo::crearMetaCompleta, modelo::actualizarMeta, modelo::borrarMeta),
+                alCerrar = { modelo.metasAbierto.value = false },
+            )
+            val extractosPanel by modelo.extractosAbierto.collectAsState()
+            if (extractosPanel) app.lukapp.ui.dinero.PantallaExtractos(
+                actual, extractos, app.lukapp.ui.dinero.AccionesExtractos(modelo::importarExtracto, modelo::completarMovimiento),
+                alCerrar = { modelo.extractosAbierto.value = false },
+            )
+            val espaciosPanel by modelo.espaciosAbierto.collectAsState()
+            if (espaciosPanel) app.lukapp.ui.dinero.PantallaEspacios(
+                espacios,
+                alAnotarEnLukApp = { monto, descripcion, categoria ->
+                    modelo.espaciosAbierto.value = false
+                    anotar.abrirMovimiento(app.lukapp.dominio.voz.movimientoEnBlanco().copy(kind = "gasto", amount = monto, category = categoria, description = descripcion))
+                },
+                alCerrar = { modelo.espaciosAbierto.value = false },
+            )
+            val vaquitasPanel by modelo.vaquitasAbierto.collectAsState()
+            if (vaquitasPanel) {
+                val contextoVaquitas = androidx.compose.ui.platform.LocalContext.current
+                val almacenVaquitas = remember(modelo.usuarioId) { app.lukapp.datos.AlmacenVaquitas(contextoVaquitas, modelo.usuarioId) }
+                app.lukapp.ui.dinero.PantallaVaquitas(almacenVaquitas, alCerrar = { modelo.vaquitasAbierto.value = false })
+            }
+            val divisionPanel by modelo.divisionAbierta.collectAsState()
+            if (divisionPanel) app.lukapp.ui.dinero.PantallaDivision(
+                alAnotarMiParte = { monto, descripcion ->
+                    modelo.divisionAbierta.value = false
+                    anotar.abrirMovimiento(app.lukapp.dominio.voz.movimientoEnBlanco().copy(kind = "gasto", amount = monto, category = "comida", description = descripcion))
+                },
+                alCerrar = { modelo.divisionAbierta.value = false },
+            )
+            val gmfPanel by modelo.gmfAbierto.collectAsState()
+            if (gmfPanel) app.lukapp.ui.dinero.PantallaGmf(
+                actual,
+                app.lukapp.ui.dinero.AccionesGmf(modelo::cambiarUvt, modelo::cambiarCuentasGmf, modelo::cambiarRegimenGmf, modelo::cambiarCuentaExentaGmf),
+                alCerrar = { modelo.gmfAbierto.value = false },
+            )
+            val funcionesPanel by modelo.funcionesAbierto.collectAsState()
+            if (funcionesPanel) app.lukapp.ui.mas.PantallaFunciones(funciones, alCerrar = { modelo.funcionesAbierto.value = false })
+            val reportePanel by modelo.reporteAbierto.collectAsState()
+            if (reportePanel) {
+                // `mesCalendarioActivo` de LukAppApp.tsx: con período mensual el mes del período; con otro, el mes de hoy.
+                val mesInforme = if (actual.ajustes.periodo.frecuencia == app.lukapp.dominio.FrecuenciaPeriodo.MENSUAL) app.lukapp.dominio.monthKey(if (actual.clavePeriodo.length > 7) actual.clavePeriodo else "${actual.clavePeriodo}-01") else actual.hoy.take(7)
+                app.lukapp.ui.mas.PantallaReporte(actual, mesInforme, correo, alCerrar = { modelo.reporteAbierto.value = false })
+            }
+            val respaldoPanel by modelo.respaldoAbierto.collectAsState()
+            if (respaldoPanel) app.lukapp.ui.mas.PantallaRespaldo(actual.libro, actual.hoy, modelo::restaurarLibro, alGenerarInforme = { modelo.respaldoAbierto.value = false; modelo.reporteAbierto.value = true }, alCerrar = { modelo.respaldoAbierto.value = false })
+            val nombresPanel by modelo.nombresAbierto.collectAsState()
+            if (nombresPanel) app.lukapp.ui.mas.PantallaNombres(
+                actual, app.lukapp.ui.mas.AccionesNombres(modelo::unirContactos, modelo::separarContactos, modelo::renombrarContacto, modelo::deshacerContacto, modelo::apodarParte),
+                alCerrar = { modelo.nombresAbierto.value = false },
+            )
+            val revisionesPanel by modelo.revisionesAbierto.collectAsState()
+            if (revisionesPanel) app.lukapp.ui.mas.PantallaRevisiones(
+                actual, modelo::guardarRevision, alAbrirMovimiento = { modelo.revisionesAbierto.value = false; anotar.abrirDetalle(it) },
+                alCerrar = { modelo.revisionesAbierto.value = false },
+            )
+            val categoriasPanel by modelo.categoriasAbierto.collectAsState()
+            if (categoriasPanel) app.lukapp.ui.mas.PantallaCategorias(
+                actual, app.lukapp.ui.mas.AccionesCategorias(modelo::crearCategoria, modelo::actualizarCategoria, modelo::archivarCategoria, modelo::borrarCategoria),
+                alCerrar = { modelo.categoriasAbierto.value = false },
+            )
+            val periodoPanel by modelo.periodoAbierto.collectAsState()
+            if (periodoPanel) app.lukapp.ui.mas.PantallaPeriodo(actual.ajustes.periodo, modelo::cambiarPeriodo, alCerrar = { modelo.periodoAbierto.value = false })
+            val proyeccion by modelo.proyeccionAbierta.collectAsState()
+            if (proyeccion) app.lukapp.ui.mes.PantallaProyeccion(actual.contexto.forecast, alCerrar = { modelo.proyeccionAbierta.value = false })
+            val resumen by modelo.resumenMes.collectAsState()
+            resumen?.let { mes ->
+                val tarjetas = remember(actual.libro.transacciones, mes, actual.hoy) { app.lukapp.dominio.resumenDelMes(actual.libro.transacciones, mes, actual.hoy) }
+                app.lukapp.ui.mes.PantallaResumen(tarjetas, actual.catalogo, actual.hoy, alCerrar = { modelo.resumenMes.value = null })
+            }
+            val abierta by modelo.cuentaAbierta.collectAsState()
+            actual.libro.cajitas.firstOrNull { it.id == abierta && it.archivedAt == null }?.let { cuenta ->
+                app.lukapp.ui.cuenta.PantallaDetalleCuenta(
+                    cajita = cuenta, vista = actual,
+                    alCerrar = { modelo.cuentaAbierta.value = null },
+                    alFijarSaldo = { modelo.fijarSaldo(cuenta.id, it) },
+                    alAlternarFavorita = { modelo.alternarFavorita(cuenta.id) },
+                    alEliminar = { modelo.eliminarCuenta(cuenta.id) },
+                    alTransferir = { destino, monto -> modelo.transferir(cuenta.id, destino, monto) },
+                )
+            }
+            // La guía va al final: encima de todo, señalando lo que hay debajo.
+            val hayPanel by modelo.hayPanelAbierto.collectAsState()
+            val ajustesGuia = actual.ajustes
+            when (app.lukapp.dominio.guiaPendiente(ajustesGuia.onboardingTerminado, ajustesGuia.guiaBasicaVista, ajustesGuia.guiaSecciones, seccion.name.lowercase(), hayPanel)) {
+                app.lukapp.dominio.GuiaPendiente.BASICA -> app.lukapp.ui.guia.GuiaApp(app.lukapp.ui.guia.PASOS_BASICOS, alCerrar = modelo::terminarGuiaBasica)
+                app.lukapp.dominio.GuiaPendiente.SECCION -> app.lukapp.ui.guia.PASOS_POR_SECCION[seccion]?.let { pasos ->
+                    app.lukapp.ui.guia.GuiaApp(pasos, alCerrar = { modelo.marcarSeccionGuia(seccion.name.lowercase()) })
+                }
+                app.lukapp.dominio.GuiaPendiente.NINGUNA -> Unit
+            }
+        }
+    }
+    }
+}
+
+/** PantallaCarga.tsx: fondo solo, spinner a los 350 ms, sin logo. */
+@Composable
+fun PantallaCarga() {
+    val c = LukApp.colores
+    var mostrar by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(350); mostrar = true }
+    Box(Modifier.fillMaxSize().background(c.bg), contentAlignment = Alignment.Center) {
+        if (mostrar) Box(Modifier.size(28.dp)) { Girando(Lucide.LoaderCircle, 28.dp, c.inkSoft.copy(alpha = 0.7f)) }
+    }
+}
+
+/** El aviso de LukAppApp.tsx:997-1000: tarjeta ámbar con ícono de 16 y texto de 13. */
+@Composable
+private fun AvisoSincronizacion(estado: EstadoSincronizacion, error: String?) {
+    val c = LukApp.colores
+    val texto = when {
+        estado == EstadoSincronizacion.SIN_CONEXION -> "Sin conexión. Tus cambios se guardan en este teléfono y se envían al volver la señal."
+        estado == EstadoSincronizacion.ERROR && error != null -> error
+        else -> return
+    }
+    Row(
+        Modifier.padding(bottom = 16.dp).fillMaxWidth()
+            .background(c.warnBg, Medidas.formaCard).padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icono(if (estado == EstadoSincronizacion.SIN_CONEXION) Lucide.CloudOff else Lucide.AlertTriangle, tamano = 16.dp, color = c.warnInk)
+        Text(texto, style = LukApp.tipo.xs, color = c.warnInk)
+    }
+}
+
+/**
+ * Estado honesto de una sección que todavía no tiene versión nativa. Solo
+ * existe en esta compilación de desarrollo: la app publicada sigue siendo la
+ * WebView hasta alcanzar paridad (docs/android/MIGRACION.md).
+ */
+@Composable
+private fun PantallaSinMigrar(seccion: Seccion) {
+    val c = LukApp.colores
+    Column(Modifier.fillMaxWidth().padding(top = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(seccion.etiqueta, style = LukApp.tipo.tituloXl, color = c.ink)
+        Text(
+            "Esta sección todavía no está migrada a la app nativa. Mientras tanto se usa en la app publicada.",
+            Modifier.padding(top = 12.dp), style = LukApp.tipo.secundario, color = c.inkSoft, textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/**
+ * La barra de anotar con todo lo que abre: capa de dictado, Captura y avisos.
+ * Como en LukAppApp.tsx, la barra se oculta en Asesor y Más y con cualquier capa abierta.
+ */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.CapaAnotar(
+    anotar: app.lukapp.ui.anotar.ModeloAnotar,
+    vista: VistaInicio,
+    seccion: Seccion,
+    estadoGuardado: String,
+    alGuardado: (String) -> Unit,
+) {
+    val dictado by anotar.dictado.collectAsState()
+    val pendiente by anotar.pendiente.collectAsState()
+    val aviso by anotar.aviso.collectAsState()
+    val detalle by anotar.detalle.collectAsState()
+    val editando by anotar.editando.collectAsState()
+    val guardado by anotar.guardado.collectAsState()
+    val comando by anotar.comando.collectAsState()
+    val contexto = androidx.compose.ui.platform.LocalContext.current
+    val multiples by anotar.multiples.collectAsState()
+    val escaneando by anotar.escaneando.collectAsState()
+    var eligiendoFoto by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    // Foto del comprobante: cámara del sistema (sin pedir permiso de cámara) o galería con el selector de fotos del sistema.
+    var fotoPendiente by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<android.net.Uri?>(null) }
+    val tomarFoto = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { listo ->
+        if (listo) fotoPendiente?.let { anotar.escanear(contexto, it) }
+    }
+    val elegirFoto = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) anotar.escanear(contexto, uri)
+    }
+    val hapticos = rememberHapticos()
+    val pedirMicrofono = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { concedido ->
+        anotar.microfonoBloqueado(!concedido)
+        if (concedido) { hapticos.disparar(Haptico.HEAVY); anotar.empezarDictado() }
+    }
+    val alMicrofono: () -> Unit = {
+        when {
+            dictado.fase == app.lukapp.ui.anotar.FaseDictado.PROCESANDO -> {}
+            androidx.core.content.ContextCompat.checkSelfPermission(contexto, android.Manifest.permission.RECORD_AUDIO) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED -> { hapticos.disparar(Haptico.HEAVY); anotar.empezarDictado() }
+            // El permiso se pide al tocar el micrófono, nunca al abrir la app.
+            else -> pedirMicrofono.launch(android.Manifest.permission.RECORD_AUDIO)
+        }
+    }
+    val hayCapa = dictado.abierto || pendiente != null || aviso != null || detalle != null || editando != null || comando != null || multiples != null
+    if (!hayCapa && seccion != Seccion.ASESOR && seccion != Seccion.AJUSTES) {
+        app.lukapp.ui.anotar.BarraAnotar(
+            escuchando = false,
+            procesando = false,
+            bloqueado = dictado.microfonoBloqueado,
+            alManual = anotar::abrirManual,
+            alMicrofono = alMicrofono,
+            alCamara = { eligiendoFoto = true },
+            escaneando = escaneando,
+            // 12dp sobre la barra inferior de 60dp (`--fin-nav-h + 0.75rem`).
+            modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 72.dp),
+        )
+    }
+    if (eligiendoFoto) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { eligiendoFoto = false },
+            title = { Text("Escanear comprobante") },
+            text = { Text("Lee el texto de la foto en tu teléfono y lo interpreta como un movimiento. Antes de guardar, lo revisas.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    eligiendoFoto = false
+                    val carpeta = java.io.File(contexto.cacheDir, "compartidos").apply { mkdirs() }
+                    val uri = androidx.core.content.FileProvider.getUriForFile(contexto, "${contexto.packageName}.archivos", java.io.File(carpeta, "comprobante.jpg"))
+                    fotoPendiente = uri
+                    tomarFoto.launch(uri)
+                }) { Text("Tomar foto") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    eligiendoFoto = false
+                    elegirFoto.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) { Text("Elegir de la galería") }
+            },
+        )
+    }
+    if (dictado.abierto) {
+        app.lukapp.ui.anotar.CapaDictado(
+            estado = dictado,
+            alCancelar = { hapticos.disparar(Haptico.LIGHT); anotar.cancelarDictado() },
+            alTerminar = { hapticos.disparar(Haptico.MEDIUM); anotar.terminarDictado() },
+            alContinuar = anotar::continuarConTexto,
+            alEscribir = { anotar.cancelarDictado(); anotar.abrirManual() },
+        )
+    }
+    val p = pendiente
+    if (p != null) {
+        app.lukapp.ui.anotar.PantallaCaptura(
+            parsed = p,
+            libro = vista.libro,
+            catalogo = vista.catalogo,
+            cuentaPorDefecto = vista.ajustes.cuentaFavoritaId,
+            alGuardar = { b ->
+                val ok = anotar.guardar(b)
+                if (ok) alGuardado(b.occurredOn ?: app.lukapp.dominio.bogotaDate())
+                ok
+            },
+            alCancelar = anotar::cerrarCaptura,
+            alReintentarVoz = if (p.raw.isNotBlank()) ({ anotar.cerrarCaptura(); alMicrofono() }) else null,
+        )
+    }
+    val varios = multiples
+    if (varios != null) {
+        app.lukapp.ui.anotar.MultiCapturaModal(
+            detectados = varios, cajitas = vista.libro.cajitas, catalogo = vista.catalogo,
+            alGuardar = { lista ->
+                val ok = anotar.guardarMultiples(lista, vista.ajustes.cuentaFavoritaId)
+                if (ok) alGuardado(app.lukapp.dominio.bogotaDate())
+                ok
+            },
+            alCancelar = anotar::cerrarMultiples,
+        )
+    }
+    val orden = comando
+    if (orden != null) {
+        app.lukapp.ui.anotar.ConfirmarComandoVoz(
+            comando = orden, cajitas = vista.libro.cajitas,
+            saldos = remember(vista.libro) { app.lukapp.dominio.saldosPorCajita(vista.libro.movimientos, vista.libro.transacciones, app.lukapp.dominio.idsPasivos(vista.libro.cajitas)) },
+            alConfirmar = anotar::confirmarComando, alCancelar = anotar::cerrarComando,
+            alRepetir = { anotar.cerrarComando(); alMicrofono() },
+        )
+    }
+    val d = detalle
+    if (d != null) {
+        app.lukapp.ui.anotar.DetalleMovimiento(d, vista.catalogo, vista.libro, vista.hoy, alCerrar = anotar::cerrarDetalle, alEditar = { anotar.editar(d) }, alBorrar = { anotar.borrar(d.id) })
+    }
+    val e = editando
+    if (e != null) {
+        app.lukapp.ui.anotar.HojaEditar(
+            tx = e, libro = vista.libro, catalogo = vista.catalogo,
+            alGuardar = { b ->
+                val ok = anotar.actualizar(e, b)
+                // Si el día cambió de período, saltar a donde quedó (handleUpdate).
+                if (ok) alGuardado(b.occurredOn ?: e.occurredOn)
+                ok
+            },
+            alCancelar = anotar::cerrarEdicion,
+        )
+    }
+    app.lukapp.ui.anotar.AvisoGuardado(
+        guardado = guardado,
+        estado = estadoGuardado,
+        alDeshacer = anotar::deshacer,
+        alCerrar = anotar::cerrarGuardado,
+        // `pb-[safe-bottom + 7rem]`: encima de la barra de anotar y la de navegación.
+        modifier = Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 112.dp),
+    )
+    val a = aviso
+    if (a != null) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = anotar::cerrarAviso,
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { anotar.cerrarAviso(); anotar.abrirManual() }) { Text("Anotar a mano") } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = anotar::cerrarAviso) { Text("Cerrar") } },
+            text = { Text(a, style = LukApp.tipo.secundario) },
+        )
+    }
+}

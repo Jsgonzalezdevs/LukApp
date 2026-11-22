@@ -35,12 +35,18 @@ export interface InfoRacha {
  *
  * Si hoy aún no has anotado pero anotaste ayer, la racha sigue viva
  * para motivarte a registrar hoy sin penalizarte antes de medianoche.
+ *
+ * `diasRegalados` son días que el equipo sumó desde el superadmin (por ejemplo,
+ * para devolver una racha perdida por una falla). Cuentan para la racha, pero
+ * no como "anotado hoy" ni en los días del mes: el recordatorio y el resumen
+ * siguen hablando de lo que la persona de verdad registró.
  */
 export const calcularRacha = (
-  transacciones: readonly Transaction[],
+  transacciones: readonly Pick<Transaction, 'occurredOn'>[],
   hoy: string,
+  diasRegalados: readonly string[] = [],
 ): InfoRacha => {
-  if (transacciones.length === 0) {
+  if (transacciones.length === 0 && diasRegalados.length === 0) {
     return {
       rachaActual: 0,
       rachaMaxima: 0,
@@ -58,15 +64,18 @@ export const calcularRacha = (
     new Set(transacciones.map((t) => t.occurredOn).filter((f): f is string => Boolean(f))),
   ).sort((a, b) => b.localeCompare(a));
 
-  const fechaSet = new Set(fechasUnicas);
-  const anotadoHoy = fechaSet.has(hoy);
+  const anotadoHoy = fechasUnicas.includes(hoy);
+  const fechasRacha = Array.from(new Set([...fechasUnicas, ...diasRegalados]))
+    .sort((a, b) => b.localeCompare(a));
+  const fechaSet = new Set(fechasRacha);
+  const cuentaHoy = fechaSet.has(hoy);
   const ayer = shiftDays(hoy, -1);
-  const anotadoAyer = fechaSet.has(ayer);
+  const cuentaAyer = fechaSet.has(ayer);
 
   // 2. Calcular racha actual
   let rachaActual = 0;
-  if (anotadoHoy || anotadoAyer) {
-    let cursor = anotadoHoy ? hoy : ayer;
+  if (cuentaHoy || cuentaAyer) {
+    let cursor = cuentaHoy ? hoy : ayer;
     while (fechaSet.has(cursor)) {
       rachaActual += 1;
       cursor = shiftDays(cursor, -1);
@@ -75,9 +84,9 @@ export const calcularRacha = (
 
   // 3. Calcular racha histórica máxima
   let rachaMaxima = 0;
-  if (fechasUnicas.length > 0) {
+  if (fechasRacha.length > 0) {
     // Orden ascendente para medir rachas pasadas
-    const fechasAsc = [...fechasUnicas].sort((a, b) => a.localeCompare(b));
+    const fechasAsc = [...fechasRacha].sort((a, b) => a.localeCompare(b));
     let rachaTemp = 1;
     rachaMaxima = 1;
 
@@ -115,4 +124,31 @@ export const calcularRacha = (
     proximoHito,
     diasParaProximoHito,
   };
+};
+
+/**
+ * Los días que hay que regalar para que la racha crezca en `dias`.
+ *
+ * Se rellenan hacia atrás desde justo antes de la racha viva, así el número
+ * sube sin inventar movimientos de hoy. Si no hay racha viva, se arranca desde
+ * ayer: la persona la conserva si anota hoy. Si el relleno toca una racha
+ * vieja, se unen y la racha puede quedar por encima de lo pedido.
+ */
+export const diasParaSumarRacha = (
+  fechasQueCuentan: Iterable<string>,
+  hoy: string,
+  dias: number,
+): string[] => {
+  const fechas = new Set(fechasQueCuentan);
+  const ayer = shiftDays(hoy, -1);
+  let cursor = fechas.has(hoy) ? hoy : ayer;
+  while (fechas.has(cursor)) cursor = shiftDays(cursor, -1);
+
+  const nuevos: string[] = [];
+  while (nuevos.length < dias) {
+    // Un día que ya cuenta no se regala dos veces: se salta y se sigue.
+    if (!fechas.has(cursor)) nuevos.push(cursor);
+    cursor = shiftDays(cursor, -1);
+  }
+  return nuevos;
 };

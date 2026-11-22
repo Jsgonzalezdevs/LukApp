@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El ícono animado del splash de Android 12+ se recorta a un círculo de 160dp
+     dentro de un lienzo de 240dp: el inset deja el logo entero, como en Expo (112dp). -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/logo_arranque_img"
+    android:inset="64dp" />
