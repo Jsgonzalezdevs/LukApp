@@ -3,13 +3,16 @@ import { CalendarDays, Flame, Settings2 } from 'lucide-react';
 import type { Transaction } from '../types';
 import { calcularRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
+import { useRachaServidor } from '../data/useRachaServidor';
 
 export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, hoy, onAjustes }: {
   periodo: string; opciones: { clave: string; etiqueta: string }[]; onPeriodo: (clave: string) => void;
   movimientos: readonly Transaction[]; hoy: string; onAjustes: () => void;
 }) {
   const [rachaAbierta, setRachaAbierta] = useState(false);
-  const racha = calcularRacha(movimientos, hoy);
+  const anotadoHoy = movimientos.some((m) => m.occurredOn === hoy);
+  const servidor = useRachaServidor(`${hoy}:${anotadoHoy}`);
+  const racha = calcularRacha(movimientos, hoy, servidor.diasProtegidos);
   return <>
     <div className="flex min-w-0 items-center justify-between gap-2">
       <label className="relative flex min-w-0 items-center gap-2 rounded-full bg-[var(--fin-soft)] px-3 py-2 text-[15px] font-semibold">
@@ -25,6 +28,6 @@ export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, hoy,
         <button type="button" onClick={onAjustes} aria-label="Ajustes" className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"><Settings2 className="h-4 w-4" /></button>
       </div>
     </div>
-    {rachaAbierta && <RachaModal infoRacha={racha} onCerrar={() => setRachaAbierta(false)} />}
+    {rachaAbierta && <RachaModal infoRacha={racha} hoy={hoy} servidor={servidor} onCerrar={() => setRachaAbierta(false)} />}
   </>;
 }

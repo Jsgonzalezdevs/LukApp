@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.16.0', fecha: '2026-11-22', texto: 'Mantener la racha ahora da premios: 🛡️ ganas un protector cada 7 días que salva un día perdido, 🎁 al llegar a 30, 100 y 365 días te regalamos 7, 30 y 90 días de Premium, y 🎉 cada hito se celebra con su tarjeta. En el ranking ya puedes ver quién ganó la semana (se reinicia cada lunes) y retar a tus amigos de un espacio compartido. Y si tu racha está en juego por la tarde, te avisamos con una notificación. 🔥🏆', },
+  { version: '10.15.0', fecha: '2026-11-21', texto: 'Llegó el ranking de racha: mira quién lleva más días seguidos anotando en LukApp y cuánto te falta para pasar a quien va justo arriba. Ahora tu racha tiene ligas (Bronce, Plata, Oro, Diamante, Leyenda), barra de progreso al siguiente hito, calendario de tus últimos 28 días y un botón para presumirla. Si quieres, puedes ocultarte del ranking. Y si tu racha está en peligro por la tarde, te avisamos en Inicio. 🔥🏆', },
   { version: '10.14.0', fecha: '2026-11-11', texto: 'La app de Android ya te deja entrar o crear tu cuenta con Google: se abre Google en tu navegador y vuelves a LukApp con la sesión lista. Si tu app es más vieja, te avisamos para que la actualices desde Google Play. 📲🔑' },
   { version: '10.13.1', fecha: '2026-11-11', texto: 'El checklist de la contraseña ahora se marca con un verde más fuerte y vivo, para que veas de una qué requisitos ya cumples. ✅' },
   { version: '10.13.0', fecha: '2026-11-11', texto: 'Ya puedes entrar o crear tu cuenta con Google, sin inventar otra contraseña. Funciona en la página y en la app de Android. 🚀' },

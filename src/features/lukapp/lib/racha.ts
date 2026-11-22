@@ -25,6 +25,10 @@ export interface InfoRacha {
   anotadoHoy: boolean;
   diasAnotadosMes: number;
   ultimoDiaAnotado: string | null;
+  /** Los días con movimientos, para pintar el calendario de la racha. */
+  diasAnotados: ReadonlySet<string>;
+  /** Días salvados con un protector: cuentan para la racha, pero no son movimientos. */
+  diasProtegidos: ReadonlySet<string>;
   hitosAlcanzados: readonly HitoRacha[];
   proximoHito: HitoRacha | null;
   diasParaProximoHito: number | null;
@@ -39,14 +43,17 @@ export interface InfoRacha {
 export const calcularRacha = (
   transacciones: readonly Transaction[],
   hoy: string,
+  diasProtegidos: readonly string[] = [],
 ): InfoRacha => {
-  if (transacciones.length === 0) {
+  if (transacciones.length === 0 && diasProtegidos.length === 0) {
     return {
       rachaActual: 0,
       rachaMaxima: 0,
       anotadoHoy: false,
       diasAnotadosMes: 0,
       ultimoDiaAnotado: null,
+      diasAnotados: new Set(),
+      diasProtegidos: new Set(),
       hitosAlcanzados: [],
       proximoHito: HITOS_RACHA[0],
       diasParaProximoHito: HITOS_RACHA[0].dias,
@@ -54,12 +61,14 @@ export const calcularRacha = (
   }
 
   // 1. Obtener conjunto ordenado descendente de fechas únicas con movimientos
-  const fechasUnicas = Array.from(
-    new Set(transacciones.map((t) => t.occurredOn).filter((f): f is string => Boolean(f))),
-  ).sort((a, b) => b.localeCompare(a));
+  const reales = new Set(transacciones.map((t) => t.occurredOn).filter((f): f is string => Boolean(f)));
+  const protegidos = new Set(diasProtegidos.filter((f) => !reales.has(f) && f <= hoy));
+  // La racha se mide sobre movimientos y protectores juntos; todo lo demás
+  // (días del mes, último día anotado) habla solo de lo que la persona anotó.
+  const fechasUnicas = Array.from(new Set([...reales, ...protegidos])).sort((a, b) => b.localeCompare(a));
 
   const fechaSet = new Set(fechasUnicas);
-  const anotadoHoy = fechaSet.has(hoy);
+  const anotadoHoy = reales.has(hoy);
   const ayer = shiftDays(hoy, -1);
   const anotadoAyer = fechaSet.has(ayer);
 
@@ -97,7 +106,7 @@ export const calcularRacha = (
 
   // 4. Días anotados en el mes en curso
   const mesActual = hoy.slice(0, 7);
-  const diasAnotadosMes = fechasUnicas.filter((f) => f.startsWith(mesActual)).length;
+  const diasAnotadosMes = [...reales].filter((f) => f.startsWith(mesActual)).length;
 
   // 5. Hitos de racha
   const mayorRacha = Math.max(rachaActual, rachaMaxima);
@@ -110,7 +119,9 @@ export const calcularRacha = (
     rachaMaxima,
     anotadoHoy,
     diasAnotadosMes,
-    ultimoDiaAnotado: fechasUnicas[0] ?? null,
+    ultimoDiaAnotado: [...reales].sort((a, b) => b.localeCompare(a))[0] ?? null,
+    diasAnotados: reales,
+    diasProtegidos: protegidos,
     hitosAlcanzados,
     proximoHito,
     diasParaProximoHito,
