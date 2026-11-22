@@ -84,8 +84,8 @@ class ModeloApp(
             totales = monthTotals(delPeriodo),
             contexto = construirContextoFinanciero(libro, hoy, ajustes.periodo),
             preparacion = preparacionInicio(libro),
-            // La web pasa los movimientos DEL PERÍODO a calcularRacha (InicioView.tsx:158-161).
-            racha = calcularRacha(delPeriodo, hoy, regalados),
+            // Con todo el historial, igual que la web: con solo el período, la racha se cortaba el día 1.
+            racha = calcularRacha(libro.transacciones, hoy, regalados),
             diasRegaladosRacha = regalados,
             catalogo = hacerCatalogo(libro.categorias),
             ajustes = ajustes,

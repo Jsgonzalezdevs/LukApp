@@ -158,9 +158,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
     }
   };
 
+  // Con todo el historial, no solo el período: una racha que empezó el mes
+  // pasado se cortaría el día 1 y no coincidiría con la de Dinero ni el superadmin.
   const infoRacha = useMemo(
-    () => calcularRacha(movimientos, today || new Date().toISOString().slice(0, 10), diasRegaladosRacha),
-    [movimientos, today, diasRegaladosRacha],
+    () => calcularRacha(historial, today || new Date().toISOString().slice(0, 10), diasRegaladosRacha),
+    [historial, today, diasRegaladosRacha],
   );
 
   const insightsVisibles = useMemo(() => {

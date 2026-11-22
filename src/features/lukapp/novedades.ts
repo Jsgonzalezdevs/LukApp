@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '10.57.1', fecha: '2026-11-22', texto: 'Arreglamos la racha en Inicio: si empezó el mes pasado, se cortaba el día 1. Ahora cuenta todos tus días seguidos, igual que en Dinero. 🔥' },
   { version: '10.57.0', fecha: '2026-11-21', texto: 'Si tu racha se cortó por algo que no fue culpa tuya, ahora el equipo de LukApp puede devolverte esos días. Se suman a tu racha sin crear movimientos en tu historial. 🔥' },
   { version: '10.56.0', fecha: '2026-11-19', texto: 'En la app de Android, Importar extractos ya trae el buzón de comprobantes: tienes una dirección de correo personal, le reenvías tus facturas y recibos y aparecen ahí con quién los mandó y cuándo, listos para descargar y revisar antes de importar. 📩' },
   { version: '10.55.2', fecha: '2026-11-19', texto: 'En la pantalla de entrada quitamos el "o demo" del campo del correo: ahora solo dice "Tu correo", más claro. ✉️' },

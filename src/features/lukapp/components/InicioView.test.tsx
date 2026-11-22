@@ -59,3 +59,15 @@ describe('Inicio — saldo e historial', () => {
   });
 
 });
+
+describe('Inicio — racha', () => {
+  it('cuenta la racha con todo el historial aunque empiece en el período anterior', () => {
+    const datos = entrada(true);
+    const dia = (fecha: string): Transaction => ({ id: `tx-${fecha}`, description: 'Almuerzo', kind: 'gasto', category: 'comida', amountCop: 1000, occurredOn: fecha, cuentaId: 'efectivo', rawTranscript: '', createdAt: `${fecha}T12:00:00Z` });
+    const septiembre = Array.from({ length: 6 }, (_, i) => dia(`2026-09-${25 + i}`));
+    const octubre = Array.from({ length: 20 }, (_, i) => dia(`2026-10-${String(i + 1).padStart(2, '0')}`));
+    const completos = { ...datos, transacciones: [...septiembre, ...octubre] };
+    render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={octubre} historial={[...septiembre, ...octubre]} diasRegaladosRacha={['2026-09-24']} today="2026-10-20" onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero(completos).liquidez} entrada={completos} />);
+    expect(screen.getByRole('button', { name: 'Racha activa: 27 días' })).toBeInTheDocument();
+  });
+});
