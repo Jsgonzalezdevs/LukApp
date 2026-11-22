@@ -110,7 +110,7 @@ fun PantallaDinero(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             SelectorPeriodoNativo(vista, alElegirPeriodo)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                val racha = calcularRacha(libro.transacciones, vista.hoy).rachaActual
+                val racha = calcularRacha(libro.transacciones, vista.hoy, vista.diasRegaladosRacha).rachaActual
                 Row(
                     Modifier.heightIn(min = 40.dp).clip(CircleShape).background(c.soft).padding(horizontal = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically,

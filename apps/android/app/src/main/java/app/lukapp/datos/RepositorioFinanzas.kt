@@ -62,6 +62,10 @@ class RepositorioFinanzas(private val supabase: SupabaseClient, private val cont
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Van aparte del libro: no son movimientos y no deben terminar en la copia ni en un respaldo.
+    private val _diasRegaladosRacha = MutableStateFlow<List<String>>(emptyList())
+    val diasRegaladosRacha: StateFlow<List<String>> = _diasRegaladosRacha.asStateFlow()
+
     private var uid: String? = null
     private var copia: ArchivoCifrado? = null
     private var cola: ArchivoCifrado? = null
@@ -81,6 +85,7 @@ class RepositorioFinanzas(private val supabase: SupabaseClient, private val cont
     fun cerrar() {
         uid = null; copia = null; cola = null
         _libro.value = Libro()
+        _diasRegaladosRacha.value = emptyList()
         _estado.value = EstadoSincronizacion.CARGANDO
     }
 
@@ -119,6 +124,11 @@ class RepositorioFinanzas(private val supabase: SupabaseClient, private val cont
                 _error.value = (e as? ErrorLukApp)?.message ?: traducirError("No se pudo sincronizar", e).message
             }
         }
+        // Es un extra: si falla (o la tabla aún no existe), la racha sale solo de los movimientos.
+        runCatching {
+            supabase.from("racha_dias_regalados").select(Columns.list("fecha")) { filter { eq("user_id", usuario) } }
+                .decodeList<JsonObject>().mapNotNull { it["fecha"]?.jsonPrimitive?.content }
+        }.onSuccess { if (uid == usuario) _diasRegaladosRacha.value = it }
     }
 
     /**

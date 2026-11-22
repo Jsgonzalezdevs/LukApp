@@ -46,6 +46,8 @@ data class VistaInicio(
     val contexto: ContextoFinanciero,
     val preparacion: PreparacionInicio,
     val racha: InfoRacha,
+    /** Días que el equipo sumó a la racha; Dinero los usa con todo el historial. */
+    val diasRegaladosRacha: List<String>,
     val catalogo: Catalogo,
     val ajustes: AjustesCuenta,
 )
@@ -67,7 +69,7 @@ class ModeloApp(
     val estadoSincronizacion: StateFlow<EstadoSincronizacion> = finanzas.estado
     val errorSincronizacion: StateFlow<String?> = finanzas.error
 
-    val vista: StateFlow<VistaInicio?> = combine(finanzas.libro, preferencias.ajustes, periodoElegido) { libro, ajustes, elegido ->
+    val vista: StateFlow<VistaInicio?> = combine(finanzas.libro, preferencias.ajustes, periodoElegido, finanzas.diasRegaladosRacha) { libro, ajustes, elegido, regalados ->
         val hoy = bogotaDate()
         val maxClave = claveDePeriodo(hoy, ajustes.periodo)
         val clave = elegido ?: maxClave
@@ -83,7 +85,8 @@ class ModeloApp(
             contexto = construirContextoFinanciero(libro, hoy, ajustes.periodo),
             preparacion = preparacionInicio(libro),
             // La web pasa los movimientos DEL PERÍODO a calcularRacha (InicioView.tsx:158-161).
-            racha = calcularRacha(delPeriodo, hoy),
+            racha = calcularRacha(delPeriodo, hoy, regalados),
+            diasRegaladosRacha = regalados,
             catalogo = hacerCatalogo(libro.categorias),
             ajustes = ajustes,
         )

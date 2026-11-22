@@ -30,26 +30,31 @@ data class InfoRacha(
 /**
  * Origen: `lib/racha.ts` (`calcularRacha`). Si hoy aún no anotó pero ayer sí, la racha
  * sigue viva: no se penaliza antes de medianoche.
+ *
+ * `diasRegalados` son los que el equipo sumó desde el superadmin: cuentan para la racha,
+ * pero no como "anotado hoy" ni en los días del mes, igual que en la web.
  */
-fun calcularRacha(transacciones: List<Transaccion>, hoy: String): InfoRacha {
-    if (transacciones.isEmpty()) {
+fun calcularRacha(transacciones: List<Transaccion>, hoy: String, diasRegalados: Collection<String> = emptyList()): InfoRacha {
+    if (transacciones.isEmpty() && diasRegalados.isEmpty()) {
         return InfoRacha(0, 0, false, 0, null, emptyList(), HITOS_RACHA[0], HITOS_RACHA[0].dias)
     }
     val fechasUnicas = transacciones.map { it.occurredOn }.filter { it.isNotEmpty() }.distinct().sortedDescending()
-    val fechas = fechasUnicas.toHashSet()
-    val anotadoHoy = hoy in fechas
+    val anotadoHoy = hoy in fechasUnicas
+    val fechasRacha = (fechasUnicas + diasRegalados).distinct().sortedDescending()
+    val fechas = fechasRacha.toHashSet()
+    val cuentaHoy = hoy in fechas
     val ayer = shiftDays(hoy, -1)
     var rachaActual = 0
-    if (anotadoHoy || ayer in fechas) {
-        var cursor = if (anotadoHoy) hoy else ayer
+    if (cuentaHoy || ayer in fechas) {
+        var cursor = if (cuentaHoy) hoy else ayer
         while (cursor in fechas) {
             rachaActual += 1
             cursor = shiftDays(cursor, -1)
         }
     }
     var rachaMaxima = 0
-    if (fechasUnicas.isNotEmpty()) {
-        val asc = fechasUnicas.sorted()
+    if (fechasRacha.isNotEmpty()) {
+        val asc = fechasRacha.sorted()
         var temp = 1
         rachaMaxima = 1
         for (i in 1 until asc.size) {

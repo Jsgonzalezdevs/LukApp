@@ -38,4 +38,12 @@ class RachaTest {
     @Test fun diasDelMes() {
         assertEquals(2, calcularRacha(listOf(m("2026-08-24"), m("2026-08-15"), m("2026-07-30")), HOY).diasAnotadosMes)
     }
+
+    @Test fun diasRegaladosSumanSinContarComoAnotados() {
+        val r = calcularRacha(listOf(m("2026-08-24")), HOY, listOf("2026-08-23", "2026-08-22"))
+        assertEquals(3, r.rachaActual); assertTrue(r.anotadoHoy); assertEquals(1, r.diasAnotadosMes)
+        val soloRegalo = calcularRacha(emptyList(), HOY, listOf("2026-08-23"))
+        assertEquals(1, soloRegalo.rachaActual); assertFalse(soloRegalo.anotadoHoy)
+        assertEquals(null, soloRegalo.ultimoDiaAnotado)
+    }
 }

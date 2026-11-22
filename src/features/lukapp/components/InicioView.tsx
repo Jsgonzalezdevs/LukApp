@@ -31,6 +31,8 @@ import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 
 interface InicioViewProps {
   etiquetaPeriodo: string;
+  /** Días que el equipo sumó a la racha desde el superadmin. */
+  diasRegaladosRacha?: readonly string[];
   onCambiarMes: () => void;
   clavePeriodo?: string;
   maxClavePeriodo?: string;
@@ -92,6 +94,7 @@ const formatMontoCompacto = (monto: number): string => {
 
 export const InicioView: React.FC<InicioViewProps> = ({
   etiquetaPeriodo,
+  diasRegaladosRacha,
   onCambiarMes,
   clavePeriodo,
   maxClavePeriodo,
@@ -156,8 +159,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   };
 
   const infoRacha = useMemo(
-    () => calcularRacha(movimientos, today || new Date().toISOString().slice(0, 10)),
-    [movimientos, today],
+    () => calcularRacha(movimientos, today || new Date().toISOString().slice(0, 10), diasRegaladosRacha),
+    [movimientos, today, diasRegaladosRacha],
   );
 
   const insightsVisibles = useMemo(() => {
