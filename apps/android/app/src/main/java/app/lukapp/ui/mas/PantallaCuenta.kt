@@ -156,6 +156,17 @@ fun PantallaCuenta(
                         FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             p.beneficios.forEach { Text(it, Modifier.clip(CircleShape).background(c.soft).padding(horizontal = 12.dp, vertical = 4.dp), style = LukApp.tipo.de(13, 600, 1.3f), color = c.inkSoft) }
                         }
+                        Row(
+                            Modifier.padding(top = 12.dp).pulsable(escala = 1f, alPulsar = modelo::abrirBeneficios),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Ver beneficios de Premium",
+                                style = LukApp.tipo.de(13, 600, 1.4f).copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline),
+                                color = c.accent,
+                            )
+                            Icono(Lucide.ChevronRight, tamano = 14.dp, grosor = 2.5f, color = c.accent)
+                        }
                         if (!p.esPremium) Text(
                             "Premium incluye ${p.beneficiosPremium} prestaciones configuradas actualmente. Para pasar a Premium, entra a LukApp desde la web.",
                             Modifier.padding(top = 8.dp), style = LukApp.tipo.de(13, 400, 1.6f), color = c.inkFaint,

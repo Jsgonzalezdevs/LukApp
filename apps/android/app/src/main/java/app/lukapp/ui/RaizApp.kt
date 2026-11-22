@@ -349,9 +349,29 @@ fun ShellLukApp(
             regalo?.let { r ->
                 if (regaloAbierto || (bienvenidaHecha && !hayPanel && guia == app.lukapp.dominio.GuiaPendiente.NINGUNA)) {
                     LaunchedEffect(r.id) { regaloAbierto = true; cuenta.regaloMostrado(r) }
-                    DialogoRegaloPremium(r, alCerrar = { regaloAbierto = false; cuenta.cerrarRegalo() })
+                    DialogoRegaloPremium(
+                        r,
+                        alCerrar = { regaloAbierto = false; cuenta.cerrarRegalo() },
+                        alVerBeneficios = { regaloAbierto = false; cuenta.cerrarRegalo(); cuenta.abrirBeneficios() },
+                    )
                 }
             }
+            // Beneficios de Premium: encima de la celebración y de Cuenta, que son desde donde se abre.
+            val beneficiosAbiertos by cuenta.beneficiosAbiertos.collectAsState()
+            if (beneficiosAbiertos) app.lukapp.ui.mas.PantallaBeneficiosPremium(
+                cuenta,
+                alCerrar = cuenta::cerrarBeneficios,
+                alIrA = { destino ->
+                    cuenta.cerrarBeneficios()
+                    modelo.cuentaAbiertaPanel.value = false
+                    when (destino) {
+                        app.lukapp.dominio.DestinoBeneficio.INICIO -> modelo.seccion.value = Seccion.INICIO
+                        app.lukapp.dominio.DestinoBeneficio.ASESOR -> modelo.seccion.value = Seccion.ASESOR
+                        app.lukapp.dominio.DestinoBeneficio.EXTRACTOS -> modelo.extractosAbierto.value = true
+                        app.lukapp.dominio.DestinoBeneficio.ESPACIOS -> modelo.espaciosAbierto.value = true
+                    }
+                },
+            )
         }
     }
     }

@@ -74,6 +74,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -92,28 +93,29 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 // La paleta del manual de marca. Va fija y no del tema: la tarjeta es morada de noche y de día.
-private val Morado = Color(0xFF772AEA)
-private val Lavanda = Color(0xFF735AC2)
-private val Lima = Color(0xFFB6F246)
-private val Magenta = Color(0xFFD4025A)
-private val Noche = Color(0xFF1A0838)
+internal val Morado = Color(0xFF772AEA)
+internal val Lavanda = Color(0xFF735AC2)
+internal val Lima = Color(0xFFB6F246)
+internal val Magenta = Color(0xFFD4025A)
+internal val Noche = Color(0xFF1A0838)
 
 /** Quien apagó las animaciones del sistema tampoco ve confeti ni a Luki saltando. */
 @Composable
-private fun animacionesReducidas(): Boolean {
+internal fun animacionesReducidas(): Boolean {
     val contexto = LocalContext.current
     return remember { Settings.Global.getFloat(contexto.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
 }
 
-private fun estilo(tamano: Int, peso: FontWeight, alto: Float = 1.3f, tracking: Float = 0f, color: Color = Color.White) =
+internal fun estilo(tamano: Int, peso: FontWeight, alto: Float = 1.3f, tracking: Float = 0f, color: Color = Color.White) =
     TextStyle(fontFamily = Poppins, fontWeight = peso, fontSize = tamano.sp, lineHeight = (tamano * alto).sp, letterSpacing = tracking.em, color = color)
 
 /**
  * RegaloPremium.tsx: la celebración de cuando el equipo de LukApp le regala Premium
- * a alguien. Tarjeta morada encima de todo, con confeti de la marca y un solo botón.
+ * a alguien. Tarjeta morada encima de todo, con confeti de la marca, el botón para cerrar
+ * y, debajo, el enlace a la página con todo lo que trae Premium.
  */
 @Composable
-fun BoxScope.DialogoRegaloPremium(regalo: RegaloPremium, alCerrar: () -> Unit) {
+fun BoxScope.DialogoRegaloPremium(regalo: RegaloPremium, alCerrar: () -> Unit, alVerBeneficios: (() -> Unit)? = null) {
     val reducidas = animacionesReducidas()
     BackHandler(onBack = alCerrar)
 
@@ -241,6 +243,22 @@ fun BoxScope.DialogoRegaloPremium(regalo: RegaloPremium, alCerrar: () -> Unit) {
                     Icono(Lucide.Sparkles, tamano = 18.dp, grosor = 2.4f, color = Color.White)
                     Text("¡A disfrutarlo!", style = estilo(16, FontWeight.Bold))
                 }
+
+                if (alVerBeneficios != null) {
+                    Row(
+                        Modifier.padding(top = 12.dp).heightIn(min = 36.dp)
+                            .clickable(role = Role.Button, onClick = alVerBeneficios)
+                            .padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Ver beneficios de Premium",
+                            style = estilo(13, FontWeight.SemiBold, color = LavandaClara).copy(textDecoration = TextDecoration.Underline),
+                        )
+                        Icono(Lucide.ChevronRight, tamano = 14.dp, grosor = 2.5f, color = LavandaClara)
+                    }
+                }
             }
         }
     }
@@ -269,8 +287,8 @@ private fun Ventaja(icono: app.lukapp.ui.iconos.IconoLucide, texto: @Composable 
 }
 
 @Composable
-private fun LukiSaltando(reducidas: Boolean) {
-    val modificador = Modifier.padding(top = 10.dp).height(112.dp)
+internal fun LukiSaltando(reducidas: Boolean, modifier: Modifier = Modifier.padding(top = 10.dp).height(112.dp)) {
+    val modificador = modifier
     if (reducidas) {
         Image(painterResource(R.drawable.luki_saltando), "Luki, la mascota de LukApp, saltando de alegría", modificador)
         return
@@ -436,4 +454,4 @@ private fun MensajeDelEquipo(mensaje: String) {
 }
 
 /** La lavanda de la marca, aclarada para que se lea sobre el morado oscuro. */
-private val LavandaClara = Color(0xFFC9B8FF)
+internal val LavandaClara = Color(0xFFC9B8FF)

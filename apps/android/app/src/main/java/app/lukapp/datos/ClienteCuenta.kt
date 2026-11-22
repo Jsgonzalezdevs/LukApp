@@ -2,6 +2,8 @@ package app.lukapp.datos
 
 import app.lukapp.BuildConfig
 import app.lukapp.dominio.EstadoPlan
+import app.lukapp.dominio.PlanBeneficios
+import app.lukapp.dominio.leerPlanBeneficios
 import app.lukapp.dominio.RegaloPremium
 import app.lukapp.dominio.leerRegaloPremium
 import io.github.jan.supabase.SupabaseClient
@@ -47,6 +49,14 @@ class ClienteCuenta(private val supabase: SupabaseClient, private val http: Http
             venceEn = ((cuerpo["suscripcion"] as? JsonObject)?.get("venceEn") as? JsonPrimitive)?.contentOrNull,
             beneficios = activos("beneficios"), beneficiosPremium = activos("beneficiosPremium").size,
         )
+    }
+
+    /** `GET /api/mi-plan` leído para la página de beneficios: con cupos, detalle y el ciclo de la suscripción. */
+    suspend fun planBeneficios(): PlanBeneficios {
+        val r = try { http.get("${BuildConfig.API_URL}/api/mi-plan") { header("Authorization", "Bearer ${token()}") } }
+        catch (e: CancellationException) { throw e } catch (e: ErrorLukApp) { throw e } catch (e: Exception) { throw traducirError("No pudimos cargar los beneficios.", e) }
+        if (r.status.value !in 200..299) throw ErrorLukApp("No pudimos cargar los beneficios.")
+        return leerPlanBeneficios(r.bodyAsText()) ?: throw ErrorLukApp("No pudimos cargar los beneficios.")
     }
 
     /**

@@ -1,5 +1,5 @@
 // ARCHIVO GENERADO por apps/android/herramientas/generar-iconos-lucide.py — no editar a mano.
-// Trazos de lucide-react (licencia ISC): los mismos 153 íconos que usa la web.
+// Trazos de lucide-react (licencia ISC): los mismos 155 íconos que usa la web.
 package app.lukapp.ui.iconos
 
 object Lucide {
@@ -47,6 +47,7 @@ object Lucide {
     val Coffee = IconoLucide("Coffee", listOf("M10 2v2", "M14 2v2", "M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1", "M6 2v2"))
     val Copy = IconoLucide("Copy", listOf("M10 8h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2Z", "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"))
     val CreditCard = IconoLucide("CreditCard", listOf("M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2Z", "M2 10L22 10"))
+    val Crown = IconoLucide("Crown", listOf("M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z", "M5 21h14"))
     val Delete = IconoLucide("Delete", listOf("M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z", "m12 9 6 6", "m18 9-6 6"))
     val DollarSign = IconoLucide("DollarSign", listOf("M12 2L12 22", "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"))
     val Download = IconoLucide("Download", listOf("M12 15V3", "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", "m7 10 5 5 5-5"))
@@ -90,7 +91,7 @@ object Lucide {
     val MapPin = IconoLucide("MapPin", listOf("M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0", "M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"))
     val Menu = IconoLucide("Menu", listOf("M4 5h16", "M4 12h16", "M4 19h16"))
     val MessageCircle = IconoLucide("MessageCircle", listOf("M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"))
-    val MessageCircleHeart = IconoLucide("MessageCircleHeart", listOf("M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719", "M7.828 13.07A3 3 0 0 1 12 8.764a3 3 0 0 1 4.172 4.306l-3.447 3.62a1 1 0 0 1-1.449 0z"))
+    val MessageCircleHeart = IconoLucide("MessageCircleHeart", listOf("M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719", "M7.828 13.07A3 3 0 0 1 12 8.764a3 3 0 0 1 5.004 2.224 3 3 0 0 1-.832 2.083l-3.447 3.62a1 1 0 0 1-1.45-.001z"))
     val MessageSquareText = IconoLucide("MessageSquareText", listOf("M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z", "M7 11h10", "M7 15h6", "M7 7h8"))
     val Mic = IconoLucide("Mic", listOf("M12 19v3", "M19 10v2a7 7 0 0 1-14 0v-2", "M12 2h0a3 3 0 0 1 3 3v7a3 3 0 0 1 -3 3h0a3 3 0 0 1 -3 -3v-7a3 3 0 0 1 3 -3Z"))
     val Minus = IconoLucide("Minus", listOf("M5 12h14"))
@@ -205,6 +206,7 @@ object Lucide {
             "Coffee" to Coffee,
             "Copy" to Copy,
             "CreditCard" to CreditCard,
+            "Crown" to Crown,
             "Delete" to Delete,
             "DollarSign" to DollarSign,
             "Download" to Download,
@@ -248,6 +250,7 @@ object Lucide {
             "MapPin" to MapPin,
             "Menu" to Menu,
             "MessageCircle" to MessageCircle,
+            "MessageCircleHeart" to MessageCircleHeart,
             "MessageSquareText" to MessageSquareText,
             "Mic" to Mic,
             "Minus" to Minus,
