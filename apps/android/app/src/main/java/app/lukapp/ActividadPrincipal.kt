@@ -67,7 +67,7 @@ class ActividadPrincipal : FragmentActivity() {
             initializer { app.lukapp.ui.mas.ModeloFunciones(contenedor.funciones) }
             initializer { app.lukapp.ui.dinero.ModeloEspacios(contenedor.espacios) }
             initializer { app.lukapp.ui.dinero.ModeloExtractos(application, contenedor.extractos, contenedor.correo) }
-            initializer { app.lukapp.ui.mas.ModeloCuenta(contenedor.cuenta, contenedor.sesion) }
+            initializer { app.lukapp.ui.mas.ModeloCuenta(contenedor.cuenta, contenedor.sesion, contenedor.preferencias) }
             initializer { app.lukapp.ui.inicio.ModeloInsights(contenedor.asesor, contenedor.preferencias) }
             initializer { app.lukapp.ui.anotar.ModeloAnotar(application, contenedor.finanzas, contenedor.transcripcion) }
         }

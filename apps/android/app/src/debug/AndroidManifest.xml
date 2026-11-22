@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo en debug: pantallas para ver diálogos que en la app dependen de datos del servidor. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="app.lukapp.VistaPreviaRegalo"
+            android:exported="true"
+            android:theme="@style/Tema.LukApp" />
+    </application>
+</manifest>

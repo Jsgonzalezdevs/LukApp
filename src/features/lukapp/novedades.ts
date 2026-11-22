@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.2.0', fecha: '2026-11-22', texto: 'En la app de Android también te enteras cuando el equipo de LukApp te regala Premium: al entrar sale la celebración con confeti y Luki, con tus días de regalo y hasta cuándo te duran. Sale una sola vez, aunque la veas primero en la web. 🎁' },
   { version: '11.1.0', fecha: '2026-11-22', texto: 'Cuando el equipo de LukApp te regala Premium, ahora te enteras: al entrar te sale una celebración con confeti y Luki, con cuántos días te regalaron y hasta cuándo te dura. Sale una sola vez. 🎁' },
   { version: '11.0.0', fecha: '2026-11-22', texto: 'Arreglamos los días de racha que regala el equipo de LukApp: ahora se suma exactamente lo que se te dio, sin unir rachas viejas por error. Si ya te habían regalado días, tu racha quedó con la cuenta correcta. 🔥' },
   { version: '10.57.1', fecha: '2026-11-22', texto: 'Arreglamos la racha en Inicio: si empezó el mes pasado, se cortaba el día 1. Ahora cuenta todos tus días seguidos, igual que en Dinero. 🔥' },

@@ -3,7 +3,9 @@ package app.lukapp.ui.mas
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.lukapp.datos.ClienteCuenta
+import app.lukapp.datos.Preferencias
 import app.lukapp.dominio.EstadoPlan
+import app.lukapp.dominio.RegaloPremium
 import app.lukapp.sesion.ServicioSesion
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -11,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /** Estado de Cuenta (CuentaView.tsx): apodo, plan y los dos cambios delicados, contraseña y eliminación. */
-class ModeloCuenta(private val cliente: ClienteCuenta, private val sesion: ServicioSesion) : ViewModel() {
+class ModeloCuenta(private val cliente: ClienteCuenta, private val sesion: ServicioSesion, private val preferencias: Preferencias) : ViewModel() {
     private val _apodo = MutableStateFlow<String?>(null)
     val apodo: StateFlow<String?> = _apodo.asStateFlow()
     private val _plan = MutableStateFlow<EstadoPlan?>(null)
@@ -37,6 +39,40 @@ class ModeloCuenta(private val cliente: ClienteCuenta, private val sesion: Servi
             _cargandoPlan.value = false
         }
     }
+
+    private val _regalo = MutableStateFlow<RegaloPremium?>(null)
+    /** El regalo de Premium que falta celebrar (RegaloPremium.tsx). null si no hay o ya se vio. */
+    val regalo: StateFlow<RegaloPremium?> = _regalo.asStateFlow()
+    private var regaloConsultado = false
+    private var regaloMarcado: Long? = null
+
+    /** Una sola consulta por arranque: la celebración no se repite al volver de segundo plano. */
+    fun consultarRegalo() {
+        if (regaloConsultado) return
+        val usuario = sesion.idUsuario ?: return
+        regaloConsultado = true
+        viewModelScope.launch {
+            val pendiente = cliente.regaloPremium() ?: return@launch
+            if (!preferencias.regaloPremiumVisto(usuario, pendiente.id)) _regalo.value = pendiente
+        }
+    }
+
+    /**
+     * Se marca como visto al aparecer, no al cerrar: si la persona cierra la app con el
+     * pop-up abierto, ya lo vio y no debe repetirse. El teléfono también lo recuerda,
+     * por si la marca del servidor no alcanzó a guardarse.
+     */
+    fun regaloMostrado(regalo: RegaloPremium) {
+        if (regaloMarcado == regalo.id) return
+        regaloMarcado = regalo.id
+        val usuario = sesion.idUsuario ?: return
+        viewModelScope.launch {
+            preferencias.recordarRegaloPremiumVisto(usuario, regalo.id)
+            cliente.marcarRegaloVisto(regalo.id)
+        }
+    }
+
+    fun cerrarRegalo() { _regalo.value = null }
 
     /** Devuelve el error para enseñarlo, o null si se guardó. */
     suspend fun cambiarContrasena(nueva: String): String? = sesion.cambiarContrasena(nueva)

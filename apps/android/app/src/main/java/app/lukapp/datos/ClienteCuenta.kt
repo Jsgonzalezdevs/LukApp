@@ -2,6 +2,8 @@ package app.lukapp.datos
 
 import app.lukapp.BuildConfig
 import app.lukapp.dominio.EstadoPlan
+import app.lukapp.dominio.RegaloPremium
+import app.lukapp.dominio.leerRegaloPremium
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
@@ -19,7 +21,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 
-/** Lo que la pantalla Cuenta pide al servidor: el apodo, el plan y la eliminación de la cuenta. */
+/** Lo que la pantalla Cuenta pide al servidor: el apodo, el plan, el regalo de Premium y la eliminación de la cuenta. */
 class ClienteCuenta(private val supabase: SupabaseClient, private val http: HttpClient) {
     private fun objeto(texto: String): JsonObject? = runCatching { Json.parseToJsonElement(texto) as? JsonObject }.getOrNull()
     private fun token(): String = supabase.auth.currentAccessTokenOrNull() ?: throw ErrorLukApp("Sesión no disponible")
@@ -46,6 +48,24 @@ class ClienteCuenta(private val supabase: SupabaseClient, private val http: Http
             beneficios = activos("beneficios"), beneficiosPremium = activos("beneficiosPremium").size,
         )
     }
+
+    /**
+     * `GET /api/mi-plan/regalo-premium`: el Premium de cortesía que falta celebrar.
+     * Cualquier fallo es null: una celebración nunca se convierte en un aviso de error.
+     */
+    suspend fun regaloPremium(): RegaloPremium? = try {
+        val token = supabase.auth.currentAccessTokenOrNull()
+        if (token == null) null else {
+            val r = http.get("${BuildConfig.API_URL}/api/mi-plan/regalo-premium") { header("Authorization", "Bearer $token") }
+            if (r.status.value in 200..299) leerRegaloPremium(r.bodyAsText()) else null
+        }
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
+
+    /** `POST /api/mi-plan/regalo-premium/:id/visto`. true si el servidor lo guardó. */
+    suspend fun marcarRegaloVisto(id: Long): Boolean = try {
+        val token = supabase.auth.currentAccessTokenOrNull()
+        token != null && http.post("${BuildConfig.API_URL}/api/mi-plan/regalo-premium/$id/visto") { header("Authorization", "Bearer $token") }.status.value in 200..299
+    } catch (e: CancellationException) { throw e } catch (_: Exception) { false }
 
     /** `POST /api/mi-cuenta/eliminar`: borra la cuenta y todos sus datos. Devuelve el error, o null si se eliminó. */
     suspend fun eliminar(): String? = try {
