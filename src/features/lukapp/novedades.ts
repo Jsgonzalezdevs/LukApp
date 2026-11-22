@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.5.0', fecha: '2026-11-22', texto: 'La página de beneficios de Premium llega a la app de Android: ábrela desde la celebración del regalo o desde Más → Cuenta, mira qué incluye tu Premium, para qué te sirve cada cosa y pruébala con un toque. ✨' },
   { version: '11.3.0', fecha: '2026-11-22', texto: 'Si el equipo de LukApp te deja un mensaje al regalarte Premium, ahora lo ves en la celebración, justo debajo de tus días de regalo. 💌' },
   { version: '11.2.0', fecha: '2026-11-22', texto: 'En la app de Android también te enteras cuando el equipo de LukApp te regala Premium: al entrar sale la celebración con confeti y Luki, con tus días de regalo y hasta cuándo te duran. Sale una sola vez, aunque la veas primero en la web. 🎁' },
   { version: '11.1.0', fecha: '2026-11-22', texto: 'Cuando el equipo de LukApp te regala Premium, ahora te enteras: al entrar te sale una celebración con confeti y Luki, con cuántos días te regalaron y hasta cuándo te dura. Sale una sola vez. 🎁' },

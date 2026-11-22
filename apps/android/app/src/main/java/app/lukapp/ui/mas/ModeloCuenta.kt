@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.lukapp.datos.ClienteCuenta
 import app.lukapp.datos.Preferencias
 import app.lukapp.dominio.EstadoPlan
+import app.lukapp.dominio.PlanBeneficios
 import app.lukapp.dominio.RegaloPremium
 import app.lukapp.sesion.ServicioSesion
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,9 +75,36 @@ class ModeloCuenta(private val cliente: ClienteCuenta, private val sesion: Servi
 
     fun cerrarRegalo() { _regalo.value = null }
 
+    /** La página «Beneficios de Premium» (BeneficiosPremium.tsx), encima de todo. */
+    val beneficiosAbiertos = MutableStateFlow(false)
+    private val _beneficios = MutableStateFlow<EstadoBeneficios>(EstadoBeneficios.Cargando)
+    val beneficios: StateFlow<EstadoBeneficios> = _beneficios.asStateFlow()
+
+    fun abrirBeneficios() {
+        beneficiosAbiertos.value = true
+        cargarBeneficios()
+    }
+
+    fun cerrarBeneficios() { beneficiosAbiertos.value = false }
+
+    /** Se consulta cada vez que se abre: el regalo pudo llegar hace un momento y los cupos cambian. */
+    fun cargarBeneficios() {
+        _beneficios.value = EstadoBeneficios.Cargando
+        viewModelScope.launch {
+            _beneficios.value = runCatching { cliente.planBeneficios() }
+                .fold(onSuccess = { EstadoBeneficios.Listo(it) }, onFailure = { EstadoBeneficios.Error })
+        }
+    }
+
     /** Devuelve el error para enseñarlo, o null si se guardó. */
     suspend fun cambiarContrasena(nueva: String): String? = sesion.cambiarContrasena(nueva)
 
     /** Devuelve el error, o null si la cuenta quedó eliminada (la pantalla entonces cierra la sesión). */
     suspend fun eliminarCuenta(): String? = cliente.eliminar()
+}
+
+sealed interface EstadoBeneficios {
+    data object Cargando : EstadoBeneficios
+    data object Error : EstadoBeneficios
+    data class Listo(val plan: PlanBeneficios) : EstadoBeneficios
 }
