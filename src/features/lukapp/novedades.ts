@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.6.0', fecha: '2026-11-22', texto: 'La página de beneficios de Premium ahora tiene su propio enlace: mi.lukapp.app/premium. Compártelo o guárdalo y te lleva directo a ver todo lo que incluye Premium. 🔗' },
   { version: '11.5.0', fecha: '2026-11-22', texto: 'La página de beneficios de Premium llega a la app de Android: ábrela desde la celebración del regalo o desde Más → Cuenta, mira qué incluye tu Premium, para qué te sirve cada cosa y pruébala con un toque. ✨' },
   { version: '11.4.0', fecha: '2026-11-22', texto: 'Nueva página de beneficios de Premium: ábrela desde la celebración del regalo o desde Más → Cuenta y mira, uno por uno, qué incluye tu Premium, para qué te sirve cada cosa y un atajo para probarla. ✨' },
   { version: '11.3.0', fecha: '2026-11-22', texto: 'Si el equipo de LukApp te deja un mensaje al regalarte Premium, ahora lo ves en la celebración, justo debajo de tus días de regalo. 💌' },

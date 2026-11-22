@@ -7,6 +7,9 @@ import { useCallback, useSyncExternalStore } from 'react';
 /** El prefijo bajo el que vive LukApp. En el dominio propio es la raíz ''. */
 export const BASE_LUKAPP = '';
 
+/** La página de beneficios de Premium: un enlace que se puede compartir. */
+export const RUTA_BENEFICIOS_PREMIUM = '/premium';
+
 const normalizar = (ruta: string): string => {
   const limpia = ruta.replace(/\/+$/, '');
   return limpia === '' ? '/' : limpia;

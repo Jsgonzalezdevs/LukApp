@@ -93,7 +93,7 @@ import type { Guardado } from './components/AvisoGuardado';
 import { ConfirmarComandoVoz } from './components/ConfirmarComandoVoz';
 import { Onboarding } from './components/Onboarding';
 import { PANELES_AJUSTES, SECTIONS } from './sections';
-import { BASE_LUKAPP, segmentosDe, useRuta } from './data/useRuta';
+import { BASE_LUKAPP, reemplazarPor, RUTA_BENEFICIOS_PREMIUM, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
 
 import { TemaToggle } from './components/TemaToggle';
@@ -424,7 +424,23 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const [mostrarPlanesPremium, setMostrarPlanesPremium] = useState(false);
-  const [mostrarBeneficiosPremium, setMostrarBeneficiosPremium] = useState(false);
+  // La página de beneficios tiene ruta propia (/premium) para poder mandarla
+  // como enlace. Al cerrarla, si se abrió desde la app se vuelve atrás y queda
+  // todo como estaba; si se llegó por el enlace, se va a Inicio.
+  const enBeneficiosPremium = segmentos[0] === RUTA_BENEFICIOS_PREMIUM.slice(1);
+  const beneficiosAbiertosDesdeLaApp = useRef(false);
+  const abrirBeneficiosPremium = useCallback(() => {
+    beneficiosAbiertosDesdeLaApp.current = true;
+    ir(`${BASE_LUKAPP}${RUTA_BENEFICIOS_PREMIUM}`);
+  }, [ir]);
+  const cerrarBeneficiosPremium = useCallback(() => {
+    if (beneficiosAbiertosDesdeLaApp.current) {
+      beneficiosAbiertosDesdeLaApp.current = false;
+      window.history.back();
+      return;
+    }
+    reemplazarPor(`${BASE_LUKAPP}/app`);
+  }, []);
   const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
   const guia = useGuiaApp();
 
@@ -763,7 +779,6 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     setGuardado(null);
     setVistaPreviaPremium(false);
     setVistaPreviaRegalo(false);
-    setMostrarBeneficiosPremium(false);
   }, [setPanelAjustes]);
 
   const abrirVistaDePrueba = useCallback((vista: VistaDePrueba) => {
@@ -779,7 +794,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       return;
     }
     if (vista === 'beneficios') {
-      setMostrarBeneficiosPremium(true);
+      abrirBeneficiosPremium();
       return;
     }
     if (vista === 'aviso') {
@@ -815,7 +830,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
       return;
     }
     setCapa('buscar');
-  }, [categorias, cerrarVistasDePrueba]);
+  }, [abrirBeneficiosPremium, categorias, cerrarVistasDePrueba]);
 
   // La API global se instala una sola vez. Las acciones viven en una ref para
   // que los cambios normales de datos no retiren el comando durante un render.
@@ -978,7 +993,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     analizando === null &&
     capa === null &&
     panelAjustes === null &&
-    !mostrarBeneficiosPremium &&
+    !enBeneficiosPremium &&
     !guiaBasicaAbierta;
   // El regalo no exige estar en Inicio ni excluye a admins: a cualquiera le
   // pueden regalar Premium. Solo espera a que no haya nada más encima.
@@ -1516,7 +1531,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 syncError={almacen.error}
                 cambiosPendientes={almacen.cambiosPendientes}
                 onSincronizar={almacen.recargar}
-                onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
+                onVerBeneficios={abrirBeneficiosPremium}
               />
             ) : (
               <PanelRespaldo
@@ -1543,7 +1558,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               syncError={almacen.error}
               cambiosPendientes={almacen.cambiosPendientes}
               onSincronizar={almacen.recargar}
-              onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
+              onVerBeneficios={abrirBeneficiosPremium}
               soloPlan
             />
           </HojaPanel>
@@ -1763,28 +1778,28 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             puedeMostrarse
             vistaPrevia={{ id: 1, dias: 30, venceEn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000).toISOString(), mensaje: 'Gracias por ayudarnos a probar LukApp. ¡Disfrútalo! 💜' }}
             onCerrar={() => setVistaPreviaRegalo(false)}
-            onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
+            onVerBeneficios={abrirBeneficiosPremium}
           />
         ) : userId && cuenta ? (
           <RegaloPremium
             userId={userId}
             puedeMostrarse={puedeMostrarRegaloPremium}
-            onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
+            onVerBeneficios={abrirBeneficiosPremium}
           />
         ) : null}
 
         <AnimatePresence>
-          {mostrarBeneficiosPremium ? (
+          {enBeneficiosPremium ? (
             <BeneficiosPremium
-              onCerrar={() => setMostrarBeneficiosPremium(false)}
+              onCerrar={cerrarBeneficiosPremium}
               onIrA={(destino) => {
-                setMostrarBeneficiosPremium(false);
+                beneficiosAbiertosDesdeLaApp.current = false;
                 setMostrarPlanesPremium(false);
                 if (destino.tipo === 'seccion') setSection(destino.id);
                 else setPanelAjustes(destino.id);
               }}
               onVerPlanes={() => {
-                setMostrarBeneficiosPremium(false);
+                cerrarBeneficiosPremium();
                 setMostrarPlanesPremium(true);
               }}
             />
