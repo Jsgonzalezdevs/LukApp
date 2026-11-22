@@ -14,7 +14,15 @@ import java.util.Locale
  * El Premium de cortesía que el equipo le dio a alguien y que esa persona todavía
  * no ha visto celebrado (lib/regaloPremium.ts). Lo calcula el servidor; la app solo lo pinta.
  */
-data class RegaloPremium(val id: Long, val dias: Int, val venceEn: String)
+data class RegaloPremium(
+    val id: Long,
+    val dias: Int,
+    val venceEn: String,
+    /** Lo que escribió el equipo al regalarlo. Opcional y corto (máximo 280). */
+    val mensaje: String? = null,
+)
+
+private const val LARGO_MAXIMO_MENSAJE = 280
 
 private val FECHA_LARGA: DateTimeFormatter = DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy", Locale.forLanguageTag("es-CO"))
 
@@ -39,7 +47,10 @@ fun leerRegaloPremium(texto: String): RegaloPremium? {
     val dias = enteroPositivo(regalo["dias"] as? JsonPrimitive)?.takeIf { it <= Int.MAX_VALUE } ?: return null
     val vence = (regalo["venceEn"] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull ?: return null
     if (instante(vence) == null) return null
-    return RegaloPremium(id, dias.toInt(), vence)
+    // Un mensaje raro no tumba la celebración: solo se queda sin mensaje.
+    val mensaje = (regalo["mensaje"] as? JsonPrimitive)?.takeIf { it.isString }?.contentOrNull?.trim()
+        ?.takeIf { it.isNotEmpty() && it.length <= LARGO_MAXIMO_MENSAJE }
+    return RegaloPremium(id, dias.toInt(), vence, mensaje)
 }
 
 /** "1 día", "30 días": el número va aparte en la tarjeta, por eso solo la palabra. */

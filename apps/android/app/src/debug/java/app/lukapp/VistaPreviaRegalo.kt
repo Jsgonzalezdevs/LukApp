@@ -23,7 +23,7 @@ class VistaPreviaRegalo : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val regalo = RegaloPremium(id = 1, dias = intent.getIntExtra("dias", 30), venceEn = intent.getStringExtra("venceEn") ?: "2026-12-23T04:59:00+00:00")
+        val regalo = RegaloPremium(id = 1, dias = intent.getIntExtra("dias", 30), venceEn = intent.getStringExtra("venceEn") ?: "2026-12-23T04:59:00+00:00", mensaje = intent.getStringExtra("mensaje") ?: "Gracias por ayudarnos a probar LukApp. ¡Disfrútalo! 💜")
         setContent {
             TemaLukApp(PreferenciaTema.SISTEMA) {
                 Box(Modifier.fillMaxSize().background(LukApp.colores.bg)) {

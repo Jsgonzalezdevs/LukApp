@@ -2349,7 +2349,7 @@ app.get('/api/mi-plan', async (req, res) => {
 // Mientras la migración del aviso no esté aplicada, la columna no existe. Eso
 // no es un error para la persona: simplemente todavía no hay regalo que mostrar.
 const esColumnaRegaloPendiente = (error: { code?: string; message?: string } | null): boolean =>
-  Boolean(error) && (error!.code === '42703' || error!.code === 'PGRST204' || /regalo_visto_en/.test(error!.message ?? ''));
+  Boolean(error) && (error!.code === '42703' || error!.code === 'PGRST204' || /regalo_visto_en|mensaje_regalo/.test(error!.message ?? ''));
 
 // El Premium de cortesía que el equipo le dio a esta cuenta y que aún no ha
 // visto celebrado. Solo cortesías manuales: un pago propio ya tiene su pantalla.
@@ -2362,9 +2362,9 @@ app.get('/api/mi-plan/regalo-premium', async (req, res) => {
   try {
     const acceso = await exigirUsuario(cliente, token);
     if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
-    const { data, error } = await cliente
+    const consultar = (columnas: string) => cliente
       .from('suscripciones')
-      .select('id,inicia_en,vence_en')
+      .select(columnas)
       .eq('user_id', acceso.userId)
       .eq('estado', 'activa')
       .eq('origen', 'manual')
@@ -2373,13 +2373,23 @@ app.get('/api/mi-plan/regalo-premium', async (req, res) => {
       .order('inicia_en', { ascending: false })
       .limit(1)
       .maybeSingle();
+    let { data, error } = await consultar('id,inicia_en,vence_en,mensaje_regalo');
+    // Si solo falta la migración del mensaje, el regalo se celebra igual, sin él.
+    if (error && /mensaje_regalo/.test(error.message ?? '')) ({ data, error } = await consultar('id,inicia_en,vence_en'));
     if (error) {
       if (esColumnaRegaloPendiente(error)) return res.status(200).json({ regalo: null });
       throw new Error(error.message);
     }
     if (!data) return res.status(200).json({ regalo: null });
+    const fila = data as unknown as { id: number; inicia_en: string; vence_en: string; mensaje_regalo?: string | null };
+    const mensaje = typeof fila.mensaje_regalo === 'string' ? fila.mensaje_regalo.trim() : '';
     return res.status(200).json({
-      regalo: { id: Number(data.id), dias: diasDeRegalo(data.inicia_en, data.vence_en), venceEn: data.vence_en },
+      regalo: {
+        id: Number(fila.id),
+        dias: diasDeRegalo(fila.inicia_en, fila.vence_en),
+        venceEn: fila.vence_en,
+        mensaje: mensaje || null,
+      },
     });
   } catch (error: any) {
     console.error('Error consultando el regalo de Premium:', error);
@@ -2796,6 +2806,17 @@ app.post('/api/superadmin/suscripciones/otorgar', async (req, res) => {
       p_nota: nota || null,
     });
     if (error) throw error;
+    // La nota de la cortesía es el mensaje que la persona lee al celebrarla. Se
+    // copia aparte porque `nota` cambia con cada edición interna de la vigencia.
+    if (nota && suscripcion?.id) {
+      const { error: errorMensaje } = await cliente
+        .from('suscripciones')
+        .update({ mensaje_regalo: nota })
+        .eq('id', suscripcion.id);
+      if (errorMensaje && !esColumnaRegaloPendiente(errorMensaje)) {
+        console.error('No se guardó el mensaje del regalo de Premium:', errorMensaje.message);
+      }
+    }
     await registrarAuditoria(cliente, acceso.email, 'Otorgó Premium de cortesía', userId, `Hasta ${venceEn}`, acceso.userId);
     return res.status(201).json({ suscripcion });
   } catch (error: any) {

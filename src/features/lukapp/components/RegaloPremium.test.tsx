@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as supabaseData from '../data/supabase';
 import { RegaloPremium } from './RegaloPremium';
 
-const regalo = { id: 42, dias: 15, venceEn: '2026-12-08T04:59:59.000Z' };
+const regalo = { id: 42, dias: 15, venceEn: '2026-12-08T04:59:59.000Z', mensaje: 'Gracias por reportar el error del 4x1000 🙌' };
 
 const respuesta = (cuerpo: unknown, ok = true) => ({ ok, status: ok ? 200 : 500, json: async () => cuerpo });
 
@@ -34,6 +34,8 @@ describe('RegaloPremium', () => {
     expect(dialogo.textContent).toContain('15');
     expect(dialogo.textContent).toContain('días');
     expect(dialogo.textContent).toContain('7 de diciembre de 2026');
+    expect(dialogo.textContent).toContain('Mensaje del equipo');
+    expect(dialogo.textContent).toContain('Gracias por reportar el error del 4x1000 🙌');
 
     await waitFor(() => {
       expect(fetchSimulado).toHaveBeenCalledWith(
@@ -68,6 +70,14 @@ describe('RegaloPremium', () => {
     render(<RegaloPremium userId="persona-1" puedeMostrarse onCerrar={onCerrar} />);
     fireEvent.click(await screen.findByRole('button', { name: /A disfrutarlo/ }));
     expect(onCerrar).toHaveBeenCalled();
+  });
+
+  it('sin mensaje no deja un globo vacío', async () => {
+    fetchSimulado.mockImplementation(async (url: string) =>
+      url.endsWith('/visto') ? { ok: true, status: 204, json: async () => ({}) } : respuesta({ regalo: { ...regalo, mensaje: null } }));
+    render(<RegaloPremium userId="persona-2" puedeMostrarse />);
+    const dialogo = await screen.findByRole('dialog');
+    expect(dialogo.textContent).not.toContain('Mensaje del equipo');
   });
 
   it('sin regalo pendiente no muestra nada', async () => {

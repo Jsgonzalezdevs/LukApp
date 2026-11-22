@@ -24,7 +24,19 @@ describe('diasDeRegalo', () => {
 describe('leerRegaloPremium', () => {
   it('acepta un regalo bien formado', () => {
     expect(leerRegaloPremium({ regalo: { id: 4, dias: 30, venceEn: '2026-12-22T04:59:59Z' } }))
-      .toEqual({ id: 4, dias: 30, venceEn: '2026-12-22T04:59:59Z' });
+      .toEqual({ id: 4, dias: 30, venceEn: '2026-12-22T04:59:59Z', mensaje: null });
+  });
+
+  it('trae el mensaje del equipo, limpio', () => {
+    expect(leerRegaloPremium({ regalo: { id: 4, dias: 30, venceEn: '2026-12-22T04:59:59Z', mensaje: '  ¡Gracias por probar LukApp!  ' } })?.mensaje)
+      .toBe('¡Gracias por probar LukApp!');
+  });
+
+  it('un mensaje vacío, raro o demasiado largo no impide el regalo', () => {
+    const base = { id: 4, dias: 30, venceEn: '2026-12-22T04:59:59Z' };
+    expect(leerRegaloPremium({ regalo: { ...base, mensaje: '   ' } })?.mensaje).toBeNull();
+    expect(leerRegaloPremium({ regalo: { ...base, mensaje: 42 } })?.mensaje).toBeNull();
+    expect(leerRegaloPremium({ regalo: { ...base, mensaje: 'a'.repeat(281) } })?.mensaje).toBeNull();
   });
 
   it('descarta lo que no sirve para pintar el pop-up', () => {

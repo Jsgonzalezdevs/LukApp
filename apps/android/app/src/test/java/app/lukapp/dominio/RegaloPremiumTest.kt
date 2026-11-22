@@ -10,6 +10,20 @@ class RegaloPremiumTest {
         assertEquals(RegaloPremium(42, 30, "2026-12-23T04:59:00+00:00"), leerRegaloPremium(texto))
     }
 
+    @Test fun traeElMensajeDelEquipoLimpio() {
+        val texto = """{"regalo":{"id":42,"dias":30,"venceEn":"2026-12-23T04:59:00Z","mensaje":"  ¡Gracias por probar LukApp! 💜  "}}"""
+        assertEquals("¡Gracias por probar LukApp! 💜", leerRegaloPremium(texto)?.mensaje)
+    }
+
+    @Test fun unMensajeRaroNoImpideElRegalo() {
+        val base = """"id":42,"dias":30,"venceEn":"2026-12-23T04:59:00Z""""
+        assertNull(leerRegaloPremium("""{"regalo":{$base,"mensaje":null}}""")?.mensaje)
+        assertNull(leerRegaloPremium("""{"regalo":{$base,"mensaje":"   "}}""")?.mensaje)
+        assertNull(leerRegaloPremium("""{"regalo":{$base,"mensaje":42}}""")?.mensaje)
+        assertNull(leerRegaloPremium("""{"regalo":{$base,"mensaje":"${"a".repeat(281)}"}}""")?.mensaje)
+        assertEquals(30, leerRegaloPremium("""{"regalo":{$base,"mensaje":42}}""")?.dias)
+    }
+
     @Test fun aceptaElFormatoIsoConZ() {
         assertEquals(7, leerRegaloPremium("""{"regalo":{"id":1,"dias":7,"venceEn":"2026-11-30T04:59:59.999Z"}}""")?.dias)
     }

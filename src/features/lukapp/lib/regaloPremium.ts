@@ -8,7 +8,11 @@ export interface RegaloPremiumPendiente {
   id: number;
   dias: number;
   venceEn: string;
+  /** Lo que escribió el equipo al regalarlo. Opcional y corto (máximo 280). */
+  mensaje: string | null;
 }
+
+const LARGO_MAXIMO_MENSAJE = 280;
 
 const MS_DIA = 24 * 60 * 60 * 1_000;
 
@@ -47,9 +51,11 @@ export const leerRegaloPremium = (cuerpo: unknown): RegaloPremiumPendiente | nul
   if (!cuerpo || typeof cuerpo !== 'object') return null;
   const regalo = (cuerpo as { regalo?: unknown }).regalo;
   if (!regalo || typeof regalo !== 'object') return null;
-  const { id, dias, venceEn } = regalo as Record<string, unknown>;
+  const { id, dias, venceEn, mensaje } = regalo as Record<string, unknown>;
   if (typeof id !== 'number' || !Number.isSafeInteger(id) || id <= 0) return null;
   if (typeof dias !== 'number' || !Number.isSafeInteger(dias) || dias <= 0) return null;
   if (typeof venceEn !== 'string' || !Number.isFinite(Date.parse(venceEn))) return null;
-  return { id, dias, venceEn };
+  // Un mensaje raro no tumba la celebración: solo se queda sin mensaje.
+  const texto = typeof mensaje === 'string' ? mensaje.trim() : '';
+  return { id, dias, venceEn, mensaje: texto && texto.length <= LARGO_MAXIMO_MENSAJE ? texto : null };
 };

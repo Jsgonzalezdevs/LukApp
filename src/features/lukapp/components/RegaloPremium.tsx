@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarCheck, Gift, ShieldCheck, Sparkles } from 'lucide-react';
+import { CalendarCheck, Gift, MessageCircleHeart, ShieldCheck, Sparkles } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { obtenerSupabase } from '../data/supabase';
@@ -201,6 +201,23 @@ export const RegaloPremium: React.FC<RegaloPremiumProps> = ({ userId, puedeMostr
                     de Premium
                   </span>
                 </motion.div>
+
+                {regalo.mensaje ? (
+                  <motion.figure
+                    className="mx-auto mt-4 max-w-[340px] rounded-[22px] border border-white/15 bg-white/[0.08] px-4 pb-3.5 pt-3 text-left shadow-[0_14px_30px_-20px_rgba(0,0,0,0.8)]"
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.35, delay: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <figcaption className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[#c9b8ff]">
+                      <MessageCircleHeart className="h-3.5 w-3.5" strokeWidth={2.4} aria-hidden="true" />
+                      Mensaje del equipo
+                    </figcaption>
+                    <blockquote className="mt-1.5 whitespace-pre-line break-words text-[15px] font-medium leading-snug text-white">
+                      “{regalo.mensaje}”
+                    </blockquote>
+                  </motion.figure>
+                ) : null}
 
                 <p id="regalo-premium-descripcion" className="mx-auto mt-4 max-w-[30ch] text-[14px] leading-relaxed text-white/75 sm:mt-5 sm:text-[15px]">
                   Ya está activo en tu cuenta: aprovecha todo lo de Premium sin pagar nada.

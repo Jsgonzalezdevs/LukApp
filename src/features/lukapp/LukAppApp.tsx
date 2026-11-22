@@ -1749,7 +1749,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
           <RegaloPremium
             userId={userId ?? 'vista-previa-local'}
             puedeMostrarse
-            vistaPrevia={{ id: 1, dias: 30, venceEn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000).toISOString() }}
+            vistaPrevia={{ id: 1, dias: 30, venceEn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000).toISOString(), mensaje: 'Gracias por ayudarnos a probar LukApp. ¡Disfrútalo! 💜' }}
             onCerrar={() => setVistaPreviaRegalo(false)}
           />
         ) : userId && cuenta ? (

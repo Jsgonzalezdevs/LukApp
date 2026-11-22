@@ -205,6 +205,8 @@ fun BoxScope.DialogoRegaloPremium(regalo: RegaloPremium, alCerrar: () -> Unit) {
                     )
                 }
 
+                regalo.mensaje?.let { MensajeDelEquipo(it) }
+
                 Text(
                     "Ya está activo en tu cuenta: aprovecha todo lo de Premium sin pagar nada.",
                     Modifier.padding(top = 16.dp).widthIn(max = 280.dp),
@@ -410,3 +412,28 @@ private fun destelloConfeti(r: Float) = Path().apply {
     }
     close()
 }
+
+/** El globo con lo que escribió el equipo al regalarlo; mismo diseño que en la web. */
+@Composable
+private fun MensajeDelEquipo(mensaje: String) {
+    Column(
+        Modifier.padding(top = 16.dp).widthIn(max = 340.dp).fillMaxWidth()
+            .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(22.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(22.dp))
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 14.dp)
+            .semantics(mergeDescendants = true) { contentDescription = "Mensaje del equipo: $mensaje" },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icono(Lucide.MessageCircleHeart, tamano = 14.dp, grosor = 2.4f, color = LavandaClara)
+            Text("MENSAJE DEL EQUIPO", style = estilo(11, FontWeight.Bold, tracking = 0.12f, color = LavandaClara))
+        }
+        Text(
+            "“$mensaje”",
+            Modifier.padding(top = 6.dp),
+            style = estilo(15, FontWeight.Medium, alto = 1.35f),
+        )
+    }
+}
+
+/** La lavanda de la marca, aclarada para que se lea sobre el morado oscuro. */
+private val LavandaClara = Color(0xFFC9B8FF)

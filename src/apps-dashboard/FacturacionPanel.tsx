@@ -378,8 +378,12 @@ export const FacturacionPanel: React.FC = () => {
               <label className="mt-3 block text-xs font-bold text-[var(--fin-ink-soft)]">Vence el
                 <SelectorFechaApp required value={venceEn} onChange={(evento) => setVenceEn(evento.target.value)} className="mt-1.5 w-full rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
               </label>
-              <label className="mt-3 block text-xs font-bold text-[var(--fin-ink-soft)]">Nota interna opcional
-                <textarea value={nota} maxLength={280} onChange={(evento) => setNota(evento.target.value)} rows={2} className="mt-1.5 w-full resize-none rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
+              <label className="mt-3 block text-xs font-bold text-[var(--fin-ink-soft)]">Mensaje para la persona (opcional)
+                <textarea value={nota} maxLength={280} onChange={(evento) => setNota(evento.target.value)} rows={2} placeholder="Ej.: Gracias por ayudarnos a probar LukApp. ¡Disfrútalo!" className="mt-1.5 w-full resize-none rounded-xl border border-[var(--fin-line)] bg-[var(--fin-soft)] px-3 py-2.5 text-[16px] text-[var(--fin-ink)] sm:text-sm" />
+                <span className="mt-1 flex justify-between gap-2 text-[11px] font-medium text-[var(--fin-ink-faint)]">
+                  <span>Lo verá en la celebración al entrar. También queda en la auditoría.</span>
+                  <span>{nota.length}/280</span>
+                </span>
               </label>
               <button disabled={otorgando} type="submit" className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-purple-700 disabled:opacity-60">
                 {otorgando ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />} Otorgar Premium
