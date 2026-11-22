@@ -65,6 +65,15 @@ describe('RegaloPremium', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('el enlace de beneficios cierra la celebración y abre la página de Premium', async () => {
+    const onCerrar = vi.fn();
+    const onVerBeneficios = vi.fn();
+    render(<RegaloPremium userId="persona-3" puedeMostrarse onCerrar={onCerrar} onVerBeneficios={onVerBeneficios} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Ver beneficios de Premium/ }));
+    expect(onCerrar).toHaveBeenCalled();
+    expect(onVerBeneficios).toHaveBeenCalled();
+  });
+
   it('se cierra con el botón', async () => {
     const onCerrar = vi.fn();
     render(<RegaloPremium userId="persona-1" puedeMostrarse onCerrar={onCerrar} />);

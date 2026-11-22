@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   AlertTriangle,
   Check,
+  ChevronRight,
   Copy,
   CreditCard,
   Eye,
@@ -26,6 +27,8 @@ interface CuentaViewProps {
   onSincronizar: () => Promise<void>;
   /** Reutiliza la compra sin mezclarla con los ajustes de la cuenta. */
   soloPlan?: boolean;
+  /** Abre la página que explica cada beneficio de Premium. */
+  onVerBeneficios?: () => void;
 }
 
 interface EstadoPlan {
@@ -138,6 +141,7 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
   cambiosPendientes,
   onSincronizar,
   soloPlan = false,
+  onVerBeneficios,
 }) => {
   const cuentaEmail = cuenta?.email ?? null;
   const [apodo, setApodo] = useState<string | null>(null);
@@ -421,6 +425,16 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
                         <span key={beneficio.clave} className="rounded-full bg-[var(--fin-soft)] px-3 py-1 text-[13px] font-semibold text-[var(--fin-ink-soft)]">{beneficio.titulo}</span>
                       ))}
                     </div>
+                    {onVerBeneficios ? (
+                      <button
+                        type="button"
+                        onClick={onVerBeneficios}
+                        className="mt-3 inline-flex items-center gap-1 text-[13px] font-semibold text-[var(--fin-accent)] underline underline-offset-4"
+                      >
+                        Ver beneficios de Premium
+                        <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+                      </button>
+                    ) : null}
                   </div>
                   {plan.codigo === 'premium' ? null : (
                     <>

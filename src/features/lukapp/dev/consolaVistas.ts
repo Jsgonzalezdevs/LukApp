@@ -6,6 +6,7 @@
 export const VISTAS_DE_PRUEBA = [
   'premium',
   'regalo',
+  'beneficios',
   'aviso',
   'captura',
   'captura-multiple',
@@ -35,6 +36,7 @@ declare global {
 const DESCRIPCIONES: Record<VistaDePrueba, string> = {
   premium: 'Invitación ocasional a Premium.',
   regalo: 'Celebración de Premium regalado por el equipo, con confeti.',
+  beneficios: 'Página con todos los beneficios de Premium.',
   aviso: 'Aviso de movimiento guardado.',
   captura: 'Hoja para anotar un movimiento.',
   'captura-multiple': 'Resumen de varios movimientos detectados.',
@@ -46,6 +48,7 @@ const DESCRIPCIONES: Record<VistaDePrueba, string> = {
 const ATAJOS_DE_UNA_PALABRA: Record<string, VistaDePrueba | 'cerrar' | 'ayuda' | 'instalar-pwa'> = {
   premium: 'premium',
   regalo: 'regalo',
+  beneficios: 'beneficios',
   aviso: 'aviso',
   captura: 'captura',
   multiple: 'captura-multiple',

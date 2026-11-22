@@ -140,6 +140,9 @@ const PRECARGA_PESTANAS: Array<() => Promise<unknown>> = [
   () => import('./components/CalendarioFinancieroView'),
   () => import('./components/AjustesView'),
 ];
+const BeneficiosPremium = lazy(() =>
+  import('./components/BeneficiosPremium').then(({ BeneficiosPremium }) => ({ default: BeneficiosPremium })),
+);
 const RegaloPremium = lazy(() =>
   import('./components/RegaloPremium').then(({ RegaloPremium }) => ({ default: RegaloPremium })),
 );
@@ -421,6 +424,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   );
   const [mostrarReporte, setMostrarReporte] = useState(false);
   const [mostrarPlanesPremium, setMostrarPlanesPremium] = useState(false);
+  const [mostrarBeneficiosPremium, setMostrarBeneficiosPremium] = useState(false);
   const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
   const guia = useGuiaApp();
 
@@ -759,6 +763,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     setGuardado(null);
     setVistaPreviaPremium(false);
     setVistaPreviaRegalo(false);
+    setMostrarBeneficiosPremium(false);
   }, [setPanelAjustes]);
 
   const abrirVistaDePrueba = useCallback((vista: VistaDePrueba) => {
@@ -771,6 +776,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     }
     if (vista === 'regalo') {
       setVistaPreviaRegalo(true);
+      return;
+    }
+    if (vista === 'beneficios') {
+      setMostrarBeneficiosPremium(true);
       return;
     }
     if (vista === 'aviso') {
@@ -969,6 +978,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     analizando === null &&
     capa === null &&
     panelAjustes === null &&
+    !mostrarBeneficiosPremium &&
     !guiaBasicaAbierta;
   // El regalo no exige estar en Inicio ni excluye a admins: a cualquiera le
   // pueden regalar Premium. Solo espera a que no haya nada más encima.
@@ -1506,6 +1516,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
                 syncError={almacen.error}
                 cambiosPendientes={almacen.cambiosPendientes}
                 onSincronizar={almacen.recargar}
+                onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
               />
             ) : (
               <PanelRespaldo
@@ -1532,6 +1543,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               syncError={almacen.error}
               cambiosPendientes={almacen.cambiosPendientes}
               onSincronizar={almacen.recargar}
+              onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
               soloPlan
             />
           </HojaPanel>
@@ -1751,10 +1763,33 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             puedeMostrarse
             vistaPrevia={{ id: 1, dias: 30, venceEn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000).toISOString(), mensaje: 'Gracias por ayudarnos a probar LukApp. ¡Disfrútalo! 💜' }}
             onCerrar={() => setVistaPreviaRegalo(false)}
+            onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
           />
         ) : userId && cuenta ? (
-          <RegaloPremium userId={userId} puedeMostrarse={puedeMostrarRegaloPremium} />
+          <RegaloPremium
+            userId={userId}
+            puedeMostrarse={puedeMostrarRegaloPremium}
+            onVerBeneficios={() => setMostrarBeneficiosPremium(true)}
+          />
         ) : null}
+
+        <AnimatePresence>
+          {mostrarBeneficiosPremium ? (
+            <BeneficiosPremium
+              onCerrar={() => setMostrarBeneficiosPremium(false)}
+              onIrA={(destino) => {
+                setMostrarBeneficiosPremium(false);
+                setMostrarPlanesPremium(false);
+                if (destino.tipo === 'seccion') setSection(destino.id);
+                else setPanelAjustes(destino.id);
+              }}
+              onVerPlanes={() => {
+                setMostrarBeneficiosPremium(false);
+                setMostrarPlanesPremium(true);
+              }}
+            />
+          ) : null}
+        </AnimatePresence>
 
         {vistaPreviaPremium ? (
           <InvitacionPremium

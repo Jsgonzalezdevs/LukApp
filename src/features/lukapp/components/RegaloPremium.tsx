@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarCheck, Gift, MessageCircleHeart, ShieldCheck, Sparkles } from 'lucide-react';
+import { CalendarCheck, ChevronRight, Gift, MessageCircleHeart, ShieldCheck, Sparkles } from 'lucide-react';
 import { apiUrl } from '../../../lib/api';
 import { useBloqueoScroll } from '../data/useBloqueoScroll';
 import { obtenerSupabase } from '../data/supabase';
@@ -19,6 +19,8 @@ interface RegaloPremiumProps {
   /** Vista previa desde la consola: no consulta ni marca nada en el servidor. */
   vistaPrevia?: RegaloPremiumPendiente;
   onCerrar?: () => void;
+  /** Cierra la celebración y abre la página con todo lo que trae Premium. */
+  onVerBeneficios?: () => void;
 }
 
 const claveVisto = (userId: string, id: number) => `lukapp-regalo-premium-visto-v1:${userId}:${id}`;
@@ -44,7 +46,7 @@ const recordarVistoAqui = (userId: string, id: number): void => {
  * Sale una sola vez por regalo: el servidor lo recuerda (vale para todos los
  * dispositivos) y el navegador también, por si la marca no alcanzó a guardarse.
  */
-export const RegaloPremium: React.FC<RegaloPremiumProps> = ({ userId, puedeMostrarse, vistaPrevia, onCerrar }) => {
+export const RegaloPremium: React.FC<RegaloPremiumProps> = ({ userId, puedeMostrarse, vistaPrevia, onCerrar, onVerBeneficios }) => {
   const [regalo, setRegalo] = useState<RegaloPremiumPendiente | null>(vistaPrevia ?? null);
   const [abierto, setAbierto] = useState(false);
   const consultado = useRef(false);
@@ -100,6 +102,11 @@ export const RegaloPremium: React.FC<RegaloPremiumProps> = ({ userId, puedeMostr
     onCerrar?.();
   }, [onCerrar]);
 
+  const verBeneficios = useCallback(() => {
+    cerrar();
+    onVerBeneficios?.();
+  }, [cerrar, onVerBeneficios]);
+
   useEffect(() => {
     if (!abierto) return undefined;
     const focoAnterior = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -108,8 +115,22 @@ export const RegaloPremium: React.FC<RegaloPremiumProps> = ({ userId, puedeMostr
         evento.preventDefault();
         cerrar();
       }
-      // Un solo botón: el foco no tiene a dónde más ir.
-      if (evento.key === 'Tab') evento.preventDefault();
+      if (evento.key !== 'Tab') return;
+      // El foco da la vuelta entre los botones del diálogo y no se escapa a la app de atrás.
+      const botones = Array.from(dialogoRef.current?.querySelectorAll<HTMLElement>('button') ?? []);
+      if (botones.length <= 1) {
+        evento.preventDefault();
+        return;
+      }
+      const primero = botones[0];
+      const ultimo = botones[botones.length - 1];
+      if (evento.shiftKey && document.activeElement === primero) {
+        evento.preventDefault();
+        ultimo.focus();
+      } else if (!evento.shiftKey && document.activeElement === ultimo) {
+        evento.preventDefault();
+        primero.focus();
+      }
     };
     document.addEventListener('keydown', alPulsarTecla);
     requestAnimationFrame(() => dialogoRef.current?.querySelector<HTMLElement>('button')?.focus());
@@ -242,6 +263,17 @@ export const RegaloPremium: React.FC<RegaloPremiumProps> = ({ userId, puedeMostr
                   <Sparkles className="h-4.5 w-4.5" strokeWidth={2.4} aria-hidden="true" />
                   ¡A disfrutarlo!
                 </button>
+
+                {onVerBeneficios ? (
+                  <button
+                    type="button"
+                    onClick={verBeneficios}
+                    className="mx-auto mt-3 inline-flex min-h-9 items-center gap-1 rounded-full px-3 text-[13px] font-semibold text-[#c9b8ff] underline decoration-[#c9b8ff]/40 underline-offset-4 transition-colors hover:text-white hover:decoration-white/60"
+                  >
+                    Ver beneficios de Premium
+                    <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+                  </button>
+                ) : null}
               </div>
             </motion.section>
           </motion.div>
