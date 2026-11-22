@@ -39,11 +39,25 @@ class RachaTest {
         assertEquals(2, calcularRacha(listOf(m("2026-08-24"), m("2026-08-15"), m("2026-07-30")), HOY).diasAnotadosMes)
     }
 
-    @Test fun diasRegaladosSumanSinContarComoAnotados() {
-        val r = calcularRacha(listOf(m("2026-08-24")), HOY, listOf("2026-08-23", "2026-08-22"))
-        assertEquals(3, r.rachaActual); assertTrue(r.anotadoHoy); assertEquals(1, r.diasAnotadosMes)
-        val soloRegalo = calcularRacha(emptyList(), HOY, listOf("2026-08-23"))
-        assertEquals(1, soloRegalo.rachaActual); assertFalse(soloRegalo.anotadoHoy)
-        assertEquals(null, soloRegalo.ultimoDiaAnotado)
+    @Test fun bonoSumaExactoAunqueHayaRachasViejasCerca() {
+        // Viva de 3 días (22-24), hueco el 21 y una racha vieja de 10 (11-20).
+        val txs = (22..24).map { m("2026-08-$it") } + (11..20).map { m("2026-08-$it") }
+        val inicio = inicioDeRachaActual(txs.map { it.occurredOn }, HOY)
+        assertEquals("2026-08-22", inicio)
+        val r = calcularRacha(txs, HOY, listOf(BonoRacha(inicio, 67)))
+        assertEquals(70, r.rachaActual); assertEquals(70, r.rachaMaxima); assertTrue(r.anotadoHoy)
+    }
+
+    @Test fun bonoSePierdeSiLaRachaSeCorta() {
+        val bono = listOf(BonoRacha("2026-08-22", 5))
+        val r = calcularRacha(listOf(m("2026-08-30"), m("2026-08-29"), m("2026-08-24"), m("2026-08-23"), m("2026-08-22")), "2026-08-30", bono)
+        assertEquals(2, r.rachaActual); assertEquals(8, r.rachaMaxima)
+    }
+
+    @Test fun bonoSinRachaVivaQuedaParaHoy() {
+        val bono = listOf(BonoRacha(HOY, 4))
+        val r = calcularRacha(listOf(m("2026-08-10")), HOY, bono)
+        assertEquals(4, r.rachaActual); assertFalse(r.anotadoHoy)
+        assertEquals(5, calcularRacha(listOf(m(HOY)), HOY, bono).rachaActual)
     }
 }

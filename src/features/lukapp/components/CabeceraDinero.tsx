@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { CalendarDays, Flame, Settings2 } from 'lucide-react';
 import type { Transaction } from '../types';
-import { calcularRacha } from '../lib/racha';
+import { calcularRacha, type BonoRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
 
-export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, diasRegaladosRacha, hoy, onAjustes }: {
+export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, bonosRacha, hoy, onAjustes }: {
   periodo: string; opciones: { clave: string; etiqueta: string }[]; onPeriodo: (clave: string) => void;
-  movimientos: readonly Transaction[]; diasRegaladosRacha?: readonly string[]; hoy: string; onAjustes: () => void;
+  movimientos: readonly Transaction[]; bonosRacha?: readonly BonoRacha[]; hoy: string; onAjustes: () => void;
 }) {
   const [rachaAbierta, setRachaAbierta] = useState(false);
-  const racha = calcularRacha(movimientos, hoy, diasRegaladosRacha);
+  const racha = calcularRacha(movimientos, hoy, bonosRacha);
   return <>
     <div className="flex min-w-0 items-center justify-between gap-2">
       <label className="relative flex min-w-0 items-center gap-2 rounded-full bg-[var(--fin-soft)] px-3 py-2 text-[15px] font-semibold">

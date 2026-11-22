@@ -21,7 +21,7 @@ import { TransactionList } from './TransactionList';
 import { AnimatedNumber } from './AnimatedNumber';
 import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
-import { calcularRacha } from '../lib/racha';
+import { calcularRacha, type BonoRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
 import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';
@@ -32,7 +32,7 @@ import { useMovimientoReducido } from '../lib/useMovimientoReducido';
 interface InicioViewProps {
   etiquetaPeriodo: string;
   /** Días que el equipo sumó a la racha desde el superadmin. */
-  diasRegaladosRacha?: readonly string[];
+  bonosRacha?: readonly BonoRacha[];
   onCambiarMes: () => void;
   clavePeriodo?: string;
   maxClavePeriodo?: string;
@@ -94,7 +94,7 @@ const formatMontoCompacto = (monto: number): string => {
 
 export const InicioView: React.FC<InicioViewProps> = ({
   etiquetaPeriodo,
-  diasRegaladosRacha,
+  bonosRacha,
   onCambiarMes,
   clavePeriodo,
   maxClavePeriodo,
@@ -161,8 +161,8 @@ export const InicioView: React.FC<InicioViewProps> = ({
   // Con todo el historial, no solo el período: una racha que empezó el mes
   // pasado se cortaría el día 1 y no coincidiría con la de Dinero ni el superadmin.
   const infoRacha = useMemo(
-    () => calcularRacha(historial, today || new Date().toISOString().slice(0, 10), diasRegaladosRacha),
-    [historial, today, diasRegaladosRacha],
+    () => calcularRacha(historial, today || new Date().toISOString().slice(0, 10), bonosRacha),
+    [historial, today, bonosRacha],
   );
 
   const insightsVisibles = useMemo(() => {

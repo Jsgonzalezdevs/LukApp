@@ -67,7 +67,7 @@ describe('Inicio — racha', () => {
     const septiembre = Array.from({ length: 6 }, (_, i) => dia(`2026-09-${25 + i}`));
     const octubre = Array.from({ length: 20 }, (_, i) => dia(`2026-10-${String(i + 1).padStart(2, '0')}`));
     const completos = { ...datos, transacciones: [...septiembre, ...octubre] };
-    render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={octubre} historial={[...septiembre, ...octubre]} diasRegaladosRacha={['2026-09-24']} today="2026-10-20" onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero(completos).liquidez} entrada={completos} />);
+    render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={octubre} historial={[...septiembre, ...octubre]} bonosRacha={[{ inicioRacha: '2026-09-25', dias: 1 }]} today="2026-10-20" onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero(completos).liquidez} entrada={completos} />);
     expect(screen.getByRole('button', { name: 'Racha activa: 27 días' })).toBeInTheDocument();
   });
 });

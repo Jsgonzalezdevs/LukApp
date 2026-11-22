@@ -62,7 +62,7 @@ import { contactoPorApodo } from './lib/contactos';
 
 
 import { calcularRacha } from './lib/racha';
-import { useDiasRegaladosRacha } from './data/useDiasRegaladosRacha';
+import { useBonosRacha } from './data/useBonosRacha';
 import { verificarRecordatorioRacha } from './lib/recordatorioRacha';
 
 
@@ -447,10 +447,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const thisMonth = monthKey(today);
 
   const { activo: recordatorioActivo, hora: recordatorioHora } = useRecordatorioRacha();
-  const diasRegaladosRacha = useDiasRegaladosRacha(userId);
+  const bonosRacha = useBonosRacha(userId);
   const infoRacha = useMemo(
-    () => calcularRacha(transacciones, today, diasRegaladosRacha),
-    [transacciones, today, diasRegaladosRacha],
+    () => calcularRacha(transacciones, today, bonosRacha),
+    [transacciones, today, bonosRacha],
   );
 
   // Verificación periódica del recordatorio de racha en segundo plano
@@ -1070,7 +1070,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         {section === 'inicio' ? (
           <InicioView
             etiquetaPeriodo={etiquetaPeriodoActivo}
-            diasRegaladosRacha={diasRegaladosRacha}
+            bonosRacha={bonosRacha}
             onCambiarMes={() => setSection('mes')}
             clavePeriodo={month}
             maxClavePeriodo={maxMonth}
@@ -1119,7 +1119,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             cabecera={<CabeceraDinero periodo={month} opciones={Array.from({ length: 13 }, (_, i) => {
               const clave = periodoAdyacente(maxMonth, -i, periodoAjustes.periodo);
               return { clave, etiqueta: etiquetaDePeriodo(clave, periodoAjustes.periodo) };
-            })} onPeriodo={setMonth} movimientos={transacciones} diasRegaladosRacha={diasRegaladosRacha} hoy={today} onAjustes={() => setSection('ajustes')} />}
+            })} onPeriodo={setMonth} movimientos={transacciones} bonosRacha={bonosRacha} hoy={today} onAjustes={() => setSection('ajustes')} />}
             onAbrirHerramienta={setPanelAjustes}
             transacciones={transacciones}
             cajitas={cajitas}

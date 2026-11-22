@@ -28,46 +28,52 @@ data class InfoRacha(
 )
 
 /**
- * Origen: `lib/racha.ts` (`calcularRacha`). Si hoy aún no anotó pero ayer sí, la racha
- * sigue viva: no se penaliza antes de medianoche.
- *
- * `diasRegalados` son los que el equipo sumó desde el superadmin: cuentan para la racha,
- * pero no como "anotado hoy" ni en los días del mes, igual que en la web.
+ * Días que el equipo le sumó a una racha desde el superadmin (`BonoRacha` de la web).
+ * Van pegados al día en que empezó esa racha: si se corta, el bono se va con ella.
  */
-fun calcularRacha(transacciones: List<Transaccion>, hoy: String, diasRegalados: Collection<String> = emptyList()): InfoRacha {
-    if (transacciones.isEmpty() && diasRegalados.isEmpty()) {
-        return InfoRacha(0, 0, false, 0, null, emptyList(), HITOS_RACHA[0], HITOS_RACHA[0].dias)
-    }
+data class BonoRacha(val inicioRacha: String, val dias: Int)
+
+/** El día en que empezó la racha viva contando solo lo anotado; sin racha viva, `hoy`. */
+fun inicioDeRachaActual(fechasAnotadas: Collection<String>, hoy: String): String {
+    val fechas = fechasAnotadas.toHashSet()
+    val ayer = shiftDays(hoy, -1)
+    if (hoy !in fechas && ayer !in fechas) return hoy
+    var cursor = if (hoy in fechas) hoy else ayer
+    while (shiftDays(cursor, -1) in fechas) cursor = shiftDays(cursor, -1)
+    return cursor
+}
+
+/**
+ * Origen: `lib/racha.ts` (`calcularRacha`). Si hoy aún no anotó pero ayer sí, la racha
+ * sigue viva: no se penaliza antes de medianoche. Los bonos se suman a la racha que
+ * empezó en su `inicioRacha`, sin contar como "anotado hoy" ni en los días del mes.
+ */
+fun calcularRacha(transacciones: List<Transaccion>, hoy: String, bonos: List<BonoRacha> = emptyList()): InfoRacha {
+    fun bonoDe(inicio: String) = bonos.filter { it.inicioRacha == inicio }.sumOf { it.dias }
+
     val fechasUnicas = transacciones.map { it.occurredOn }.filter { it.isNotEmpty() }.distinct().sortedDescending()
-    val anotadoHoy = hoy in fechasUnicas
-    val fechasRacha = (fechasUnicas + diasRegalados).distinct().sortedDescending()
-    val fechas = fechasRacha.toHashSet()
-    val cuentaHoy = hoy in fechas
+    val fechas = fechasUnicas.toHashSet()
+    val anotadoHoy = hoy in fechas
     val ayer = shiftDays(hoy, -1)
     var rachaActual = 0
-    if (cuentaHoy || ayer in fechas) {
-        var cursor = if (cuentaHoy) hoy else ayer
+    if (anotadoHoy || ayer in fechas) {
+        var cursor = if (anotadoHoy) hoy else ayer
         while (cursor in fechas) {
             rachaActual += 1
             cursor = shiftDays(cursor, -1)
         }
     }
-    var rachaMaxima = 0
-    if (fechasRacha.isNotEmpty()) {
-        val asc = fechasRacha.sorted()
-        var temp = 1
-        rachaMaxima = 1
-        for (i in 1 until asc.size) {
-            val diff = daysBetween(asc[i - 1], asc[i])
-            if (diff == 1) {
-                temp += 1
-                if (temp > rachaMaxima) rachaMaxima = temp
-            } else if (diff > 1) {
-                temp = 1
-            }
-        }
-        if (rachaActual > rachaMaxima) rachaMaxima = rachaActual
+    rachaActual += bonoDe(inicioDeRachaActual(fechasUnicas, hoy))
+
+    var rachaMaxima = rachaActual
+    val asc = fechasUnicas.reversed()
+    var inicioTramo = asc.firstOrNull() ?: hoy
+    for (i in asc.indices) {
+        if (i > 0 && daysBetween(asc[i - 1], asc[i]) != 1) inicioTramo = asc[i]
+        val largo = daysBetween(inicioTramo, asc[i]) + 1 + bonoDe(inicioTramo)
+        if (largo > rachaMaxima) rachaMaxima = largo
     }
+
     val mesActual = hoy.take(7)
     val mayor = maxOf(rachaActual, rachaMaxima)
     val proximo = HITOS_RACHA.firstOrNull { rachaActual < it.dias }

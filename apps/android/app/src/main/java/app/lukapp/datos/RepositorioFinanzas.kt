@@ -1,6 +1,7 @@
 package app.lukapp.datos
 
 import android.content.Context
+import app.lukapp.dominio.BonoRacha
 import app.lukapp.dominio.Libro
 import app.lukapp.seguridad.ArchivoCifrado
 import io.github.jan.supabase.SupabaseClient
@@ -63,8 +64,8 @@ class RepositorioFinanzas(private val supabase: SupabaseClient, private val cont
     val error: StateFlow<String?> = _error.asStateFlow()
 
     // Van aparte del libro: no son movimientos y no deben terminar en la copia ni en un respaldo.
-    private val _diasRegaladosRacha = MutableStateFlow<List<String>>(emptyList())
-    val diasRegaladosRacha: StateFlow<List<String>> = _diasRegaladosRacha.asStateFlow()
+    private val _bonosRacha = MutableStateFlow<List<BonoRacha>>(emptyList())
+    val bonosRacha: StateFlow<List<BonoRacha>> = _bonosRacha.asStateFlow()
 
     private var uid: String? = null
     private var copia: ArchivoCifrado? = null
@@ -85,7 +86,7 @@ class RepositorioFinanzas(private val supabase: SupabaseClient, private val cont
     fun cerrar() {
         uid = null; copia = null; cola = null
         _libro.value = Libro()
-        _diasRegaladosRacha.value = emptyList()
+        _bonosRacha.value = emptyList()
         _estado.value = EstadoSincronizacion.CARGANDO
     }
 
@@ -126,9 +127,13 @@ class RepositorioFinanzas(private val supabase: SupabaseClient, private val cont
         }
         // Es un extra: si falla (o la tabla aún no existe), la racha sale solo de los movimientos.
         runCatching {
-            supabase.from("racha_dias_regalados").select(Columns.list("fecha")) { filter { eq("user_id", usuario) } }
-                .decodeList<JsonObject>().mapNotNull { it["fecha"]?.jsonPrimitive?.content }
-        }.onSuccess { if (uid == usuario) _diasRegaladosRacha.value = it }
+            supabase.from("racha_bonos").select(Columns.list("inicio_racha", "dias")) { filter { eq("user_id", usuario) } }
+                .decodeList<JsonObject>().mapNotNull { fila ->
+                    val inicio = fila["inicio_racha"]?.jsonPrimitive?.content ?: return@mapNotNull null
+                    val dias = fila["dias"]?.jsonPrimitive?.content?.toIntOrNull() ?: return@mapNotNull null
+                    BonoRacha(inicio, dias)
+                }
+        }.onSuccess { if (uid == usuario) _bonosRacha.value = it }
     }
 
     /**

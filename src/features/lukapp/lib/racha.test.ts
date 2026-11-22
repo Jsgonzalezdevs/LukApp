@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calcularRacha, diasParaSumarRacha } from './racha';
+import { calcularRacha, inicioDeRachaActual } from './racha';
+import { shiftDays } from './localDate';
 import type { Transaction } from '../types';
 
 const mockTx = (occurredOn: string): Transaction => ({
@@ -68,34 +69,39 @@ describe('calcularRacha', () => {
   });
 });
 
-describe('días regalados desde el superadmin', () => {
+describe('bonos de racha desde el superadmin', () => {
   const HOY = '2026-08-24';
+  const dias = (desde: string, n: number) =>
+    Array.from({ length: n }, (_, i) => mockTx(shiftDays(desde, -i)));
 
-  it('suman a la racha sin contar como anotado hoy ni en el mes', () => {
-    const r = calcularRacha([mockTx('2026-08-24')], HOY, ['2026-08-23', '2026-08-22']);
-    expect(r.rachaActual).toBe(3);
+  it('suma exactamente lo pedido, aunque haya rachas viejas cerca', () => {
+    // Racha viva de 3 días (22-24), hueco de 1 día y una racha vieja de 10.
+    const txs = [...dias('2026-08-24', 3), ...dias('2026-08-20', 10)];
+    const bono = { inicioRacha: inicioDeRachaActual(txs.map((t) => t.occurredOn), HOY), dias: 67 };
+    expect(bono.inicioRacha).toBe('2026-08-22');
+    const r = calcularRacha(txs, HOY, [bono]);
+    expect(r.rachaActual).toBe(70);
+    expect(r.rachaMaxima).toBe(70);
     expect(r.anotadoHoy).toBe(true);
-    expect(r.diasAnotadosMes).toBe(1);
-
-    const soloRegalo = calcularRacha([], HOY, ['2026-08-23']);
-    expect(soloRegalo.rachaActual).toBe(1);
-    expect(soloRegalo.anotadoHoy).toBe(false);
-    expect(soloRegalo.ultimoDiaAnotado).toBeNull();
+    expect(r.diasAnotadosMes).toBe(13);
   });
 
-  it('rellena justo antes de la racha viva', () => {
-    const dias = diasParaSumarRacha(['2026-08-24', '2026-08-23'], HOY, 3);
-    expect(dias).toEqual(['2026-08-22', '2026-08-21', '2026-08-20']);
-    const r = calcularRacha([mockTx('2026-08-24'), mockTx('2026-08-23')], HOY, dias);
-    expect(r.rachaActual).toBe(5);
+  it('sigue sumando mientras la racha crece y se pierde si se corta', () => {
+    const bono = { inicioRacha: '2026-08-22', dias: 5 };
+    expect(calcularRacha(dias('2026-08-24', 3), HOY, [bono]).rachaActual).toBe(8);
+    expect(calcularRacha(dias('2026-08-30', 9), '2026-08-30', [bono]).rachaActual).toBe(14);
+    const cortada = calcularRacha([...dias('2026-08-30', 2), ...dias('2026-08-24', 3)], '2026-08-30', [bono]);
+    expect(cortada.rachaActual).toBe(2);
+    expect(cortada.rachaMaxima).toBe(8);
   });
 
-  it('sin racha viva arranca desde ayer', () => {
-    expect(diasParaSumarRacha(['2026-08-10'], HOY, 2)).toEqual(['2026-08-23', '2026-08-22']);
-  });
-
-  it('no regala un día que ya cuenta', () => {
-    const dias = diasParaSumarRacha(['2026-08-23', '2026-08-21'], HOY, 2);
-    expect(dias).toEqual(['2026-08-22', '2026-08-20']);
+  it('sin racha viva, el bono queda para hoy y se conserva si anota hoy', () => {
+    expect(inicioDeRachaActual(['2026-08-10'], HOY)).toBe(HOY);
+    const bono = { inicioRacha: HOY, dias: 4 };
+    const sinAnotar = calcularRacha([mockTx('2026-08-10')], HOY, [bono]);
+    expect(sinAnotar.rachaActual).toBe(4);
+    expect(sinAnotar.anotadoHoy).toBe(false);
+    expect(calcularRacha([mockTx(HOY)], HOY, [bono]).rachaActual).toBe(5);
+    expect(calcularRacha([mockTx('2026-08-25')], '2026-08-25', [bono]).rachaActual).toBe(1);
   });
 });

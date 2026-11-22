@@ -2434,8 +2434,8 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
           <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 shadow-2xl z-10">
             <h3 className="text-base font-bold text-[var(--fin-ink)]">🔥 Racha de {rachaDe.usuario || rachaDe.email}</h3>
             <p className="mt-2 text-xs text-[var(--fin-ink-soft)] leading-relaxed">
-              Los días se suman justo antes de su racha actual (o desde ayer si no tiene una viva).
-              No crean movimientos: solo cuentan para la racha.
+              Se suman exactamente a su racha actual. Si la racha se corta, los días regalados se
+              van con ella. No crean movimientos: solo cuentan para la racha.
             </p>
 
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">

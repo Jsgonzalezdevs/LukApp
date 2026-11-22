@@ -7,6 +7,7 @@ import app.lukapp.datos.OperacionesLibro
 import app.lukapp.datos.EstadoSincronizacion
 import app.lukapp.datos.PreferenciasCuenta
 import app.lukapp.datos.RepositorioFinanzas
+import app.lukapp.dominio.BonoRacha
 import app.lukapp.dominio.Catalogo
 import app.lukapp.dominio.ContextoFinanciero
 import app.lukapp.dominio.InfoRacha
@@ -46,8 +47,8 @@ data class VistaInicio(
     val contexto: ContextoFinanciero,
     val preparacion: PreparacionInicio,
     val racha: InfoRacha,
-    /** Días que el equipo sumó a la racha; Dinero los usa con todo el historial. */
-    val diasRegaladosRacha: List<String>,
+    /** Días que el equipo sumó a la racha; Dinero también los necesita. */
+    val bonosRacha: List<BonoRacha>,
     val catalogo: Catalogo,
     val ajustes: AjustesCuenta,
 )
@@ -69,7 +70,7 @@ class ModeloApp(
     val estadoSincronizacion: StateFlow<EstadoSincronizacion> = finanzas.estado
     val errorSincronizacion: StateFlow<String?> = finanzas.error
 
-    val vista: StateFlow<VistaInicio?> = combine(finanzas.libro, preferencias.ajustes, periodoElegido, finanzas.diasRegaladosRacha) { libro, ajustes, elegido, regalados ->
+    val vista: StateFlow<VistaInicio?> = combine(finanzas.libro, preferencias.ajustes, periodoElegido, finanzas.bonosRacha) { libro, ajustes, elegido, bonos ->
         val hoy = bogotaDate()
         val maxClave = claveDePeriodo(hoy, ajustes.periodo)
         val clave = elegido ?: maxClave
@@ -85,8 +86,8 @@ class ModeloApp(
             contexto = construirContextoFinanciero(libro, hoy, ajustes.periodo),
             preparacion = preparacionInicio(libro),
             // Con todo el historial, igual que la web: con solo el período, la racha se cortaba el día 1.
-            racha = calcularRacha(libro.transacciones, hoy, regalados),
-            diasRegaladosRacha = regalados,
+            racha = calcularRacha(libro.transacciones, hoy, bonos),
+            bonosRacha = bonos,
             catalogo = hacerCatalogo(libro.categorias),
             ajustes = ajustes,
         )

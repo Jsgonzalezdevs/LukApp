@@ -71,7 +71,7 @@ import {
   type UsoTokensIA,
 } from './server_lib/usoProveedorIA.ts';
 import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
-import { calcularRacha, diasParaSumarRacha } from './src/features/lukapp/lib/racha.ts';
+import { calcularRacha, inicioDeRachaActual, type BonoRacha } from './src/features/lukapp/lib/racha.ts';
 import { bogotaDate } from './src/features/lukapp/lib/localDate.ts';
 import { validarFirmaWebhookResend } from './server_lib/firmaWebhookResend.ts';
 import {
@@ -1525,24 +1525,28 @@ const leerRachaDe = async (cliente: ClienteAdmin, userId: string) => {
     if (!data || data.length < 1000) break;
   }
 
-  const { data: regalos, error: errorRegalos } = await cliente
-    .from('racha_dias_regalados')
-    .select('fecha')
+  const { data: filasBonos, error: errorBonos } = await cliente
+    .from('racha_bonos')
+    .select('inicio_racha, dias')
     .eq('user_id', userId);
-  if (errorRegalos) throw new Error(`No se pudieron leer los días regalados: ${errorRegalos.message}`);
-  const diasRegalados = (regalos ?? []).map((f) => String(f.fecha));
+  if (errorBonos) throw new Error(`No se pudieron leer los días regalados: ${errorBonos.message}`);
+  const bonos: BonoRacha[] = (filasBonos ?? []).map((f) => ({ inicioRacha: String(f.inicio_racha), dias: Number(f.dias) }));
 
   const hoy = bogotaDate();
   const movimientos = [...new Set(fechasMovimientos)].map((occurredOn) => ({ occurredOn }));
-  const info = calcularRacha(movimientos, hoy, diasRegalados);
-  return { hoy, info, fechasMovimientos, diasRegalados };
+  const info = calcularRacha(movimientos, hoy, bonos);
+  const inicio = inicioDeRachaActual(fechasMovimientos, hoy);
+  // Solo lo regalado a la racha de ahora: un bono de una racha que ya se
+  // cortó no está sumando nada y confundiría al leer el panel.
+  const diasRegalados = bonos.filter((b) => b.inicioRacha === inicio).reduce((t, b) => t + b.dias, 0);
+  return { hoy, info, inicio, diasRegalados };
 };
 
 const resumenRacha = (r: Awaited<ReturnType<typeof leerRachaDe>>) => ({
   rachaActual: r.info.rachaActual,
   rachaMaxima: r.info.rachaMaxima,
   anotadoHoy: r.info.anotadoHoy,
-  diasRegalados: r.diasRegalados.length,
+  diasRegalados: r.diasRegalados,
 });
 
 app.get('/api/superadmin/racha', async (req, res) => {
@@ -1586,7 +1590,7 @@ app.post('/api/superadmin/racha', async (req, res) => {
     if (!ctx.existe) return res.status(404).json({ error: 'Ese usuario ya no existe.' });
 
     if (accion === 'quitar') {
-      const { error } = await cliente.from('racha_dias_regalados').delete().eq('user_id', userId);
+      const { error } = await cliente.from('racha_bonos').delete().eq('user_id', userId);
       if (error) throw error;
       await registrarAuditoria(cliente, acceso.email, 'Quitó los días de racha regalados', ctx.objetivoEmail || userId, undefined, acceso.userId);
       return res.status(200).json(resumenRacha(await leerRachaDe(cliente, userId)));
@@ -1597,11 +1601,12 @@ app.post('/api/superadmin/racha', async (req, res) => {
     }
 
     const antes = await leerRachaDe(cliente, userId);
-    const nuevos = diasParaSumarRacha([...antes.fechasMovimientos, ...antes.diasRegalados], antes.hoy, dias);
-    const { error } = await cliente.from('racha_dias_regalados').upsert(
-      nuevos.map((fecha) => ({ user_id: userId, fecha, otorgado_por: acceso.userId })),
-      { onConflict: 'user_id,fecha', ignoreDuplicates: true },
-    );
+    const { error } = await cliente.from('racha_bonos').insert({
+      user_id: userId,
+      inicio_racha: antes.inicio,
+      dias,
+      otorgado_por: acceso.userId,
+    });
     if (error) throw error;
 
     const despues = await leerRachaDe(cliente, userId);
