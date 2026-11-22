@@ -48,6 +48,7 @@ import app.lukapp.ui.comun.pulsable
 import app.lukapp.ui.iconos.Icono
 import app.lukapp.ui.iconos.Lucide
 import app.lukapp.ui.inicio.PantallaInicio
+import app.lukapp.ui.mas.DialogoRegaloPremium
 import app.lukapp.ui.shell.BarraNavegacion
 import app.lukapp.ui.shell.Seccion
 import app.lukapp.ui.tema.LukApp
@@ -332,12 +333,24 @@ fun ShellLukApp(
             // La guía va al final: encima de todo, señalando lo que hay debajo.
             val hayPanel by modelo.hayPanelAbierto.collectAsState()
             val ajustesGuia = actual.ajustes
-            when (app.lukapp.dominio.guiaPendiente(ajustesGuia.onboardingTerminado, ajustesGuia.guiaBasicaVista, ajustesGuia.guiaSecciones, seccion.name.lowercase(), hayPanel)) {
+            val guia = app.lukapp.dominio.guiaPendiente(ajustesGuia.onboardingTerminado, ajustesGuia.guiaBasicaVista, ajustesGuia.guiaSecciones, seccion.name.lowercase(), hayPanel)
+            when (guia) {
                 app.lukapp.dominio.GuiaPendiente.BASICA -> app.lukapp.ui.guia.GuiaApp(app.lukapp.ui.guia.PASOS_BASICOS, alCerrar = modelo::terminarGuiaBasica)
                 app.lukapp.dominio.GuiaPendiente.SECCION -> app.lukapp.ui.guia.PASOS_POR_SECCION[seccion]?.let { pasos ->
                     app.lukapp.ui.guia.GuiaApp(pasos, alCerrar = { modelo.marcarSeccionGuia(seccion.name.lowercase()) })
                 }
                 app.lukapp.dominio.GuiaPendiente.NINGUNA -> Unit
+            }
+            // El regalo de Premium espera su turno: después de la bienvenida y sin la guía ni otro panel encima.
+            LaunchedEffect(Unit) { cuenta.consultarRegalo() }
+            val regalo by cuenta.regalo.collectAsState()
+            var regaloAbierto by remember { mutableStateOf(false) }
+            val bienvenidaHecha = actual.ajustes.onboardingTerminado || actual.libro.transacciones.isNotEmpty()
+            regalo?.let { r ->
+                if (regaloAbierto || (bienvenidaHecha && !hayPanel && guia == app.lukapp.dominio.GuiaPendiente.NINGUNA)) {
+                    LaunchedEffect(r.id) { regaloAbierto = true; cuenta.regaloMostrado(r) }
+                    DialogoRegaloPremium(r, alCerrar = { regaloAbierto = false; cuenta.cerrarRegalo() })
+                }
             }
         }
     }
