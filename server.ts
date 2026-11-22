@@ -73,6 +73,7 @@ import {
 import { MODELOS_GROQ_ASESOR } from './server_lib/proveedoresIA.ts';
 import { calcularRacha, inicioDeRachaActual, type BonoRacha } from './src/features/lukapp/lib/racha.ts';
 import { bogotaDate } from './src/features/lukapp/lib/localDate.ts';
+import { diasDeRegalo } from './src/features/lukapp/lib/regaloPremium.ts';
 import { validarFirmaWebhookResend } from './server_lib/firmaWebhookResend.ts';
 import {
   centavosWompi,
@@ -2342,6 +2343,75 @@ app.get('/api/mi-plan', async (req, res) => {
   } catch (error: any) {
     console.error('Error consultando el plan propio:', error);
     return res.status(500).json({ error: 'No se pudo consultar tu plan.' });
+  }
+});
+
+// Mientras la migración del aviso no esté aplicada, la columna no existe. Eso
+// no es un error para la persona: simplemente todavía no hay regalo que mostrar.
+const esColumnaRegaloPendiente = (error: { code?: string; message?: string } | null): boolean =>
+  Boolean(error) && (error!.code === '42703' || error!.code === 'PGRST204' || /regalo_visto_en/.test(error!.message ?? ''));
+
+// El Premium de cortesía que el equipo le dio a esta cuenta y que aún no ha
+// visto celebrado. Solo cortesías manuales: un pago propio ya tiene su pantalla.
+app.get('/api/mi-plan/regalo-premium', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+  if (!cliente) return res.status(200).json({ regalo: null });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const { data, error } = await cliente
+      .from('suscripciones')
+      .select('id,inicia_en,vence_en')
+      .eq('user_id', acceso.userId)
+      .eq('estado', 'activa')
+      .eq('origen', 'manual')
+      .is('regalo_visto_en', null)
+      .gt('vence_en', new Date().toISOString())
+      .order('inicia_en', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      if (esColumnaRegaloPendiente(error)) return res.status(200).json({ regalo: null });
+      throw new Error(error.message);
+    }
+    if (!data) return res.status(200).json({ regalo: null });
+    return res.status(200).json({
+      regalo: { id: Number(data.id), dias: diasDeRegalo(data.inicia_en, data.vence_en), venceEn: data.vence_en },
+    });
+  } catch (error: any) {
+    console.error('Error consultando el regalo de Premium:', error);
+    return res.status(500).json({ error: 'No se pudo consultar tu regalo.' });
+  }
+});
+
+app.post('/api/mi-plan/regalo-premium/:id/visto', async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  const cliente = clienteAdmin();
+  if (!token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+  if (!cliente) return res.status(503).json({ error: 'La gestión de planes todavía no está configurada.' });
+
+  try {
+    const acceso = await exigirUsuario(cliente, token);
+    if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ error: 'El regalo no es válido.' });
+    // El filtro por user_id es el que impide marcar el regalo de otra persona:
+    // esta ruta usa la llave de servicio y no pasa por las políticas de RLS.
+    const { error } = await cliente
+      .from('suscripciones')
+      .update({ regalo_visto_en: new Date().toISOString() })
+      .eq('id', id)
+      .eq('user_id', acceso.userId)
+      .eq('origen', 'manual')
+      .is('regalo_visto_en', null);
+    if (error && !esColumnaRegaloPendiente(error)) throw new Error(error.message);
+    return res.status(204).end();
+  } catch (error: any) {
+    console.error('Error marcando el regalo de Premium como visto:', error);
+    return res.status(500).json({ error: 'No se pudo guardar que viste tu regalo.' });
   }
 });
 

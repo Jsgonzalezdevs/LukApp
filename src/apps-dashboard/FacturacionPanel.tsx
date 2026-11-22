@@ -231,7 +231,7 @@ export const FacturacionPanel: React.FC = () => {
       setUsuarioSeleccionado('');
       setVenceEn('');
       setNota('');
-      setAviso('Premium de cortesía otorgado y registrado en la auditoría.');
+      setAviso('Premium de cortesía otorgado y registrado en la auditoría. La próxima vez que esa persona entre, verá una celebración con los días que le regalaste.');
       await cargar();
     } catch (causa: any) {
       setError(causa?.message || 'No se pudo otorgar Premium.');

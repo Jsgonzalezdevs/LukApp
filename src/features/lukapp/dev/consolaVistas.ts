@@ -5,6 +5,7 @@
  */
 export const VISTAS_DE_PRUEBA = [
   'premium',
+  'regalo',
   'aviso',
   'captura',
   'captura-multiple',
@@ -33,6 +34,7 @@ declare global {
 
 const DESCRIPCIONES: Record<VistaDePrueba, string> = {
   premium: 'Invitación ocasional a Premium.',
+  regalo: 'Celebración de Premium regalado por el equipo, con confeti.',
   aviso: 'Aviso de movimiento guardado.',
   captura: 'Hoja para anotar un movimiento.',
   'captura-multiple': 'Resumen de varios movimientos detectados.',
@@ -43,6 +45,7 @@ const DESCRIPCIONES: Record<VistaDePrueba, string> = {
 /** Cada alias se ejecuta al escribir esa única palabra en la consola. */
 const ATAJOS_DE_UNA_PALABRA: Record<string, VistaDePrueba | 'cerrar' | 'ayuda' | 'instalar-pwa'> = {
   premium: 'premium',
+  regalo: 'regalo',
   aviso: 'aviso',
   captura: 'captura',
   multiple: 'captura-multiple',

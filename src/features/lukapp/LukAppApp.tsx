@@ -140,6 +140,10 @@ const PRECARGA_PESTANAS: Array<() => Promise<unknown>> = [
   () => import('./components/CalendarioFinancieroView'),
   () => import('./components/AjustesView'),
 ];
+const RegaloPremium = lazy(() =>
+  import('./components/RegaloPremium').then(({ RegaloPremium }) => ({ default: RegaloPremium })),
+);
+
 const InvitacionPremium = lazy(() =>
   import('./components/InvitacionPremium').then(({ InvitacionPremium }) => ({ default: InvitacionPremium })),
 );
@@ -719,6 +723,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const [detalle, setDetalle] = useState<Transaction | null>(null);
   const [guardado, setGuardado] = useState<Guardado | null>(null);
   const [vistaPreviaPremium, setVistaPreviaPremium] = useState(false);
+  const [vistaPreviaRegalo, setVistaPreviaRegalo] = useState(false);
 
   // Repetir no escribe a ciegas: abre la captura con los datos del último
   // movimiento y la fecha de hoy. La persona todavía ve y confirma todo antes
@@ -753,6 +758,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     setMostrarReporte(false);
     setGuardado(null);
     setVistaPreviaPremium(false);
+    setVistaPreviaRegalo(false);
   }, [setPanelAjustes]);
 
   const abrirVistaDePrueba = useCallback((vista: VistaDePrueba) => {
@@ -761,6 +767,10 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
     if (vista === 'premium') {
       setVistaPreviaPremium(true);
+      return;
+    }
+    if (vista === 'regalo') {
+      setVistaPreviaRegalo(true);
       return;
     }
     if (vista === 'aviso') {
@@ -960,6 +970,14 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
     capa === null &&
     panelAjustes === null &&
     !guiaBasicaAbierta;
+  // El regalo no exige estar en Inicio ni excluye a admins: a cualquiera le
+  // pueden regalar Premium. Solo espera a que no haya nada más encima.
+  const puedeMostrarRegaloPremium =
+    userId !== null &&
+    cuenta !== undefined &&
+    onboarding.terminado &&
+    !guiaSeccionAbierta &&
+    ningunModalAbierto;
   const puedeMostrarInvitacionPremium =
     userId !== null &&
     cuenta !== undefined &&
@@ -1725,6 +1743,17 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             cajitasBalances={cajitasBalances}
             emailUsuario={cuenta?.email}
           />
+        ) : null}
+
+        {vistaPreviaRegalo ? (
+          <RegaloPremium
+            userId={userId ?? 'vista-previa-local'}
+            puedeMostrarse
+            vistaPrevia={{ id: 1, dias: 30, venceEn: new Date(Date.now() + 30 * 24 * 60 * 60 * 1_000).toISOString() }}
+            onCerrar={() => setVistaPreviaRegalo(false)}
+          />
+        ) : userId && cuenta ? (
+          <RegaloPremium userId={userId} puedeMostrarse={puedeMostrarRegaloPremium} />
         ) : null}
 
         {vistaPreviaPremium ? (
