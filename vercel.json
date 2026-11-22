@@ -22,7 +22,7 @@
     { "source": "/finanzas/:path*", "destination": "/index.html" },
     { "source": "/pago/confirmado", "destination": "/index.html" },
     {
-      "source": "/(app|entrar|registro|superadmin|estadisticas|dinero|mes|asesor|ajustes|ecosistema|blog|legal|terminos|eliminar-datos)(/.*)?",
+      "source": "/(app|entrar|registro|superadmin|estadisticas|dinero|mes|asesor|ajustes|calendario|premium|ecosistema|blog|legal|terminos|eliminar-datos)(/.*)?",
       "destination": "/index.html"
     }
   ],
@@ -71,7 +71,7 @@
       ]
     },
     {
-      "source": "/(dinero|mes|asesor|ajustes|ecosistema)(/.*)?",
+      "source": "/(dinero|mes|asesor|ajustes|calendario|premium|ecosistema)(/.*)?",
       "headers": [
         { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" },
         { "key": "Cache-Control", "value": "private, no-store, must-revalidate" }
