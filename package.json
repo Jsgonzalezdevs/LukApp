@@ -1,7 +1,7 @@
 {
   "name": "lukapp",
   "private": true,
-  "version": "11.6.1",
+  "version": "11.7.0",
   "type": "module",
   "description": "LukApp — Plataforma de finanzas personales asistida por IA y comandos de voz",
   "allowScripts": {
@@ -28,7 +28,8 @@
     "pdf-parse": "^2.4.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
-    "tesseract.js": "^7.0.0"
+    "tesseract.js": "^7.0.0",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@netlify/functions": "^5.3.0",

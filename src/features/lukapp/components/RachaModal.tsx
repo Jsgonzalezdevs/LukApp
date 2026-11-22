@@ -1,19 +1,47 @@
 import { IconoSimbolo } from './IconoSimbolo';
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, CheckCircle2, Clock, Flame, Trophy, X } from 'lucide-react';
+import { Bell, CheckCircle2, Clock, Flame, Share2, Trophy, X } from 'lucide-react';
 import { HITOS_RACHA, type InfoRacha } from '../lib/racha';
 import { useRecordatorioRacha } from '../data/usePreferencias';
 import { enviarNotificacionRacha } from '../lib/recordatorioRacha';
+import { RankingRacha } from './RankingRacha';
+import type { EstadoServidor } from '../data/useRachaServidor';
+import { ligaDeRacha, PREMIOS_RACHA, siguienteLiga, textoParaCompartir, ultimosDias } from '../lib/rankingRacha';
 
 interface RachaModalProps {
   infoRacha: InfoRacha;
+  /** El día de hoy en Bogotá, para el calendario. */
+  hoy: string;
+  /** Protectores y premios, que viven en el servidor. */
+  servidor: EstadoServidor;
   onCerrar: () => void;
 }
 
-export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) => {
+export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, hoy, servidor, onCerrar }) => {
   const recordatorio = useRecordatorioRacha();
   const [mensajePrueba, setMensajePrueba] = useState<string | null>(null);
+  const [mensajeCompartir, setMensajeCompartir] = useState<string | null>(null);
+  const [pestana, setPestana] = useState<'mia' | 'ranking'>('mia');
+  const liga = ligaDeRacha(infoRacha.rachaActual);
+  const proximaLiga = siguienteLiga(infoRacha.rachaActual);
+  const dias = ultimosDias(infoRacha.diasAnotados, hoy, 28, infoRacha.diasProtegidos);
+  const hito = infoRacha.proximoHito;
+  const progresoHito = hito ? Math.min(100, Math.round((infoRacha.rachaActual / hito.dias) * 100)) : 100;
+
+  const compartir = async () => {
+    const texto = textoParaCompartir(infoRacha.rachaActual);
+    try {
+      if (navigator.share) await navigator.share({ text: texto });
+      else {
+        await navigator.clipboard.writeText(texto);
+        setMensajeCompartir('Texto copiado, pégalo donde quieras.');
+        setTimeout(() => setMensajeCompartir(null), 3000);
+      }
+    } catch {
+      // Cerrar la hoja de compartir cuenta como cancelar; no es un error.
+    }
+  };
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-md">
       <motion.div
@@ -74,6 +102,89 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
               <span className="text-[13px] font-bold text-[var(--fin-ink-soft)] uppercase tracking-tight">
                 Días este mes
               </span>
+            </div>
+          </div>
+
+          {/* Pestañas: lo mío / el ranking de todos */}
+          <div role="tablist" className="grid grid-cols-2 gap-1 rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] p-1">
+            {([['mia', '🔥 Mi racha'], ['ranking', '🏆 Ranking']] as const).map(([id, etiqueta]) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={pestana === id}
+                onClick={() => setPestana(id)}
+                className={`rounded-[var(--fin-r-pill)] py-2 text-[14px] font-bold transition-colors ${
+                  pestana === id ? 'bg-[var(--fin-card)] text-[var(--fin-ink)] shadow-sm' : 'text-[var(--fin-ink-soft)]'
+                }`}
+              >
+                {etiqueta}
+              </button>
+            ))}
+          </div>
+
+          {pestana === 'ranking' ? <RankingRacha /> : (<>
+
+          {/* Liga y progreso */}
+          <div className="rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[15px] font-bold text-[var(--fin-ink)]">
+                {liga ? `${liga.emoji} Liga ${liga.nombre}` : 'Aún sin liga'}
+              </p>
+              {proximaLiga && (
+                <p className="text-[13px] text-[var(--fin-ink-soft)]">
+                  {proximaLiga.emoji} {proximaLiga.nombre} en {proximaLiga.desde - infoRacha.rachaActual} {proximaLiga.desde - infoRacha.rachaActual === 1 ? 'día' : 'días'}
+                </p>
+              )}
+            </div>
+            {hito && (
+              <div className="mt-3">
+                <div className="h-2 overflow-hidden rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)]">
+                  <div className="h-full rounded-[var(--fin-r-pill)] bg-amber-500 transition-all" style={{ width: `${progresoHito}%` }} />
+                </div>
+                <p className="mt-1.5 text-[13px] text-[var(--fin-ink-soft)]">
+                  {hito.emoji} {hito.titulo}: te faltan {infoRacha.diasParaProximoHito} {infoRacha.diasParaProximoHito === 1 ? 'día' : 'días'}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Protectores: una red de seguridad, no una licencia para faltar */}
+          <div className="flex items-center gap-3 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-4">
+            <span className="text-[24px]" aria-hidden="true">🛡️</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15px] font-bold text-[var(--fin-ink)]">
+                {servidor.protectores} {servidor.protectores === 1 ? 'protector' : 'protectores'} de racha
+              </p>
+              <p className="text-[13px] leading-snug text-[var(--fin-ink-soft)]">
+                {servidor.protectorUsado
+                  ? 'Usamos un protector para salvar tu racha de ayer. 🎉'
+                  : 'Ganas uno cada 7 días de racha (máximo 2). Si un día se te pasa, salva tu racha solo.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Últimos 28 días */}
+          <div>
+            <h3 className="mb-2 text-[15px] font-bold text-[var(--fin-ink)]">Tus últimos 28 días</h3>
+            <div className="grid grid-cols-7 gap-1.5" role="img" aria-label={`${dias.filter((d) => d.estado === 'anotado').length} de 28 días anotados`}>
+              {dias.map((d) => (
+                <div
+                  key={d.fecha}
+                  title={d.fecha}
+                  className={`flex aspect-square items-center justify-center rounded-[var(--fin-r-control)] text-[11px] ${
+                    d.estado === 'anotado'
+                      ? 'bg-amber-500'
+                      : d.estado === 'protegido'
+                        ? 'border border-[var(--fin-line)] bg-[var(--fin-card)]'
+                        : d.estado === 'hoy-pendiente'
+                          ? 'border-2 border-dashed border-amber-500 bg-transparent'
+                          : 'bg-[var(--fin-soft)]'
+                  }`}
+                >
+                  {d.estado === 'protegido' ? '🛡️' : null}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -251,6 +362,50 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, onCerrar }) =
               })}
             </div>
           </div>
+
+          {/* Premios en Premium */}
+          <div>
+            <h3 className="mb-3 flex items-center gap-2 text-[15px] font-bold text-[var(--fin-ink)]">
+              <span aria-hidden="true">🎁</span> Premios por tu constancia
+            </h3>
+            <div className="flex flex-col gap-2">
+              {PREMIOS_RACHA.map((premio) => {
+                const reclamado = servidor.premiosReclamados.includes(premio.hito);
+                const alcanzado = infoRacha.rachaActual >= premio.hito;
+                return (
+                  <div
+                    key={premio.hito}
+                    className={`flex items-center justify-between gap-3 rounded-[var(--fin-r-card)] border p-3 ${
+                      reclamado ? 'border-[var(--fin-in)]/30 bg-[var(--fin-soft)]' : 'border-[var(--fin-line)]/60 bg-[var(--fin-bg)]'
+                    }`}
+                  >
+                    <div>
+                      <p className="text-[15px] font-bold text-[var(--fin-ink)]">
+                        {premio.diasPremium} días de Premium
+                      </p>
+                      <p className="text-[13px] text-[var(--fin-ink-soft)]">
+                        {reclamado
+                          ? 'Ya lo reclamaste ✅'
+                          : alcanzado
+                            ? 'Lo recibes al abrir la app, si no tienes Premium activo'
+                            : `Al llegar a ${premio.hito} días de racha (te faltan ${premio.hito - infoRacha.rachaActual})`}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void compartir()}
+            className="flex items-center justify-center gap-2 rounded-[var(--fin-r-card)] border border-[var(--fin-line)] py-2.5 text-[14px] font-bold text-[var(--fin-ink)] hover:bg-[var(--fin-soft)]"
+          >
+            <Share2 className="h-4 w-4" /> Presumir mi racha
+          </button>
+          {mensajeCompartir && <p className="text-center text-[13px] text-[var(--fin-ink-soft)]">{mensajeCompartir}</p>}
+          </>)}
         </div>
 
         {/* Botón cerrar */}

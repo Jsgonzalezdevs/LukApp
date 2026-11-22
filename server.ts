@@ -10,6 +10,7 @@ import { esUltimoAdmin, motivoParaNoBorrar, motivoParaRechazar } from './server_
 import type { CambiosUsuario } from './server_lib/superadmin.ts';
 import { validarContrasenaSegura } from './src/lib/seguridad.ts';
 import { urlSupabaseDelServidor } from './server_lib/configuracionSupabase.ts';
+import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_lib/avisosRacha.ts';
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
@@ -971,6 +972,53 @@ app.post('/api/registrar-ultimo-acceso', async (req, res) => {
   } catch (error: any) {
     console.warn('No se pudo registrar el último acceso:', error.message || error);
     return res.status(500).json({ error: 'No se pudo registrar el último acceso.' });
+  }
+});
+
+// ----------------------------------------------------------------------
+// ENDPOINT: Aviso push antes de perder la racha
+// Lo dispara un cron externo (Render Cron Job, cron-job.org...) hacia las
+// 7 pm de Bogotá con el secreto en `x-cron-secret`. La función SQL decide a
+// quién avisar y marca el aviso del día, así que llamarlo dos veces no
+// duplica notificaciones.
+// ----------------------------------------------------------------------
+app.post('/api/racha/avisos', async (req, res) => {
+  if (!cronAutorizado(req.headers['x-cron-secret'], process.env.CRON_SECRET)) {
+    return res.status(401).json({ error: 'No autorizado' });
+  }
+  const llavePrivada = process.env.VAPID_PRIVATE_KEY?.trim();
+  const llavePublica = process.env.VITE_VAPID_PUBLIC_KEY?.trim();
+  if (!llavePrivada || !llavePublica) {
+    return res.status(500).json({ error: 'Faltan las llaves VAPID para enviar notificaciones.' });
+  }
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(500).json({ error: 'Falta configurar SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY' });
+
+  try {
+    // El nombre va en una variable para que TypeScript no exija los tipos de un
+    // paquete que solo este endpoint usa.
+    const nombreModulo = 'web-push';
+    const webpush = (await import(nombreModulo)).default as {
+      setVapidDetails: (asunto: string, publica: string, privada: string) => void;
+      sendNotification: (suscripcion: unknown, carga: string) => Promise<unknown>;
+    };
+    webpush.setVapidDetails(process.env.VAPID_SUBJECT?.trim() || 'mailto:soporte@lukapp.app', llavePublica, llavePrivada);
+
+    const { data, error } = await cliente.rpc('usuarios_racha_en_riesgo');
+    if (error) throw error;
+    const destinos = (data ?? []) as DestinoAviso[];
+
+    const resultado = await enviarAvisosRacha(
+      destinos,
+      async (destino, carga) => { await webpush.sendNotification(destino.suscripcion, JSON.stringify(carga)); },
+      async (destino) => {
+        await cliente.from('suscripciones_push').delete().eq('user_id', destino.user_id).eq('endpoint', destino.endpoint);
+      },
+    );
+    return res.json({ destinatarios: destinos.length, ...resultado });
+  } catch (error: any) {
+    console.error('No se pudieron enviar los avisos de racha:', error?.message || error);
+    return res.status(500).json({ error: 'No se pudieron enviar los avisos de racha.' });
   }
 });
 

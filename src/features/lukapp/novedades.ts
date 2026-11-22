@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.7.0', fecha: '2026-11-22', texto: 'Llegó el ranking de racha: mira quién lleva más días seguidos en LukApp, quién ganó la semana (se reinicia cada lunes) y reta a tus amigos de un espacio compartido. Tu racha ahora tiene ligas (Bronce, Plata, Oro, Diamante, Leyenda), calendario de 28 días, botón para presumirla y 🛡️ protectores: ganas uno cada 7 días y salva un día perdido. 🎁 Al llegar a 30, 100 y 365 días te regalamos 7, 30 y 90 días de Premium, cada hito se celebra con su tarjeta y, si tu racha está en juego por la tarde, te avisamos con una notificación. Si no quieres salir en el ranking, puedes ocultarte. 🔥🏆' },
   { version: '11.6.1', fecha: '2026-11-22', texto: 'Arreglamos los enlaces directos a mi.lukapp.app/premium y a mi.lukapp.app/calendario: antes salía una página de error y ahora abren la app. 🔗' },
   { version: '11.6.0', fecha: '2026-11-22', texto: 'La página de beneficios de Premium ahora tiene su propio enlace: mi.lukapp.app/premium. Compártelo o guárdalo y te lleva directo a ver todo lo que incluye Premium. 🔗' },
   { version: '11.5.0', fecha: '2026-11-22', texto: 'La página de beneficios de Premium llega a la app de Android: ábrela desde la celebración del regalo o desde Más → Cuenta, mira qué incluye tu Premium, para qué te sirve cada cosa y pruébala con un toque. ✨' },
