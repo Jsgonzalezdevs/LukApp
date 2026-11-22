@@ -428,18 +428,27 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   // como enlace. Al cerrarla, si se abrió desde la app se vuelve atrás y queda
   // todo como estaba; si se llegó por el enlace, se va a Inicio.
   const enBeneficiosPremium = segmentos[0] === RUTA_BENEFICIOS_PREMIUM.slice(1);
-  const beneficiosAbiertosDesdeLaApp = useRef(false);
+  const regresoDeBeneficios = useRef<string | null>(null);
   const abrirBeneficiosPremium = useCallback(() => {
-    beneficiosAbiertosDesdeLaApp.current = true;
+    if (segmentosDe(window.location.pathname)[0] !== RUTA_BENEFICIOS_PREMIUM.slice(1)) {
+      regresoDeBeneficios.current = `${window.location.pathname}${window.location.search}`;
+    }
     ir(`${BASE_LUKAPP}${RUTA_BENEFICIOS_PREMIUM}`);
   }, [ir]);
   const cerrarBeneficiosPremium = useCallback(() => {
-    if (beneficiosAbiertosDesdeLaApp.current) {
-      beneficiosAbiertosDesdeLaApp.current = false;
-      window.history.back();
+    const regreso = regresoDeBeneficios.current;
+    regresoDeBeneficios.current = null;
+    if (!regreso) {
+      reemplazarPor(`${BASE_LUKAPP}/app`);
       return;
     }
-    reemplazarPor(`${BASE_LUKAPP}/app`);
+    // Atrás deja el historial limpio, pero depende de que la entrada anterior
+    // sea la de la app; si el navegador no se movió (otra pestaña, una recarga,
+    // un historial distinto), se va directo a donde estaba la persona.
+    window.history.back();
+    window.setTimeout(() => {
+      if (segmentosDe(window.location.pathname)[0] === RUTA_BENEFICIOS_PREMIUM.slice(1)) reemplazarPor(regreso);
+    }, 350);
   }, []);
   const [esPrimeraPrueba, setEsPrimeraPrueba] = useState(false);
   const guia = useGuiaApp();
@@ -1793,7 +1802,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             <BeneficiosPremium
               onCerrar={cerrarBeneficiosPremium}
               onIrA={(destino) => {
-                beneficiosAbiertosDesdeLaApp.current = false;
+                regresoDeBeneficios.current = null;
                 setMostrarPlanesPremium(false);
                 if (destino.tipo === 'seccion') setSection(destino.id);
                 else setPanelAjustes(destino.id);

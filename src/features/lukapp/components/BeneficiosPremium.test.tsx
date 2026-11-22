@@ -33,6 +33,13 @@ describe('BeneficiosPremium', () => {
 
   beforeEach(() => {
     window.scrollTo = vi.fn() as typeof window.scrollTo;
+    // jsdom no trae IntersectionObserver; las animaciones al hacer scroll lo usan.
+    vi.stubGlobal('IntersectionObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() { return []; }
+    });
     vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue({
       auth: { getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'token-prueba' } } }) },
     } as never);
@@ -64,6 +71,18 @@ describe('BeneficiosPremium', () => {
     expect(dialogo.textContent).toContain('Regalo del equipo');
     expect(dialogo.textContent).toContain('7 de diciembre de 2026');
     expect(dialogo.textContent).toContain('¿Me van a cobrar algo?');
+    expect(dialogo.textContent).toMatch(/te quedan|te queda/);
+  });
+
+  it('muestra cuánto del cupo va usado este mes', async () => {
+    fetchSimulado.mockResolvedValue(respuesta({ ...planPremium, consumo: { dictados: 45, asesorIa: 3, extractos: 0 } }));
+    render(<BeneficiosPremium onCerrar={vi.fn()} />);
+
+    const barra = await screen.findByRole('progressbar', { name: /Registro por voz/ });
+    expect(barra.getAttribute('aria-valuenow')).toBe('45');
+    expect(barra.getAttribute('aria-valuemax')).toBe('200');
+    expect(screen.getByText('Te quedan 155 este mes')).toBeTruthy();
+    expect(screen.getByText('Sin límite este mes')).toBeTruthy();
   });
 
   it('lleva a probar cada beneficio en su sitio de la app', async () => {
