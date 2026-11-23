@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
 import { obtenerSupabase } from './supabase';
 
-export interface PremioReclamado {
+export interface PremioRacha {
   hito: number;
   diasPremium: number;
+  alcanzado: boolean;
+  reclamado: boolean;
+  /** Tiene Premium pagado vigente: el premio espera a que se le acabe. */
+  bloqueadoPorPago: boolean;
 }
+
+/** Lo escucha quien muestra el plan, para enterarse sin esperar al sondeo. */
+export const EVENTO_PLAN_CAMBIADO = 'lukapp:plan-cambiado';
 
 export interface EstadoServidor {
   usuario: string | null;
   protectores: number;
   diasProtegidos: readonly string[];
-  /** Hitos cuyo premio ya se entregó alguna vez. */
-  premiosReclamados: readonly number[];
-  /** Premios que se entregaron en esta sesión, para celebrarlos una vez. */
-  premiosNuevos: readonly PremioReclamado[];
+  /** Los premios de Premium por hito, tal como los ve el servidor. */
+  premios: readonly PremioRacha[];
   protectorUsado: string | null;
   protectorGanado: boolean;
 }
@@ -22,8 +27,7 @@ const VACIO: EstadoServidor = {
   usuario: null,
   protectores: 0,
   diasProtegidos: [],
-  premiosReclamados: [],
-  premiosNuevos: [],
+  premios: [],
   protectorUsado: null,
   protectorGanado: false,
 };
@@ -40,6 +44,51 @@ const publicar = (siguiente: EstadoServidor) => {
   oyentes.forEach((o) => o());
 };
 
+interface FilaPremio {
+  premio_hito: number;
+  premio_dias: number;
+  alcanzado: boolean;
+  reclamado: boolean;
+  bloqueado_por_pago: boolean;
+}
+
+const leerPremios = async (): Promise<PremioRacha[] | null> => {
+  const cliente = obtenerSupabase();
+  if (!cliente) return null;
+  const { data, error } = await cliente.rpc('estado_premios_racha');
+  if (error || !Array.isArray(data)) return null;
+  return (data as FilaPremio[]).map((f) => ({
+    hito: f.premio_hito,
+    diasPremium: f.premio_dias,
+    alcanzado: Boolean(f.alcanzado),
+    reclamado: Boolean(f.reclamado),
+    bloqueadoPorPago: Boolean(f.bloqueado_por_pago),
+  }));
+};
+
+export type ResultadoReclamo =
+  | { ok: true; venceEn: string | null }
+  | { ok: false; motivo: string };
+
+/**
+ * Activa el Premium de un hito. Solo pasa cuando la persona toca el botón: el
+ * servidor ya no lo regala al abrir la app.
+ */
+export const reclamarPremioRacha = async (hito: number): Promise<ResultadoReclamo> => {
+  const cliente = obtenerSupabase();
+  if (!cliente) return { ok: false, motivo: 'sin_conexion' };
+  const { data, error } = await cliente.rpc('reclamar_premio_racha', { p_hito: hito });
+  const fila = Array.isArray(data) ? (data[0] as { otorgado: boolean; motivo: string | null; vence_en: string | null } | undefined) : undefined;
+  if (error || !fila) return { ok: false, motivo: 'sin_conexion' };
+
+  const premios = await leerPremios();
+  if (premios) publicar({ ...estado, premios });
+  if (!fila.otorgado) return { ok: false, motivo: fila.motivo ?? 'desconocido' };
+
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(EVENTO_PLAN_CAMBIADO));
+  return { ok: true, venceEn: fila.vence_en };
+};
+
 const sincronizar = async (clave: string) => {
   const cliente = obtenerSupabase();
   if (!cliente) return;
@@ -53,19 +102,13 @@ const sincronizar = async (clave: string) => {
   if (error || !fila) return;
   claveSincronizada = clave;
 
-  const { data: premios } = await cliente.rpc('reclamar_premios_racha');
-  const nuevos = ((premios ?? []) as Array<{ premio_hito: number; premio_dias: number; premio_otorgado: boolean }>)
-    .filter((p) => p.premio_otorgado)
-    .map((p) => ({ hito: p.premio_hito, diasPremium: p.premio_dias }));
-
-  const { data: reclamados } = await cliente.from('racha_premios').select('hito').eq('user_id', usuario);
+  const premios = await leerPremios();
 
   publicar({
     usuario,
-    premiosReclamados: ((reclamados ?? []) as Array<{ hito: number }>).map((r) => r.hito),
+    premios: premios ?? estado.premios,
     protectores: fila.protectores ?? 0,
     diasProtegidos: fila.dias_protegidos ?? [],
-    premiosNuevos: nuevos.length ? nuevos : estado.premiosNuevos,
     protectorUsado: fila.protector_usado ?? estado.protectorUsado,
     protectorGanado: Boolean(fila.protector_ganado) || estado.protectorGanado,
   });
@@ -74,7 +117,7 @@ const sincronizar = async (clave: string) => {
 /**
  * Protectores, días protegidos y premios de la racha, que viven en el
  * servidor. `clave` cambia cuando conviene volver a sincronizar (otro día, o
- * ya anotó hoy): ahí se aplica un protector pendiente o se entrega un premio.
+ * ya anotó hoy): ahí se aplica un protector pendiente y se mira qué premios hay.
  */
 export const useRachaServidor = (clave: string): EstadoServidor => {
   const [, forzar] = useState(0);

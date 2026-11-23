@@ -709,7 +709,11 @@ export const InicioView: React.FC<InicioViewProps> = ({
       {hitoCelebrado !== null && (
         <CelebracionHito
           hito={HITOS_RACHA.find((h) => h.dias === hitoCelebrado) ?? HITOS_RACHA[0]}
-          diasPremium={servidorRacha.premiosNuevos.find((p) => p.hito === hitoCelebrado)?.diasPremium}
+          diasPremium={servidorRacha.premios.find((p) => p.hito === hitoCelebrado && p.alcanzado && !p.reclamado)?.diasPremium}
+          onVerPremio={() => {
+            setHitoCelebrado(null);
+            setMostrarRachaModal(true);
+          }}
           onCerrar={() => setHitoCelebrado(null)}
         />
       )}

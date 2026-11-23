@@ -6,6 +6,7 @@ import { bogotaDate } from '../lib/localDate';
 import { PERIODO_POR_DEFECTO, type ConfigPeriodo } from '../lib/periodo';
 import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
+import { EVENTO_PLAN_CAMBIADO } from '../data/useRachaServidor';
 
 interface UseAiInsightsOptions {
   transacciones: readonly Transaction[];
@@ -118,10 +119,12 @@ export const useAiInsights = ({
     void consultarPlan();
     const intervalo = window.setInterval(() => void consultarPlan(), 30_000);
     window.addEventListener('focus', consultarPlan);
+    window.addEventListener(EVENTO_PLAN_CAMBIADO, consultarPlan);
     return () => {
       cancelado = true;
       window.clearInterval(intervalo);
       window.removeEventListener('focus', consultarPlan);
+      window.removeEventListener(EVENTO_PLAN_CAMBIADO, consultarPlan);
     };
   }, []);
 
