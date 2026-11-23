@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calcularRacha, inicioDeRachaActual } from './racha';
+import { calcularRacha, estadoRacha, inicioDeRachaActual } from './racha';
 import { shiftDays } from './localDate';
 import type { Transaction } from '../types';
 
@@ -119,5 +119,33 @@ describe('bonos de racha desde el superadmin', () => {
     expect(sinAnotar.anotadoHoy).toBe(false);
     expect(calcularRacha([mockTx(HOY)], HOY, [bono]).rachaActual).toBe(5);
     expect(calcularRacha([mockTx('2026-08-25')], '2026-08-25', [bono]).rachaActual).toBe(1);
+  });
+});
+
+describe('estadoRacha', () => {
+  it('se enciende solo si hoy ya anotó', () => {
+    expect(estadoRacha({ rachaActual: 5, anotadoHoy: true })).toBe('encendida');
+    expect(estadoRacha({ rachaActual: 5, anotadoHoy: false })).toBe('pendiente');
+    expect(estadoRacha({ rachaActual: 0, anotadoHoy: false })).toBe('apagada');
+  });
+
+  it('días regalados sin anotar hoy quedan pendientes, no encendidos', () => {
+    const info = calcularRacha([{ occurredOn: '2026-10-19' }], '2026-10-20', [{ inicioRacha: '2026-10-19', dias: 9 }]);
+    expect(info.rachaActual).toBe(10);
+    expect(estadoRacha(info)).toBe('pendiente');
+  });
+});
+
+describe('regalo con un día protegido en medio', () => {
+  it('el inicio que calcula el superadmin coincide con el de la app', () => {
+    // 15 y 16 anotados, 17 salvado con protector, 18 y 19 anotados.
+    const movimientos = ['2026-10-15', '2026-10-16', '2026-10-18', '2026-10-19'];
+    const protegidos = ['2026-10-17'];
+    const hoy = '2026-10-19';
+    const inicio = inicioDeRachaActual([...movimientos, ...protegidos], hoy);
+    expect(inicio).toBe('2026-10-15');
+
+    const info = calcularRacha(movimientos.map((occurredOn) => ({ occurredOn })), hoy, [{ inicioRacha: inicio, dias: 10 }], protegidos);
+    expect(info.rachaActual).toBe(15);
   });
 });

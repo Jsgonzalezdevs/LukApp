@@ -61,7 +61,7 @@ import { NOVEDADES } from './novedades';
 import { contactoPorApodo } from './lib/contactos';
 
 
-import { calcularRacha } from './lib/racha';
+import { useRacha } from './data/useRacha';
 import { useBonosRacha } from './data/useBonosRacha';
 import { verificarRecordatorioRacha } from './lib/recordatorioRacha';
 
@@ -481,10 +481,8 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
 
   const { activo: recordatorioActivo, hora: recordatorioHora } = useRecordatorioRacha();
   const bonosRacha = useBonosRacha(userId);
-  const infoRacha = useMemo(
-    () => calcularRacha(transacciones, today, bonosRacha),
-    [transacciones, today, bonosRacha],
-  );
+  // El recordatorio usa la misma racha que se ve en pantalla, protectores incluidos.
+  const { info: infoRacha } = useRacha(transacciones, today, bonosRacha);
 
   // Verificación periódica del recordatorio de racha en segundo plano
   useEffect(() => {

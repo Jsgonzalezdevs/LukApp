@@ -21,12 +21,12 @@ import { TransactionList } from './TransactionList';
 import { AnimatedNumber } from './AnimatedNumber';
 import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
-import { calcularRacha, HITOS_RACHA, type BonoRacha } from '../lib/racha';
+import { HITOS_RACHA, type BonoRacha } from '../lib/racha';
+import { useRacha } from '../data/useRacha';
 import { CLAVE_HITOS_CELEBRADOS, hitoPorCelebrar, rachaEnRiesgo } from '../lib/rankingRacha';
 import { bogotaHora } from '../lib/localDate';
 import { RachaModal } from './RachaModal';
 import { CelebracionHito } from './CelebracionHito';
-import { useRachaServidor } from '../data/useRachaServidor';
 import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';
 import { DecisionFinanciera } from './DecisionFinanciera';
@@ -165,15 +165,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
   // Con todo el historial, no solo el período: una racha que empezó el mes
   // pasado se cortaría el día 1 y no coincidiría con la de Dinero ni el superadmin.
   const hoyRacha = today || new Date().toISOString().slice(0, 10);
-  const anotadoHoyLocal = useMemo(
-    () => historial.some((m) => m.occurredOn === hoyRacha),
-    [historial, hoyRacha],
-  );
-  const servidorRacha = useRachaServidor(`${hoyRacha}:${anotadoHoyLocal}`);
-  const infoRacha = useMemo(
-    () => calcularRacha(historial, hoyRacha, bonosRacha, servidorRacha.diasProtegidos),
-    [historial, hoyRacha, bonosRacha, servidorRacha.diasProtegidos],
-  );
+  const { info: infoRacha, estado: estadoDeRacha, servidor: servidorRacha } = useRacha(historial, hoyRacha, bonosRacha);
 
   // Celebración de hitos: se enseña una vez por hito y se recuerda en este
   // aparato. Si la persona ya iba lejos, celebra el más alto y da por vistos
@@ -193,9 +185,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
     setHitoCelebrado(celebrar);
   }, [infoRacha.rachaActual]);
 
-  // Los días (propios o regalados desde el superadmin) se conservan hasta
-  // medianoche, pero la llama solo se enciende cuando hoy hay algo anotado.
-  const rachaEncendida = infoRacha.rachaActual > 0 && infoRacha.anotadoHoy;
+  const rachaEncendida = estadoDeRacha === 'encendida';
   const rachaPeligra = rachaEnRiesgo(infoRacha.rachaActual, infoRacha.anotadoHoy, bogotaHora());
 
   const insightsVisibles = useMemo(() => {

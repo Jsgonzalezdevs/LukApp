@@ -132,3 +132,19 @@ export const calcularRacha = (
     diasParaProximoHito,
   };
 };
+
+/**
+ * Cómo se pinta la racha. Todas las pantallas lo sacan de aquí para que
+ * nunca una diga «activa» mientras otra pide anotar.
+ *
+ * - `encendida`: hay días y hoy ya anotó.
+ * - `pendiente`: hay días (propios, protegidos o regalados) pero hoy aún no
+ *   anota; se conservan hasta medianoche.
+ * - `apagada`: no hay racha.
+ */
+export type EstadoRacha = 'encendida' | 'pendiente' | 'apagada';
+
+export const estadoRacha = (info: Pick<InfoRacha, 'rachaActual' | 'anotadoHoy'>): EstadoRacha => {
+  if (info.rachaActual <= 0) return 'apagada';
+  return info.anotadoHoy ? 'encendida' : 'pendiente';
+};
