@@ -1,21 +1,27 @@
 # Publicación de la app Android nativa
 
-Estado al **v10.56.0** (`versionCode` **1056000**). Rama local `android-nativo`: **64 commits** sobre `main`, todos con
-`vX.Y.Z` en el mensaje, etiquetas `v10.14.1` … `v10.56.0`, **nada enviado al remoto** (la rama no tiene upstream).
-Este documento no publica nada: dice en qué punto está, qué falta y qué decisiones son del dueño.
+Estado al **v11.8.1** (`versionCode` **1108001**). La rama `android-nativo` ya está en el remoto
+(`origin/android-nativo`) y se ha unido a `main` varias veces (por ejemplo el PR #44); la app nativa sigue **sin
+publicarse en Play**. Este documento no publica nada: dice en qué punto está, qué falta y qué decisiones son del dueño.
+
+> Las secciones 2 a 4 se escribieron en v10.56.0 y siguen vigentes: desde entonces no se ha hecho ninguna de las pruebas
+> de la sección 3 ni se ha resuelto ningún bloqueo de la sección 4 (`apps/android/lukapp.properties` todavía no existe).
 
 ## 1. La decisión grande: reemplazar o no la app de Play
 
 La app de Play hoy es el WebView de `apps/mobile`, que muestra la web completa. La nativa se publicaría con el mismo
-`applicationId` (`lukApp.App`) y un `versionCode` mayor (`1056000` contra `1014000`), o sea **como actualización que la
+`applicationId` (`lukApp.App`) y un `versionCode` mayor (`1108001` contra `1014000`), o sea **como actualización que la
 reemplaza**.
 
-**Paridad con la web:** ya están todos los paneles. Lo único de la web que **no** está en la nativa:
+**Paridad con la web:** los paneles de v10.56.0 están todos. Lo que la web tiene y la nativa **no**:
 
 | Falta en la nativa | Dónde está en la web |
 |---|---|
 | Compra de Premium dentro de la app | Pago por Wompi en la web (la nativa lo dice y no vende; ver 4.4) |
 | Registro automático (Apple Pay) | Solo iOS: no aplica a Android |
+| Ranking de racha, ligas, protectores, premios por hitos y aviso push (v11.7.0) | `RankingRacha.tsx`, `RachaModal.tsx`, `CelebracionHito.tsx` y `/api/racha/avisos` |
+| Renovación de la página de beneficios: tarjeta de socio y medidor de uso del mes (v11.8.0) | `BeneficiosPremium.tsx`; la nativa tiene la versión de v11.5.0 |
+| Arreglos de la pantalla del mes: barras por día y promedio mensual (v11.8.1) | `DetalleMes.tsx` y `TendenciasView.tsx`; falta revisar si la nativa tiene el mismo problema |
 
 Pero paridad de pantallas **no es lo mismo que probado**: la versión de lanzamiento nunca se ha usado con sesión (3.1) y
 varias escrituras nunca se ejercitaron (3.4). **Recomendación: pista de pruebas internas primero** y reemplazar la app de
@@ -108,10 +114,9 @@ Para la pista de pruebas internas hay una guía propia, con las notas de la vers
 3. `cd apps/android && ./gradlew testDebugUnitTest bundleRelease` y revisar que el código de salida sea 0
    (en zsh no usar `PIPESTATUS`; ver la nota del repositorio).
 4. Instalar la versión de lanzamiento **firmada** y hacer la prueba de humo de la sección 3.1.
-5. Revisar los commits que se van a enviar (`git log $(git merge-base HEAD origin/main)..HEAD`): hoy los 62 llevan versión.
-6. **Solo con visto bueno del dueño:** `git push -u origin android-nativo` y `git push origin --tags` (las etiquetas
-   `v10.14.1`…`v10.56.0`). No se ha empujado nada.
-7. Subir el AAB a la pista elegida; `versionCode` actual `1056000` (sale de `src/version.ts`: mayor·100000 + menor·1000 + parche).
+5. Revisar los commits que se van a enviar (`git log origin/android-nativo..HEAD`) y que todos lleven `vX.Y.Z`.
+6. **Solo con visto bueno del dueño:** `git push origin android-nativo` y `git push origin --tags`.
+7. Subir el AAB a la pista elegida; `versionCode` actual `1108001` (sale de `src/version.ts`: mayor·100000 + menor·1000 + parche).
 
 ## 6. Deuda técnica conocida
 
@@ -119,8 +124,9 @@ Para la pista de pruebas internas hay una guía propia, con las notas de la vers
   podrían medirse y, si hace falta, ir perezosos.
 - Sin tiempo real ni copia local en Compartidas (la web escucha cambios y guarda una copia); sin lectura de CSV/Excel/foto con
   otros formatos de banco más allá de lo probado.
-- El `.gitignore` está modificado (junto con `apps/mobile/README.md`) y hay 22 archivos sin seguimiento (`* 2.*`, APK/AAB
-  de prueba, `pnpm-lock.yaml`…) que no son de este trabajo y **no se incluyeron en ningún commit**; conviene revisarlos
-  antes de empujar.
+- Hay archivos sin seguimiento que no son de este trabajo y **no se incluyeron en ningún commit**: los duplicados « 2»
+  que crea iCloud (`apps/mobile/* 2.*`, `netlify 2.toml`, `docs/PLAN_16_MEJORAS 2.md`), APK/AAB de prueba en
+  `apps/mobile/`, `app.json` y `pnpm-lock.yaml`/`pnpm-workspace.yaml` en la raíz. Conviene revisarlos y borrarlos o
+  ignorarlos.
 - Bugs de la web copiados a propósito para tener los mismos resultados, y diferencias que se decidieron a propósito: ver
   «Diferencias conocidas» y cada versión en `MIGRACION.md`.

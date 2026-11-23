@@ -251,7 +251,10 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
             {COPY.tendencias.promedio}
           </h2>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {/* Columnas que se acomodan al ancho real de la tarjeta, no al de la
+              pantalla: en escritorio la tarjeta va a media columna y tres cifras
+              fijas no cabían, así que se partían a mitad del número. */}
+          <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))] gap-3">
             {[
               { label: COPY.balance.ingresos, valor: promedio.ingresos, color: 'var(--fin-in)' },
               { label: COPY.balance.gastos, valor: promedio.gastos, color: 'var(--fin-out)' },
@@ -265,7 +268,7 @@ export const TendenciasView: React.FC<TendenciasViewProps> = ({ transacciones, m
                 <p className="text-[13px] font-semibold text-[var(--fin-ink-faint)]">
                   {item.label}
                 </p>
-                <p className="text-[17px] font-semibold tabular-nums" style={{ color: item.color }}>
+                <p className="whitespace-nowrap text-[17px] font-semibold tabular-nums" style={{ color: item.color, overflowWrap: 'normal' }}>
                   {formatCop(item.valor)}
                 </p>
               </div>

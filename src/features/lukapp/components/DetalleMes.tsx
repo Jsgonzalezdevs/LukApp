@@ -195,12 +195,21 @@ const PorDia: React.FC<{ transacciones: readonly Transaction[]; mes: string; onA
             onFocus={() => setActivo(i)}
             onClick={() => setActivo(activo === i ? null : i)}
             aria-label={`${dayLabel(d.fecha)}: ${formatCop(d.gastoCop)}`}
-            className="flex-1 rounded-t-sm bg-[var(--fin-out)] transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fin-ink)]"
-            style={{
-              height: `${Math.max(d.gastoCop > 0 ? 4 : 1, (d.gastoCop / techo) * 100)}%`,
-              opacity: activo === i ? 1 : d.gastoCop > 0 ? 0.85 : 0.18,
-            }}
-          />
+            // El botón ocupa toda la altura y la barra va dentro: así un día
+            // vacío se sigue pudiendo tocar. Se anula el ancho táctil global
+            // porque 31 columnas de 44px no caben en ninguna pantalla.
+            className="flex h-full flex-1 items-end focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--fin-ink)]"
+            style={{ minInlineSize: 0 }}
+          >
+            <span
+              aria-hidden="true"
+              className="block w-full rounded-t-sm bg-[var(--fin-out)] transition-opacity"
+              style={{
+                height: `${Math.max(d.gastoCop > 0 ? 4 : 1, (d.gastoCop / techo) * 100)}%`,
+                opacity: activo === i ? 1 : d.gastoCop > 0 ? 0.85 : 0.18,
+              }}
+            />
+          </button>
         ))}
       </div>
 

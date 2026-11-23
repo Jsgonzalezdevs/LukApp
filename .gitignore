@@ -32,3 +32,4 @@ __pycache__/
 .env.pruebas
 
 # Proyecto aparte que vive en esta carpeta, pero no es de Focus.
+.vercel
