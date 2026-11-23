@@ -186,7 +186,7 @@ body.fin-page > #root,
   /* La altura de la barra de navegación de abajo, ya sin el hueco vacío que
      antes reservaba para el botón de anotar. `BotonAnotar` la lee para
      posicionarse justo encima sin superponerse ni dejar un salto raro. */
-  --fin-nav-h: 60px;
+  --fin-nav-h: 66px;
 }
 
 /* Dark. Warm near-black rather than pure #000: the light theme is a warm cream,
@@ -372,8 +372,8 @@ nav[aria-label="Secciones"] {
   bottom: var(--fin-safe-area-bottom) !important;
   left: 50%;
   right: auto;
-  width: min(320px, calc(100% - 32px));
-  max-width: 320px;
+  width: min(380px, calc(100% - 24px));
+  max-width: 380px;
   transform: translateX(-50%);
   z-index: 20;
   box-sizing: border-box;
@@ -389,13 +389,41 @@ nav[aria-label="Secciones"] {
   display: none;
 }
 
-.fin-navigation button[aria-current='page'] {
-  background: color-mix(in srgb, var(--fin-accent) 12%, var(--fin-soft));
+.fin-nav-item {
+  color: var(--fin-ink-faint);
+  -webkit-tap-highlight-color: transparent;
 }
 
-.fin-navigation button[aria-current='page'] svg,
-.fin-navigation button[aria-current='page'] span {
-  color: var(--fin-accent) !important;
+.fin-nav-pildora {
+  transition: background-color 220ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.fin-nav-nombre {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: color 160ms ease;
+}
+
+.fin-nav-item:active .fin-nav-pildora {
+  transform: scale(0.92);
+}
+
+.fin-navigation button[aria-current='page'] {
+  color: var(--fin-accent);
+}
+
+.fin-navigation button[aria-current='page'] .fin-nav-pildora {
+  background: color-mix(in srgb, var(--fin-accent) 14%, var(--fin-soft));
+}
+
+.fin-navigation button[aria-current='page'] .fin-nav-nombre {
+  color: var(--fin-ink);
+  font-weight: 650;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fin-nav-pildora,
+  .fin-nav-nombre { transition: none; }
 }
 
 /* Novedades informa; no debe parecer una advertencia amarilla. El contraste
