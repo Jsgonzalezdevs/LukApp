@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { CalendarDays, Flame, Settings2 } from 'lucide-react';
 import type { Transaction } from '../types';
-import { calcularRacha, type BonoRacha } from '../lib/racha';
+import type { BonoRacha } from '../lib/racha';
 import { RachaModal } from './RachaModal';
-import { useRachaServidor } from '../data/useRachaServidor';
+import { useRacha } from '../data/useRacha';
 
 export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, bonosRacha, hoy, onAjustes }: {
   periodo: string; opciones: { clave: string; etiqueta: string }[]; onPeriodo: (clave: string) => void;
   movimientos: readonly Transaction[]; bonosRacha?: readonly BonoRacha[]; hoy: string; onAjustes: () => void;
 }) {
   const [rachaAbierta, setRachaAbierta] = useState(false);
-  const anotadoHoy = movimientos.some((m) => m.occurredOn === hoy);
-  const servidor = useRachaServidor(`${hoy}:${anotadoHoy}`);
-  const racha = calcularRacha(movimientos, hoy, bonosRacha, servidor.diasProtegidos);
+  const { info: racha, estado, servidor } = useRacha(movimientos, hoy, bonosRacha);
   return <>
     <div className="flex min-w-0 items-center justify-between gap-2">
       <label className="relative flex min-w-0 items-center gap-2 rounded-full bg-[var(--fin-soft)] px-3 py-2 text-[15px] font-semibold">
@@ -22,8 +20,8 @@ export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, bono
         </select>
       </label>
       <div className="flex shrink-0 items-center gap-2">
-        <button type="button" onClick={() => setRachaAbierta(true)} aria-label="Ver tu racha" className="flex min-h-10 items-center gap-1.5 rounded-full bg-[var(--fin-soft)] px-2.5 text-xs font-bold text-[var(--fin-ink-soft)]">
-          <Flame className="h-4 w-4" />{racha.rachaActual} {racha.rachaActual === 1 ? 'día' : 'días'}
+        <button type="button" onClick={() => setRachaAbierta(true)} aria-label={estado === 'pendiente' ? 'Ver tu racha: aún no anotas hoy' : 'Ver tu racha'} className={`flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-xs font-bold ${estado === 'encendida' ? 'bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]' : 'bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]'}`}>
+          <Flame className={`h-4 w-4 ${estado === 'encendida' ? 'fill-amber-500 text-amber-500' : 'opacity-70'}`} />{racha.rachaActual} {racha.rachaActual === 1 ? 'día' : 'días'}
         </button>
         <button type="button" onClick={onAjustes} aria-label="Ajustes" className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--fin-soft)] text-[var(--fin-ink-soft)]"><Settings2 className="h-4 w-4" /></button>
       </div>

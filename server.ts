@@ -1581,10 +1581,20 @@ const leerRachaDe = async (cliente: ClienteAdmin, userId: string) => {
   if (errorBonos) throw new Error(`No se pudieron leer los días regalados: ${errorBonos.message}`);
   const bonos: BonoRacha[] = (filasBonos ?? []).map((f) => ({ inicioRacha: String(f.inicio_racha), dias: Number(f.dias) }));
 
+  // Los días salvados con protector cuentan igual que en la app. Sin ellos,
+  // el panel mostraba otra racha y, peor, pegaba el regalo a un inicio que la
+  // app no reconoce: los días sumados nunca le aparecían a la persona.
+  const { data: filasProtegidos, error: errorProtegidos } = await cliente
+    .from('racha_dias_protegidos')
+    .select('dia')
+    .eq('user_id', userId);
+  if (errorProtegidos) throw new Error(`No se pudieron leer los días protegidos: ${errorProtegidos.message}`);
   const hoy = bogotaDate();
+  const diasProtegidos = (filasProtegidos ?? []).map((f) => String(f.dia)).filter((d) => d <= hoy);
+
   const movimientos = [...new Set(fechasMovimientos)].map((occurredOn) => ({ occurredOn }));
-  const info = calcularRacha(movimientos, hoy, bonos);
-  const inicio = inicioDeRachaActual(fechasMovimientos, hoy);
+  const info = calcularRacha(movimientos, hoy, bonos, diasProtegidos);
+  const inicio = inicioDeRachaActual([...fechasMovimientos, ...diasProtegidos], hoy);
   // Solo lo regalado a la racha de ahora: un bono de una racha que ya se
   // cortó no está sumando nada y confundiría al leer el panel.
   const diasRegalados = bonos.filter((b) => b.inicioRacha === inicio).reduce((t, b) => t + b.dias, 0);
