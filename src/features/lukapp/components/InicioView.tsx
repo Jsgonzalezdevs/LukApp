@@ -21,8 +21,12 @@ import { TransactionList } from './TransactionList';
 import { AnimatedNumber } from './AnimatedNumber';
 import type { Insight } from '../lib/insights';
 import { useDismissedInsights } from '../data/useDismissedInsights';
-import { calcularRacha, type BonoRacha } from '../lib/racha';
+import { calcularRacha, HITOS_RACHA, type BonoRacha } from '../lib/racha';
+import { CLAVE_HITOS_CELEBRADOS, hitoPorCelebrar, rachaEnRiesgo } from '../lib/rankingRacha';
+import { bogotaHora } from '../lib/localDate';
 import { RachaModal } from './RachaModal';
+import { CelebracionHito } from './CelebracionHito';
+import { useRachaServidor } from '../data/useRachaServidor';
 import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';
 import { DecisionFinanciera } from './DecisionFinanciera';
@@ -160,10 +164,36 @@ export const InicioView: React.FC<InicioViewProps> = ({
 
   // Con todo el historial, no solo el período: una racha que empezó el mes
   // pasado se cortaría el día 1 y no coincidiría con la de Dinero ni el superadmin.
-  const infoRacha = useMemo(
-    () => calcularRacha(historial, today || new Date().toISOString().slice(0, 10), bonosRacha),
-    [historial, today, bonosRacha],
+  const hoyRacha = today || new Date().toISOString().slice(0, 10);
+  const anotadoHoyLocal = useMemo(
+    () => historial.some((m) => m.occurredOn === hoyRacha),
+    [historial, hoyRacha],
   );
+  const servidorRacha = useRachaServidor(`${hoyRacha}:${anotadoHoyLocal}`);
+  const infoRacha = useMemo(
+    () => calcularRacha(historial, hoyRacha, bonosRacha, servidorRacha.diasProtegidos),
+    [historial, hoyRacha, bonosRacha, servidorRacha.diasProtegidos],
+  );
+
+  // Celebración de hitos: se enseña una vez por hito y se recuerda en este
+  // aparato. Si la persona ya iba lejos, celebra el más alto y da por vistos
+  // los anteriores.
+  const [hitoCelebrado, setHitoCelebrado] = useState<number | null>(null);
+  useEffect(() => {
+    if (infoRacha.rachaActual <= 0) return;
+    let vistos = new Set<number>();
+    try {
+      vistos = new Set(JSON.parse(localStorage.getItem(CLAVE_HITOS_CELEBRADOS) || '[]') as number[]);
+    } catch { /* sin almacenamiento: se celebra y ya */ }
+    const { celebrar, marcar } = hitoPorCelebrar(infoRacha.rachaActual, HITOS_RACHA.map((h) => h.dias), vistos);
+    if (celebrar === null) return;
+    try {
+      localStorage.setItem(CLAVE_HITOS_CELEBRADOS, JSON.stringify([...vistos, ...marcar]));
+    } catch { /* ídem */ }
+    setHitoCelebrado(celebrar);
+  }, [infoRacha.rachaActual]);
+
+  const rachaPeligra = rachaEnRiesgo(infoRacha.rachaActual, infoRacha.anotadoHoy, bogotaHora());
 
   const insightsVisibles = useMemo(() => {
     if (!insights) return [];
@@ -266,7 +296,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
               ? `Racha activa: ${infoRacha.rachaActual} ${infoRacha.rachaActual === 1 ? 'día' : 'días'}`
               : 'Sin racha activa. Ver tu racha'}
             title={infoRacha.rachaActual > 0 ? 'Tu racha está activa' : 'Ver tu racha'}
-            className={`flex h-8.5 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold transition-all active:scale-95 ${
+            className={`flex h-8.5 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold transition-all active:scale-95 ${rachaPeligra ? 'animate-pulse' : ''} ${
               infoRacha.rachaActual > 0
                 ? 'border border-[var(--fin-warn)]/35 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]'
                 : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card)]'
@@ -274,7 +304,7 @@ export const InicioView: React.FC<InicioViewProps> = ({
           >
             <IconoSimbolo valor="Flame" className={`h-4 w-4 ${infoRacha.rachaActual > 0 ? '' : 'grayscale opacity-70'}`} />
             <span className="tabular-nums">{infoRacha.rachaActual} {infoRacha.rachaActual === 1 ? 'día' : 'días'}</span>
-            {infoRacha.rachaActual > 0 && <span>Activa</span>}
+            {infoRacha.rachaActual > 0 && <span>{rachaPeligra ? '¡Anota hoy!' : 'Activa'}</span>}
           </button>
 
           {onTogglePrivacidad && (
@@ -676,10 +706,20 @@ export const InicioView: React.FC<InicioViewProps> = ({
         )}
       </AnimatePresence>
 
+      {hitoCelebrado !== null && (
+        <CelebracionHito
+          hito={HITOS_RACHA.find((h) => h.dias === hitoCelebrado) ?? HITOS_RACHA[0]}
+          diasPremium={servidorRacha.premiosNuevos.find((p) => p.hito === hitoCelebrado)?.diasPremium}
+          onCerrar={() => setHitoCelebrado(null)}
+        />
+      )}
+
       {/* Modal de racha */}
       {mostrarRachaModal && (
         <RachaModal
           infoRacha={infoRacha}
+          hoy={hoyRacha}
+          servidor={servidorRacha}
           onCerrar={() => setMostrarRachaModal(false)}
         />
       )}

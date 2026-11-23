@@ -67,6 +67,22 @@ describe('calcularRacha', () => {
     const r = calcularRacha(txs, HOY);
     expect(r.diasAnotadosMes).toBe(2);
   });
+
+  it('un día protegido sostiene la racha sin contar como movimiento', () => {
+    const txs = [mockTx('2026-08-24'), mockTx('2026-08-22'), mockTx('2026-08-21')];
+    const sin = calcularRacha(txs, HOY);
+    expect(sin.rachaActual).toBe(1);
+    const con = calcularRacha(txs, HOY, [], ['2026-08-23']);
+    expect(con.rachaActual).toBe(4);
+    expect(con.diasProtegidos.has('2026-08-23')).toBe(true);
+    expect(con.diasAnotados.has('2026-08-23')).toBe(false);
+    expect(con.diasAnotadosMes).toBe(3);
+  });
+
+  it('ignora protectores en el futuro', () => {
+    const r = calcularRacha([mockTx('2026-08-24')], HOY, [], ['2026-08-30']);
+    expect(r.rachaActual).toBe(1);
+  });
 });
 
 describe('bonos de racha desde el superadmin', () => {
