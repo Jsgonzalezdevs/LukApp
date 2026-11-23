@@ -121,8 +121,8 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, hoy, servidor
           >
             <X className="h-4 w-4" />
           </button>
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-pill)] bg-[var(--fin-warn-bg)]">
-            <Flame className="h-8 w-8 fill-amber-500 text-amber-500" />
+          <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[var(--fin-r-pill)] ${infoRacha.anotadoHoy ? 'bg-[var(--fin-warn-bg)]' : 'bg-[var(--fin-soft)]'}`}>
+            <Flame className={`h-8 w-8 ${infoRacha.anotadoHoy ? 'fill-amber-500 text-amber-500' : 'text-[var(--fin-ink-soft)] opacity-70'}`} />
           </div>
           <p className="mt-2 text-[40px] font-extrabold leading-none tabular-nums text-[var(--fin-ink)]">{racha}</p>
           <p className="mt-1 text-[15px] font-semibold text-[var(--fin-ink-soft)]">

@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.10.1', fecha: '2026-11-23', texto: 'Arreglamos la llama de tu racha: ahora solo se enciende y dice «Activa» cuando ya anotaste algo hoy. Si todavía no, conservas tus días, pero la verás apagada con un «¡Anota hoy!» para que no la pierdas. 🔥' },
   { version: '11.10.0', fecha: '2026-11-23', texto: 'Tu racha se ve nueva: la hoja ya no se transparenta, el número grande arriba, las medallas en cuadrícula y todo más ordenado. 🎁 Los días de Premium que ganas con la racha ya no se activan solos: te quedan guardados y los activas con el botón «Reclamar» cuando quieras. Si ya tienes un Premium de regalo, se suman al final. 🔥' },
   { version: '11.9.1', fecha: '2026-11-23', texto: 'Arreglamos la actualización de la app: ahora tu navegador descarga la versión nueva apenas la publicamos, sin quedarse mostrando la anterior. 🔄' },
   { version: '11.9.0', fecha: '2026-11-23', texto: 'En el panel de superadmin, la pestaña Usuarios ahora tiene «Exportar a Excel»: descarga un .xlsx con el correo, el nombre, el rol, la fecha de registro y el último acceso de cada usuario. Si estás buscando, exporta solo lo que se ve. 📊' },

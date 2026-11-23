@@ -70,4 +70,13 @@ describe('Inicio — racha', () => {
     render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={octubre} historial={[...septiembre, ...octubre]} bonosRacha={[{ inicioRacha: '2026-09-25', dias: 1 }]} today="2026-10-20" onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero(completos).liquidez} entrada={completos} />);
     expect(screen.getByRole('button', { name: 'Racha activa: 27 días' })).toBeInTheDocument();
   });
+
+  it('con días regalados pero sin anotar hoy, la racha no se ve activa', () => {
+    const datos = entrada(true);
+    const dia = (fecha: string): Transaction => ({ id: `tx-${fecha}`, description: 'Almuerzo', kind: 'gasto', category: 'comida', amountCop: 1000, occurredOn: fecha, cuentaId: 'efectivo', rawTranscript: '', createdAt: `${fecha}T12:00:00Z` });
+    const ayer = [dia('2026-10-19')];
+    render(<InicioView etiquetaPeriodo="octubre de 2026" onCambiarMes={vi.fn()} onBuscar={vi.fn()} onAjustes={vi.fn()} patrimonioCop={0} gastosCop={0} ingresosCop={0} onVerMes={vi.fn()} movimientos={ayer} historial={ayer} bonosRacha={[{ inicioRacha: '2026-10-19', dias: 9 }]} today="2026-10-20" onAbrirMovimiento={vi.fn()} liquidez={construirContextoFinanciero({ ...datos, transacciones: ayer }).liquidez} entrada={{ ...datos, transacciones: ayer }} />);
+    expect(screen.getByRole('button', { name: 'Racha de 10 días, aún sin anotar hoy' })).toBeInTheDocument();
+    expect(screen.queryByText('Activa')).not.toBeInTheDocument();
+  });
 });
