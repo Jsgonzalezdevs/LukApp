@@ -281,6 +281,13 @@ export const useRecordatorioRacha = () => {
     void desactivarNotificacionesPush();
   }, []);
 
+  // Quien ya tenía el recordatorio activo se suscribe de nuevo al abrir la app:
+  // así le llega el push aunque lo haya activado cuando el servidor aún no
+  // tenía llaves, o si el navegador renovó su suscripción.
+  useEffect(() => {
+    if (activo && permiso === 'granted') void activarNotificacionesPush();
+  }, [activo, permiso]);
+
   const cambiarHora = useCallback((nuevaHora: string) => {
     setHoraState(nuevaHora);
     try {

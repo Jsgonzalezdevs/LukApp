@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Bell, CheckCircle2, Clock, Flame, Loader2, Share2, X } from 'lucide-react';
 import { HITOS_RACHA, type InfoRacha } from '../lib/racha';
 import { useRecordatorioRacha } from '../data/usePreferencias';
+import { pushConfigurado } from '../lib/notificacionesPush';
 import { enviarNotificacionRacha } from '../lib/recordatorioRacha';
 import { RankingRacha } from './RankingRacha';
 import { reclamarPremioRacha, type EstadoServidor, type PremioRacha } from '../data/useRachaServidor';
@@ -354,7 +355,11 @@ export const RachaModal: React.FC<RachaModalProps> = ({ infoRacha, hoy, servidor
                     <Bell className={`h-5 w-5 shrink-0 ${recordatorio.activo ? 'text-[var(--fin-warn-ink)]' : 'text-[var(--fin-ink-faint)]'}`} />
                     <div className="min-w-0 flex-1">
                       <p className="text-[15px] font-bold text-[var(--fin-ink)]">Recordatorio diario</p>
-                      <p className="text-[13px] text-[var(--fin-ink-soft)]">Te avisa si no has anotado hoy</p>
+                      <p className="text-[13px] text-[var(--fin-ink-soft)]">
+                        {recordatorio.activo && !pushConfigurado()
+                          ? 'Por ahora te avisa solo con LukApp abierta'
+                          : 'Te avisa si no has anotado hoy'}
+                      </p>
                     </div>
                     <button
                       type="button"
