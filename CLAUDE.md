@@ -46,16 +46,18 @@ Al subir un número, los de su derecha vuelven a cero:
 En **cada** respuesta donde entregues un cambio, di en qué versión quedó:
 «Listo, v1.0.1». El usuario tiene que poder seguir el hilo sin abrir el código.
 
-### 5. Subirla son tres sitios
+### 5. Subirla son cuatro sitios
 
 1. La constante `VERSION` en `src/version.ts`.
 2. El campo `version` de `package.json`.
 3. Una entrada nueva **arriba** de `NOVEDADES` en
    `src/features/lukapp/novedades.ts` — eso es lo que el usuario lee dentro de
    la app, así que se escribe en su idioma, no en jerga de commits.
+4. La constante `VERSION` de `public/sw.js` (con la `v` delante): si no cambia,
+   los celulares se quedan con la versión vieja en caché.
 
-`src/version.test.ts` comprueba que los tres coincidan y que el historial no
-tenga versiones repetidas ni desordenadas. Si subes una sola, el test falla. Es
+`src/version.test.ts` y `src/features/lukapp/pwa.test.ts` comprueban que coincidan y que el historial no
+tenga versiones repetidas ni desordenadas. Si te falta uno, el test falla. Es
 a propósito.
 
 ### 6. Al cerrar una versión, etiqueta de git

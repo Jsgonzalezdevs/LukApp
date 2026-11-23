@@ -193,6 +193,9 @@ export const InicioView: React.FC<InicioViewProps> = ({
     setHitoCelebrado(celebrar);
   }, [infoRacha.rachaActual]);
 
+  // Los días (propios o regalados desde el superadmin) se conservan hasta
+  // medianoche, pero la llama solo se enciende cuando hoy hay algo anotado.
+  const rachaEncendida = infoRacha.rachaActual > 0 && infoRacha.anotadoHoy;
   const rachaPeligra = rachaEnRiesgo(infoRacha.rachaActual, infoRacha.anotadoHoy, bogotaHora());
 
   const insightsVisibles = useMemo(() => {
@@ -292,19 +295,21 @@ export const InicioView: React.FC<InicioViewProps> = ({
           <button
             type="button"
             onClick={() => setMostrarRachaModal(true)}
-            aria-label={infoRacha.rachaActual > 0
+            aria-label={rachaEncendida
               ? `Racha activa: ${infoRacha.rachaActual} ${infoRacha.rachaActual === 1 ? 'día' : 'días'}`
-              : 'Sin racha activa. Ver tu racha'}
-            title={infoRacha.rachaActual > 0 ? 'Tu racha está activa' : 'Ver tu racha'}
+              : infoRacha.rachaActual > 0
+                ? `Racha de ${infoRacha.rachaActual} ${infoRacha.rachaActual === 1 ? 'día' : 'días'}, aún sin anotar hoy`
+                : 'Sin racha activa. Ver tu racha'}
+            title={rachaEncendida ? 'Tu racha está activa' : 'Ver tu racha'}
             className={`flex h-8.5 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-bold transition-all active:scale-95 ${rachaPeligra ? 'animate-pulse' : ''} ${
-              infoRacha.rachaActual > 0
+              rachaEncendida
                 ? 'border border-[var(--fin-warn)]/35 bg-[var(--fin-warn-bg)] text-[var(--fin-warn-ink)]'
                 : 'border border-[var(--fin-line)] bg-[var(--fin-soft)] text-[var(--fin-ink-soft)] hover:bg-[var(--fin-card)]'
             }`}
           >
-            <IconoSimbolo valor="Flame" className={`h-4 w-4 ${infoRacha.rachaActual > 0 ? '' : 'grayscale opacity-70'}`} />
+            <IconoSimbolo valor="Flame" className={`h-4 w-4 ${rachaEncendida ? '' : 'grayscale opacity-70'}`} />
             <span className="tabular-nums">{infoRacha.rachaActual} {infoRacha.rachaActual === 1 ? 'día' : 'días'}</span>
-            {infoRacha.rachaActual > 0 && <span>{rachaPeligra ? '¡Anota hoy!' : 'Activa'}</span>}
+            {infoRacha.rachaActual > 0 && <span>{rachaEncendida ? 'Activa' : '¡Anota hoy!'}</span>}
           </button>
 
           {onTogglePrivacidad && (

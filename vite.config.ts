@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { configDefaults } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -38,5 +39,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/setupTests.ts'],
+    // Los worktrees de otras sesiones viven dentro del repo; sin esto vitest
+    // corre también sus copias, con otra versión, y falla por ellas.
+    exclude: [...configDefaults.exclude, '.claude/**'],
   },
 })
