@@ -33,6 +33,7 @@ import {
   CreditCard,
   FileText,
   Flame,
+  Download,
 } from 'lucide-react';
 import { TemaToggle } from '../features/lukapp/components/TemaToggle';
 import type { Tema } from '../features/lukapp/data/useTema';
@@ -48,6 +49,7 @@ import { TerminosCondiciones } from '../features/lukapp/components/LegalLukApp';
 import { TextoMarkdown } from '../components/TextoMarkdown';
 import { RespuestaAsesor } from '../components/RespuestaAsesor';
 import { ContextoIAPanel } from './ContextoIAPanel';
+import { descargarUsuariosExcel } from './exportarUsuarios';
 import type { EstadoRacha } from './superadmin.types';
 
 interface SuperadminPanelProps {
@@ -1225,6 +1227,17 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                   </p>
                 </div>
 
+                <div className="flex flex-col gap-2 sm:flex-row">
+                {/* Exporta lo que se ve: si hay búsqueda activa, solo esas filas. */}
+                <button
+                  onClick={() => descargarUsuariosExcel(filteredUsuarios, roles)}
+                  disabled={loadingUsuarios || filteredUsuarios.length === 0}
+                  title="Descargar correos y datos de los usuarios en Excel"
+                  className="flex items-center justify-center gap-2 rounded-xl border border-[var(--fin-line)] bg-[var(--fin-card)] px-4 py-2.5 text-xs font-bold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  Exportar a Excel ({filteredUsuarios.length})
+                </button>
                 {puede('crear_usuario') && (
                   <button
                     onClick={abrirCrear}
@@ -1234,6 +1247,7 @@ export const SuperadminPanel: React.FC<SuperadminPanelProps> = ({ rol, permisos,
                     Nuevo Usuario
                   </button>
                 )}
+                </div>
               </div>
 
               <div className="rounded-3xl border border-[var(--fin-line)] bg-[var(--fin-card)] shadow-sm overflow-hidden">

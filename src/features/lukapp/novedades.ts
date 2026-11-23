@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.9.0', fecha: '2026-11-23', texto: 'En el panel de superadmin, la pestaña Usuarios ahora tiene «Exportar a Excel»: descarga un .xlsx con el correo, el nombre, el rol, la fecha de registro y el último acceso de cada usuario. Si estás buscando, exporta solo lo que se ve. 📊' },
   { version: '11.8.1', fecha: '2026-11-23', texto: 'Arreglamos la pantalla del mes: las barras de «En qué días se fue» ya no se salen de la tarjeta y las cifras del promedio mensual ya no se parten a la mitad. 📊' },
   { version: '11.8.0', fecha: '2026-11-23', texto: 'La página de beneficios de Premium se renovó: una tarjeta con los días que te quedan, cuánto llevas este mes de registros por voz, consultas al Asesor y extractos, y el botón principal siempre a la mano. Además, «Volver» te regresa justo a donde estabas. 👑' },
   { version: '11.7.0', fecha: '2026-11-22', texto: 'Llegó el ranking de racha: mira quién lleva más días seguidos en LukApp, quién ganó la semana (se reinicia cada lunes) y reta a tus amigos de un espacio compartido. Tu racha ahora tiene ligas (Bronce, Plata, Oro, Diamante, Leyenda), calendario de 28 días, botón para presumirla y 🛡️ protectores: ganas uno cada 7 días y salva un día perdido. 🎁 Al llegar a 30, 100 y 365 días te regalamos 7, 30 y 90 días de Premium, cada hito se celebra con su tarjeta y, si tu racha está en juego por la tarde, te avisamos con una notificación. Si no quieres salir en el ranking, puedes ocultarte. 🔥🏆' },
