@@ -8,8 +8,10 @@ const CONFETI = ['🎉', '✨', '🔥', '🎊', '⭐'];
 
 interface CelebracionHitoProps {
   hito: HitoRacha;
-  /** Días de Premium que acaban de entregarse con este hito, si hubo. */
+  /** Días de Premium que este hito dejó listos para reclamar, si hubo. */
   diasPremium?: number;
+  /** Lleva a la racha, donde está el botón para activar el premio. */
+  onVerPremio?: () => void;
   onCerrar: () => void;
 }
 
@@ -17,7 +19,7 @@ interface CelebracionHitoProps {
  * Tarjeta de felicitación al cruzar un hito de racha. El confeti es adorno
  * puro (aria-hidden) y se apaga con "reducir movimiento".
  */
-export const CelebracionHito: React.FC<CelebracionHitoProps> = ({ hito, diasPremium, onCerrar }) => {
+export const CelebracionHito: React.FC<CelebracionHitoProps> = ({ hito, diasPremium, onVerPremio, onCerrar }) => {
   const piezas = useMemo(
     () => Array.from({ length: 22 }, (_, i) => ({
       id: i,
@@ -67,18 +69,28 @@ export const CelebracionHito: React.FC<CelebracionHitoProps> = ({ hito, diasPrem
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="relative w-full max-w-sm rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-card)] p-6 text-center shadow-2xl"
+        className="relative w-full max-w-sm rounded-[var(--fin-r-sheet)] border border-[var(--fin-line)] bg-[var(--fin-surface)] p-6 text-center shadow-2xl"
       >
         <div className="text-[56px]" aria-hidden="true">{hito.emoji}</div>
         <h2 className="mt-2 text-[20px] font-bold text-[var(--fin-ink)]">{hito.titulo}</h2>
         <p className="mt-1 text-[15px] font-semibold text-[var(--fin-warn-ink)]">{hito.dias} días de racha</p>
         <p className="mt-2 text-[13px] leading-snug text-[var(--fin-ink-soft)]">{hito.descripcion}</p>
         {diasPremium ? (
-          <p className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3 text-[14px] font-bold text-[var(--fin-ink)]">
-            🎁 Te regalamos {diasPremium} días de Premium
-          </p>
+          <div className="mt-3 rounded-[var(--fin-r-card)] bg-[var(--fin-soft)] p-3">
+            <p className="text-[14px] font-bold text-[var(--fin-ink)]">🎁 Ganaste {diasPremium} días de Premium</p>
+            <p className="mt-0.5 text-[13px] text-[var(--fin-ink-soft)]">Actívalos cuando quieras desde tu racha.</p>
+          </div>
         ) : null}
         <div className="mt-5 flex flex-col gap-2">
+          {diasPremium && onVerPremio ? (
+            <button
+              type="button"
+              onClick={onVerPremio}
+              className="rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] py-3 text-[15px] font-bold text-[var(--fin-on-accent)]"
+            >
+              Reclamar mi Premium
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => void compartir()}
@@ -89,9 +101,11 @@ export const CelebracionHito: React.FC<CelebracionHitoProps> = ({ hito, diasPrem
           <button
             type="button"
             onClick={onCerrar}
-            className="rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] py-3 text-[15px] font-bold text-[var(--fin-on-accent)]"
+            className={diasPremium && onVerPremio
+              ? 'py-2 text-[14px] font-semibold text-[var(--fin-ink-soft)]'
+              : 'rounded-[var(--fin-r-card)] bg-[var(--fin-accent)] py-3 text-[15px] font-bold text-[var(--fin-on-accent)]'}
           >
-            ¡A seguir la racha!
+            {diasPremium && onVerPremio ? 'Ahora no' : '¡A seguir la racha!'}
           </button>
         </div>
       </motion.div>
