@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.9.1', fecha: '2026-11-23', texto: 'Arreglamos la actualización de la app: ahora tu navegador descarga la versión nueva apenas la publicamos, sin quedarse mostrando la anterior. 🔄' },
   { version: '11.9.0', fecha: '2026-11-23', texto: 'En el panel de superadmin, la pestaña Usuarios ahora tiene «Exportar a Excel»: descarga un .xlsx con el correo, el nombre, el rol, la fecha de registro y el último acceso de cada usuario. Si estás buscando, exporta solo lo que se ve. 📊' },
   { version: '11.8.1', fecha: '2026-11-23', texto: 'Arreglamos la pantalla del mes: las barras de «En qué días se fue» ya no se salen de la tarjeta y las cifras del promedio mensual ya no se parten a la mitad. 📊' },
   { version: '11.8.0', fecha: '2026-11-23', texto: 'La página de beneficios de Premium se renovó: una tarjeta con los días que te quedan, cuánto llevas este mes de registros por voz, consultas al Asesor y extractos, y el botón principal siempre a la mano. Además, «Volver» te regresa justo a donde estabas. 👑' },
