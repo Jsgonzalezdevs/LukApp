@@ -22,6 +22,8 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.11.0', fecha: '2026-11-23', texto: 'La barra de abajo ahora dice el nombre de cada sección —Inicio, Dinero, Mes, Asesor y Más— y marca dónde estás con una pastilla de color. Más fácil saber a dónde vas. 🧭' },
+  { version: '11.10.4', fecha: '2026-11-23', texto: 'Arreglamos el recordatorio de racha: si ya lo tenías activado, tu celular se vuelve a registrar solo al abrir LukApp para que el aviso te llegue aunque tengas la app cerrada. 🔔' },
   { version: '11.10.3', fecha: '2026-11-23', texto: 'Tu racha ahora cuenta igual en todas partes: Inicio, Dinero y el recordatorio muestran el mismo número, con los días que salvaste con 🛡️ protector incluidos. En Dinero la llama también se enciende solo cuando ya anotaste hoy. Y si el equipo te regala días de racha, ahora sí te aparecen aunque hayas usado un protector. 🔥' },
   { version: '11.10.2', fecha: '2026-11-23', texto: 'Ajustes internos para que la app se actualice bien en tu celular y el arreglo de la racha te llegue sin tener que reinstalar nada. 🔄' },
   { version: '11.10.1', fecha: '2026-11-23', texto: 'Arreglamos la llama de tu racha: ahora solo se enciende y dice «Activa» cuando ya anotaste algo hoy. Si todavía no, conservas tus días, pero la verás apagada con un «¡Anota hoy!» para que no la pierdas. 🔥' },

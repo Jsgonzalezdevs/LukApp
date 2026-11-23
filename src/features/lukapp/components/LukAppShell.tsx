@@ -132,7 +132,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
    estructura, así que esto se puede reordenar sin romperla. */}
       <div
         data-guia="nav"
-        className="flex h-[var(--fin-nav-h)] w-full items-center justify-center gap-2 px-3"
+        className="flex h-[var(--fin-nav-h)] w-full items-center justify-between px-2"
       >
         {SECTIONS.map((item) => {
           const activa = item.id === section || (section === 'calendario' && item.id === 'mes');
@@ -143,17 +143,17 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
-              aria-label={item.label}
-              title={item.label}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors"
+              className="fin-nav-item flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1"
             >
-              <item.icon
-                className="h-6 w-6 shrink-0 transition-colors"
-                strokeWidth={activa ? 2.5 : 2}
-                style={{ color: activa ? 'var(--fin-ink)' : 'var(--fin-ink-faint)' }}
-                aria-hidden="true"
-              />
-              <span className="sr-only">{item.label}</span>
+              {/* La pastilla marca la sección sobre el icono y deja el nombre
+                  limpio debajo: se lee de un vistazo sin parecer pestaña vieja. */}
+              <span className="fin-nav-pildora flex h-8 w-14 items-center justify-center rounded-full" aria-hidden="true">
+                <item.icon
+                  className="h-[22px] w-[22px] shrink-0"
+                  strokeWidth={activa ? 2.4 : 1.9}
+                />
+              </span>
+              <span className="fin-nav-nombre max-w-full truncate text-[11px] leading-none">{item.label}</span>
             </button>
           );
         })}
