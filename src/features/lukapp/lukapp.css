@@ -418,8 +418,11 @@ body.fin-page > #root,
   -webkit-tap-highlight-color: transparent;
 }
 
-.fin-nav-pildora {
-  transition: background-color 220ms ease, transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+.fin-nav-item {
+  transition:
+    background-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .fin-nav-nombre {
@@ -428,17 +431,15 @@ body.fin-page > #root,
   transition: color 160ms ease;
 }
 
-.fin-nav-item:active .fin-nav-pildora {
-  transform: scale(0.92);
+.fin-nav-item:active {
+  transform: scale(0.94);
 }
 
+/* La selección envuelve icono y nombre: es una gota de vidrio dentro del
+   vidrio, con tinte transparente y su propio filo de luz, en vez de un
+   relleno plano. Así el botón entero se lee como lo que tocaste. */
 .fin-navigation button[aria-current='page'] {
   color: var(--fin-accent);
-}
-
-/* La pastilla es una gota de vidrio dentro del vidrio: tinte transparente y
-   su propio filo de luz, en vez de un relleno plano. */
-.fin-navigation button[aria-current='page'] .fin-nav-pildora {
   background: color-mix(in srgb, var(--fin-accent) 16%, transparent);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.45),
@@ -447,13 +448,14 @@ body.fin-page > #root,
 }
 
 .fin-navigation button[aria-current='page'] .fin-nav-nombre {
-  color: var(--fin-ink);
+  color: var(--fin-accent);
   font-weight: 650;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fin-nav-pildora,
+  .fin-nav-item,
   .fin-nav-nombre { transition: none; }
+  .fin-nav-item:active { transform: none; }
 }
 
 /* Novedades informa; no debe parecer una advertencia amarilla. El contraste

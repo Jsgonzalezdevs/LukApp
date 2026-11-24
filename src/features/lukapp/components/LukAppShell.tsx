@@ -143,11 +143,9 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
               data-guia={`nav-${item.id}`}
               onClick={() => handleSectionChange(item.id)}
               aria-current={activa ? 'page' : undefined}
-              className="fin-nav-item flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1"
+              className="fin-nav-item flex h-[calc(100%-10px)] min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full"
             >
-              {/* La pastilla marca la sección sobre el icono y deja el nombre
-                  limpio debajo: se lee de un vistazo sin parecer pestaña vieja. */}
-              <span className="fin-nav-pildora flex h-8 w-14 items-center justify-center rounded-full" aria-hidden="true">
+              <span className="fin-nav-pildora flex h-7 w-12 items-center justify-center" aria-hidden="true">
                 <item.icon
                   className="h-[22px] w-[22px] shrink-0"
                   strokeWidth={activa ? 2.4 : 1.9}
