@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.11.2', fecha: '2026-11-24', texto: 'En la barra de abajo, la sección donde estás ahora se ilumina completa, icono y nombre juntos, para que sepas de un vistazo dónde andas. ✨' },
   { version: '11.11.1', fecha: '2026-11-23', texto: 'La barra de abajo ahora es de vidrio: deja ver suavemente lo que pasa por detrás, con un brillo de luz arriba, y la sección donde estás se marca con una gotita de color. ✨' },
   { version: '11.11.0', fecha: '2026-11-23', texto: 'La barra de abajo ahora dice el nombre de cada sección —Inicio, Dinero, Mes, Asesor y Más— y marca dónde estás con una pastilla de color. Más fácil saber a dónde vas. 🧭' },
   { version: '11.10.4', fecha: '2026-11-23', texto: 'Arreglamos el recordatorio de racha: si ya lo tenías activado, tu celular se vuelve a registrar solo al abrir LukApp para que el aviso te llegue aunque tengas la app cerrada. 🔔' },
