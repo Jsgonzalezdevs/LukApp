@@ -6,6 +6,7 @@ import { useHapticFeedback } from '../hooks/useHapticFeedback';
 import { useAudioFeedback } from '../hooks/useAudioFeedback';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { PullToRefreshIndicator } from './PullToRefreshIndicator';
+import { LenteVidrio } from './LenteVidrio';
 
 interface LukAppShellProps {
   section: SectionId;
@@ -48,6 +49,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
   habilitarRefresco = true,
 }) => {
   const haptic = useHapticFeedback();
+  const barraRef = React.useRef<HTMLElement>(null);
   const audio = useAudioFeedback();
 
   const handleSectionChange = (newSection: SectionId) => {
@@ -124,6 +126,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
 
     {/* La zona segura queda fuera de la cápsula para mantener los iconos centrados. */}
     {createPortal(<nav
+      ref={barraRef}
       className="fin-navigation fixed z-20 flex justify-center"
       aria-label="Secciones"
     >
@@ -156,6 +159,7 @@ export const LukAppShell: React.FC<LukAppShellProps> = ({
           );
         })}
       </div>
+      <LenteVidrio objetivo={barraRef} id="fin-lente-barra" />
     </nav>, document.body)}
   </div>
   );
