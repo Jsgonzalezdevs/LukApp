@@ -291,6 +291,61 @@ export const HallazgoProactivo: React.FC<{
   </aside>
 );
 
+const COLOR_PUNTO: Record<HallazgoAsesor['tono'], string> = {
+  atento: 'var(--fin-out)',
+  bien: 'var(--fin-in)',
+  neutral: 'var(--asesor-hallazgo-tinta)',
+};
+
+/**
+ * El resumen con el que abre el Asesor. Un panel con una fila por hallazgo y
+ * no una tarjeta grande por cada uno: en la pantalla de bienvenida comparte
+ * espacio con Luki y los atajos, y tres tarjetas completas no cabían.
+ */
+export const ResumenProactivo: React.FC<{
+  hallazgos: readonly HallazgoAsesor[];
+  onPreguntar: (pregunta: string) => void;
+  onUsarPropuesta?: (propuesta: PropuestaSugeridaAsesor) => void;
+  deshabilitado?: boolean;
+}> = ({ hallazgos, onPreguntar, onUsarPropuesta, deshabilitado }) => (
+  <section className="asesor-resumen-proactivo asesor-hallazgo w-full min-w-0 rounded-2xl p-1.5 text-left" aria-label="Lo que Luki notó en tus finanzas">
+    <p className="flex items-center gap-1.5 px-2.5 pb-1 pt-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--asesor-hallazgo-tinta)]">
+      <Sparkles className="h-3 w-3" aria-hidden="true" />Esto noté en tus finanzas
+    </p>
+    <ul>
+      {hallazgos.map((hallazgo) => (
+        <li key={hallazgo.id} className="asesor-resumen-fila flex items-center gap-2 rounded-xl px-1 py-0.5">
+          <button
+            type="button"
+            disabled={deshabilitado || !hallazgo.pregunta}
+            onClick={() => hallazgo.pregunta && onPreguntar(hallazgo.pregunta)}
+            title={hallazgo.detalle}
+            className="group flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-1.5 py-2 text-left transition-colors hover:bg-[var(--fin-card-hover)] disabled:cursor-default disabled:hover:bg-transparent"
+          >
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COLOR_PUNTO[hallazgo.tono] }} aria-hidden="true" />
+            <span className="min-w-0 flex-1">
+              <span className="line-clamp-2 block text-[13px] font-bold leading-snug text-[var(--fin-ink)]">{hallazgo.titulo}</span>
+              {hallazgo.pregunta && <span className="block truncate text-[12px] text-[var(--fin-ink-faint)] group-hover:text-[var(--fin-ink-soft)]">{hallazgo.pregunta}</span>}
+            </span>
+          </button>
+          {hallazgo.propuesta && onUsarPropuesta && (
+            <button
+              type="button"
+              disabled={deshabilitado}
+              onClick={() => onUsarPropuesta(hallazgo.propuesta!)}
+              aria-label={etiquetaPropuesta(hallazgo.propuesta)}
+              title={etiquetaPropuesta(hallazgo.propuesta)}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[var(--fin-line)] bg-[var(--fin-card)] px-2.5 py-1.5 text-[12px] font-bold text-[var(--fin-ink)] transition-colors hover:border-[var(--asesor-hallazgo-tinta)] hover:text-[var(--asesor-hallazgo-tinta)] disabled:opacity-50"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />{hallazgo.propuesta.tipo === 'presupuesto' ? 'Tope' : 'Meta'}
+            </button>
+          )}
+        </li>
+      ))}
+    </ul>
+  </section>
+);
+
 /**
  * Las preguntas para seguir. Se muestran solo bajo la última respuesta, como
  * en los buenos asistentes: debajo de respuestas viejas serían ruido.

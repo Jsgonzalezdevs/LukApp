@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { CATEGORY_LABELS } from '../src/features/lukapp/types.ts';
 
 export type FilaFinanciera = Record<string, unknown>;
 
@@ -47,9 +48,12 @@ const sumaPorClave = (filas: readonly { clave: string; montoCop: number }[]): re
  * ids internos, credenciales ni datos ajenos.
  */
 export const construirPerfilFinancieroCompleto = (datos: DatosPerfilFinanciero): Record<string, unknown> => {
-  const nombresCategorias = new Map(
-    datos.categorias.map((fila) => [texto(fila.id, 80), texto(fila.nombre, 100)] as const),
-  );
+  // Las categorías de fábrica no están en la tabla de personales: sin esto la
+  // IA y las tarjetas mostraban la clave interna ("salud") en vez de "Salud".
+  const nombresCategorias = new Map<string, string>([
+    ...Object.entries(CATEGORY_LABELS),
+    ...datos.categorias.map((fila) => [texto(fila.id, 80), texto(fila.nombre, 100)] as const),
+  ]);
   const cuentas = datos.cajitas
     .map((fila) => ({
       id: texto(fila.id, 80),

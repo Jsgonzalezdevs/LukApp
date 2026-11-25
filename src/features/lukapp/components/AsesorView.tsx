@@ -45,7 +45,7 @@ import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
-import { HallazgoProactivo, RespuestaAsesor, SeguimientosAsesor } from '../../../components/RespuestaAsesor';
+import { RespuestaAsesor, ResumenProactivo, SeguimientosAsesor } from '../../../components/RespuestaAsesor';
 import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
 import { leerRespuestaVisual, serializarRespuestaVisual, validarBloque, validarHallazgo, validarPropuestaSugerida, validarSeguimientos, type BloqueAsesor, type HallazgoAsesor, type PropuestaSugeridaAsesor, type SeccionAccionAsesor } from '../../../lib/bloquesAsesor';
 
@@ -1232,7 +1232,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 sitio para que se le vean las piernas, y es la primera vez que
                 el usuario se encuentra con la IA. */}
             <MascotaLuki
-              className="h-36 w-36 shrink-0 object-contain sm:h-40 sm:w-40 md:h-44 md:w-44 lg:h-48 lg:w-48"
+              className={resumenProactivo.length > 0
+                ? 'h-24 w-24 shrink-0 object-contain sm:h-28 sm:w-28'
+                : 'h-36 w-36 shrink-0 object-contain sm:h-40 sm:w-40 md:h-44 md:w-44 lg:h-48 lg:w-48'}
               src={imagenLuki.src}
               alt={imagenLuki.alt}
               prioridad="alta"
@@ -1241,21 +1243,19 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
               {messages[0].text}
             </p>
             {resumenProactivo.length > 0 && (
-              <section className="asesor-resumen-proactivo w-full min-w-0 space-y-2 px-2 text-left" aria-label="Lo que Luki notó en tus finanzas">
-                <p className="px-1 text-[12px] font-extrabold text-[var(--fin-ink-soft)]">Antes de que preguntes, esto noté 👀</p>
-                {resumenProactivo.map((hallazgo) => (
-                  <HallazgoProactivo
-                    key={hallazgo.id}
-                    hallazgo={hallazgo}
-                    onPreguntar={(pregunta) => void handleSend(pregunta)}
-                    onUsarPropuesta={(propuesta) => usarPropuesta(propuesta)}
-                    deshabilitado={pensando}
-                  />
-                ))}
-              </section>
+              <div className="w-full min-w-0 px-2">
+                <ResumenProactivo
+                  hallazgos={resumenProactivo}
+                  onPreguntar={(pregunta) => void handleSend(pregunta)}
+                  onUsarPropuesta={(propuesta) => usarPropuesta(propuesta)}
+                  deshabilitado={pensando}
+                />
+              </div>
             )}
             <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 w-full min-w-0 px-2">
-              {SUGERENCIAS_INICIALES.map((sug) => (
+              {/* Con el resumen arriba, cuatro atajos bastan: seis empujaban la
+                  pantalla debajo de la caja de texto. */}
+              {(resumenProactivo.length > 0 ? SUGERENCIAS_INICIALES.slice(0, 4) : SUGERENCIAS_INICIALES).map((sug) => (
                 <button
                   key={sug}
                   onClick={() => handleSend(sug)}
