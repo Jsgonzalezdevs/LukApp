@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.15.0', fecha: '2026-11-24', texto: 'Luki ahora piensa un paso adelante. Debajo de cada respuesta te propone cómo seguir la conversación, y si nota algo que te conviene saber —un gasto que se disparó, un tope pasado, una meta a punto de cumplirse— te lo cuenta aunque no se lo hayas preguntado. 💡' },
   { version: '11.14.0', fecha: '2026-11-24', texto: '¡Ya puedes cambiar tu nombre! Entra a Más → Cuenta, toca «Cambiar nombre», escribe el nuevo y guárdalo. Es el nombre con el que te ven en el ranking de racha. ✏️' },
   { version: '11.13.5', fecha: '2026-11-24', texto: 'Luki ahora solo te habla de lo que ves en LukApp: secciones, botones y herramientas. Si le preguntas por algo que la app todavía no permite, como cambiar tu nombre de usuario, te lo dice claro y te cuenta dónde proponerlo. 💬' },
   { version: '11.13.4', fecha: '2026-11-24', texto: 'Cuando Luki te muestra tus tarjetas y gráficas, el texto de arriba ya no repite cifras de otro período: los números los ves en las tarjetas y Luki se queda con el consejo. Así no se contradice. 📊' },

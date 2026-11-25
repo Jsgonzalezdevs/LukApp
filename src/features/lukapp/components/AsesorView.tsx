@@ -45,9 +45,9 @@ import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
-import { RespuestaAsesor } from '../../../components/RespuestaAsesor';
+import { RespuestaAsesor, SeguimientosAsesor } from '../../../components/RespuestaAsesor';
 import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
-import { leerRespuestaVisual, serializarRespuestaVisual, validarBloque, type BloqueAsesor, type SeccionAccionAsesor } from '../../../lib/bloquesAsesor';
+import { leerRespuestaVisual, serializarRespuestaVisual, validarBloque, validarHallazgo, validarSeguimientos, type BloqueAsesor, type HallazgoAsesor, type SeccionAccionAsesor } from '../../../lib/bloquesAsesor';
 
 interface Message {
   id: string;
@@ -55,6 +55,8 @@ interface Message {
   text: string;
   /** Vista visual que el servidor ya llenó con cifras reales. */
   bloques?: BloqueAsesor[];
+  /** Lo que Luki notó del expediente sin que se lo preguntaran. */
+  hallazgo?: HallazgoAsesor;
   provider?: string;
   action?: ParsedTransaction;
   actions?: ParsedTransaction[];
@@ -186,6 +188,22 @@ const extraerRespuestaIA = (respuesta: unknown): string | null => {
   return texto || null;
 };
 
+const extraerSeguimientosIA = (respuesta: unknown): string[] =>
+  validarSeguimientos(respuesta && typeof respuesta === 'object' ? (respuesta as { seguimientos?: unknown }).seguimientos : null);
+
+const extraerHallazgoIA = (respuesta: unknown): HallazgoAsesor | undefined =>
+  validarHallazgo(respuesta && typeof respuesta === 'object' ? (respuesta as { hallazgo?: unknown }).hallazgo : null) ?? undefined;
+
+/** Lo que se ve mientras la IA responde. Cambiar de paso hace visible que
+ * está trabajando de verdad, en vez de tres puntos quietos un minuto. */
+const PASOS_PENSANDO = [
+  'Leyendo tu pregunta…',
+  'Revisando tus movimientos…',
+  'Comparando con tus meses anteriores…',
+  'Buscando lo que te conviene saber…',
+  'Preparando tu respuesta…',
+];
+
 const extraerBloquesIA = (respuesta: unknown): BloqueAsesor[] => {
   const bloques = respuesta && typeof respuesta === 'object' ? (respuesta as { bloques?: unknown }).bloques : null;
   return Array.isArray(bloques)
@@ -264,6 +282,17 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [errorIA, setErrorIA] = useState<string | null>(null);
   const [textoParaReintentar, setTextoParaReintentar] = useState<string | null>(null);
   const [validandoSesion, setValidandoSesion] = useState(false);
+  const [pasoPensando, setPasoPensando] = useState(0);
+  useEffect(() => {
+    if (!pensando) {
+      setPasoPensando(0);
+      return;
+    }
+    const intervalo = window.setInterval(() => {
+      setPasoPensando((paso) => Math.min(paso + 1, PASOS_PENSANDO.length - 1));
+    }, 1_800);
+    return () => window.clearInterval(intervalo);
+  }, [pensando]);
   const endRef = useRef<HTMLDivElement>(null);
   const historialRef = useRef<HTMLElement>(null);
   const peticionIARef = useRef<AbortController | null>(null);
@@ -317,6 +346,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           role: mensaje.rol === 'assistant' ? 'bot' : 'user',
           text: visual?.texto ?? mensaje.texto,
           bloques: visual?.bloques,
+          hallazgo: visual?.hallazgo,
+          suggestions: visual?.seguimientos,
           provider: mensaje.proveedor ?? undefined,
         };
       });
@@ -390,7 +421,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         id = await creandoConversacionRef.current;
       }
       if (!id) return;
-      const guardado = await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: serializarRespuestaVisual({ texto: mensaje.text, bloques: mensaje.bloques ?? [] }), proveedor: mensaje.provider }) });
+      const guardado = await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: serializarRespuestaVisual({ texto: mensaje.text, bloques: mensaje.bloques ?? [], seguimientos: mensaje.role === 'bot' ? mensaje.suggestions : undefined, hallazgo: mensaje.hallazgo }), proveedor: mensaje.provider }) });
       if (guardado.ok) {
         const ahora = new Date().toISOString();
         setConversaciones((actuales) => actuales
@@ -831,6 +862,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             finanzasContext,
             memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
             idConsulta,
+            // Así Luki no repite en la misma conversación algo que ya señaló.
+            hallazgosVistos: messages.flatMap((mensaje) => (mensaje.hallazgo ? [mensaje.hallazgo.id] : [])),
           }),
         }));
         const data = typeof res.json === 'function' ? await esperarConsulta(res.json()).catch(() => null) : null;
@@ -862,6 +895,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 role: 'bot',
                 text: textoRespuesta,
                 bloques: extraerBloquesIA(data),
+                hallazgo: extraerHallazgoIA(data),
+                suggestions: extraerSeguimientosIA(data),
                 provider: proveedor,
                 action: propuestaFinanciera ? undefined : deteccion.propuesta?.action,
                 actions: propuestaFinanciera ? undefined : deteccion.propuesta?.actions,
@@ -904,6 +939,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     }
   };
   handleSendRef.current = handleSend;
+  // Solo la última respuesta ofrece cómo seguir: si el usuario ya escribió
+  // después, esas sugerencias quedaron viejas.
+  const ultimoMensaje = messages[messages.length - 1];
+  const idUltimaRespuesta = ultimoMensaje?.role === 'bot' ? ultimoMensaje.id : null;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1170,7 +1209,14 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
                   }`}
                 >
-                  <RespuestaAsesor texto={msg.text} bloques={msg.bloques} onIrASeccion={onIrASeccion} />
+                  <RespuestaAsesor
+                    texto={msg.text}
+                    bloques={msg.bloques}
+                    hallazgo={msg.hallazgo}
+                    onIrASeccion={onIrASeccion}
+                    onPreguntar={(pregunta) => void handleSend(pregunta)}
+                    deshabilitado={pensando}
+                  />
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
                       {efectoMovimiento(msg.action)}
@@ -1248,20 +1294,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                         </button>
                       )}
                     </section>
-                  )}
-                  {msg.suggestions && msg.suggestions.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2 pt-1">
-                      {msg.suggestions.map((sug, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleSend(sug)}
-                          disabled={pensando}
-                          className="rounded-[var(--fin-r-pill)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
-                        >
-                          {sug}
-                        </button>
-                      ))}
-                    </div>
                   )}
                   {msg.role === 'bot' && (
                     <div className="mt-3 flex items-center gap-1 border-t border-[var(--fin-line)] pt-2 text-[var(--fin-ink-faint)]">
@@ -1357,6 +1389,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       </button>
                     </div>
                   )}
+                  {msg.role === 'bot' && msg.id === idUltimaRespuesta && !pensando && msg.suggestions && msg.suggestions.length > 0 && (
+                    <SeguimientosAsesor seguimientos={msg.suggestions} onElegir={(texto) => void handleSend(texto)} deshabilitado={pensando} />
+                  )}
                 </div>
               </div>
             ))}
@@ -1383,7 +1418,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       style={{ animationDelay: '300ms' }}
                     />
                   </span>
-                  <span>{validandoSesion ? 'Validando tu sesión…' : 'Analizando tus finanzas...'}</span>
+                  <span key={validandoSesion ? 'sesion' : pasoPensando} className="asesor-pensando-paso">
+                    {validandoSesion ? 'Validando tu sesión…' : PASOS_PENSANDO[pasoPensando]}
+                  </span>
                 </div>
               </div>
             )}

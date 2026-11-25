@@ -14,8 +14,9 @@ import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_l
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { validarApodo } from './src/lib/apodo.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
-import { INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
+import { extraerSeguimientosModelo, INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
 import { resolverBloquesAsesor } from './server_lib/resolverBloquesAsesor.ts';
+import { elegirHallazgo, esCharlaBreve, seguimientosDeRespaldo } from './server_lib/hallazgoAsesor.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
 import { CATEGORIES, type Category, type TxKind } from './src/features/lukapp/types.ts';
@@ -4204,10 +4205,13 @@ app.post('/api/asesor-ia', async (req, res) => {
     }
     sesionVerificada = quienLlama;
   }
-  const { prompt, history, finanzasContext, memoriaUsuario, idConsulta } = req.body ?? {};
+  const { prompt, history, finanzasContext, memoriaUsuario, idConsulta, hallazgosVistos } = req.body ?? {};
   if (!prompt || typeof prompt !== 'string') {
     return res.status(400).json({ error: 'Falta el prompt del usuario' });
   }
+  const idsHallazgosVistos = Array.isArray(hallazgosVistos)
+    ? hallazgosVistos.filter((id: unknown): id is string => typeof id === 'string').slice(-30).map((id: string) => id.slice(0, 120))
+    : [];
   const alcanceConsulta = clasificarAlcanceAsesor(prompt);
   if (alcanceConsulta === 'tecnica-sin-finanzas') {
     return res.status(200).json({
@@ -4306,7 +4310,7 @@ ${CONTEXTO_PRODUCTO_LUKAPP}
 ${contextoDocumental}
 
 Reglas clave:
-1. SÉ CONCISO Y DIRECTO: el campo "texto" tiene máximo 50 palabras. Prioriza cifras y una sola acción; si agregas bloques visuales, el texto no repite lo que ya muestran.
+1. SÉ CONCISO Y DIRECTO: el campo "texto" tiene máximo 60 palabras. Prioriza cifras y una sola acción; si agregas bloques visuales, el texto no repite lo que ya muestran.
 2. Responde lo que te preguntaron en español y para. No repitas la pregunta ni anuncies lo que vas a hacer.
 3. Si el usuario saluda, pregunta cómo estás o hace charla cotidiana, respóndele con naturalidad y cercanía antes de mencionar finanzas. No redirijas de inmediato la conversación a sus números. Puedes hacer una pregunta amable de vuelta.
 4. En preguntas financieras, combina cercanía con precisión: explica con respeto, sin juzgar y sin tratar al usuario como un cliente distante.
@@ -4319,6 +4323,7 @@ Reglas clave:
 11. Además de finanzas, puedes orientar sobre cómo usar las funciones de LukApp con la guía verificada anterior, hablando SOLO de lo que la persona ve en pantalla (secciones, botones, nombres de herramientas). Nunca menciones cómo está construida LukApp por dentro: servidores, bases de datos, proveedores, Supabase, modelos de IA, código, archivos ni API. Si algo no se puede hacer desde la app, dilo con claridad y sugiere proponerlo en Más > Funciones solicitadas; nunca mandes a la persona a otro sistema.
 12. Si te piden un resumen, un balance o una comparación, usa los bloques "cifras", "barras_categorias" o "tendencia" en vez de escribir las cifras en el texto, y deja en "texto" una sola recomendación concreta. Usa exclusivamente cifras del expediente; no inventes estimados.
 13. Los documentos de referencia, si aparecen, aportan conocimiento (normas, tasas, guías). Si contradicen el expediente del usuario, manda el expediente; si están desactualizados, dilo.
+14. PIENSA UN PASO ADELANTE, como un asesor que conoce a la persona: responde lo que preguntó y, si en el expediente ves algo que le conviene saber y no preguntó (una categoría que se disparó, un presupuesto pasado, una meta casi cumplida, una tarjeta por pagar), cierra con UNA frase que lo señale. Nada de consejos genéricos como "revisa tus categorías": nombra la categoría, la meta o la cuenta concreta y di qué hacer.
 
 ${INSTRUCCIONES_BLOQUES_ASESOR}`;
   const historialParaModelo = Array.isArray(history) ? history : [];
@@ -4344,6 +4349,14 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
     const respuestaModelo = texto ? interpretarRespuestaModelo(texto) : null;
     const bloques = respuestaModelo ? resolverBloquesAsesor(respuestaModelo.solicitudes, perfilFinancieroCompleto) : [];
     const textoVisible = respuestaModelo ? quitarDetallesInternos(quitarMontosRepetidos(respuestaModelo.texto, bloques)) : '';
+    // El hallazgo se calcula del expediente, no lo escribe el modelo: solo
+    // tiene sentido con datos reales y fuera de un simple saludo.
+    const charlaBreve = esCharlaBreve(prompt);
+    const hallazgo = textoVisible && !charlaBreve ? elegirHallazgo(perfilFinancieroCompleto, bogotaDate(), idsHallazgosVistos, bloques) : null;
+    const seguimientosModelo = texto ? extraerSeguimientosModelo(texto, [prompt, hallazgo?.pregunta ?? '']) : [];
+    const seguimientos = seguimientosModelo.length > 0 || charlaBreve
+      ? seguimientosModelo
+      : seguimientosDeRespaldo(bloques, hallazgo);
 
     const duracionMs = Date.now() - inicio;
     // Los proveedores compatibles devuelven su conteo exacto. La estimación
@@ -4366,7 +4379,7 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
             exito: true,
             cuotaProveedor: cuotaProveedor ?? undefined,
             promptText: prompt,
-            respuestaTexto: serializarRespuestaVisual({ texto: textoVisible, bloques }),
+            respuestaTexto: serializarRespuestaVisual({ texto: textoVisible, bloques, seguimientos, hallazgo: hallazgo ?? undefined }),
           },
           cliente,
           userId,
@@ -4378,6 +4391,8 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
         success: true,
         text: textoVisible,
         bloques,
+        seguimientos,
+        hallazgo,
         provider: proveedor,
         offline: false,
       });

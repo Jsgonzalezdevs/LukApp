@@ -1,7 +1,7 @@
 import React from 'react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, Sparkles } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, CornerDownRight, Sparkles } from 'lucide-react';
 import { TextoMarkdown } from './TextoMarkdown';
-import { leerRespuestaVisual, type BloqueAsesor, type SeccionAccionAsesor } from '../lib/bloquesAsesor';
+import { leerRespuestaVisual, type BloqueAsesor, type HallazgoAsesor, type SeccionAccionAsesor } from '../lib/bloquesAsesor';
 
 interface CifraResumen {
   valor: number;
@@ -237,6 +237,70 @@ const Bloque: React.FC<{ bloque: BloqueAsesor; onIrASeccion?: (seccion: SeccionA
   }
 };
 
+const ETIQUETA_TONO: Record<HallazgoAsesor['tono'], string> = {
+  atento: 'Ojo con esto',
+  bien: 'Buenas noticias',
+  neutral: 'Algo que noté',
+};
+
+/**
+ * Lo que Luki notó sin que se lo preguntaran. Va separado de la respuesta para
+ * que se lea como un aparte del asesor, no como parte de lo que se pidió.
+ */
+export const HallazgoProactivo: React.FC<{
+  hallazgo: HallazgoAsesor;
+  onPreguntar?: (pregunta: string) => void;
+  deshabilitado?: boolean;
+}> = ({ hallazgo, onPreguntar, deshabilitado }) => (
+  <aside className={`asesor-hallazgo asesor-hallazgo--${hallazgo.tono} rounded-2xl p-3`} aria-label="Algo que Luki notó en tus finanzas">
+    <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--asesor-hallazgo-tinta)]">
+      <Sparkles className="h-3 w-3" aria-hidden="true" />{ETIQUETA_TONO[hallazgo.tono]}
+    </p>
+    <p className="mt-1 text-[14px] font-extrabold leading-snug text-[var(--fin-ink)]">{hallazgo.titulo}</p>
+    <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">{hallazgo.detalle}</p>
+    {hallazgo.pregunta && onPreguntar && (
+      <button
+        type="button"
+        disabled={deshabilitado}
+        onClick={() => onPreguntar(hallazgo.pregunta!)}
+        className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-[var(--asesor-hallazgo-tinta)] transition-opacity hover:opacity-75 disabled:opacity-50"
+      >
+        {hallazgo.pregunta}<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    )}
+  </aside>
+);
+
+/**
+ * Las preguntas para seguir. Se muestran solo bajo la última respuesta, como
+ * en los buenos asistentes: debajo de respuestas viejas serían ruido.
+ */
+export const SeguimientosAsesor: React.FC<{
+  seguimientos: readonly string[];
+  onElegir: (texto: string) => void;
+  deshabilitado?: boolean;
+}> = ({ seguimientos, onElegir, deshabilitado }) => (
+  <nav className="asesor-seguimientos" aria-label="Preguntas para seguir la conversación">
+    <p className="mb-1 px-1 text-[11px] font-extrabold text-[var(--fin-ink-faint)]">Sigue explorando</p>
+    <ul>
+      {seguimientos.map((texto, indice) => (
+        <li key={texto} style={{ animationDelay: `${120 + indice * 70}ms` }} className="asesor-seguimiento">
+          <button
+            type="button"
+            disabled={deshabilitado}
+            onClick={() => onElegir(texto)}
+            className="group flex w-full items-center gap-2.5 rounded-xl px-2 py-2.5 text-left text-[14px] font-semibold leading-snug text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)] disabled:opacity-50"
+          >
+            <CornerDownRight className="h-4 w-4 shrink-0 text-[var(--fin-ink-faint)] transition-colors group-hover:text-[var(--fin-accent)]" aria-hidden="true" />
+            <span className="min-w-0 flex-1">{texto}</span>
+            <ArrowRight className="h-3.5 w-3.5 shrink-0 -translate-x-1 text-[var(--fin-accent)] opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  </nav>
+);
+
 /**
  * Pinta la respuesta del Asesor. Con bloques usa el catálogo cerrado de
  * componentes; sin ellos conserva la lectura de resúmenes en texto, que es como
@@ -245,17 +309,22 @@ const Bloque: React.FC<{ bloque: BloqueAsesor; onIrASeccion?: (seccion: SeccionA
 export const RespuestaAsesor: React.FC<{
   texto: string;
   bloques?: BloqueAsesor[];
+  hallazgo?: HallazgoAsesor;
   onIrASeccion?: (seccion: SeccionAccionAsesor) => void;
-}> = ({ texto: textoRecibido, bloques: bloquesRecibidos, onIrASeccion }) => {
+  onPreguntar?: (pregunta: string) => void;
+  deshabilitado?: boolean;
+}> = ({ texto: textoRecibido, bloques: bloquesRecibidos, hallazgo: hallazgoRecibido, onIrASeccion, onPreguntar, deshabilitado }) => {
   // El SuperAdmin recibe el mensaje tal como se guardó, con los bloques dentro.
   const guardada = bloquesRecibidos ? null : leerRespuestaVisual(textoRecibido);
   const texto = guardada?.texto ?? textoRecibido;
   const bloques = bloquesRecibidos ?? guardada?.bloques ?? [];
-  if (bloques.length > 0) {
+  const hallazgo = hallazgoRecibido ?? guardada?.hallazgo;
+  if (bloques.length > 0 || hallazgo) {
     return (
       <div className="w-full max-w-full space-y-3" aria-label="Respuesta visual del Asesor">
         <TextoMarkdown texto={texto} />
         {bloques.map((bloque, indice) => <Bloque key={`${bloque.tipo}-${indice}`} bloque={bloque} onIrASeccion={onIrASeccion} />)}
+        {hallazgo && <HallazgoProactivo hallazgo={hallazgo} onPreguntar={onPreguntar} deshabilitado={deshabilitado} />}
       </div>
     );
   }

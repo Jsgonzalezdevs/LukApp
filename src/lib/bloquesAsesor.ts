@@ -30,10 +30,29 @@ export type BloqueAsesor =
   | { tipo: 'alerta'; tono: TonoAlertaAsesor; titulo: string; detalle: string }
   | { tipo: 'accion'; etiqueta: string; seccion: SeccionAccionAsesor };
 
+/**
+ * Lo que Luki notó sin que se lo preguntaran. No lo escribe el modelo: sale
+ * del expediente con reglas fijas, así que sus cifras siempre son reales.
+ */
+export interface HallazgoAsesor {
+  /** Estable entre consultas: sirve para no repetir el mismo hallazgo. */
+  id: string;
+  tono: TonoAlertaAsesor;
+  titulo: string;
+  detalle: string;
+  /** La pregunta que se envía si la persona quiere profundizar. */
+  pregunta?: string;
+}
+
 export interface RespuestaVisualAsesor {
   texto: string;
   bloques: BloqueAsesor[];
+  /** Preguntas para seguir la conversación, como las que propone un buen asesor. */
+  seguimientos?: string[];
+  hallazgo?: HallazgoAsesor;
 }
+
+export const MAX_SEGUIMIENTOS_ASESOR = 3;
 
 const esObjeto = (valor: unknown): valor is Record<string, unknown> =>
   Boolean(valor) && typeof valor === 'object' && !Array.isArray(valor);
@@ -168,6 +187,49 @@ export const validarBloque = (valor: unknown): BloqueAsesor | null => {
   }
 };
 
+/**
+ * Los seguimientos se pintan como botones que envían su texto tal cual: por eso
+ * se recortan, se quitan los repetidos y nunca pasan de tres.
+ */
+export const validarSeguimientos = (valor: unknown, excluir: readonly string[] = []): string[] => {
+  if (!Array.isArray(valor)) return [];
+  const clave = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es-CO').replace(/[^a-z0-9ñ ]/g, '').trim();
+  const vistos = new Set(excluir.map(clave));
+  const resultado: string[] = [];
+  for (const item of valor) {
+    const texto = cadena(item, 80).replace(/^[-•*\d.)\s]+/, '');
+    if (texto.length < 4 || DETALLE_INTERNO.test(texto)) continue;
+    const llave = clave(texto);
+    if (!llave || vistos.has(llave)) continue;
+    vistos.add(llave);
+    resultado.push(texto);
+    if (resultado.length >= MAX_SEGUIMIENTOS_ASESOR) break;
+  }
+  return resultado;
+};
+
+export const validarHallazgo = (valor: unknown): HallazgoAsesor | null => {
+  if (!esObjeto(valor)) return null;
+  const id = cadena(valor.id, 120);
+  const titulo = cadena(valor.titulo, 90);
+  const detalle = cadena(valor.detalle, 260);
+  if (!id || !titulo || !detalle) return null;
+  const pregunta = cadena(valor.pregunta, 80);
+  return { id, tono: tono(valor.tono), titulo, detalle, ...(pregunta ? { pregunta } : {}) };
+};
+
+/** Lee los seguimientos del JSON del modelo; si no vienen, la lista queda vacía. */
+export const extraerSeguimientosModelo = (crudo: string, excluir: readonly string[] = []): string[] => {
+  const limpio = crudo.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  try {
+    const datos = JSON.parse(limpio) as unknown;
+    if (!esObjeto(datos)) return [];
+    return validarSeguimientos(datos.seguimientos ?? datos.sugerencias ?? datos.preguntas, excluir);
+  } catch {
+    return [];
+  }
+};
+
 // Un monto en pesos: "$750.000", "16.7 M", "3,2 millones", "480.200 COP". Los
 // porcentajes no cuentan: "ahorras el 50 %" no choca con ninguna tarjeta.
 const MONTO_EN_TEXTO = /\$\s?\d|\d[\d.,]*\s?(?:m|mm|millones?|mil|k)\b|\d{1,3}(?:[.,]\d{3})+|\d[\d.,]*\s?cop\b/i;
@@ -206,10 +268,17 @@ export const quitarDetallesInternos = (texto: string): string => {
 };
 
 /** Se guarda como texto del mensaje: así el historial y el SuperAdmin conservan la vista. */
-export const serializarRespuestaVisual = (respuesta: RespuestaVisualAsesor): string =>
-  respuesta.bloques.length === 0
-    ? respuesta.texto
-    : JSON.stringify({ formato: FORMATO_BLOQUES_ASESOR, texto: respuesta.texto, bloques: respuesta.bloques });
+export const serializarRespuestaVisual = (respuesta: RespuestaVisualAsesor): string => {
+  const seguimientos = respuesta.seguimientos ?? [];
+  if (respuesta.bloques.length === 0 && seguimientos.length === 0 && !respuesta.hallazgo) return respuesta.texto;
+  return JSON.stringify({
+    formato: FORMATO_BLOQUES_ASESOR,
+    texto: respuesta.texto,
+    bloques: respuesta.bloques,
+    ...(seguimientos.length > 0 ? { seguimientos } : {}),
+    ...(respuesta.hallazgo ? { hallazgo: respuesta.hallazgo } : {}),
+  });
+};
 
 export const leerRespuestaVisual = (texto: string): RespuestaVisualAsesor | null => {
   if (!texto.trimStart().startsWith('{')) return null;
@@ -220,7 +289,14 @@ export const leerRespuestaVisual = (texto: string): RespuestaVisualAsesor | null
       .map(validarBloque)
       .filter((bloque): bloque is BloqueAsesor => bloque !== null)
       .slice(0, MAX_BLOQUES_ASESOR);
-    return { texto: datos.texto, bloques };
+    const seguimientos = validarSeguimientos(datos.seguimientos);
+    const hallazgo = validarHallazgo(datos.hallazgo);
+    return {
+      texto: datos.texto,
+      bloques,
+      ...(seguimientos.length > 0 ? { seguimientos } : {}),
+      ...(hallazgo ? { hallazgo } : {}),
+    };
   } catch {
     return null;
   }
@@ -232,7 +308,8 @@ export const textoPlanoDeRespuesta = (texto: string): string => leerRespuestaVis
 /** Instrucciones de formato que el servidor añade al system prompt. Viven en
  * código (no en un PDF) porque tienen que coincidir con los componentes. */
 export const INSTRUCCIONES_BLOQUES_ASESOR = `FORMATO DE SALIDA OBLIGATORIO: responde SOLO con un objeto JSON válido, sin Markdown alrededor:
-{"texto": "tu respuesta breve en español, puede usar **negrillas**", "bloques": []}
+{"texto": "tu respuesta breve en español, puede usar **negrillas**", "bloques": [], "seguimientos": ["...", "...", "..."]}
+"seguimientos" son ${MAX_SEGUIMIENTOS_ASESOR} preguntas cortas (máx 8 palabras cada una) que la persona podría hacerte después, escritas como si ella las dijera ("¿Cómo bajo lo de Salud?", "Ayúdame a crear una meta"). Piensa como un asesor que se adelanta: que vayan MÁS ALLÁ de lo que preguntó, sean distintas entre sí y salgan de su expediente (su categoría más alta, una meta, un presupuesto, el mes siguiente). Nunca repitas la pregunta que acaba de hacer. Inclúyelas siempre, salvo en una despedida.
 "bloques" es opcional (máximo ${MAX_BLOQUES_ASESOR}) y sirve para que la app muestre la respuesta de forma visual. Tipos permitidos:
 - {"tipo":"cifras","mes":"AAAA-MM" o "historico"}: tarjetas de ingresos, gastos y balance. La app pone las cifras reales; tú NO escribes montos aquí ni en "texto".
 - {"tipo":"barras_categorias","mes":"AAAA-MM" o "historico","top":4}: barras de las categorías con más gasto.
