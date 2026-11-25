@@ -1,6 +1,7 @@
 import React from 'react';
-import { ArrowDownRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, Sparkles } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, Sparkles } from 'lucide-react';
 import { TextoMarkdown } from './TextoMarkdown';
+import { leerRespuestaVisual, type BloqueAsesor, type SeccionAccionAsesor } from '../lib/bloquesAsesor';
 
 interface CifraResumen {
   valor: number;
@@ -138,8 +139,127 @@ const TarjetaCifra: React.FC<{ etiqueta: string; cifra: CifraResumen; tono: 'ing
   );
 };
 
-/** Resume informes financieros extensos en indicadores y una gráfica compacta. */
-export const RespuestaAsesor: React.FC<{ texto: string }> = ({ texto }) => {
+const BarrasCategorias: React.FC<{ periodo: string; items: { nombre: string; valorCop: number }[] }> = ({ periodo, items }) => {
+  const mayor = Math.max(...items.map((item) => item.valorCop), 1);
+  return (
+    <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-3">
+      <p className="mb-2 text-[11px] font-extrabold text-[var(--fin-ink)]">¿En qué se concentraron tus gastos?{periodo && <span className="font-semibold text-[var(--fin-ink-soft)]"> · {periodo}</span>}</p>
+      <ul className="space-y-2">
+        {items.map((item) => (
+          <li key={`${item.nombre}-${item.valorCop}`}>
+            <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
+              <span className="truncate font-semibold capitalize text-[var(--fin-ink-soft)]">{item.nombre}</span>
+              <span className="shrink-0 font-bold tabular-nums text-[var(--fin-out)]">{formatoCop(item.valorCop)} <span className="text-[9px]">COP</span></span>
+            </div>
+            <div className="h-2.5 overflow-hidden rounded-full bg-[var(--fin-out-bg)] shadow-inner">
+              <div className="h-full rounded-full bg-[var(--fin-out)]" style={{ width: `${Math.max(6, item.valorCop / mayor * 100)}%` }} />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+/** Ingresos en verde y gastos en rojo, mes a mes: el color conserva su significado. */
+const Tendencia: React.FC<{ items: Extract<BloqueAsesor, { tipo: 'tendencia' }>['items'] }> = ({ items }) => {
+  const mayor = Math.max(...items.flatMap((item) => [item.ingresosCop, item.gastosCop]), 1);
+  return (
+    <div className="rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] font-extrabold text-[var(--fin-ink)]">Así vienen tus meses</p>
+        <p className="flex items-center gap-3 text-[10px] font-semibold text-[var(--fin-ink-soft)]">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[var(--fin-in)]" />Entró</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[var(--fin-out)]" />Salió</span>
+        </p>
+      </div>
+      <div className="flex h-28 items-end gap-2" role="img" aria-label={items.map((item) => `${item.etiqueta}: entró ${formatoCop(item.ingresosCop)}, salió ${formatoCop(item.gastosCop)}`).join('; ')}>
+        {items.map((item) => (
+          <div key={item.mes} className="flex h-full min-w-0 flex-1 flex-col justify-end gap-1">
+            <div className="flex min-h-0 flex-1 items-end justify-center gap-0.5">
+              <div className="w-1/2 max-w-4 rounded-t bg-[var(--fin-in)]" style={{ height: `${Math.max(2, item.ingresosCop / mayor * 100)}%` }} />
+              <div className="w-1/2 max-w-4 rounded-t bg-[var(--fin-out)]" style={{ height: `${Math.max(2, item.gastosCop / mayor * 100)}%` }} />
+            </div>
+            <span className="truncate text-center text-[10px] font-semibold text-[var(--fin-ink-soft)]">{item.etiqueta}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const colorDeTono = (tono: string): string =>
+  tono === 'atento' ? 'var(--fin-out)' : tono === 'bien' ? 'var(--fin-in)' : 'var(--fin-ink-faint)';
+
+const NOMBRE_SECCION: Record<SeccionAccionAsesor, string> = { inicio: 'Inicio', dinero: 'Dinero', mes: 'Mes' };
+
+const Bloque: React.FC<{ bloque: BloqueAsesor; onIrASeccion?: (seccion: SeccionAccionAsesor) => void }> = ({ bloque, onIrASeccion }) => {
+  switch (bloque.tipo) {
+    case 'cifras':
+      return (
+        <div>
+          {bloque.periodo && <p className="mb-1.5 text-[11px] font-bold text-[var(--fin-ink-soft)]">{bloque.periodo}</p>}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+            <TarjetaCifra etiqueta="Ingresos" cifra={{ valor: bloque.ingresosCop, textoOriginal: '' }} tono="ingreso" />
+            <TarjetaCifra etiqueta="Gastos" cifra={{ valor: bloque.gastosCop, textoOriginal: '' }} tono="gasto" />
+            <TarjetaCifra etiqueta="Balance" cifra={{ valor: bloque.balanceCop, textoOriginal: '' }} tono="balance" />
+          </div>
+        </div>
+      );
+    case 'barras_categorias':
+      return <BarrasCategorias periodo={bloque.periodo} items={bloque.items} />;
+    case 'tendencia':
+      return <Tendencia items={bloque.items} />;
+    case 'alerta':
+      return (
+        <div className="flex items-start gap-2.5 rounded-2xl border border-[var(--fin-line)] bg-[var(--fin-card)] p-3">
+          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorDeTono(bloque.tono) }} aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-extrabold text-[var(--fin-ink)]">{bloque.titulo}</p>
+            <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">{bloque.detalle}</p>
+          </div>
+        </div>
+      );
+    case 'accion':
+      return onIrASeccion ? (
+        <button
+          type="button"
+          onClick={() => onIrASeccion(bloque.seccion)}
+          className="inline-flex items-center gap-1.5 rounded-[var(--fin-r-control,0.75rem)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90"
+        >
+          {bloque.etiqueta}<ArrowRight className="h-3.5 w-3.5" />
+        </button>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--fin-line)] px-3 py-1.5 text-[12px] font-semibold text-[var(--fin-ink-soft)]">
+          {bloque.etiqueta} → {NOMBRE_SECCION[bloque.seccion]}
+        </span>
+      );
+  }
+};
+
+/**
+ * Pinta la respuesta del Asesor. Con bloques usa el catálogo cerrado de
+ * componentes; sin ellos conserva la lectura de resúmenes en texto, que es como
+ * llegan los mensajes guardados antes de los bloques.
+ */
+export const RespuestaAsesor: React.FC<{
+  texto: string;
+  bloques?: BloqueAsesor[];
+  onIrASeccion?: (seccion: SeccionAccionAsesor) => void;
+}> = ({ texto: textoRecibido, bloques: bloquesRecibidos, onIrASeccion }) => {
+  // El SuperAdmin recibe el mensaje tal como se guardó, con los bloques dentro.
+  const guardada = bloquesRecibidos ? null : leerRespuestaVisual(textoRecibido);
+  const texto = guardada?.texto ?? textoRecibido;
+  const bloques = bloquesRecibidos ?? guardada?.bloques ?? [];
+  if (bloques.length > 0) {
+    return (
+      <div className="w-full max-w-full space-y-3" aria-label="Respuesta visual del Asesor">
+        <TextoMarkdown texto={texto} />
+        {bloques.map((bloque, indice) => <Bloque key={`${bloque.tipo}-${indice}`} bloque={bloque} onIrASeccion={onIrASeccion} />)}
+      </div>
+    );
+  }
+
   const resumen = analizarResumen(texto);
   if (!resumen) return <TextoMarkdown texto={texto} />;
 
