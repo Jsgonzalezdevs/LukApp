@@ -58,8 +58,9 @@ import {
   type FilaFinanciera,
 } from './server_lib/perfilAsesor.ts';
 import {
-  MAX_CARACTERES_CONTEXTO_ASESOR,
   MAX_CARACTERES_MEMORIA_ASESOR,
+  MAX_TOKENS_RESPUESTA_ASESOR,
+  caracteresContextoDisponibles,
   MAX_CARACTERES_PREGUNTA_ASESOR,
   acotarHistorialAsesor,
   recortarConMuestras,
@@ -3368,7 +3369,10 @@ async function buscarContextoDocumentalIA(
   cliente: ClienteAdmin | null,
   consulta: string,
   alcances: AlcanceDocumentoIA[],
-  limite = 4,
+  limite = 2,
+  // Cada carácter de más compite con el expediente dentro de la cuota por
+  // minuto de Groq; con 9.000 el Asesor dejaba de responder.
+  maxCaracteres = 2_400,
 ): Promise<string> {
   if (!cliente || !consulta.trim()) return '';
   try {
@@ -3383,7 +3387,7 @@ async function buscarContextoDocumentalIA(
         Boolean(fila && typeof fila.nombre === 'string' && typeof fila.contenido === 'string'))
       .map((fila) => `Documento: ${fila.nombre.slice(0, 120)} · tema: ${fila.alcance}\n${fila.contenido.slice(0, 2200)}`)
       .join('\n\n---\n\n')
-      .slice(0, 9000);
+      .slice(0, maxCaracteres);
   } catch {
     // La aplicación puede desplegar el servidor antes de aplicar la migración.
     return '';
@@ -4227,12 +4231,12 @@ app.post('/api/asesor-ia', async (req, res) => {
     }
     return valor;
   };
+  // Sin sangría: los espacios del JSON bonito también cuentan como tokens.
   const contextoCompleto = perfilFinancieroCompleto
-    ? JSON.stringify(perfilFinancieroCompleto, null, 2)
+    ? JSON.stringify(perfilFinancieroCompleto)
     : finanzasContext
-      ? JSON.stringify(compactar(finanzasContext), null, 2)
+      ? JSON.stringify(compactar(finanzasContext))
     : 'No hay datos financieros registrados aún.';
-  const contextoParaModelo = recortarConMuestras(contextoCompleto, MAX_CARACTERES_CONTEXTO_ASESOR);
   const memoriaParaModelo = Array.isArray(memoriaUsuario)
     ? recortarConMuestras(
       memoriaUsuario
@@ -4247,7 +4251,7 @@ app.post('/api/asesor-ia', async (req, res) => {
     await buscarContextoDocumentalIA(cliente, preguntaParaModelo, ['general', 'producto', 'finanzas', 'extractos']),
   );
 
-  const systemPrompt = `Eres Luki, un asesor financiero personal experto para Colombia dentro de LukApp: un amigo contador cercano, confiable y profesional.
+  const armarSystemPrompt = (contextoParaModelo: string) => `Eres Luki, un asesor financiero personal experto para Colombia dentro de LukApp: un amigo contador cercano, confiable y profesional.
 Tu tono es cálido, humano, empático, claro y directo. Habla como un buen amigo que sabe de finanzas, sin sonar robótico, frío ni regañón.
 IDIOMA OBLIGATORIO: Responde SIEMPRE 100% en ESPAÑOL (español de Colombia / latinoamericano). NUNCA respondas ni pienses en inglés.
 ESTILO DIRECTO: NO incluyas etiquetas <think>, monólogos internos, introducciones ni explicaciones de tu proceso de pensamiento. Ve directo a la respuesta en español.
@@ -4277,16 +4281,22 @@ Reglas clave:
 13. Los documentos de referencia, si aparecen, aportan conocimiento (normas, tasas, guías). Si contradicen el expediente del usuario, manda el expediente; si están desactualizados, dilo.
 
 ${INSTRUCCIONES_BLOQUES_ASESOR}`;
+  const historialParaModelo = Array.isArray(history) ? history : [];
+  const caracteresFijos = armarSystemPrompt('').length
+    + preguntaParaModelo.length
+    + acotarHistorialAsesor(historialParaModelo).reduce((total, mensaje) => total + mensaje.content.length, 0);
+  const contextoParaModelo = recortarConMuestras(contextoCompleto, caracteresContextoDisponibles(caracteresFijos));
+  const systemPrompt = armarSystemPrompt(contextoParaModelo);
 
   const inicio = Date.now();
   try {
     const { texto, proveedor, modelo, fallos, usoTokens, cuotaProveedor } = await consultarModeloIA({
       systemPrompt,
       userPrompt: preguntaParaModelo,
-      history: Array.isArray(history) ? history : [],
-      // gpt-oss gasta parte del tope razonando antes de escribir el JSON; con
-      // 450 la respuesta se cortaba. Es un techo: solo se cobra lo que se usa.
-      maxTokens: 1000,
+      history: historialParaModelo,
+      // gpt-oss razona antes de escribir el JSON: con 450 se cortaba. No se
+      // sube más porque Groq descuenta este techo de la cuota por minuto.
+      maxTokens: MAX_TOKENS_RESPUESTA_ASESOR,
       temperature: 0.6,
       responseFormat: { type: 'json_object' },
       preferirEconomico: true,
@@ -4589,7 +4599,7 @@ Reglas obligatorias:
 
   const userPrompt = `Expediente financiero real de la persona:\n${JSON.stringify(perfil)}\n\nGenera los insights en formato JSON.`;
   const contextoDocumental = envolverContextoDocumentalIA(
-    await buscarContextoDocumentalIA(cliente, 'finanzas personales presupuesto ahorro cuentas Colombia', ['general', 'finanzas'], 3),
+    await buscarContextoDocumentalIA(cliente, 'finanzas personales presupuesto ahorro cuentas Colombia', ['general', 'finanzas'], 2, 2_500),
   );
 
   try {

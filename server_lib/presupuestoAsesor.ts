@@ -11,6 +11,25 @@ export const MAX_CARACTERES_MENSAJE_HISTORIAL = 700;
 export const MAX_MENSAJES_HISTORIAL_ASESOR = 4;
 export const MAX_CARACTERES_PREGUNTA_ASESOR = 2_000;
 
+/** Groq gratis acepta unos 8.000 tokens por minuto contando la respuesta
+ * reservada; se deja margen porque la estimación por caracteres es gruesa. */
+export const PRESUPUESTO_TOKENS_ASESOR = 6_200;
+export const MAX_TOKENS_RESPUESTA_ASESOR = 600;
+const CARACTERES_POR_TOKEN = 3.2;
+const MIN_CARACTERES_CONTEXTO_ASESOR = 2_000;
+
+/**
+ * El expediente es lo único que se puede recortar sin perder la pregunta, las
+ * reglas o el formato: recibe lo que sobre después de todo lo demás.
+ */
+export const caracteresContextoDisponibles = (
+  caracteresFijos: number,
+  maxTokensRespuesta = MAX_TOKENS_RESPUESTA_ASESOR,
+): number => {
+  const libres = Math.floor((PRESUPUESTO_TOKENS_ASESOR - maxTokensRespuesta) * CARACTERES_POR_TOKEN) - caracteresFijos;
+  return Math.max(MIN_CARACTERES_CONTEXTO_ASESOR, Math.min(MAX_CARACTERES_CONTEXTO_ASESOR, libres));
+};
+
 /**
  * Mantiene ambos extremos porque los resúmenes financieros suelen abrir con
  * totales y cerrar con movimientos, deudas o metas recientes.
