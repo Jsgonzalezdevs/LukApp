@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { construirPerfilFinancieroCompleto } from './perfilAsesor';
-import { detectarHallazgos, elegirHallazgo, esCharlaBreve, seguimientosDeRespaldo } from './hallazgoAsesor';
+import { detectarHallazgos, elegirHallazgo, esCharlaBreve, hallazgoDePregunta, seguimientosDeRespaldo } from './hallazgoAsesor';
 import { resolverBloquesAsesor } from './resolverBloquesAsesor';
-import { extraerSeguimientosModelo, leerRespuestaVisual, serializarRespuestaVisual } from '../src/lib/bloquesAsesor';
+import { extraerPropuestaModelo, extraerSeguimientosModelo, leerRespuestaVisual, serializarRespuestaVisual } from '../src/lib/bloquesAsesor';
 
 const base = {
   cajitas: [{ id: 'nequi', nombre: 'Nequi', tipo: 'cuenta' }],
@@ -117,5 +117,33 @@ describe('seguimientos', () => {
     const hallazgo = elegirHallazgo(perfilSalud, '2026-11-24', [], [])!;
     const guardado = serializarRespuestaVisual({ texto: 'Hola', bloques: [], seguimientos: ['¿Y el mes pasado?'], hallazgo });
     expect(leerRespuestaVisual(guardado)).toEqual({ texto: 'Hola', bloques: [], seguimientos: ['¿Y el mes pasado?'], hallazgo });
+  });
+});
+
+describe('propuestas', () => {
+  it('el tope propuesto sale de los meses normales, con holgura, y no del mes atípico', () => {
+    const concentracion = detectarHallazgos(perfilSalud, '2026-11-24').find((hallazgo) => hallazgo.id.startsWith('concentracion'));
+    // Octubre: 40.000 en Salud → +10 % → 44.000 → se redondea a 50.000.
+    expect(concentracion?.propuesta).toEqual({ tipo: 'presupuesto', categoria: 'Salud', montoCop: 50_000 });
+  });
+
+  it('el sobrante sin meta propone un fondo de emergencia de tres meses de gasto', () => {
+    const sobrante = detectarHallazgos(perfilSalud, '2026-11-24').find((hallazgo) => hallazgo.id.startsWith('sobrante'));
+    // Promedio de octubre (70.000) y noviembre (359.400) = 214.700 × 3 → 700.000.
+    expect(sobrante?.propuesta).toEqual({ tipo: 'meta', nombre: 'Fondo de emergencia', objetivoCop: 700_000, fechaObjetivo: null });
+  });
+
+  it('reconoce la pregunta de un hallazgo aunque cambien tildes o signos', () => {
+    expect(hallazgoDePregunta(perfilSalud, '2026-11-24', 'ayudame a ponerle tope a salud')?.id).toBe('concentracion:salud:2026-11');
+    expect(hallazgoDePregunta(perfilSalud, '2026-11-24', 'Dame mi resumen')).toBeNull();
+  });
+
+  it('acepta la propuesta del modelo solo si está completa', () => {
+    expect(extraerPropuestaModelo(JSON.stringify({ texto: 'x', propuesta: { tipo: 'presupuesto', categoria: 'Comida', montoCop: 300000.4 } })))
+      .toEqual({ tipo: 'presupuesto', categoria: 'Comida', montoCop: 300_000 });
+    expect(extraerPropuestaModelo(JSON.stringify({ texto: 'x', propuesta: { tipo: 'meta', nombre: 'Viaje', objetivoCop: 2_000_000, fechaObjetivo: 'pronto' } })))
+      .toEqual({ tipo: 'meta', nombre: 'Viaje', objetivoCop: 2_000_000, fechaObjetivo: null });
+    expect(extraerPropuestaModelo(JSON.stringify({ texto: 'x', propuesta: { tipo: 'presupuesto', categoria: 'Comida', montoCop: -5 } }))).toBeNull();
+    expect(extraerPropuestaModelo(JSON.stringify({ texto: 'x', propuesta: { tipo: 'borrar_todo' } }))).toBeNull();
   });
 });

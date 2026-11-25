@@ -14,9 +14,9 @@ import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_l
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { validarApodo } from './src/lib/apodo.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
-import { extraerSeguimientosModelo, INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
+import { extraerPropuestaModelo, extraerSeguimientosModelo, INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
 import { resolverBloquesAsesor } from './server_lib/resolverBloquesAsesor.ts';
-import { elegirHallazgo, esCharlaBreve, seguimientosDeRespaldo } from './server_lib/hallazgoAsesor.ts';
+import { detectarHallazgos, elegirHallazgo, esCharlaBreve, hallazgoDePregunta, seguimientosDeRespaldo } from './server_lib/hallazgoAsesor.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
 import { CATEGORIES, type Category, type TxKind } from './src/features/lukapp/types.ts';
@@ -3937,6 +3937,23 @@ app.get('/api/asesor/conversaciones', async (req, res) => {
   return res.json({ conversaciones: data ?? [] });
 });
 
+// Lo que Luki muestra al abrir el Asesor, antes de que la persona escriba.
+// Sale del expediente con reglas fijas: no llama a la IA ni gasta consultas.
+app.get('/api/asesor/resumen-proactivo', rateLimiter(20, 60_000), async (req, res) => {
+  const cliente = clienteAdmin();
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!cliente || !token) return res.status(401).json({ error: 'Debes iniciar sesión.' });
+  const quien = await exigirUsuario(cliente, token);
+  if ('status' in quien) return res.status(quien.status).json({ error: quien.error });
+  try {
+    const perfil = await leerPerfilFinancieroParaIA(cliente, quien.userId);
+    return res.json({ hallazgos: detectarHallazgos(perfil, bogotaDate()).slice(0, 3) });
+  } catch (error) {
+    console.error('[asesor] No se pudo preparar el resumen proactivo:', error);
+    return res.status(503).json({ error: 'No se pudo preparar tu resumen.' });
+  }
+});
+
 app.post('/api/asesor/conversaciones', async (req, res) => {
   const cliente = clienteAdmin();
   const token = req.headers.authorization?.replace('Bearer ', '');
@@ -4352,7 +4369,14 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
     // El hallazgo se calcula del expediente, no lo escribe el modelo: solo
     // tiene sentido con datos reales y fuera de un simple saludo.
     const charlaBreve = esCharlaBreve(prompt);
-    const hallazgo = textoVisible && !charlaBreve ? elegirHallazgo(perfilFinancieroCompleto, bogotaDate(), idsHallazgosVistos, bloques) : null;
+    const hoy = bogotaDate();
+    // Si la pregunta es la de un hallazgo, ese ya se está respondiendo: no se
+    // vuelve a mostrar como tarjeta, pero su propuesta acompaña la respuesta.
+    const hallazgoRespondido = hallazgoDePregunta(perfilFinancieroCompleto, hoy, prompt);
+    const hallazgo = textoVisible && !charlaBreve
+      ? elegirHallazgo(perfilFinancieroCompleto, hoy, [...idsHallazgosVistos, ...(hallazgoRespondido ? [hallazgoRespondido.id] : [])], bloques)
+      : null;
+    const propuesta = textoVisible ? hallazgoRespondido?.propuesta ?? (texto ? extraerPropuestaModelo(texto) : null) : null;
     const seguimientosModelo = texto ? extraerSeguimientosModelo(texto, [prompt, hallazgo?.pregunta ?? '']) : [];
     const seguimientos = seguimientosModelo.length > 0 || charlaBreve
       ? seguimientosModelo
@@ -4393,6 +4417,7 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
         bloques,
         seguimientos,
         hallazgo,
+        propuesta,
         provider: proveedor,
         offline: false,
       });

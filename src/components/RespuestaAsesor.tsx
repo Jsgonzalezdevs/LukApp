@@ -1,7 +1,7 @@
-import React from 'react';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, CornerDownRight, Sparkles } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChartNoAxesColumnIncreasing, ChevronDown, CornerDownRight, Plus, Sparkles } from 'lucide-react';
 import { TextoMarkdown } from './TextoMarkdown';
-import { leerRespuestaVisual, type BloqueAsesor, type HallazgoAsesor, type SeccionAccionAsesor } from '../lib/bloquesAsesor';
+import { leerRespuestaVisual, type BloqueAsesor, type HallazgoAsesor, type PropuestaSugeridaAsesor, type SeccionAccionAsesor } from '../lib/bloquesAsesor';
 
 interface CifraResumen {
   valor: number;
@@ -247,26 +247,46 @@ const ETIQUETA_TONO: Record<HallazgoAsesor['tono'], string> = {
  * Lo que Luki notó sin que se lo preguntaran. Va separado de la respuesta para
  * que se lea como un aparte del asesor, no como parte de lo que se pidió.
  */
+export const etiquetaPropuesta = (propuesta: PropuestaSugeridaAsesor): string =>
+  propuesta.tipo === 'presupuesto'
+    ? `Crear tope de ${formatoCop(propuesta.montoCop)}`
+    : `Crear meta «${propuesta.nombre}»`;
+
 export const HallazgoProactivo: React.FC<{
   hallazgo: HallazgoAsesor;
   onPreguntar?: (pregunta: string) => void;
+  onUsarPropuesta?: (propuesta: PropuestaSugeridaAsesor) => void;
   deshabilitado?: boolean;
-}> = ({ hallazgo, onPreguntar, deshabilitado }) => (
+}> = ({ hallazgo, onPreguntar, onUsarPropuesta, deshabilitado }) => (
   <aside className={`asesor-hallazgo asesor-hallazgo--${hallazgo.tono} rounded-2xl p-3`} aria-label="Algo que Luki notó en tus finanzas">
     <p className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.08em] text-[var(--asesor-hallazgo-tinta)]">
       <Sparkles className="h-3 w-3" aria-hidden="true" />{ETIQUETA_TONO[hallazgo.tono]}
     </p>
     <p className="mt-1 text-[14px] font-extrabold leading-snug text-[var(--fin-ink)]">{hallazgo.titulo}</p>
     <p className="mt-0.5 text-[13px] leading-relaxed text-[var(--fin-ink-soft)]">{hallazgo.detalle}</p>
-    {hallazgo.pregunta && onPreguntar && (
-      <button
-        type="button"
-        disabled={deshabilitado}
-        onClick={() => onPreguntar(hallazgo.pregunta!)}
-        className="mt-2 inline-flex items-center gap-1 text-[12px] font-bold text-[var(--asesor-hallazgo-tinta)] transition-opacity hover:opacity-75 disabled:opacity-50"
-      >
-        {hallazgo.pregunta}<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
+    {((hallazgo.propuesta && onUsarPropuesta) || (hallazgo.pregunta && onPreguntar)) && (
+      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+        {hallazgo.propuesta && onUsarPropuesta && (
+          <button
+            type="button"
+            disabled={deshabilitado}
+            onClick={() => onUsarPropuesta(hallazgo.propuesta!)}
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--fin-accent)] px-3 py-1.5 text-[12px] font-bold text-[var(--fin-on-accent)] transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <Plus className="h-3.5 w-3.5" aria-hidden="true" />{etiquetaPropuesta(hallazgo.propuesta)}
+          </button>
+        )}
+        {hallazgo.pregunta && onPreguntar && (
+          <button
+            type="button"
+            disabled={deshabilitado}
+            onClick={() => onPreguntar(hallazgo.pregunta!)}
+            className="inline-flex items-center gap-1 text-[12px] font-bold text-[var(--asesor-hallazgo-tinta)] transition-opacity hover:opacity-75 disabled:opacity-50"
+          >
+            {hallazgo.pregunta}<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        )}
+      </div>
     )}
   </aside>
 );
@@ -301,6 +321,50 @@ export const SeguimientosAsesor: React.FC<{
   </nav>
 );
 
+const MS_POR_PALABRA = 28;
+
+/**
+ * Descubre el texto palabra por palabra. La respuesta ya llegó completa y
+ * limpia del servidor: se escribe en pantalla para que se lea como alguien que
+ * contesta, sin el riesgo de mostrar una cifra que luego se borra.
+ */
+const useTextoProgresivo = (texto: string, activo: boolean, alTerminar?: () => void): { visible: string; terminado: boolean } => {
+  const palabras = texto.split(/(\s+)/);
+  const [cuantas, setCuantas] = useState(activo ? 0 : palabras.length);
+  const alTerminarRef = useRef(alTerminar);
+  alTerminarRef.current = alTerminar;
+  useEffect(() => {
+    if (!activo) {
+      setCuantas(palabras.length);
+      return;
+    }
+    const reducido = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reducido) {
+      setCuantas(palabras.length);
+      alTerminarRef.current?.();
+      return;
+    }
+    // Las respuestas largas no deben tardar más de ~1,6 s en escribirse.
+    const paso = Math.max(1, Math.ceil(palabras.length / (1_600 / MS_POR_PALABRA)));
+    let actual = 0;
+    const intervalo = window.setInterval(() => {
+      actual = Math.min(palabras.length, actual + paso);
+      setCuantas(actual);
+      if (actual >= palabras.length) {
+        window.clearInterval(intervalo);
+        alTerminarRef.current?.();
+      }
+    }, MS_POR_PALABRA);
+    return () => window.clearInterval(intervalo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texto, activo]);
+  const terminado = cuantas >= palabras.length;
+  let visible = palabras.slice(0, cuantas).join('');
+  // Unas negrillas a medio escribir mostrarían los asteriscos sueltos.
+  if (!terminado && (visible.match(/\*\*/g)?.length ?? 0) % 2 === 1) visible += '**';
+  return { visible, terminado };
+};
+
 /**
  * Pinta la respuesta del Asesor. Con bloques usa el catálogo cerrado de
  * componentes; sin ellos conserva la lectura de resúmenes en texto, que es como
@@ -312,19 +376,27 @@ export const RespuestaAsesor: React.FC<{
   hallazgo?: HallazgoAsesor;
   onIrASeccion?: (seccion: SeccionAccionAsesor) => void;
   onPreguntar?: (pregunta: string) => void;
+  onUsarPropuesta?: (propuesta: PropuestaSugeridaAsesor) => void;
   deshabilitado?: boolean;
-}> = ({ texto: textoRecibido, bloques: bloquesRecibidos, hallazgo: hallazgoRecibido, onIrASeccion, onPreguntar, deshabilitado }) => {
+  /** Recién llegada: el texto se escribe y lo visual aparece al terminar. */
+  escribiendo?: boolean;
+  onTerminoEscritura?: () => void;
+}> = ({ texto: textoRecibido, bloques: bloquesRecibidos, hallazgo: hallazgoRecibido, onIrASeccion, onPreguntar, onUsarPropuesta, deshabilitado, escribiendo = false, onTerminoEscritura }) => {
   // El SuperAdmin recibe el mensaje tal como se guardó, con los bloques dentro.
   const guardada = bloquesRecibidos ? null : leerRespuestaVisual(textoRecibido);
   const texto = guardada?.texto ?? textoRecibido;
   const bloques = bloquesRecibidos ?? guardada?.bloques ?? [];
   const hallazgo = hallazgoRecibido ?? guardada?.hallazgo;
+  const { visible, terminado } = useTextoProgresivo(texto, escribiendo, onTerminoEscritura);
+  if (escribiendo && !terminado) {
+    return <div className="w-full max-w-full" aria-busy="true"><TextoMarkdown texto={visible} /><span className="asesor-cursor" aria-hidden="true" /></div>;
+  }
   if (bloques.length > 0 || hallazgo) {
     return (
-      <div className="w-full max-w-full space-y-3" aria-label="Respuesta visual del Asesor">
+      <div className={`w-full max-w-full space-y-3 ${escribiendo ? 'asesor-revela' : ''}`} aria-label="Respuesta visual del Asesor">
         <TextoMarkdown texto={texto} />
         {bloques.map((bloque, indice) => <Bloque key={`${bloque.tipo}-${indice}`} bloque={bloque} onIrASeccion={onIrASeccion} />)}
-        {hallazgo && <HallazgoProactivo hallazgo={hallazgo} onPreguntar={onPreguntar} deshabilitado={deshabilitado} />}
+        {hallazgo && <HallazgoProactivo hallazgo={hallazgo} onPreguntar={onPreguntar} onUsarPropuesta={onUsarPropuesta} deshabilitado={deshabilitado} />}
       </div>
     );
   }

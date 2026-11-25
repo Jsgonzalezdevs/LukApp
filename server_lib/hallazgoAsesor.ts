@@ -1,4 +1,4 @@
-import type { BloqueAsesor, HallazgoAsesor } from '../src/lib/bloquesAsesor.ts';
+import type { BloqueAsesor, HallazgoAsesor, PropuestaSugeridaAsesor } from '../src/lib/bloquesAsesor.ts';
 
 /**
  * Lo que Luki nota sin que se lo pregunten.
@@ -70,6 +70,8 @@ const leerCategorias = (valor: unknown): Categoria[] =>
       .filter((fila) => fila.clave && fila.montoCop > 0 && !esTraslado(fila.clave))
     : [];
 
+const redondearArriba = (valor: number, paso: number): number => Math.max(paso, Math.ceil(valor / paso) * paso);
+
 const lista = (valor: unknown): Record<string, unknown>[] => (Array.isArray(valor) ? valor.filter(esObjeto) : []);
 
 interface Candidato extends HallazgoAsesor {
@@ -95,6 +97,20 @@ export const detectarHallazgos = (perfil: Record<string, unknown> | null, hoy: s
     .filter((fila) => fila.categoria && fila.montoCop > 0);
   const metas = lista(perfil.metas).filter((meta) => !meta.completada);
   const candidatos: Candidato[] = [];
+
+  /**
+   * El tope que se propone sale de los meses normales de esa categoría, con un
+   * 10 % de holgura: un tope igual a un mes atípico no frena nada, y uno muy
+   * por debajo de lo habitual se rompe la primera semana.
+   */
+  const propuestaDeTope = (categoria: Categoria): PropuestaSugeridaAsesor => {
+    const otrosMeses = Object.entries(porMes)
+      .filter(([mes]) => mes !== actual?.mes)
+      .map(([, filas]) => leerCategorias(filas).find((cat) => cat.clave === categoria.clave)?.montoCop ?? 0)
+      .filter((monto) => monto > 0);
+    const base = otrosMeses.length > 0 ? otrosMeses.reduce((a, b) => a + b, 0) / otrosMeses.length : categoria.montoCop;
+    return { tipo: 'presupuesto', categoria: categoria.clave, montoCop: redondearArriba(base * 1.1, 10_000) };
+  };
 
   // Solo se comenta el mes en curso: decirle en noviembre que en agosto se
   // pasó del presupuesto no le sirve de nada.
@@ -149,6 +165,7 @@ export const detectarHallazgos = (perfil: Record<string, unknown> | null, hoy: s
           titulo: `${categoria.clave} subió ${porcentaje(diferencia, antes)} % frente a ${nombreMes(anterior.mes)}`,
           detalle: `Pasó de ${pesos(antes)} a ${pesos(categoria.montoCop)}. Si fue algo puntual, tranquilo; si se vuelve costumbre, conviene ponerle un tope.`,
           pregunta: `¿Por qué subió tanto ${categoria.clave}?`,
+          ...(presupuestos.some((p) => normalizar(p.categoria) === normalizar(categoria.clave)) ? {} : { propuesta: propuestaDeTope(categoria) }),
         });
         break;
       }
@@ -169,6 +186,7 @@ export const detectarHallazgos = (perfil: Record<string, unknown> | null, hoy: s
           ? 'Casi todo lo que salió este mes fue a una sola categoría. Si fue algo puntual, el resto de tu mes se ve muy controlado.'
           : 'Casi todo lo que salió fue a una sola categoría y no tiene tope. Si se repite, un presupuesto te avisa antes de que se dispare.',
         pregunta: tieneTope ? `¿${principal.clave} fue algo puntual?` : `Ayúdame a ponerle tope a ${principal.clave}`,
+        ...(tieneTope ? {} : { propuesta: propuestaDeTope(principal) }),
       });
     }
   }
@@ -191,6 +209,9 @@ export const detectarHallazgos = (perfil: Record<string, unknown> | null, hoy: s
     }
   }
 
+  const mesesConGasto = meses.filter((mes) => mes.gastosCop > 0).slice(-3);
+  const gastoPromedio = mesesConGasto.length > 0 ? mesesConGasto.reduce((total, mes) => total + mes.gastosCop, 0) / mesesConGasto.length : 0;
+
   if (actual && actual.balanceCop > 0 && actual.ingresosCop > 0) {
     const tasa = porcentaje(actual.balanceCop, actual.ingresosCop);
     if (metas.length === 0 && tasa >= 15) {
@@ -201,6 +222,8 @@ export const detectarHallazgos = (perfil: Record<string, unknown> | null, hoy: s
         titulo: `Te está sobrando el ${tasa} % de lo que entró`,
         detalle: 'Ese margen rinde más si tiene nombre: una meta hace que no se diluya en gastos pequeños.',
         pregunta: 'Ayúdame a crear una meta de ahorro',
+        // Tres meses de gastos es el colchón que se suele recomendar.
+        ...(gastoPromedio > 0 ? { propuesta: { tipo: 'meta' as const, nombre: 'Fondo de emergencia', objetivoCop: redondearArriba(gastoPromedio * 3, 100_000), fechaObjetivo: null } } : {}),
       });
     } else if (anterior && anterior.ingresosCop > 0 && tasa >= porcentaje(anterior.balanceCop, anterior.ingresosCop) + 10) {
       candidatos.push({
@@ -222,6 +245,7 @@ export const detectarHallazgos = (perfil: Record<string, unknown> | null, hoy: s
       titulo: 'Aún no tienes topes de gasto',
       detalle: 'Con un presupuesto por categoría, LukApp te avisa cuando vas llegando al límite y no al final del mes.',
       pregunta: 'Ayúdame a armar mi presupuesto',
+      propuesta: propuestaDeTope(principal),
     });
   }
 
@@ -243,6 +267,18 @@ export const elegirHallazgo = (
   if (bloques.some((bloque) => bloque.tipo === 'alerta')) return null;
   const yaVistos = new Set(vistos);
   return detectarHallazgos(perfil, hoy).find((hallazgo) => !yaVistos.has(hallazgo.id)) ?? null;
+};
+
+/**
+ * Si la persona tocó la pregunta de un hallazgo ("Ayúdame a ponerle tope a
+ * Salud"), la respuesta trae la propuesta de ese hallazgo: así el tope se
+ * puede crear sin que la IA tenga que adivinar el monto.
+ */
+export const hallazgoDePregunta = (perfil: Record<string, unknown> | null, hoy: string, pregunta: string): HallazgoAsesor | null => {
+  const buscada = normalizar(pregunta).replace(/[¿?¡!.]/g, '').trim();
+  if (!buscada) return null;
+  return detectarHallazgos(perfil, hoy).find((hallazgo) =>
+    hallazgo.pregunta && normalizar(hallazgo.pregunta).replace(/[¿?¡!.]/g, '').trim() === buscada) ?? null;
 };
 
 /** Saludos, agradecimientos y despedidas no necesitan que Luki saque temas. */

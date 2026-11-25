@@ -31,6 +31,15 @@ export type BloqueAsesor =
   | { tipo: 'accion'; etiqueta: string; seccion: SeccionAccionAsesor };
 
 /**
+ * Un cambio que Luki propone y la persona revisa antes de guardarlo. La
+ * categoría viaja por nombre: la app la traduce a su clave y, si no existe,
+ * descarta la propuesta en vez de crear un tope huérfano.
+ */
+export type PropuestaSugeridaAsesor =
+  | { tipo: 'presupuesto'; categoria: string; montoCop: number }
+  | { tipo: 'meta'; nombre: string; objetivoCop: number; fechaObjetivo: string | null };
+
+/**
  * Lo que Luki notó sin que se lo preguntaran. No lo escribe el modelo: sale
  * del expediente con reglas fijas, así que sus cifras siempre son reales.
  */
@@ -42,6 +51,8 @@ export interface HallazgoAsesor {
   detalle: string;
   /** La pregunta que se envía si la persona quiere profundizar. */
   pregunta?: string;
+  /** Lo que Luki haría al respecto, listo para revisar con un toque. */
+  propuesta?: PropuestaSugeridaAsesor;
 }
 
 export interface RespuestaVisualAsesor {
@@ -208,6 +219,29 @@ export const validarSeguimientos = (valor: unknown, excluir: readonly string[] =
   return resultado;
 };
 
+// Un tope o una meta por encima de esto es casi seguro un error de lectura.
+const MAXIMO_PROPUESTA_COP = 10_000_000_000;
+
+export const validarPropuestaSugerida = (valor: unknown): PropuestaSugeridaAsesor | null => {
+  if (!esObjeto(valor)) return null;
+  if (valor.tipo === 'presupuesto') {
+    const categoria = cadena(valor.categoria, 60);
+    const montoCop = entero(valor.montoCop);
+    return categoria && montoCop && montoCop > 0 && montoCop <= MAXIMO_PROPUESTA_COP
+      ? { tipo: 'presupuesto', categoria, montoCop }
+      : null;
+  }
+  if (valor.tipo === 'meta') {
+    const nombre = cadena(valor.nombre, 60);
+    const objetivoCop = entero(valor.objetivoCop);
+    const fecha = typeof valor.fechaObjetivo === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valor.fechaObjetivo) ? valor.fechaObjetivo : null;
+    return nombre && objetivoCop && objetivoCop > 0 && objetivoCop <= MAXIMO_PROPUESTA_COP
+      ? { tipo: 'meta', nombre, objetivoCop, fechaObjetivo: fecha }
+      : null;
+  }
+  return null;
+};
+
 export const validarHallazgo = (valor: unknown): HallazgoAsesor | null => {
   if (!esObjeto(valor)) return null;
   const id = cadena(valor.id, 120);
@@ -215,7 +249,26 @@ export const validarHallazgo = (valor: unknown): HallazgoAsesor | null => {
   const detalle = cadena(valor.detalle, 260);
   if (!id || !titulo || !detalle) return null;
   const pregunta = cadena(valor.pregunta, 80);
-  return { id, tono: tono(valor.tono), titulo, detalle, ...(pregunta ? { pregunta } : {}) };
+  const propuesta = validarPropuestaSugerida(valor.propuesta);
+  return {
+    id,
+    tono: tono(valor.tono),
+    titulo,
+    detalle,
+    ...(pregunta ? { pregunta } : {}),
+    ...(propuesta ? { propuesta } : {}),
+  };
+};
+
+/** La propuesta que el modelo sugiere en su JSON, si trae una válida. */
+export const extraerPropuestaModelo = (crudo: string): PropuestaSugeridaAsesor | null => {
+  const limpio = crudo.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  try {
+    const datos = JSON.parse(limpio) as unknown;
+    return esObjeto(datos) ? validarPropuestaSugerida(datos.propuesta) : null;
+  } catch {
+    return null;
+  }
 };
 
 /** Lee los seguimientos del JSON del modelo; si no vienen, la lista queda vacía. */
@@ -310,6 +363,7 @@ export const textoPlanoDeRespuesta = (texto: string): string => leerRespuestaVis
 export const INSTRUCCIONES_BLOQUES_ASESOR = `FORMATO DE SALIDA OBLIGATORIO: responde SOLO con un objeto JSON válido, sin Markdown alrededor:
 {"texto": "tu respuesta breve en español, puede usar **negrillas**", "bloques": [], "seguimientos": ["...", "...", "..."]}
 "seguimientos" son ${MAX_SEGUIMIENTOS_ASESOR} preguntas cortas (máx 8 palabras cada una) que la persona podría hacerte después, escritas como si ella las dijera ("¿Cómo bajo lo de Salud?", "Ayúdame a crear una meta"). Piensa como un asesor que se adelanta: que vayan MÁS ALLÁ de lo que preguntó, sean distintas entre sí y salgan de su expediente (su categoría más alta, una meta, un presupuesto, el mes siguiente). Nunca repitas la pregunta que acaba de hacer. Inclúyelas siempre, salvo en una despedida.
+"propuesta" es opcional y va SOLO cuando recomiendes crear un tope o una meta concreta: {"tipo":"presupuesto","categoria":"nombre exacto de una categoría del expediente","montoCop":numero} o {"tipo":"meta","nombre":"máx 4 palabras","objetivoCop":numero,"fechaObjetivo":"AAAA-MM-DD" o null}. La app la muestra como tarjeta editable y la persona decide si la guarda; tú nunca digas que ya quedó creada. Calcula el monto desde el expediente (por ejemplo, lo que gastó en esa categoría en meses normales).
 "bloques" es opcional (máximo ${MAX_BLOQUES_ASESOR}) y sirve para que la app muestre la respuesta de forma visual. Tipos permitidos:
 - {"tipo":"cifras","mes":"AAAA-MM" o "historico"}: tarjetas de ingresos, gastos y balance. La app pone las cifras reales; tú NO escribes montos aquí ni en "texto".
 - {"tipo":"barras_categorias","mes":"AAAA-MM" o "historico","top":4}: barras de las categorías con más gasto.

@@ -45,9 +45,9 @@ import { obtenerSupabase } from '../data/supabase';
 import { bogotaDate, daysBetween, etiquetaConexion, type EstadoConexion } from '../lib/localDate';
 import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
-import { RespuestaAsesor, SeguimientosAsesor } from '../../../components/RespuestaAsesor';
+import { HallazgoProactivo, RespuestaAsesor, SeguimientosAsesor } from '../../../components/RespuestaAsesor';
 import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
-import { leerRespuestaVisual, serializarRespuestaVisual, validarBloque, validarHallazgo, validarSeguimientos, type BloqueAsesor, type HallazgoAsesor, type SeccionAccionAsesor } from '../../../lib/bloquesAsesor';
+import { leerRespuestaVisual, serializarRespuestaVisual, validarBloque, validarHallazgo, validarPropuestaSugerida, validarSeguimientos, type BloqueAsesor, type HallazgoAsesor, type PropuestaSugeridaAsesor, type SeccionAccionAsesor } from '../../../lib/bloquesAsesor';
 
 interface Message {
   id: string;
@@ -191,6 +191,9 @@ const extraerRespuestaIA = (respuesta: unknown): string | null => {
 const extraerSeguimientosIA = (respuesta: unknown): string[] =>
   validarSeguimientos(respuesta && typeof respuesta === 'object' ? (respuesta as { seguimientos?: unknown }).seguimientos : null);
 
+const extraerPropuestaIA = (respuesta: unknown): PropuestaSugeridaAsesor | null =>
+  validarPropuestaSugerida(respuesta && typeof respuesta === 'object' ? (respuesta as { propuesta?: unknown }).propuesta : null);
+
 const extraerHallazgoIA = (respuesta: unknown): HallazgoAsesor | undefined =>
   validarHallazgo(respuesta && typeof respuesta === 'object' ? (respuesta as { hallazgo?: unknown }).hallazgo : null) ?? undefined;
 
@@ -283,6 +286,9 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   const [textoParaReintentar, setTextoParaReintentar] = useState<string | null>(null);
   const [validandoSesion, setValidandoSesion] = useState(false);
   const [pasoPensando, setPasoPensando] = useState(0);
+  /** La respuesta que se está escribiendo en pantalla en este momento. */
+  const [escribiendoId, setEscribiendoId] = useState<string | null>(null);
+  const [resumenProactivo, setResumenProactivo] = useState<HallazgoAsesor[]>([]);
   useEffect(() => {
     if (!pensando) {
       setPasoPensando(0);
@@ -293,6 +299,30 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     }, 1_800);
     return () => window.clearInterval(intervalo);
   }, [pensando]);
+
+  // Al abrir, Luki cuenta primero lo que notó. Es un cálculo sobre los datos,
+  // sin IA: si falla o no hay sesión, la pantalla queda como siempre.
+  useEffect(() => {
+    let vigente = true;
+    void (async () => {
+      try {
+        const cliente = obtenerSupabase();
+        const sesion = cliente ? (await cliente.auth.getSession()).data.session : null;
+        if (!sesion?.access_token) return;
+        const respuesta = await fetch(apiUrl('/api/asesor/resumen-proactivo'), { headers: { Authorization: `Bearer ${sesion.access_token}` } });
+        if (!respuesta.ok) return;
+        const datos = (await respuesta.json()) as { hallazgos?: unknown };
+        const hallazgos = (Array.isArray(datos.hallazgos) ? datos.hallazgos : [])
+          .map(validarHallazgo)
+          .filter((hallazgo): hallazgo is HallazgoAsesor => hallazgo !== null)
+          .slice(0, 3);
+        if (vigente) setResumenProactivo(hallazgos);
+      } catch {
+        // Sin resumen no pasa nada: siguen los botones de siempre.
+      }
+    })();
+    return () => { vigente = false; };
+  }, []);
   const endRef = useRef<HTMLDivElement>(null);
   const historialRef = useRef<HTMLElement>(null);
   const peticionIARef = useRef<AbortController | null>(null);
@@ -678,7 +708,11 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     const textoUsuario = (textoDirecto ?? input).trim();
     if (!textoUsuario || pensando || peticionIARef.current) return;
     const propuestaFinanciera = detectarPropuestaAsesor(textoUsuario, categorias, lexico);
-    const respuestaLocalDeAyuda = responderAyudaLukApp(textoUsuario);
+    // La pregunta de un hallazgo va siempre a la IA: el servidor la reconoce y
+    // devuelve su propuesta lista. Un atajo local la contestaría sin ella.
+    const esPreguntaDeHallazgo = [...resumenProactivo, ...messages.map((mensaje) => mensaje.hallazgo)]
+      .some((hallazgo) => hallazgo?.pregunta === textoUsuario);
+    const respuestaLocalDeAyuda = esPreguntaDeHallazgo ? null : responderAyudaLukApp(textoUsuario);
 
     const userMsg: Message = { id: nuevoId(), role: 'user', text: textoUsuario };
     let guardadoUsuario: Promise<void> | null = null;
@@ -703,7 +737,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       setTextoParaReintentar(null);
       return;
     }
-    const simulacionLocal = entradaFinanciera ? simularPregunta(textoUsuario, entradaFinanciera) : null;
+    const simulacionLocal = entradaFinanciera && !esPreguntaDeHallazgo ? simularPregunta(textoUsuario, entradaFinanciera) : null;
     if (simulacionLocal) {
       const mensajeSimulacion: Message = { id: nuevoId(), role: 'bot', text: simulacionLocal.respuesta, provider: 'Luki' };
       setMessages((prev) => [...prev, mensajeSimulacion]);
@@ -715,7 +749,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     }
     // Una respuesta instantánea no dice nada sobre la IA: por eso ya no cambia
     // el indicador a "IA no disponible", que confundía al ver que sí lo estaba.
-    if (!esReintento && !propuestaFinanciera && !PIDE_ANALISIS_IA.test(normalizarPregunta(textoUsuario))) {
+    if (!esReintento && !propuestaFinanciera && !esPreguntaDeHallazgo && !PIDE_ANALISIS_IA.test(normalizarPregunta(textoUsuario))) {
       const respuestaInstantanea = responderAsesor(
         textoUsuario, transacciones, cajitas, cajitasBalances, categorias, lexico, context, disponibleDiarioCop,
       );
@@ -863,7 +897,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
             idConsulta,
             // Así Luki no repite en la misma conversación algo que ya señaló.
-            hallazgosVistos: messages.flatMap((mensaje) => (mensaje.hallazgo ? [mensaje.hallazgo.id] : [])),
+            hallazgosVistos: [...resumenProactivo, ...messages.map((mensaje) => mensaje.hallazgo)].flatMap((hallazgo) => (hallazgo ? [hallazgo.id] : [])),
           }),
         }));
         const data = typeof res.json === 'function' ? await esperarConsulta(res.json()).catch(() => null) : null;
@@ -900,8 +934,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 provider: proveedor,
                 action: propuestaFinanciera ? undefined : deteccion.propuesta?.action,
                 actions: propuestaFinanciera ? undefined : deteccion.propuesta?.actions,
-                propuesta: propuestaFinanciera ?? undefined,
+                // Lo que la persona escribió manda sobre lo que Luki propone.
+                propuesta: propuestaFinanciera ?? convertirPropuesta(extraerPropuestaIA(data)) ?? undefined,
               };
+              setEscribiendoId(botMsg.id);
               setMessages((prev) => [...prev, botMsg]);
               void guardarMensaje(botMsg);
             setConexion('en-linea');
@@ -939,6 +975,40 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
     }
   };
   handleSendRef.current = handleSend;
+
+  /**
+   * La IA nombra la categoría como la ve la persona ("Salud"); la app guarda
+   * presupuestos por clave. Si no hay una categoría que coincida, la
+   * propuesta se descarta: un tope sobre una categoría inexistente no sirve.
+   */
+  function convertirPropuesta(sugerida: PropuestaSugeridaAsesor | null): PropuestaAsesor | null {
+    if (!sugerida) return null;
+    if (sugerida.tipo === 'meta') return sugerida;
+    const buscada = normalizarPregunta(sugerida.categoria).trim();
+    const categoria = hacerCatalogo(categorias).lista.find((item) =>
+      normalizarPregunta(item.nombre).trim() === buscada || normalizarPregunta(String(item.clave)).trim() === buscada);
+    return categoria ? { tipo: 'presupuesto', categoria: categoria.clave, montoCop: sugerida.montoCop } : null;
+  }
+
+  /** Abre la propuesta editable. Desde un mensaje se pega a él; desde el
+   * resumen inicial llega como una respuesta nueva de Luki. */
+  const usarPropuesta = (sugerida: PropuestaSugeridaAsesor, mensajeId?: string) => {
+    const propuesta = convertirPropuesta(sugerida);
+    if (!propuesta) {
+      mostrarToast('No encontré esa categoría en tu lista. Puedes crear el tope desde Dinero.');
+      return;
+    }
+    if (mensajeId) {
+      setMessages((actuales) => actuales.map((mensaje) => mensaje.id === mensajeId
+        ? { ...mensaje, propuesta, propuestaConfirmada: false, propuestaError: undefined }
+        : mensaje));
+      return;
+    }
+    const texto = propuesta.tipo === 'presupuesto'
+      ? 'Te dejo este tope listo. Ajusta el monto si quieres y confírmalo. 👇'
+      : 'Te dejo esta meta lista. Cambia el nombre o el objetivo si quieres y confírmala. 👇';
+    setMessages((actuales) => [...actuales, { id: nuevoId(), role: 'bot', text: texto, provider: 'Luki', propuesta }]);
+  };
   // Solo la última respuesta ofrece cómo seguir: si el usuario ya escribió
   // después, esas sugerencias quedaron viejas.
   const ultimoMensaje = messages[messages.length - 1];
@@ -1170,6 +1240,20 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
             <p className="text-[15px] leading-snug text-[var(--fin-ink-soft)]">
               {messages[0].text}
             </p>
+            {resumenProactivo.length > 0 && (
+              <section className="asesor-resumen-proactivo w-full min-w-0 space-y-2 px-2 text-left" aria-label="Lo que Luki notó en tus finanzas">
+                <p className="px-1 text-[12px] font-extrabold text-[var(--fin-ink-soft)]">Antes de que preguntes, esto noté 👀</p>
+                {resumenProactivo.map((hallazgo) => (
+                  <HallazgoProactivo
+                    key={hallazgo.id}
+                    hallazgo={hallazgo}
+                    onPreguntar={(pregunta) => void handleSend(pregunta)}
+                    onUsarPropuesta={(propuesta) => usarPropuesta(propuesta)}
+                    deshabilitado={pensando}
+                  />
+                ))}
+              </section>
+            )}
             <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2 w-full min-w-0 px-2">
               {SUGERENCIAS_INICIALES.map((sug) => (
                 <button
@@ -1215,7 +1299,10 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                     hallazgo={msg.hallazgo}
                     onIrASeccion={onIrASeccion}
                     onPreguntar={(pregunta) => void handleSend(pregunta)}
+                    onUsarPropuesta={(propuesta) => usarPropuesta(propuesta, msg.id)}
                     deshabilitado={pensando}
+                    escribiendo={msg.id === escribiendoId}
+                    onTerminoEscritura={() => setEscribiendoId((actual) => (actual === msg.id ? null : actual))}
                   />
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
@@ -1243,8 +1330,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       ))}
                     </div>
                   )}
-                  {msg.propuesta && (
-                    <section className="mt-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-3" aria-label="Propuesta editable del asesor">
+                  {msg.propuesta && msg.id !== escribiendoId && (
+                    <section className="asesor-resumen-proactivo mt-3 rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] p-3" aria-label="Propuesta editable del asesor">
                       <h3 className="text-[14px] font-semibold text-[var(--fin-ink)]">💡 Propuesta para revisar</h3>
                       {msg.propuesta.tipo === 'presupuesto' ? (() => {
                         const propuesta = msg.propuesta;
@@ -1389,7 +1476,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       </button>
                     </div>
                   )}
-                  {msg.role === 'bot' && msg.id === idUltimaRespuesta && !pensando && msg.suggestions && msg.suggestions.length > 0 && (
+                  {msg.role === 'bot' && msg.id === idUltimaRespuesta && !pensando && msg.id !== escribiendoId && msg.suggestions && msg.suggestions.length > 0 && (
                     <SeguimientosAsesor seguimientos={msg.suggestions} onElegir={(texto) => void handleSend(texto)} deshabilitado={pensando} />
                   )}
                 </div>
