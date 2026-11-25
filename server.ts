@@ -13,7 +13,7 @@ import { urlSupabaseDelServidor } from './server_lib/configuracionSupabase.ts';
 import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_lib/avisosRacha.ts';
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
-import { INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
+import { INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
 import { resolverBloquesAsesor } from './server_lib/resolverBloquesAsesor.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
@@ -4276,7 +4276,7 @@ Reglas clave:
 8. Da recomendaciones realistas y accionables para Colombia (ahorro, cajitas, CDT, presupuestos, recorte de gastos hormiga).
 9. No des recomendaciones de inversión de alto riesgo sin advertencias.
 10. Si te cuentan algo personal o difícil, reconócelo en UNA frase; ofrece una respuesta humana breve y, solo si encaja, conecta luego con lo financiero.
-11. Además de finanzas, puedes orientar sobre cómo usar las funciones de LukApp con la guía verificada anterior. No confundas una pregunta sobre cómo usar la app con una pregunta de programación. Si preguntan por programación, SQL o configuración técnica externa, explica brevemente que no tienes acceso al código o dispositivo y ofrece ayuda con el uso de la app.
+11. Además de finanzas, puedes orientar sobre cómo usar las funciones de LukApp con la guía verificada anterior, hablando SOLO de lo que la persona ve en pantalla (secciones, botones, nombres de herramientas). Nunca menciones cómo está construida LukApp por dentro: servidores, bases de datos, proveedores, Supabase, modelos de IA, código, archivos ni API. Si algo no se puede hacer desde la app, dilo con claridad y sugiere proponerlo en Más > Funciones solicitadas; nunca mandes a la persona a otro sistema.
 12. Si te piden un resumen, un balance o una comparación, usa los bloques "cifras", "barras_categorias" o "tendencia" en vez de escribir las cifras en el texto, y deja en "texto" una sola recomendación concreta. Usa exclusivamente cifras del expediente; no inventes estimados.
 13. Los documentos de referencia, si aparecen, aportan conocimiento (normas, tasas, guías). Si contradicen el expediente del usuario, manda el expediente; si están desactualizados, dilo.
 
@@ -4303,7 +4303,7 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
     });
     const respuestaModelo = texto ? interpretarRespuestaModelo(texto) : null;
     const bloques = respuestaModelo ? resolverBloquesAsesor(respuestaModelo.solicitudes, perfilFinancieroCompleto) : [];
-    const textoVisible = respuestaModelo ? quitarMontosRepetidos(respuestaModelo.texto, bloques) : '';
+    const textoVisible = respuestaModelo ? quitarDetallesInternos(quitarMontosRepetidos(respuestaModelo.texto, bloques)) : '';
 
     const duracionMs = Date.now() - inicio;
     // Los proveedores compatibles devuelven su conteo exacto. La estimación

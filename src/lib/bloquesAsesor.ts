@@ -188,6 +188,23 @@ export const quitarMontosRepetidos = (texto: string, bloques: readonly BloqueAse
   return resultado || 'Aquí tienes tu resumen.';
 };
 
+// Nombres de la trastienda que la persona nunca ve en la app.
+const DETALLE_INTERNO = /\b(supabase|groq|netlify|vercel|postgres(?:ql)?|sql|server\.ts|servidor(?:es)?|backend|base de datos|bases de datos|api|endpoint|migraci[oó]n(?:es)?|service_role|openai|gpt[\w.-]*|llama|qwen|deepseek|gemini|anthropic|typescript|javascript|react|repositorio|c[oó]digo fuente)\b/i;
+
+export const RESPUESTA_SIN_DETALLES_INTERNOS = 'Eso no lo puedes hacer desde la app por ahora. Si te gustaría que existiera, propónlo en **Más → Funciones solicitadas**.';
+
+/**
+ * Red de seguridad: aunque el prompt lo prohíbe, un modelo puede nombrar la
+ * infraestructura o mandar a la persona a otro sistema. Esas frases se quitan.
+ */
+export const quitarDetallesInternos = (texto: string): string => {
+  const frases = texto.split(/(?<=[.!?])\s+|\n+/);
+  const limpias = frases.filter((frase) => !DETALLE_INTERNO.test(frase.replace(/\*\*/g, '')));
+  if (limpias.length === frases.length) return texto;
+  const resultado = limpias.join(' ').replace(/\s+/g, ' ').trim();
+  return resultado || RESPUESTA_SIN_DETALLES_INTERNOS;
+};
+
 /** Se guarda como texto del mensaje: así el historial y el SuperAdmin conservan la vista. */
 export const serializarRespuestaVisual = (respuesta: RespuestaVisualAsesor): string =>
   respuesta.bloques.length === 0

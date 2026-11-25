@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { construirPerfilFinancieroCompleto } from './perfilAsesor';
 import { resolverBloquesAsesor } from './resolverBloquesAsesor';
-import { interpretarRespuestaModelo, leerRespuestaVisual, quitarMontosRepetidos, serializarRespuestaVisual } from '../src/lib/bloquesAsesor';
+import { interpretarRespuestaModelo, leerRespuestaVisual, quitarDetallesInternos, quitarMontosRepetidos, RESPUESTA_SIN_DETALLES_INTERNOS, serializarRespuestaVisual } from '../src/lib/bloquesAsesor';
 
 const perfil = construirPerfilFinancieroCompleto({
   cajitas: [{ id: 'nequi', nombre: 'Nequi', tipo: 'cuenta' }],
@@ -108,5 +108,21 @@ describe('quitarMontosRepetidos', () => {
 
   it('si todo eran montos, deja una frase neutra', () => {
     expect(quitarMontosRepetidos('Ingresos $750.000, gastos $369.933.', cifras)).toBe('Aquí tienes tu resumen.');
+  });
+});
+
+describe('quitarDetallesInternos', () => {
+  it('quita la frase que nombra la infraestructura y deja la que la persona puede usar', () => {
+    const texto = 'En LukApp no puedes cambiar el nombre de usuario desde la app; debes hacerlo en tu perfil de Supabase. Abre **Más → Funciones solicitadas** y propónlo.';
+    expect(quitarDetallesInternos(texto)).toBe('Abre **Más → Funciones solicitadas** y propónlo.');
+  });
+
+  it('si todo era técnico, responde con algo útil para la persona', () => {
+    expect(quitarDetallesInternos('Eso se guarda en la base de datos del servidor.')).toBe(RESPUESTA_SIN_DETALLES_INTERNOS);
+  });
+
+  it('no toca respuestas normales', () => {
+    const texto = 'Abre **Dinero** y pulsa **Agregar cuenta**. Ahí eliges el nombre.';
+    expect(quitarDetallesInternos(texto)).toBe(texto);
   });
 });
