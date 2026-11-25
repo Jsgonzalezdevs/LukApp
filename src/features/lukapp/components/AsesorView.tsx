@@ -1374,7 +1374,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       )}
                       {msg.propuestaError ? <p role="alert" className="mt-2 text-[13px] text-[var(--fin-out)]">{msg.propuestaError}</p> : null}
                       {msg.propuestaConfirmada ? (
-                        <p role="status" className="mt-2 text-[13px] font-semibold text-[var(--fin-in)]">✅ Guardado. Puedes verlo en Dinero.</p>
+                        <p role="status" className="mt-2 text-[13px] font-semibold text-[var(--fin-in)]">✅ Guardado. Puedes verlo en {msg.propuesta.tipo === 'presupuesto' ? 'Mes → Topes de gasto' : 'Dinero → Metas de ahorro'}.</p>
                       ) : (
                         <button type="button" disabled={msg.propuestaGuardando || (msg.propuesta.tipo === 'presupuesto' ? !onFijarPresupuesto : !onCrearMeta)} onClick={() => void confirmarPropuesta(msg)} className="mt-3 min-h-11 w-full rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-50">
                           {msg.propuestaGuardando ? 'Guardando…' : `Confirmar ${msg.propuesta.tipo === 'presupuesto' ? 'presupuesto' : 'meta'}`}

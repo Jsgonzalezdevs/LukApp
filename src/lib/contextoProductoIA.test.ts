@@ -35,3 +35,11 @@ describe('CONTEXTO_PRODUCTO_LUKAPP', () => {
     expect(CONTEXTO_PRODUCTO_LUKAPP).not.toMatch(/supabase|server\.ts|react|typescript|migrations|api\b/i);
   });
 });
+
+describe('actualizar saldos', () => {
+  it('explica cómo editar el saldo en vez de mandar a importar extractos', () => {
+    const respuesta = responderAyudaLukApp('ayudame a actualizazr mis saldos');
+    expect(respuesta).toContain('Saldo actual');
+    expect(respuesta).not.toContain('Importar');
+  });
+});

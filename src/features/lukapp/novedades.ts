@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.17.0', fecha: '2026-11-25', texto: 'Luki ahora se sabe LukApp de memoria. Pregúntale cómo hacer cualquier cosa —actualizar el saldo de una cuenta, pagar la tarjeta, crear un ahorro, poner un tope, compartir gastos— y te da los pasos con los nombres exactos de los botones. 🧭' },
   { version: '11.16.1', fecha: '2026-11-24', texto: 'Ordenamos lo que Luki te cuenta al abrir el Asesor: ahora es un panel compacto, una línea por cada cosa que notó, con su botón para crear el tope o la meta. Y las categorías ya salen con su nombre bien escrito («Salud», no «salud»). ✨' },
   { version: '11.16.0', fecha: '2026-11-24', texto: 'Al abrir el Asesor, Luki te cuenta primero lo que notó en tus finanzas. Cuando te recomienda un tope o una meta, te la deja lista con un botón: la revisas, ajustas el monto y la confirmas sin salir del chat. Y sus respuestas ahora se van escribiendo en pantalla. ✨' },
   { version: '11.15.0', fecha: '2026-11-24', texto: 'Luki ahora piensa un paso adelante. Debajo de cada respuesta te propone cómo seguir la conversación, y si nota algo que te conviene saber —un gasto que se disparó, un tope pasado, una meta a punto de cumplirse— te lo cuenta aunque no se lo hayas preguntado. 💡' },

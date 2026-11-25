@@ -14,6 +14,7 @@ import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_l
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { validarApodo } from './src/lib/apodo.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
+import { guiaLukAppPara } from './src/lib/guiaLukApp.ts';
 import { extraerPropuestaModelo, extraerSeguimientosModelo, INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
 import { resolverBloquesAsesor } from './server_lib/resolverBloquesAsesor.ts';
 import { detectarHallazgos, elegirHallazgo, esCharlaBreve, hallazgoDePregunta, seguimientosDeRespaldo } from './server_lib/hallazgoAsesor.ts';
@@ -4312,6 +4313,13 @@ app.post('/api/asesor-ia', async (req, res) => {
     await buscarContextoDocumentalIA(cliente, preguntaParaModelo, ['general', 'producto', 'finanzas', 'extractos']),
   );
 
+  // El último mensaje del usuario también cuenta: «¿y cómo lo hago?» depende
+  // del tema que venía de antes.
+  const ultimoDelUsuario = Array.isArray(history)
+    ? [...history].reverse().find((m) => m?.role === 'user')
+    : undefined;
+  const guiaDetallada = guiaLukAppPara(`${preguntaParaModelo}\n${String(ultimoDelUsuario?.content ?? ultimoDelUsuario?.text ?? '').slice(0, 300)}`);
+
   const armarSystemPrompt = (contextoParaModelo: string) => `Eres Luki, un asesor financiero personal experto para Colombia dentro de LukApp: un amigo contador cercano, confiable y profesional.
 Tu tono es cálido, humano, empático, claro y directo. Habla como un buen amigo que sabe de finanzas, sin sonar robótico, frío ni regañón.
 IDIOMA OBLIGATORIO: Responde SIEMPRE 100% en ESPAÑOL (español de Colombia / latinoamericano). NUNCA respondas ni pienses en inglés.
@@ -4323,7 +4331,7 @@ Memoria autorizada por el usuario (úsala solo para personalizar, nunca inventes
 ${memoriaParaModelo}` : ''}
 
 Guía verificada de LukApp para orientar sobre la aplicación:
-${CONTEXTO_PRODUCTO_LUKAPP}
+${CONTEXTO_PRODUCTO_LUKAPP}${guiaDetallada}
 ${contextoDocumental}
 
 Reglas clave:
@@ -4337,7 +4345,7 @@ Reglas clave:
 8. Da recomendaciones realistas y accionables para Colombia (ahorro, cajitas, CDT, presupuestos, recorte de gastos hormiga).
 9. No des recomendaciones de inversión de alto riesgo sin advertencias.
 10. Si te cuentan algo personal o difícil, reconócelo en UNA frase; ofrece una respuesta humana breve y, solo si encaja, conecta luego con lo financiero.
-11. Además de finanzas, puedes orientar sobre cómo usar las funciones de LukApp con la guía verificada anterior, hablando SOLO de lo que la persona ve en pantalla (secciones, botones, nombres de herramientas). Nunca menciones cómo está construida LukApp por dentro: servidores, bases de datos, proveedores, Supabase, modelos de IA, código, archivos ni API. Si algo no se puede hacer desde la app, dilo con claridad y sugiere proponerlo en Más > Funciones solicitadas; nunca mandes a la persona a otro sistema.
+11. Además de finanzas, ayudas con TODO lo de LukApp: cuando pregunten cómo hacer algo en la app, da los pasos numerados con los nombres exactos de la guía verificada y del manual detallado (pestaña > botón > qué escribir > botón final), sin mandar a otra herramienta que no resuelve lo que pidieron. Habla SOLO de lo que la persona ve en pantalla (secciones, botones, nombres de herramientas). Nunca menciones cómo está construida LukApp por dentro: servidores, bases de datos, proveedores, Supabase, modelos de IA, código, archivos ni API. Si algo no se puede hacer desde la app, dilo con claridad y sugiere proponerlo en Más > Funciones solicitadas; nunca mandes a la persona a otro sistema.
 12. Si te piden un resumen, un balance o una comparación, usa los bloques "cifras", "barras_categorias" o "tendencia" en vez de escribir las cifras en el texto, y deja en "texto" una sola recomendación concreta. Usa exclusivamente cifras del expediente; no inventes estimados.
 13. Los documentos de referencia, si aparecen, aportan conocimiento (normas, tasas, guías). Si contradicen el expediente del usuario, manda el expediente; si están desactualizados, dilo.
 14. PIENSA UN PASO ADELANTE, como un asesor que conoce a la persona: responde lo que preguntó y, si en el expediente ves algo que le conviene saber y no preguntó (una categoría que se disparó, un presupuesto pasado, una meta casi cumplida, una tarjeta por pagar), cierra con UNA frase que lo señale. Nada de consejos genéricos como "revisa tus categorías": nombra la categoría, la meta o la cuenta concreta y di qué hacer.

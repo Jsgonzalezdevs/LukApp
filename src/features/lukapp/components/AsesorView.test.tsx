@@ -155,7 +155,7 @@ describe('AsesorView — el LLM nunca decide solo qué se guarda', () => {
     fireEvent.change(monto, { target: { value: '400000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar presupuesto' }));
     await waitFor(() => expect(onFijarPresupuesto).toHaveBeenCalledWith('transporte', 400000));
-    await screen.findByText(/Guardado\. Puedes verlo en Dinero/);
+    await screen.findByText(/Guardado\. Puedes verlo en Mes → Topes de gasto/);
   });
 
   it('permite editar el nombre y objetivo de una meta antes de confirmar', async () => {

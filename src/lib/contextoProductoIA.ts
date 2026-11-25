@@ -9,12 +9,14 @@ export const CONTEXTO_PRODUCTO_LUKAPP = `LukApp es una app de finanzas personale
 - Dinero: cuentas, efectivo, cajitas de ahorro, tarjetas, deudas, metas e Importar extractos.
 - Mes: balance del período, topes de gasto y pagos fijos.
 - Asesor: preguntas sobre las finanzas y funciones de LukApp.
-- Más: categorías, período, copia de seguridad, cuenta y otras herramientas generales.
+- Más: categorías, período, registro automático, revisar movimientos, nombres repetidos, copia de seguridad, funciones solicitadas, apariencia y Cuenta y Premium.
+En Inicio, Dinero y Mes hay una barra flotante abajo para anotar: teclado (a mano), cámara (foto del comprobante), lupa (buscar) y micrófono rojo (hablando).
+Para actualizar el saldo de una cuenta: Dinero > toca la cuenta > toca la cifra de «Saldo actual» > escribe lo que tienes > Guardar. LukApp anota la diferencia como ajuste, sin contarla como gasto ni ingreso.
 Para importar movimientos abre Dinero > Importar extractos. Acepta PDF, fotos, Excel .xlsx y CSV; permite varios archivos de hasta 4 MB cada uno. Las filas se revisan antes de confirmar y se buscan posibles duplicados. Para CSV/XLSX hacen falta columnas que permitan identificar fecha, descripción y monto; pueden incluir columnas separadas de débito y crédito o un campo de monto con tipo Ingreso/Gasto. La importación agrega movimientos a una cuenta existente, no crea cuentas nuevas.
 Para crear una cuenta, abre Dinero y pulsa Agregar cuenta. Las tarjetas, deudas y cajitas se crean desde su grupo correspondiente en Dinero.
 En Más, las opciones tienen su nombre visible; para encontrar una herramienta, orienta por la pestaña y el nombre exacto, y evita inventar botones o rutas. Si los documentos de conocimiento no confirman un paso, dilo y pregunta qué pantalla ve la persona.
-En Más > Cuenta están tu nombre o apodo, tu plan, el ID de cuenta, la sincronización, el cambio de contraseña y la opción de borrar la cuenta.
-Para cambiar el nombre o apodo: Más > Cuenta, botón Cambiar nombre, escribir el nuevo (de 3 a 24 caracteres; letras, números, espacios, punto, guion o guion bajo) y Guardar. Debe ser único y no puede parecerse a un nombre del equipo de LukApp. Es el nombre que ven los demás en el ranking de racha.
+En Más > Cuenta y Premium están tu nombre o apodo, tu plan, el ID de cuenta, la sincronización, el cambio de contraseña y la opción de borrar la cuenta.
+Para cambiar el nombre o apodo: Más > Cuenta y Premium, botón Cambiar nombre, escribir el nuevo (de 3 a 24 caracteres; letras, números, espacios, punto, guion o guion bajo) y Guardar. Debe ser único y no puede parecerse a un nombre del equipo de LukApp. Es el nombre que ven los demás en el ranking de racha.
 Para pedir una función que no existe está Más > Funciones solicitadas, donde también se votan las ideas de otros.
 No afirmes que puedes inspeccionar la pantalla actual ni cambiar ajustes por la persona.`;
 
@@ -38,6 +40,12 @@ export const responderAyudaLukApp = (pregunta: string): string | null => {
     return 'Entra en **Dinero** y pulsa **Agregar cuenta**. Allí puedes indicar el nombre y el tipo de cuenta. Si no ves ese botón, dime qué aparece en tu pantalla.';
   }
 
+  if (/\b(actualiza\w*|ajusta\w*|cambia\w*|corregi\w*|correg\w*|cuadra\w*|poner|edita\w*|modifica\w*)\b/.test(texto)
+    && /\bsaldos?\b/.test(texto)
+    && !/\b(tarjeta|deuda|cajita|ahorro|bolsillo)\b/.test(texto)) {
+    return 'Para dejar el saldo igual al de tu banco:\n1. Abre **Dinero** y toca la cuenta.\n2. En **Saldo actual** toca la cifra (dice **Editar**).\n3. Escribe lo que de verdad tienes y toca **Guardar**.\n\nLukApp anota la diferencia como un ajuste: no cuenta como gasto ni ingreso. Repítelo con cada cuenta. También puedes decirlo con el micrófono rojo: «actualiza el saldo de Nequi a 500 mil».';
+  }
+
   if (/\b(top(e|es)|limite|presupuesto)\b/.test(texto) && /\b(donde|como|ver|buscar|encontrar|consultar)\b/.test(texto)) {
     return 'Los **Topes de gasto** están en la sección **Mes**. Abre esa herramienta para crear o revisar el límite de una categoría.';
   }
@@ -50,7 +58,7 @@ export const responderAyudaLukApp = (pregunta: string): string | null => {
   if (/\b(cambiar|cambio|editar|modificar|actualizar)\b/.test(texto)
     && /\b(nombre|apodo|usuario)\b/.test(texto)
     && !/\b(cuenta de|cajita|categoria|meta|tarjeta|bolsillo|espacio)\b/.test(texto)) {
-    return 'Abre **Más → Cuenta** y toca **Cambiar nombre**. Escribe el nuevo (de 3 a 24 caracteres) y pulsa **Guardar**. Si otra persona ya lo usa, te lo avisamos para que elijas otro.';
+    return 'Abre **Más → Cuenta y Premium** y toca **Cambiar nombre**. Escribe el nuevo (de 3 a 24 caracteres) y pulsa **Guardar**. Si otra persona ya lo usa, te lo avisamos para que elijas otro.';
   }
 
   if (/\b(copia de seguridad|respaldo|backup|restaurar)\b/.test(texto)) {
