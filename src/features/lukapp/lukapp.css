@@ -394,6 +394,13 @@ body.fin-page > #root,
   .fin-navigation { background: var(--fin-soft) !important; }
 }
 
+/* Con lente (solo Chromium, ver LenteVidrio.tsx) el fondo primero se dobla
+   en los bordes y luego se desenfoca. Menos blur que sin lente: si no, la
+   curva se pierde en la neblina y el efecto no se nota. */
+.fin-navigation[data-lente='si'] {
+  backdrop-filter: url(#fin-lente-barra) blur(12px) saturate(1.9) brightness(1.04);
+}
+
 /* El reflejo especular: una luz que entra por arriba y se desvanece, que es
    lo que hace que la cápsula se lea como un objeto curvo y no un panel. */
 .fin-navigation::before {

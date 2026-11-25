@@ -113,6 +113,18 @@ export const construirPerfilFinancieroCompleto = (datos: DatosPerfilFinanciero):
       .map((tx) => ({ clave: tx.categoria || 'Sin categoría', montoCop: tx.montoCop })),
   );
 
+  // Las barras del Asesor muestran el gasto de un mes concreto; el histórico
+  // total no sirve para "¿en qué se me fue la plata en noviembre?".
+  const mesesRecientes = [...meses.keys()].sort().slice(-3);
+  const gastosPorCategoriaPorMes = Object.fromEntries(mesesRecientes.map((mes) => [
+    mes,
+    sumaPorClave(
+      transacciones
+        .filter((tx) => tx.tipo === 'gasto' && tx.fecha.startsWith(mes))
+        .map((tx) => ({ clave: tx.categoria || 'Sin categoría', montoCop: tx.montoCop })),
+    ).slice(0, 8),
+  ]));
+
   const gastosPorCuenta = sumaPorClave(
     transacciones
       .filter((tx) => tx.tipo === 'gasto')
@@ -180,6 +192,7 @@ export const construirPerfilFinancieroCompleto = (datos: DatosPerfilFinanciero):
         .map(([mes, totales]) => ({ mes, ...totales, balanceCop: totales.ingresosCop - totales.gastosCop }))
         .sort((a, b) => a.mes.localeCompare(b.mes)),
       gastosPorCategoria,
+      gastosPorCategoriaPorMes,
       gastosPorCuenta,
     },
     actividadDetalladaReciente: transacciones.slice(0, MAX_TRANSACCIONES_DETALLADAS),

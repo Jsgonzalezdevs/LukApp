@@ -48,6 +48,7 @@ import { FacturacionPanel } from './FacturacionPanel';
 import { TerminosCondiciones } from '../features/lukapp/components/LegalLukApp';
 import { TextoMarkdown } from '../components/TextoMarkdown';
 import { RespuestaAsesor } from '../components/RespuestaAsesor';
+import { leerRespuestaVisual } from '../lib/bloquesAsesor';
 import { ContextoIAPanel } from './ContextoIAPanel';
 import { descargarUsuariosExcel } from './exportarUsuarios';
 import type { EstadoRacha } from './superadmin.types';
@@ -320,6 +321,8 @@ const puntoDeTono = (tono?: string): string =>
  * una respuesta conversacional sino un JSON de tarjetas. Mostrar ese JSON
  * crudo es ilegible; esto lo detecta y lo pinta como las tarjetas que son. */
 const RespuestaIA: React.FC<{ texto: string }> = ({ texto }) => {
+  // Las respuestas con bloques visuales se ven igual que en el chat del usuario.
+  if (leerRespuestaVisual(texto)) return <RespuestaAsesor texto={texto} />;
   let parsed: unknown;
   try {
     parsed = JSON.parse(texto);

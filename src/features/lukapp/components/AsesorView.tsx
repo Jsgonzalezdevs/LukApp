@@ -47,11 +47,14 @@ import { ES_PASIVO } from '../data/modelos';
 import { MascotaLuki } from './landing/MascotaLuki';
 import { RespuestaAsesor } from '../../../components/RespuestaAsesor';
 import { responderAyudaLukApp } from '../../../lib/contextoProductoIA';
+import { leerRespuestaVisual, serializarRespuestaVisual, validarBloque, type BloqueAsesor, type SeccionAccionAsesor } from '../../../lib/bloquesAsesor';
 
 interface Message {
   id: string;
   role: 'user' | 'bot';
   text: string;
+  /** Vista visual que el servidor ya llenó con cifras reales. */
+  bloques?: BloqueAsesor[];
   provider?: string;
   action?: ParsedTransaction;
   actions?: ParsedTransaction[];
@@ -99,6 +102,7 @@ interface AsesorViewProps {
   entradaFinanciera?: EntradaMotorFinanciero;
   contextoParaAsesor?: ContextoParaAsesor;
   mostrarMarcaPremium?: boolean;
+  onIrASeccion?: (seccion: SeccionAccionAsesor) => void;
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -174,6 +178,13 @@ const extraerRespuestaIA = (respuesta: unknown): string | null => {
   return texto || null;
 };
 
+const extraerBloquesIA = (respuesta: unknown): BloqueAsesor[] => {
+  const bloques = respuesta && typeof respuesta === 'object' ? (respuesta as { bloques?: unknown }).bloques : null;
+  return Array.isArray(bloques)
+    ? bloques.map(validarBloque).filter((bloque): bloque is BloqueAsesor => bloque !== null)
+    : [];
+};
+
 export const AsesorView: React.FC<AsesorViewProps> = ({
   transacciones,
   cajitas,
@@ -189,6 +200,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
   entradaFinanciera,
   contextoParaAsesor,
   mostrarMarcaPremium = false,
+  onIrASeccion,
 }) => {
   const [context, setContext] = useState<AsesorContext>({ ultimoAsunto: null, ultimaFecha: null });
   const [imagenLuki] = useState(() => {
@@ -290,12 +302,16 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       const respuesta = await fetch(apiUrl(`/api/asesor/conversaciones/${conversacion.id}/mensajes`), { headers });
       if (!respuesta.ok) throw new Error('No se pudo abrir la conversación.');
       const guardados = ((await respuesta.json()).mensajes ?? []) as MensajePersistido[];
-      const recuperados: Message[] = guardados.map((mensaje) => ({
-        id: mensaje.id,
-        role: mensaje.rol === 'assistant' ? 'bot' : 'user',
-        text: mensaje.texto,
-        provider: mensaje.proveedor ?? undefined,
-      }));
+      const recuperados: Message[] = guardados.map((mensaje) => {
+        const visual = mensaje.rol === 'assistant' ? leerRespuestaVisual(mensaje.texto) : null;
+        return {
+          id: mensaje.id,
+          role: mensaje.rol === 'assistant' ? 'bot' : 'user',
+          text: visual?.texto ?? mensaje.texto,
+          bloques: visual?.bloques,
+          provider: mensaje.proveedor ?? undefined,
+        };
+      });
       setMessages(recuperados.length > 0 ? recuperados : [MENSAJE_INICIAL]);
       conversacionIdRef.current = conversacion.id;
       setConversacionId(conversacion.id);
@@ -366,7 +382,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         id = await creandoConversacionRef.current;
       }
       if (!id) return;
-      const guardado = await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: mensaje.text, proveedor: mensaje.provider }) });
+      const guardado = await fetch(apiUrl('/api/asesor/mensajes'), { method: 'POST', headers, body: JSON.stringify({ conversacionId: id, rol: mensaje.role === 'bot' ? 'assistant' : 'user', texto: serializarRespuestaVisual({ texto: mensaje.text, bloques: mensaje.bloques ?? [] }), proveedor: mensaje.provider }) });
       if (guardado.ok) {
         const ahora = new Date().toISOString();
         setConversaciones((actuales) => actuales
@@ -802,7 +818,8 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
           signal: controlador.signal,
           body: JSON.stringify({
             prompt: textoUsuario,
-            history: messages.slice(-5),
+            // Solo el texto: los bloques ya resueltos no le aportan al modelo.
+            history: messages.slice(-5).map(({ role, text }) => ({ role, text })),
             finanzasContext,
             memoriaUsuario: recordar ? memoria.map((dato) => `${dato.clave}: ${dato.valor}`) : [],
             idConsulta,
@@ -836,6 +853,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                 id: nuevoId(),
                 role: 'bot',
                 text: textoRespuesta,
+                bloques: extraerBloquesIA(data),
                 provider: proveedor,
                 action: propuestaFinanciera ? undefined : deteccion.propuesta?.action,
                 actions: propuestaFinanciera ? undefined : deteccion.propuesta?.actions,
@@ -1144,7 +1162,7 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
                       : 'rounded-bl-none bg-[var(--fin-soft)] text-[var(--fin-ink)]'
                   }`}
                 >
-                  <RespuestaAsesor texto={msg.text} />
+                  <RespuestaAsesor texto={msg.text} bloques={msg.bloques} onIrASeccion={onIrASeccion} />
                   {msg.action && onCrearTransaccion && (
                     <div className="mt-3 border-t border-[var(--fin-line)] pt-3">
                       {efectoMovimiento(msg.action)}
