@@ -168,6 +168,26 @@ export const validarBloque = (valor: unknown): BloqueAsesor | null => {
   }
 };
 
+// Un monto en pesos: "$750.000", "16.7 M", "3,2 millones", "480.200 COP". Los
+// porcentajes no cuentan: "ahorras el 50 %" no choca con ninguna tarjeta.
+const MONTO_EN_TEXTO = /\$\s?\d|\d[\d.,]*\s?(?:m|mm|millones?|mil|k)\b|\d{1,3}(?:[.,]\d{3})+|\d[\d.,]*\s?cop\b/i;
+const BLOQUES_CON_CIFRAS = new Set<BloqueAsesor['tipo']>(['cifras', 'barras_categorias', 'tendencia']);
+
+/**
+ * Si la respuesta trae tarjetas o barras, las cifras ya están ahí y vienen del
+ * expediente. El modelo a veces repite montos de OTRO período en el texto
+ * (el histórico junto a tarjetas del mes) y la pantalla se contradice; por eso
+ * se quitan las frases con montos y queda el consejo.
+ */
+export const quitarMontosRepetidos = (texto: string, bloques: readonly BloqueAsesor[]): string => {
+  if (!bloques.some((bloque) => BLOQUES_CON_CIFRAS.has(bloque.tipo))) return texto;
+  const frases = texto.split(/(?<=[.!?])\s+|\n+/);
+  const sinMontos = frases.filter((frase) => !MONTO_EN_TEXTO.test(frase.replace(/\*\*/g, '')));
+  if (sinMontos.length === frases.length) return texto;
+  const resultado = sinMontos.join(' ').replace(/\s+/g, ' ').trim();
+  return resultado || 'Aquí tienes tu resumen.';
+};
+
 /** Se guarda como texto del mensaje: así el historial y el SuperAdmin conservan la vista. */
 export const serializarRespuestaVisual = (respuesta: RespuestaVisualAsesor): string =>
   respuesta.bloques.length === 0
@@ -197,9 +217,9 @@ export const textoPlanoDeRespuesta = (texto: string): string => leerRespuestaVis
 export const INSTRUCCIONES_BLOQUES_ASESOR = `FORMATO DE SALIDA OBLIGATORIO: responde SOLO con un objeto JSON válido, sin Markdown alrededor:
 {"texto": "tu respuesta breve en español, puede usar **negrillas**", "bloques": []}
 "bloques" es opcional (máximo ${MAX_BLOQUES_ASESOR}) y sirve para que la app muestre la respuesta de forma visual. Tipos permitidos:
-- {"tipo":"cifras","mes":"AAAA-MM" o "historico"}: tarjetas de ingresos, gastos y balance. La app pone las cifras reales; tú NO escribes montos aquí.
+- {"tipo":"cifras","mes":"AAAA-MM" o "historico"}: tarjetas de ingresos, gastos y balance. La app pone las cifras reales; tú NO escribes montos aquí ni en "texto".
 - {"tipo":"barras_categorias","mes":"AAAA-MM" o "historico","top":4}: barras de las categorías con más gasto.
 - {"tipo":"tendencia","meses":4}: comparación de los últimos meses.
 - {"tipo":"alerta","tono":"bien"|"atento"|"neutral","titulo":"máx 8 palabras","detalle":"máx 30 palabras"}: un aviso o logro puntual. Solo cifras que estén en el expediente.
 - {"tipo":"accion","etiqueta":"máx 4 palabras","seccion":"inicio"|"dinero"|"mes"}: botón para ir a esa sección.
-Usa bloques solo cuando aporten (resúmenes, comparaciones, alertas). Para saludos o charla, "bloques" va vacío. Si omites "mes", la app usa el mes más reciente con datos. Nunca escribas HTML, código ni tipos que no estén en esta lista.`;
+Si usas "cifras", "barras_categorias" o "tendencia", el campo "texto" NO lleva montos en pesos (la app los muestra y borra las frases que los repitan): da solo la lectura o el consejo. Usa bloques solo cuando aporten (resúmenes, comparaciones, alertas). Para saludos o charla, "bloques" va vacío. Si omites "mes", la app usa el mes más reciente con datos. Nunca escribas HTML, código ni tipos que no estén en esta lista.`;

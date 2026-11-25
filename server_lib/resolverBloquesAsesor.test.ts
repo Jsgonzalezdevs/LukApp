@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { construirPerfilFinancieroCompleto } from './perfilAsesor';
 import { resolverBloquesAsesor } from './resolverBloquesAsesor';
-import { interpretarRespuestaModelo, leerRespuestaVisual, serializarRespuestaVisual } from '../src/lib/bloquesAsesor';
+import { interpretarRespuestaModelo, leerRespuestaVisual, quitarMontosRepetidos, serializarRespuestaVisual } from '../src/lib/bloquesAsesor';
 
 const perfil = construirPerfilFinancieroCompleto({
   cajitas: [{ id: 'nequi', nombre: 'Nequi', tipo: 'cuenta' }],
@@ -81,5 +81,32 @@ describe('respuesta guardada', () => {
   it('una respuesta sin bloques se guarda como texto normal', () => {
     expect(serializarRespuestaVisual({ texto: 'Hola', bloques: [] })).toBe('Hola');
     expect(leerRespuestaVisual('Hola')).toBeNull();
+  });
+});
+
+describe('quitarMontosRepetidos', () => {
+  const cifras = resolverBloquesAsesor([{ tipo: 'cifras' }], perfil);
+
+  it('con tarjetas, quita las frases con montos de otro período y deja el consejo', () => {
+    const texto = '**Resumen:** Ingresos totales ≈ 16.7 M, gastos ≈ 13.5 M, saldo ≈ 3.2 M. Reduce gastos hormiga y destina más a ahorros.';
+    expect(quitarMontosRepetidos(texto, cifras)).toBe('Reduce gastos hormiga y destina más a ahorros.');
+  });
+
+  it('reconoce montos con signo de pesos, puntos de miles o COP', () => {
+    expect(quitarMontosRepetidos('Gastaste $369.933. Bien.', cifras)).toBe('Bien.');
+    expect(quitarMontosRepetidos('Salud se llevó 340.000. Ojo.', cifras)).toBe('Ojo.');
+    expect(quitarMontosRepetidos('Van 6000 COP en bus. Camina más.', cifras)).toBe('Camina más.');
+  });
+
+  it('conserva porcentajes y textos sin montos', () => {
+    expect(quitarMontosRepetidos('Ahorras el 50 % de lo que entra. Sigue así.', cifras)).toBe('Ahorras el 50 % de lo que entra. Sigue así.');
+  });
+
+  it('sin tarjetas el texto queda intacto, montos incluidos', () => {
+    expect(quitarMontosRepetidos('Llevas $369.933 este mes.', [])).toBe('Llevas $369.933 este mes.');
+  });
+
+  it('si todo eran montos, deja una frase neutra', () => {
+    expect(quitarMontosRepetidos('Ingresos $750.000, gastos $369.933.', cifras)).toBe('Aquí tienes tu resumen.');
   });
 });

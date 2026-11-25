@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.13.4', fecha: '2026-11-24', texto: 'Cuando Luki te muestra tus tarjetas y gráficas, el texto de arriba ya no repite cifras de otro período: los números los ves en las tarjetas y Luki se queda con el consejo. Así no se contradice. 📊' },
   { version: '11.13.3', fecha: '2026-11-24', texto: 'Cuando le pides a Luki tu resumen o cómo vas, ahora te contesta la IA con tus tarjetas y gráficas, en vez de una respuesta automática. Y el aviso «IA no disponible» ya no sale cuando la IA sí está funcionando. 📊' },
   { version: '11.13.2', fecha: '2026-11-24', texto: 'Arreglamos de nuevo el Asesor: con la información extra que le dimos a Luki, la consulta quedaba demasiado grande y la IA la rechazaba. Ahora Luki ajusta lo que lee para responderte siempre. 🤖' },
   { version: '11.13.1', fecha: '2026-11-24', texto: 'Arreglamos el Asesor: después de la última actualización a veces decía que la IA no estaba disponible. Ya vuelve a responder, con sus gráficas cuando hacen falta. 🤖' },

@@ -13,7 +13,7 @@ import { urlSupabaseDelServidor } from './server_lib/configuracionSupabase.ts';
 import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_lib/avisosRacha.ts';
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
-import { INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
+import { INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
 import { resolverBloquesAsesor } from './server_lib/resolverBloquesAsesor.ts';
 import { analizarConPlantilla, detectarBanco } from './server_lib/plantillas/index.ts';
 import type { AnalisisResultado, MovimientoExtraido } from './src/features/lukapp/analista/tipos.ts';
@@ -4303,7 +4303,7 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
     });
     const respuestaModelo = texto ? interpretarRespuestaModelo(texto) : null;
     const bloques = respuestaModelo ? resolverBloquesAsesor(respuestaModelo.solicitudes, perfilFinancieroCompleto) : [];
-    const textoVisible = respuestaModelo?.texto ?? '';
+    const textoVisible = respuestaModelo ? quitarMontosRepetidos(respuestaModelo.texto, bloques) : '';
 
     const duracionMs = Date.now() - inicio;
     // Los proveedores compatibles devuelven su conteo exacto. La estimación
