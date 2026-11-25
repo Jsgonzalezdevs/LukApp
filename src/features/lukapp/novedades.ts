@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.14.0', fecha: '2026-11-24', texto: '¡Ya puedes cambiar tu nombre! Entra a Más → Cuenta, toca «Cambiar nombre», escribe el nuevo y guárdalo. Es el nombre con el que te ven en el ranking de racha. ✏️' },
   { version: '11.13.5', fecha: '2026-11-24', texto: 'Luki ahora solo te habla de lo que ves en LukApp: secciones, botones y herramientas. Si le preguntas por algo que la app todavía no permite, como cambiar tu nombre de usuario, te lo dice claro y te cuenta dónde proponerlo. 💬' },
   { version: '11.13.4', fecha: '2026-11-24', texto: 'Cuando Luki te muestra tus tarjetas y gráficas, el texto de arriba ya no repite cifras de otro período: los números los ves en las tarjetas y Luki se queda con el consejo. Así no se contradice. 📊' },
   { version: '11.13.3', fecha: '2026-11-24', texto: 'Cuando le pides a Luki tu resumen o cómo vas, ahora te contesta la IA con tus tarjetas y gráficas, en vez de una respuesta automática. Y el aviso «IA no disponible» ya no sale cuando la IA sí está funcionando. 📊' },

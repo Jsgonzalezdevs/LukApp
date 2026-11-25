@@ -13,8 +13,9 @@ export const CONTEXTO_PRODUCTO_LUKAPP = `LukApp es una app de finanzas personale
 Para importar movimientos abre Dinero > Importar extractos. Acepta PDF, fotos, Excel .xlsx y CSV; permite varios archivos de hasta 4 MB cada uno. Las filas se revisan antes de confirmar y se buscan posibles duplicados. Para CSV/XLSX hacen falta columnas que permitan identificar fecha, descripción y monto; pueden incluir columnas separadas de débito y crédito o un campo de monto con tipo Ingreso/Gasto. La importación agrega movimientos a una cuenta existente, no crea cuentas nuevas.
 Para crear una cuenta, abre Dinero y pulsa Agregar cuenta. Las tarjetas, deudas y cajitas se crean desde su grupo correspondiente en Dinero.
 En Más, las opciones tienen su nombre visible; para encontrar una herramienta, orienta por la pestaña y el nombre exacto, y evita inventar botones o rutas. Si los documentos de conocimiento no confirman un paso, dilo y pregunta qué pantalla ve la persona.
-En Más > Cuenta están tu plan, el ID de cuenta, la sincronización, el cambio de contraseña y la opción de borrar la cuenta.
-El nombre o apodo se elige al crear la cuenta; hoy no hay opción para cambiarlo desde la app. Para pedir una función que no existe está Más > Funciones solicitadas, donde también se votan las ideas de otros.
+En Más > Cuenta están tu nombre o apodo, tu plan, el ID de cuenta, la sincronización, el cambio de contraseña y la opción de borrar la cuenta.
+Para cambiar el nombre o apodo: Más > Cuenta, botón Cambiar nombre, escribir el nuevo (de 3 a 24 caracteres; letras, números, espacios, punto, guion o guion bajo) y Guardar. Debe ser único y no puede parecerse a un nombre del equipo de LukApp. Es el nombre que ven los demás en el ranking de racha.
+Para pedir una función que no existe está Más > Funciones solicitadas, donde también se votan las ideas de otros.
 No afirmes que puedes inspeccionar la pantalla actual ni cambiar ajustes por la persona.`;
 
 /** Respuestas sin costo para las preguntas de navegación más frecuentes. */
@@ -49,7 +50,7 @@ export const responderAyudaLukApp = (pregunta: string): string | null => {
   if (/\b(cambiar|cambio|editar|modificar|actualizar)\b/.test(texto)
     && /\b(nombre|apodo|usuario)\b/.test(texto)
     && !/\b(cuenta de|cajita|categoria|meta|tarjeta|bolsillo|espacio)\b/.test(texto)) {
-    return 'Tu **nombre o apodo** se elige al crear la cuenta y, por ahora, no se puede cambiar desde la app. Si te gustaría poder hacerlo, propónlo en **Más → Funciones solicitadas** para que el equipo lo tenga en cuenta.';
+    return 'Abre **Más → Cuenta** y toca **Cambiar nombre**. Escribe el nuevo (de 3 a 24 caracteres) y pulsa **Guardar**. Si otra persona ya lo usa, te lo avisamos para que elijas otro.';
   }
 
   if (/\b(copia de seguridad|respaldo|backup|restaurar)\b/.test(texto)) {

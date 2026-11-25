@@ -9,6 +9,7 @@ import {
   EyeOff,
   KeyRound,
   Loader2,
+  Pencil,
   RefreshCw,
   Trash2,
   User,
@@ -17,6 +18,7 @@ import { apiUrl } from '../../../lib/api';
 import { obtenerSupabase } from '../data/supabase';
 import { VERSION_ETIQUETA } from '../../../version';
 import { validarContrasenaSegura } from '../../../lib/seguridad';
+import { APODO_MAXIMO, validarApodo } from '../../../lib/apodo';
 import { beneficiosActivos, type BeneficioPlan } from '../lib/beneficiosPlan';
 
 interface CuentaViewProps {
@@ -145,6 +147,11 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
 }) => {
   const cuentaEmail = cuenta?.email ?? null;
   const [apodo, setApodo] = useState<string | null>(null);
+  const [editandoApodo, setEditandoApodo] = useState(false);
+  const [nuevoApodo, setNuevoApodo] = useState('');
+  const [guardandoApodo, setGuardandoApodo] = useState(false);
+  const [errorApodo, setErrorApodo] = useState<string | null>(null);
+  const [apodoGuardado, setApodoGuardado] = useState(false);
   const [id, setId] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
   const [sincronizando, setSincronizando] = useState(false);
@@ -179,6 +186,40 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
       .maybeSingle()
       .then(({ data }) => setApodo(data?.usuario ?? null));
   }, [userId]);
+
+  const abrirEditorApodo = () => {
+    setNuevoApodo(apodo ?? '');
+    setErrorApodo(null);
+    setApodoGuardado(false);
+    setEditandoApodo(true);
+  };
+
+  const guardarApodo = async (evento: React.FormEvent) => {
+    evento.preventDefault();
+    const validacion = validarApodo(nuevoApodo);
+    if (!validacion.ok) {
+      setErrorApodo(validacion.error);
+      return;
+    }
+    setGuardandoApodo(true);
+    setErrorApodo(null);
+    try {
+      const respuesta = await conToken((token) => fetch(apiUrl('/api/mi-cuenta/apodo'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ apodo: validacion.apodo }),
+      }));
+      const cuerpo = await respuesta.json().catch(() => ({}));
+      if (!respuesta.ok) throw new Error(cuerpo.error || 'No se pudo cambiar tu nombre.');
+      setApodo(cuerpo.apodo ?? validacion.apodo);
+      setEditandoApodo(false);
+      setApodoGuardado(true);
+    } catch (error) {
+      setErrorApodo(error instanceof Error ? error.message : 'No se pudo cambiar tu nombre.');
+    } finally {
+      setGuardandoApodo(false);
+    }
+  };
 
   const cargarPlan = useCallback(async () => {
     if (!cuentaEmail || !userId) {
@@ -371,8 +412,54 @@ export const CuentaView: React.FC<CuentaViewProps> = ({
           {apodo ? (
             <p className="truncate text-[15px] text-[var(--fin-ink-soft)]">{cuenta?.email}</p>
           ) : null}
+          {apodoGuardado ? <p className="text-[13px] font-semibold text-[var(--fin-in)]" role="status">Listo, así te verán ahora ✨</p> : null}
         </div>
+        {cuentaEmail && !editandoApodo ? (
+          <button
+            type="button"
+            onClick={abrirEditorApodo}
+            className="flex shrink-0 items-center gap-1.5 rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--fin-ink)] transition-colors hover:bg-[var(--fin-card-hover)]"
+          >
+            <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+            {apodo ? 'Cambiar nombre' : 'Ponerte nombre'}
+          </button>
+        ) : null}
       </div>
+
+      {editandoApodo ? (
+        <form onSubmit={(evento) => void guardarApodo(evento)} className="-mt-2 flex flex-col gap-2 rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
+          <label htmlFor="nuevo-apodo" className="text-[13px] font-semibold text-[var(--fin-ink-soft)]">Tu nombre o apodo</label>
+          <input
+            id="nuevo-apodo"
+            value={nuevoApodo}
+            onChange={(evento) => { setNuevoApodo(evento.target.value); setErrorApodo(null); }}
+            maxLength={APODO_MAXIMO}
+            autoComplete="nickname"
+            autoFocus
+            className="rounded-[var(--fin-r-control)] border border-[var(--fin-line)] bg-[var(--fin-bg)] px-3 py-3 text-[16px] text-[var(--fin-ink)] outline-none focus:border-[var(--fin-accent)]"
+          />
+          <p className="text-[12px] text-[var(--fin-ink-faint)]">Así te ven los demás en el ranking de racha.</p>
+          {errorApodo ? <p className="text-[13px] font-medium text-[var(--fin-out)]" role="alert">{errorApodo}</p> : null}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={guardandoApodo}
+              className="flex flex-1 items-center justify-center gap-2 rounded-[var(--fin-r-control)] bg-[var(--fin-accent)] px-3 py-2.5 text-[14px] font-semibold text-[var(--fin-on-accent)] disabled:opacity-60"
+            >
+              {guardandoApodo ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+              Guardar
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditandoApodo(false)}
+              disabled={guardandoApodo}
+              className="rounded-[var(--fin-r-control)] bg-[var(--fin-soft)] px-4 py-2.5 text-[14px] font-semibold text-[var(--fin-ink)]"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       <div className="rounded-[var(--fin-r-card)] bg-[var(--fin-card)] p-4">
         <p className="mb-2 text-[13px] font-semibold text-[var(--fin-ink-soft)]">ID de cuenta</p>

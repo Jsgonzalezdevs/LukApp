@@ -12,6 +12,7 @@ import { validarContrasenaSegura } from './src/lib/seguridad.ts';
 import { urlSupabaseDelServidor } from './server_lib/configuracionSupabase.ts';
 import { cronAutorizado, enviarAvisosRacha, type DestinoAviso } from './server_lib/avisosRacha.ts';
 import { clasificarAlcanceAsesor, RESPUESTA_TEMA_TECNICO } from './src/lib/alcanceAsesor.ts';
+import { validarApodo } from './src/lib/apodo.ts';
 import { CONTEXTO_PRODUCTO_LUKAPP } from './src/lib/contextoProductoIA.ts';
 import { INSTRUCCIONES_BLOQUES_ASESOR, interpretarRespuestaModelo, quitarDetallesInternos, quitarMontosRepetidos, serializarRespuestaVisual } from './src/lib/bloquesAsesor.ts';
 import { resolverBloquesAsesor } from './server_lib/resolverBloquesAsesor.ts';
@@ -1808,6 +1809,45 @@ app.post('/api/mi-cuenta/contrasena-cambiada', async (req, res) => {
 
   await registrarAuditoria(cliente, acceso.email, 'Cambió su contraseña', acceso.email, undefined, acceso.userId);
   return res.status(200).json({ success: true });
+});
+
+// El apodo se cambia aquí y no con un UPDATE desde el navegador: así pasan
+// las reglas de validarApodo (nombres reservados incluidos) y queda auditado.
+app.post('/api/mi-cuenta/apodo', rateLimiter(10, 60_000), async (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ error: 'Inicia sesión para cambiar tu nombre.' });
+  const cliente = clienteAdmin();
+  if (!cliente) return res.status(503).json({ error: 'No se pudo cambiar tu nombre. Inténtalo de nuevo.' });
+
+  const acceso = await exigirUsuario(cliente, token);
+  if ('error' in acceso) return res.status(acceso.status).json({ error: acceso.error });
+
+  const validacion = validarApodo(req.body?.apodo);
+  if ('error' in validacion) return res.status(400).json({ error: validacion.error });
+  const { apodo } = validacion;
+
+  const { data: anterior } = await cliente.from('perfiles').select('usuario').eq('id', acceso.userId).maybeSingle();
+  if (anterior?.usuario === apodo) return res.status(200).json({ ok: true, apodo });
+
+  // El índice único es quien manda; esta consulta solo da un mensaje claro
+  // antes de chocar. Se excluye a la persona para que pueda cambiar mayúsculas.
+  const { data: ocupado } = await cliente
+    .from('perfiles')
+    .select('id')
+    .ilike('usuario', apodo.replace(/[\\%_]/g, (caracter) => `\\${caracter}`))
+    .neq('id', acceso.userId)
+    .limit(1);
+  if (ocupado && ocupado.length > 0) return res.status(409).json({ error: 'Ese nombre ya lo tiene otra persona. Prueba con otro.' });
+
+  const { error } = await cliente.from('perfiles').update({ usuario: apodo }).eq('id', acceso.userId);
+  if (error) {
+    if (error.code === '23505') return res.status(409).json({ error: 'Ese nombre ya lo tiene otra persona. Prueba con otro.' });
+    console.error('[apodo] No se pudo actualizar:', error.message);
+    return res.status(500).json({ error: 'No se pudo cambiar tu nombre. Inténtalo de nuevo.' });
+  }
+
+  await registrarAuditoria(cliente, acceso.email, 'Cambió su nombre de usuario', acceso.email, `${anterior?.usuario ?? '(sin nombre)'} → ${apodo}`, acceso.userId);
+  return res.status(200).json({ ok: true, apodo });
 });
 
 // ----------------------------------------------------------------------

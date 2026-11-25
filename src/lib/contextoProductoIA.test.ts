@@ -20,7 +20,7 @@ describe('responderAyudaLukApp', () => {
 
   it('responde sin tecnicismos cómo cambiar el nombre de usuario', () => {
     const respuesta = responderAyudaLukApp('Como puedo cambiar mi nombre de usuario?');
-    expect(respuesta).toContain('Funciones solicitadas');
+    expect(respuesta).toContain('Cambiar nombre');
     expect(respuesta).not.toMatch(/supabase|servidor|base de datos/i);
   });
 
