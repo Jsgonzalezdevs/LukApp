@@ -30,6 +30,17 @@ describe('interpretarRespuestaModelo', () => {
     expect(solicitudes).toEqual([{ tipo: 'cifras', mes: '2026-11' }]);
   });
 
+  it('rescata el texto de un JSON cortado sin mostrar llaves', () => {
+    expect(interpretarRespuestaModelo('{"texto": "Vas **bien**, sigue así.\\nOjo con", "bloques": [{"tipo": "cif')).toEqual({
+      texto: 'Vas **bien**, sigue así.\nOjo con',
+      solicitudes: [],
+    });
+  });
+
+  it('acepta el texto aunque el modelo cambie el nombre del campo', () => {
+    expect(interpretarRespuestaModelo('{"respuesta": "Hola"}')).toEqual({ texto: 'Hola', solicitudes: [] });
+  });
+
   it('si el proveedor responde en prosa, la prosa queda como respuesta', () => {
     expect(interpretarRespuestaModelo('Hola, ¿cómo vas?')).toEqual({ texto: 'Hola, ¿cómo vas?', solicitudes: [] });
   });

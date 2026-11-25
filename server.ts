@@ -3584,11 +3584,23 @@ async function consultarModeloIA(params: ConsultaIAParams): Promise<ConsultaIARe
           bodyPayload.response_format = responseFormat;
         }
 
-        const res = await fetchConTiempoLimite('https://api.groq.com/openai/v1/chat/completions', {
+        const pedirAGroq = () => fetchConTiempoLimite('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${groqKey}` },
           body: JSON.stringify(bodyPayload),
         }, timeoutMs);
+        let res = await pedirAGroq();
+        // En modo JSON Groq responde 400 (json_validate_failed) si el modelo
+        // se corta o se sale del formato, y así se caían todos los modelos y
+        // el Asesor quedaba "no disponible". Se reintenta en texto libre: quien
+        // llama ya sabe leer una respuesta que no venga en JSON.
+        if (res.status === 400 && responseFormat) {
+          const detalle = await res.text().catch(() => '');
+          console.error(`[ia] Groq ${modeloGroq.id} rechazó el modo JSON: ${detalle.slice(0, 300)}`);
+          fallos.push(`groq-${modeloGroq.id}:400-json`);
+          delete bodyPayload.response_format;
+          res = await pedirAGroq();
+        }
         if (res.ok) {
           const data = (await res.json()) as RespuestaChat;
           const raw = data.choices?.[0]?.message?.content || '';
@@ -4272,8 +4284,9 @@ ${INSTRUCCIONES_BLOQUES_ASESOR}`;
       systemPrompt,
       userPrompt: preguntaParaModelo,
       history: Array.isArray(history) ? history : [],
-      // El JSON y los bloques ocupan más que la prosa de antes (220).
-      maxTokens: 450,
+      // gpt-oss gasta parte del tope razonando antes de escribir el JSON; con
+      // 450 la respuesta se cortaba. Es un techo: solo se cobra lo que se usa.
+      maxTokens: 1000,
       temperature: 0.6,
       responseFormat: { type: 'json_object' },
       preferirEconomico: true,

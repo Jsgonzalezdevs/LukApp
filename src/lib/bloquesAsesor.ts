@@ -92,6 +92,11 @@ export const interpretarRespuestaModelo = (crudo: string): { texto: string; soli
   const limpio = crudo.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   try {
     const datos = JSON.parse(limpio) as unknown;
+    if (esObjeto(datos) && typeof datos.texto !== 'string') {
+      // Algunos modelos cambian el nombre del campo pese a la instrucción.
+      const alterno = ['respuesta', 'mensaje', 'text', 'answer'].map((clave) => datos[clave]).find((valor) => typeof valor === 'string');
+      if (typeof alterno === 'string') datos.texto = alterno;
+    }
     if (esObjeto(datos) && typeof datos.texto === 'string' && datos.texto.trim()) {
       const solicitudes = (Array.isArray(datos.bloques) ? datos.bloques : [])
         .map(validarSolicitudBloque)
@@ -100,7 +105,17 @@ export const interpretarRespuestaModelo = (crudo: string): { texto: string; soli
       return { texto: datos.texto.trim().slice(0, 1500), solicitudes };
     }
   } catch {
-    // Prosa: se usa tal cual.
+    // JSON cortado a mitad de camino: se rescata el campo "texto" para no
+    // mostrarle llaves y comillas a la persona.
+    if (limpio.startsWith('{')) {
+      const rescatado = /"texto"\s*:\s*"((?:[^"\\]|\\.)*)/.exec(limpio)?.[1];
+      if (!rescatado) return { texto: '', solicitudes: [] };
+      try {
+        return { texto: JSON.parse(`"${rescatado}"`).trim(), solicitudes: [] };
+      } catch {
+        return { texto: rescatado.replace(/\\n/g, '\n').replace(/\\"/g, '"').trim(), solicitudes: [] };
+      }
+    }
   }
   return { texto: crudo.trim(), solicitudes: [] };
 };
