@@ -316,9 +316,42 @@ describe('AsesorView — conversaciones guardadas', () => {
   });
 });
 
-// El resumen del mes ya se contesta al instante con el motor local; estas
-// pruebas necesitan una pregunta que el motor no reconozca para llegar a la IA.
+// Preguntas que el motor local no reconoce y por eso siempre llegan a la IA.
 const PREGUNTA_PARA_IA = 'Cuéntame algo sobre el ahorro';
+
+describe('AsesorView — el resumen lo responde la IA con gráficas', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+    vi.spyOn(supabaseData, 'obtenerSupabase').mockReturnValue(null);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('«Dime mi resumen» va a la IA y pinta las tarjetas que llenó el servidor', async () => {
+    const peticiones = vi.fn().mockImplementation((url: string) => Promise.resolve({ ok: true, json: async () => (
+      String(url).includes('/api/asesor-ia/disponibilidad')
+        ? { ia: true }
+        : {
+          text: 'Vas bien este mes.',
+          bloques: [{ tipo: 'cifras', periodo: 'noviembre 2026', ingresosCop: 750_000, gastosCop: 369_933, balanceCop: 380_067 }],
+          provider: 'Groq',
+          offline: false,
+        }
+    ) }));
+    vi.stubGlobal('fetch', peticiones);
+    render(<AsesorView {...props} />);
+    const input = screen.getByPlaceholderText('Pregúntale a tu asesor...');
+    fireEvent.change(input, { target: { value: 'Dime mi resumen' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await screen.findByText('Vas bien este mes.');
+    expect(peticiones.mock.calls.some(([url]) => new URL(String(url), 'http://localhost').pathname === '/api/asesor-ia')).toBe(true);
+    expect(screen.getByText('noviembre 2026')).toBeTruthy();
+    expect(screen.getByText('Balance')).toBeTruthy();
+    expect(screen.queryByText(/IA no disponible/)).toBeNull();
+  });
+});
 
 describe('AsesorView — conversación de deuda en modo local', () => {
   it('no responde con reglas y reintenta sin duplicar el mensaje del usuario', async () => {

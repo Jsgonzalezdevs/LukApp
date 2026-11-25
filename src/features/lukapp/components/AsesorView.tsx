@@ -106,6 +106,14 @@ interface AsesorViewProps {
 }
 
 const nuevoId = () => `msg-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+/** Preguntas de análisis: la IA las responde con cifras reales y gráficas, así
+ * que no se contestan con el motor local salvo que la IA falle. */
+const PIDE_ANALISIS_IA = /\b(resumen|como voy|como me ves|como ves|finanzas|gastando mucho|analisis|analiza|balance)\b/;
+const normalizarPregunta = (texto: string): string => texto
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLocaleLowerCase('es-CO');
 const PROBABILIDAD_LENGUA = 0.00001; // 0,001 %
 export const PROBABILIDAD_LUKI_LOCO = 0.0001; // 0,01 %: una vez cada diez mil aperturas en promedio.
 
@@ -669,13 +677,14 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
       const mensajeSimulacion: Message = { id: nuevoId(), role: 'bot', text: simulacionLocal.respuesta, provider: 'Luki' };
       setMessages((prev) => [...prev, mensajeSimulacion]);
       void (guardadoUsuario ?? Promise.resolve()).then(() => guardarMensaje(mensajeSimulacion));
-      setConexion('local');
       setInput('');
       setErrorIA(null);
       setTextoParaReintentar(null);
       return;
     }
-    if (!esReintento && !propuestaFinanciera) {
+    // Una respuesta instantánea no dice nada sobre la IA: por eso ya no cambia
+    // el indicador a "IA no disponible", que confundía al ver que sí lo estaba.
+    if (!esReintento && !propuestaFinanciera && !PIDE_ANALISIS_IA.test(normalizarPregunta(textoUsuario))) {
       const respuestaInstantanea = responderAsesor(
         textoUsuario, transacciones, cajitas, cajitasBalances, categorias, lexico, context, disponibleDiarioCop,
       );
@@ -692,7 +701,6 @@ export const AsesorView: React.FC<AsesorViewProps> = ({
         setMessages((prev) => [...prev, mensajeInstantaneo]);
         setContext(respuestaInstantanea.newContext);
         void (guardadoUsuario ?? Promise.resolve()).then(() => guardarMensaje(mensajeInstantaneo));
-        setConexion('local');
         setInput('');
         setErrorIA(null);
         setTextoParaReintentar(null);
