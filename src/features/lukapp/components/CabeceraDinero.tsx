@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CalendarDays, Flame, Settings2 } from 'lucide-react';
 import type { Transaction } from '../types';
 import type { BonoRacha } from '../lib/racha';
-import { RachaModal } from './RachaModal';
+import { RachaModalDiferido as RachaModal } from './RachaModalDiferido';
 import { useRacha } from '../data/useRacha';
 
 export function CabeceraDinero({ periodo, opciones, onPeriodo, movimientos, bonosRacha, hoy, onAjustes }: {

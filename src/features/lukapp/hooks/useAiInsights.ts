@@ -128,7 +128,7 @@ export const useAiInsights = ({
     };
   }, []);
 
-  const fetchAiInsights = async () => {
+  const fetchAiInsights = async (forzar = false) => {
     // Si no está incluida la prestación, no gastar llamadas al modelo.
     if (!prestaciones.insightsIa) {
       setAiInsights([]);
@@ -157,7 +157,7 @@ export const useAiInsights = ({
         headers,
         // El servidor arma el perfil desde la cuenta autenticada. El cliente
         // no manda cifras ni puede pedir datos de otra persona.
-        body: JSON.stringify({}),
+        body: JSON.stringify(forzar ? { forzar: true } : {}),
       });
 
       if (res.ok) {
@@ -205,7 +205,7 @@ export const useAiInsights = ({
     esPremium: prestaciones.esPremium,
     refrescar: () => {
       lastFetchKey.current = '';
-      fetchAiInsights();
+      fetchAiInsights(true);
     },
   };
 };

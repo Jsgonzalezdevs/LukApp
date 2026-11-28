@@ -25,7 +25,7 @@ import { HITOS_RACHA, type BonoRacha } from '../lib/racha';
 import { useRacha } from '../data/useRacha';
 import { CLAVE_HITOS_CELEBRADOS, hitoPorCelebrar, rachaEnRiesgo } from '../lib/rankingRacha';
 import { bogotaHora } from '../lib/localDate';
-import { RachaModal } from './RachaModal';
+import { RachaModalDiferido as RachaModal } from './RachaModalDiferido';
 import { CelebracionHito } from './CelebracionHito';
 import type { Novedad } from '../novedades';
 import { useCatalogo } from '../catalogoContexto';

@@ -82,9 +82,9 @@ const cifrasDeCategoria = (texto: string): CategoriaResumen[] => {
 const analizarResumen = (texto: string): ResumenFinanciero | null => {
   const encabezado = /resumen financiero(?:\s*\(([^)]+)\))?/i.exec(texto);
   if (!encabezado) return null;
-  const ingresos = leerCifra(texto, /ingresos?\s+(?:totales?|del periodo|del mes)[^\d$+\-]{0,30}(?:cop\s*)?\$?\s*([+\-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
-  const gastos = leerCifra(texto, /gastos?\s+(?:totales?|del periodo|del mes)[^\d$+\-]{0,30}(?:cop\s*)?\$?\s*([+\-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
-  const balance = leerCifra(texto, /balance(?:\s+acumulado|\s+del periodo|\s+del mes)?[^\d$+\-]{0,30}(?:cop\s*)?\$?\s*([+\-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
+  const ingresos = leerCifra(texto, /ingresos?\s+(?:totales?|del periodo|del mes)[^\d$+-]{0,30}(?:cop\s*)?\$?\s*([+-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
+  const gastos = leerCifra(texto, /gastos?\s+(?:totales?|del periodo|del mes)[^\d$+-]{0,30}(?:cop\s*)?\$?\s*([+-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
+  const balance = leerCifra(texto, /balance(?:\s+acumulado|\s+del periodo|\s+del mes)?[^\d$+-]{0,30}(?:cop\s*)?\$?\s*([+-]?\s*\d[\d.,]*)(?:\s*(millones?|m|mil|k))?/i);
   if (!ingresos || !gastos || !balance) return null;
   return {
     periodo: encabezado[1]?.trim() ?? '',

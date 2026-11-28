@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deriva el Luki de la portada a partir del Luki ensamblado.
 
-`public/luki-vector/luki-ensamblado.svg` es la lamina completa del rig: siete
+`arte/luki/vector/luki-ensamblado.svg` es la lamina completa del rig: siete
 figuras, piezas sueltas y una demo de animacion encima. La portada solo usa una
 de esas figuras, y con otras proporciones: la de la lamina se lee cuadrada
 --torso corto, saco que termina alto, piernas pegadas al saco--, mientras que la
@@ -28,8 +28,8 @@ import re
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-ORIGEN = RAIZ / 'public/luki-vector/luki-ensamblado.svg'
-DESTINO = RAIZ / 'public/luki-vector/luki-portada.svg'
+ORIGEN = RAIZ / 'arte/luki/vector/luki-ensamblado.svg'
+DESTINO = RAIZ / 'arte/luki/vector/luki-portada.svg'
 
 # Donde esta la figura de pie dentro de la lamina, ya medido sobre el dibujo.
 FIGURA = (28.0, 45.0, 244.0, 335.0)  # x0, y0, x1, y1 en coordenadas de la lamina

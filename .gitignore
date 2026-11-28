@@ -33,3 +33,7 @@ __pycache__/
 
 # Proyecto aparte que vive en esta carpeta, pero no es de Focus.
 .vercel
+
+# Builds de Android: pesan decenas de MB y se regeneran con EAS.
+*.apk
+*.aab

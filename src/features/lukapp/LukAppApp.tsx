@@ -57,7 +57,7 @@ import {
   useRecordatorioRacha,
   useCuentaFavorita,
 } from './data/usePreferencias';
-import { NOVEDADES } from './novedades';
+import type { Novedad } from './novedades';
 import { contactoPorApodo } from './lib/contactos';
 
 
@@ -90,8 +90,6 @@ import { BotonAnotar } from './components/BotonAnotar';
 import { DetalleMovimiento } from './components/DetalleMovimiento';
 import { AvisoGuardado } from './components/AvisoGuardado';
 import type { Guardado } from './components/AvisoGuardado';
-import { ConfirmarComandoVoz } from './components/ConfirmarComandoVoz';
-import { Onboarding } from './components/Onboarding';
 import { PANELES_AJUSTES, SECTIONS } from './sections';
 import { BASE_LUKAPP, reemplazarPor, RUTA_BENEFICIOS_PREMIUM, segmentosDe, useRuta } from './data/useRuta';
 import type { PanelAjustes, SectionId } from './sections';
@@ -128,6 +126,14 @@ const MesView = lazy(() =>
 );
 const MultiCapturaModal = lazy(() =>
   import('./components/MultiCapturaModal').then(({ MultiCapturaModal }) => ({ default: MultiCapturaModal })),
+);
+/* La confirmación de un comando por voz y la bienvenida solo aparecen en
+   momentos puntuales; la mayoría de aperturas no las necesita. */
+const ConfirmarComandoVoz = lazy(() =>
+  import('./components/ConfirmarComandoVoz').then(({ ConfirmarComandoVoz }) => ({ default: ConfirmarComandoVoz })),
+);
+const Onboarding = lazy(() =>
+  import('./components/Onboarding').then(({ Onboarding }) => ({ default: Onboarding })),
 );
 const ReporteFinancieroModal = lazy(() =>
   import('./components/ReporteFinancieroModal').then(({ ReporteFinancieroModal }) => ({ default: ReporteFinancieroModal })),
@@ -370,6 +376,17 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
   const periodoAjustes = useAjustesPeriodo();
   const presupuestoAjustes = useAjustesPresupuesto();
   const novedades = useNovedades();
+  // El historial completo solo se descarga cuando hay algo que contar: casi
+  // siempre la tarjeta está cerrada y bajarlo al abrir la app era peso muerto.
+  const [novedadActual, setNovedadActual] = useState<Novedad | null>(null);
+  useEffect(() => {
+    if (!novedades.hayNovedad) return;
+    let vigente = true;
+    void import('./novedades').then(({ NOVEDADES }) => {
+      if (vigente) setNovedadActual(NOVEDADES[0] ?? null);
+    });
+    return () => { vigente = false; };
+  }, [novedades.hayNovedad]);
   const { cuentaFavoritaId, setCuentaFavorita } = useCuentaFavorita();
   const { transacciones, cajitas, cajitaMovimientos, categorias } = almacen.datos;
 
@@ -1151,7 +1168,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
             modoPrivacidad={modoPrivacidad}
             onTogglePrivacidad={alternarPrivacidad}
             today={today}
-            novedad={novedades.hayNovedad ? NOVEDADES[0] : null}
+            novedad={novedades.hayNovedad ? novedadActual : null}
             onCerrarNovedad={() => novedades.marcarVista()}
             onAnotar={() => setPending(movimientoEnBlanco())}
             liquidez={contextoFinanciero.liquidez}
@@ -1704,6 +1721,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
         ) : null}
 
         {comandoPorVoz ? (
+          <Suspense fallback={null}>
           <ConfirmarComandoVoz
             comando={comandoPorVoz}
             cajitas={cajitas}
@@ -1715,6 +1733,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               setDisparoDictado((actual) => actual + 1);
             }}
           />
+          </Suspense>
         ) : null}
 
         <AvisoGuardado
@@ -1732,6 +1751,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
  guarda de verdad, no con `transacciones.length === 0`: así no vuelve a
  aparecer el día que alguien borre su único movimiento. */}
         {!onboarding.terminado ? (
+          <Suspense fallback={null}>
           <Onboarding
             onTerminar={async ({ nombre, banco, claseCuenta, saldoCop }) => {
               if (nombre) onboarding.guardarNombre(nombre);
@@ -1751,6 +1771,7 @@ const LukAppPanel: React.FC<LukAppPanelProps> = ({
               return true;
             }}
           />
+          </Suspense>
         ) : null}
 
         {/* LA GUÍA

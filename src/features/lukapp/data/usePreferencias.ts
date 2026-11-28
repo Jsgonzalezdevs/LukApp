@@ -4,7 +4,10 @@ import type { RegimenGmf, ValorUvt } from '../lib/gmf';
 import { PERIODO_POR_DEFECTO } from '../lib/periodo';
 import type { ConfigPeriodo, FrecuenciaPeriodo } from '../lib/periodo';
 import { bogotaDate } from '../lib/localDate';
-import { VERSION_ACTUAL } from '../novedades';
+// La versión sale de version.ts y no del historial de novedades: ese archivo pesa
+// más de 100 kB y no tiene por qué bajarse al abrir la app. version.test.ts
+// garantiza que la primera novedad y VERSION coinciden.
+import { VERSION as VERSION_ACTUAL } from '../../../version';
 import { obtenerSupabase } from './supabase';
 import { activarNotificacionesPush, desactivarNotificacionesPush } from '../lib/notificacionesPush';
 

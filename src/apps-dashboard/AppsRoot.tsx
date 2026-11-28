@@ -308,7 +308,7 @@ export const AppsRoot: React.FC = () => {
         setPermisos(permisosAsignados);
         setLoadingRol(false);
         setErrorCargaRol(false);
-      } catch (error) {
+      } catch {
         if (cancelado) return;
 
         const maxIntentosReintento = 3;

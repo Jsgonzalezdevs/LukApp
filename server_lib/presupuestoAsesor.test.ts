@@ -6,6 +6,8 @@ import {
   PRESUPUESTO_TOKENS_ASESOR,
   caracteresContextoDisponibles,
   acotarHistorialAsesor,
+  compactarParaIA,
+  insightsSiguenVigentes,
   recortarConMuestras,
 } from './presupuestoAsesor';
 
@@ -35,7 +37,7 @@ describe('presupuesto del Asesor', () => {
 
 describe('caracteresContextoDisponibles', () => {
   it('le da al expediente solo lo que sobra dentro de la cuota de Groq', () => {
-    const fijos = 14_000;
+    const fijos = 10_000;
     const contexto = caracteresContextoDisponibles(fijos);
     const tokensEstimados = (fijos + contexto) / 3.2 + MAX_TOKENS_RESPUESTA_ASESOR;
     expect(tokensEstimados).toBeLessThanOrEqual(PRESUPUESTO_TOKENS_ASESOR);
@@ -43,10 +45,38 @@ describe('caracteresContextoDisponibles', () => {
   });
 
   it('sin historial ni documentos conserva el expediente completo', () => {
-    expect(caracteresContextoDisponibles(4_000)).toBe(MAX_CARACTERES_CONTEXTO_ASESOR);
+    expect(caracteresContextoDisponibles(2_000)).toBe(MAX_CARACTERES_CONTEXTO_ASESOR);
   });
 
   it('nunca deja al modelo sin expediente', () => {
     expect(caracteresContextoDisponibles(100_000)).toBe(2_000);
+  });
+});
+
+describe('una consulta deja aire en la cuota por minuto', () => {
+  it('el presupuesto del Asesor no pasa del 70 % de los 8.000 tokens de Groq gratis', () => {
+    expect(PRESUPUESTO_TOKENS_ASESOR).toBeLessThanOrEqual(8_000 * 0.7);
+  });
+});
+
+describe('compactarParaIA', () => {
+  it('conserva los extremos de una serie larga', () => {
+    const serie = Array.from({ length: 40 }, (_, i) => i);
+    expect(compactarParaIA(serie)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 32, 33, 34, 35, 36, 37, 38, 39]);
+  });
+});
+
+describe('insightsSiguenVigentes', () => {
+  const ahora = Date.parse('2026-11-27T12:00:00Z');
+  it('reutiliza un análisis de hace un par de horas', () => {
+    expect(insightsSiguenVigentes('2026-11-27T10:00:00Z', ahora)).toBe(true);
+  });
+  it('pide uno nuevo cuando ya pasó la vigencia', () => {
+    expect(insightsSiguenVigentes('2026-11-27T05:00:00Z', ahora)).toBe(false);
+  });
+  it('no confía en fechas vacías, inválidas o futuras', () => {
+    expect(insightsSiguenVigentes(null, ahora)).toBe(false);
+    expect(insightsSiguenVigentes('ayer', ahora)).toBe(false);
+    expect(insightsSiguenVigentes('2026-11-28T00:00:00Z', ahora)).toBe(false);
   });
 });
