@@ -22,6 +22,7 @@ export interface Novedad {
 }
 
 export const NOVEDADES: readonly Novedad[] = [
+  { version: '11.17.3', fecha: '2026-11-27', texto: 'Seguimos ordenando LukApp por dentro, esta vez el panel de administración. Por fuera todo se ve y funciona igual. 🧰' },
   { version: '11.17.2', fecha: '2026-11-27', texto: 'Ordenamos LukApp por dentro para que los próximos arreglos lleguen más rápido y con menos riesgo de romper algo. Por fuera todo sigue igual. 🧰' },
   { version: '11.17.1', fecha: '2026-11-27', texto: 'LukApp abre más rápido y Luki gasta mucho menos para pensar: tus recomendaciones de Inicio ya no se recalculan con cada gasto que anotas, y el Asesor deja espacio para que puedas seguir conversando sin que la IA se quede sin aire. ⚡' },
   { version: '11.17.0', fecha: '2026-11-25', texto: 'Luki ahora se sabe LukApp de memoria. Pregúntale cómo hacer cualquier cosa —actualizar el saldo de una cuenta, pagar la tarjeta, crear un ahorro, poner un tope, compartir gastos— y te da los pasos con los nombres exactos de los botones. 🧭' },
